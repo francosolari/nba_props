@@ -1,19 +1,29 @@
-# The first instruction is what image we want to base our container on
-# We Use an official Python runtime as a parent image
-FROM python:3.11
+# Step 1: Use an official Python runtime as a parent image
+FROM python:3.10
 
-# The enviroment variable ensures that the python output is set straight
-# to the terminal with out buffering it first
-ENV PYTHONUNBUFFERED 1
+# Step 2: Set environment variables to prevent Python from buffering stdout and stdin
+ENV PYTHONUNBUFFERED=1
 
-# create root directory for our project in the container
-RUN mkdir /nba_predictions
-
-# Set the working directory to /music_service
+# Step 3: Set the working directory in the container
 WORKDIR /nba_predictions
 
-# Copy the current directory contents into the container at /music_service
-ADD . /nba_predictions/
+# Step 4: Copy the requirements file into the container
+COPY requirements.txt /nba_predictions/
 
-# Install any needed packages specified in requirements.txt
-RUN pip install -r requirements.txt
+# Step 5: Install any necessary dependencies
+RUN pip install --upgrade pip \
+    && pip install -r requirements.txt
+RUN python manage.py collectstatic --noinput
+
+# Step 6: Copy the application code into the container at /nba_predictions
+COPY . /nba_predictions/
+
+# Step 7: Set environment variables for Django (optional)
+# Replace `nba_predictions.settings` with your actual settings path if different
+ENV DJANGO_SETTINGS_MODULE=nba_predictions.settings
+
+# Step 8: Expose the port that your app runs on (if needed for local testing)
+EXPOSE 8000
+
+# Step 9: Run the Django app using Gunicorn for production
+CMD ["gunicorn", "nba_predictions.wsgi:application", "--bind", "0.0.0.0:8000"]

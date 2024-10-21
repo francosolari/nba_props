@@ -1,11 +1,33 @@
 version: '3'
 
 services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: nbapredictionsdb
+      POSTGRES_USER: nbauser
+      POSTGRES_PASSWORD: nbapassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nba_network
+
   web:
     build: .
-    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-    container_name: nba_predictions
+    command: gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - .:/nba_predictions
     ports:
       - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://nbauser:nbapassword@db:5432/nbapredictionsdb
+    networks:
+      - nba_network
+
+volumes:
+  postgres_data:
+
+networks:
+  nba_network:
