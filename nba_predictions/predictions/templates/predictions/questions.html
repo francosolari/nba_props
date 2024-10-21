@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <div class="container mx-auto py-12">
+        <h2 class="text-2xl font-bold mb-4">Standings Predictions</h2>
+        <div id="prediction-root" data-season-slug="{{ season.slug }}"></div>
+        <h2 class="text-2xl font-bold mb-4">Question Rendering</h2>
+        <div id="display-qform-predictions-root" data-season-slug="{{ season.slug }}"></div>
+        <script src="{% static 'js/bundle.js' %}"></script>
+    </div>
+{% endblock %}
