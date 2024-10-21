@@ -7,7 +7,7 @@
     "dev": "webpack serve",
     "build": "webpack"
   },
-  "author": "",
+  "author": "Franco Solari",
   "license": "ISC",
   "dependencies": {
     "@babel/core": "^7.25.2",
@@ -32,5 +32,12 @@
     "mini-css-extract-plugin": "^2.9.1",
     "postcss-loader": "^8.1.1",
     "webpack-dev-server": "^4.15.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/francosolari/nba_props_pred"
+  },
+  "keywords": [
+    "nba"
+  ]
 }
