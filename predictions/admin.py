@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from .models import Season, Team, PlayoffPrediction, StandingPrediction, \
-    RegularSeasonStandings, PostSeasonStandings, \
+    RegularSeasonStandings, PostSeasonStandings, Player, \
     InSeasonTournamentStandings, Question, Answer, \
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion, \
     Award, HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion
@@ -130,6 +130,10 @@ class QuestionAdmin(PolymorphicParentModelAdmin):
     # base_form =
     child_models = (SuperlativeQuestion,PropQuestion,PlayerStatPredictionQuestion)
     # list_filter = (PolymorphicChildModelFilter,)
+
+@admin.register(Player)
+class PlayerAdmin(admin.ModelAdmin):
+    list_display = ('name',)  # Customize as necessary
 
 
 # class QuestionAdmin(admin.ModelAdmin):
