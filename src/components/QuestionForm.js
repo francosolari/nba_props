@@ -34,50 +34,40 @@ const QuestionForm = ({ seasonSlug }) => {
     return cookieValue;
   }, []);
 
-  useEffect(() => {
-    if (seasonSlug) {
-      console.log(`Fetching questions for season: ${seasonSlug}`);
+      useEffect(() => {
+        if (seasonSlug) {
+          const fetchData = async () => {
+            setLoading(true); // Start loading
 
-      // Fetch questions for the season
-      axios.get(`/api/questions/${seasonSlug}/`)
-        .then(response => {
-          console.log("Questions fetched successfully:", response.data);
-          setQuestions(response.data.questions);
-        })
-        .catch(error => {
-          console.error('Error fetching questions:', error);
-        });
+            try {
+              // Fetch all data in parallel
+              const [
+                questionsResponse,
+                playersResponse,
+                teamsResponse,
+                istResponse,
+              ] = await Promise.all([
+                axios.get(`/api/questions/${seasonSlug}/`),
+                axios.get('/api/players/'),
+                axios.get('/api/teams/'),
+                axios.get(`/api/ist-standings/${seasonSlug}/`),
+              ]);
 
-      // Fetch players for superlative questions
-      axios.get('/api/players/')
-        .then(response => {
-          console.log("Players fetched successfully:", response.data);
-          setPlayers(response.data.players);
-        })
-        .catch(error => {
-          console.error('Error fetching players:', error);
-        });
-      // Fetch teams for HeadToHead questions
-      axios.get('/api/teams/')
-        .then(response => {
-          console.log("Teams fetched successfully:", response.data);
-          setTeams(response.data.teams);
-        })
-        .catch(error => {
-          console.error('Error fetching teams:', error);
-        });
-      // Fetch In Season Tournament standings
-      axios.get(`/api/ist-standings/${seasonSlug}/`)
-        .then(response => {
-          console.log("IST Standings fetched successfully:", response.data);
-          setIstStandings(response.data);  // Correct this line
-        })
-        .catch(error => {
-          console.error('Error fetching ist standings:', error);
-        });
-        setLoading(false);  // Even if there is an error, stop loading
-    }
-  }, [seasonSlug]); // Dependency array ensures effect runs when seasonSlug changes
+              // Set Questions
+              setQuestions(questionsResponse.data?.questions || []);
+              setPlayers(playersResponse.data?.players || []);
+              setTeams(teamsResponse.data?.teams || []);
+              setIstStandings(istResponse.data || {});  // Ensure this matches your API structure
+            } catch (error) {
+              console.error('Error fetching data:', error);
+            } finally {
+              setLoading(false); // Stop loading when done
+            }
+          };
+
+          fetchData();
+        }
+      }, [seasonSlug]); // Dependency array ensures effect runs when seasonSlug changes
   // if (loading) {
   //   return <div>Loading...</div>;
   // }

@@ -15,18 +15,42 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
+IS_DEVELOPMENT = os.getenv('DJANGO_DEVELOPMENT', 'False').lower() == 'true'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-vz_05dx#kxb^&(95ltkswn%b56hbq4c6y&+opawn%qt7dda$4h'
+if IS_DEVELOPMENT:
+    # Development settings (for local environment)
+    DEBUG = True
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',  # Local SQLite database for development
+        }
+    }
+
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+else:
+    # Production settings (default)
+    DEBUG = False
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/var/www/nba_predictions/db.sqlite3',  # Use the correct path for the server's SQLite file
+        }
+    }
+
+    ALLOWED_HOSTS = ['134.209.213.185', 'propspredictions.com']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
-ALLOWED_HOSTS = ["0.0.0.0", "127.0.0.1", 'localhost', '134.209.213.185', 'propspredictions.com']
+# ALLOWED_HOSTS = ["0.0.0.0", "127.0.0.1", 'localhost', '134.209.213.185', 'propspredictions.com']
 
 
 # Application definition
@@ -90,12 +114,12 @@ WSGI_APPLICATION = 'nba_predictions.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
