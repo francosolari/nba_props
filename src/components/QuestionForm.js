@@ -388,371 +388,386 @@ const handleSubmit = useCallback((e) => {
     );
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-4">
-      {/* Superlative Questions */}
-      {superlativeQuestions.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Superlatives</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {superlativeQuestions.map(question => (
-              <div
-                key={question.id}
-                className="p-4 border border-gray-200 rounded-md shadow-sm flex flex-col justify-between min-h-48"
-              >
-                <div>
-                  <label htmlFor={`question_${question.id}`} className="block text-gray-700 mb-2 text-sm">
-                    {question.text}
-                  </label>
-                  {renderInput(question)}
-                  {/* Point Value Display */}
-                  <span className="mt-2 text-xs italic text-gray-500 text-center">
+      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-4">
+          {/* Superlative Questions */}
+          {superlativeQuestions.length > 0 && (
+              <div className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4">Superlatives</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {superlativeQuestions.map(question => (
+                          <div
+                              key={question.id}
+                              className="p-4 border border-gray-200 rounded-md shadow-sm flex flex-col justify-between min-h-48"
+                          >
+                              <div>
+                                  <label htmlFor={`question_${question.id}`}
+                                         className="block text-gray-700 mb-2 text-sm">
+                                      {question.text}
+                                  </label>
+                                  {renderInput(question)}
+                                  {/* Point Value Display */}
+                                  <span className="mt-2 text-xs italic text-gray-500 text-center">
                     {question.point_value} {question.point_value === 1 ? 'point' : 'points'} for correct answer{' '}
-                    <br />{question.point_value / 2} {question.point_value / 2 === 1 ? 'point' : 'points'} for runner-up
+                                      <br/>{question.point_value / 2} {question.point_value / 2 === 1 ? 'point' : 'points'} for runner-up
                   </span>
-                  {/* Error Message */}
-                  {errors[question.id] && (
-                    <span className="mt-1 text-xs text-red-500">
+                                  {/* Error Message */}
+                                  {errors[question.id] && (
+                                      <span className="mt-1 text-xs text-red-500">
                       {errors[question.id]}
                     </span>
-                  )}
-                </div>
+                                  )}
+                              </div>
+                          </div>
+                      ))}
+                  </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-        {/* NBA Finals Section */}
-        {nbaFinalsQuestions.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">NBA Finals Predictions</h2>
-            <p className="text-gray-500 mb-4">
-              1 point for correct team, 1 point for correct wins, game score used as tiebreaker.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Eastern Conference Finals */}
-              <div className="p-4 border border-gray-200 rounded-md shadow-sm flex flex-col">
-                <h3 className="text-lg font-semibold mb-2">Eastern Conference Finals</h3>
-                {/* Team Selection for East */}
-                {nbaFinalsQuestions
-                  .filter(q => q.group_name === 'finals_east' && q.text.toLowerCase().includes('team'))
-                  .map(question => {
-                    // Generate team options for Eastern Conference
-                    const teamOptions = teams
-                      .filter(team => team.conference === 'East')
-                      .map(team => ({ value: team.id, label: team.name }));
+          )}
+          {/* NBA Finals Section */}
+          {nbaFinalsQuestions.length > 0 && (
+              <div className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4">NBA Finals Predictions</h2>
+                  <p className="text-gray-500 mb-4">
+                      1 point for correct team, 1 point for correct wins, game score used as tiebreaker.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Eastern Conference Finals */}
+                      <div className="p-4 border border-gray-200 rounded-md shadow-sm flex flex-col">
+                          <h3 className="text-lg font-semibold mb-2">Eastern Conference Finals</h3>
+                          {/* Team Selection for East */}
+                          {nbaFinalsQuestions
+                              .filter(q => q.group_name === 'finals_east' && q.text.toLowerCase().includes('team'))
+                              .map(question => {
+                                  // Generate team options for Eastern Conference
+                                  const teamOptions = teams
+                                      .filter(team => team.conference === 'East')
+                                      .map(team => ({value: team.id, label: team.name}));
 
-                    // Find the selected team option based on the stored answer
-                    const selectedTeamOption = teamOptions.find(option => option.value === answers[question.id]) || null;
+                                  // Find the selected team option based on the stored answer
+                                  const selectedTeamOption = teamOptions.find(option => option.value === answers[question.id]) || null;
 
-                    return (
-                      <div key={question.id} className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">{question.text}</label>
-                        <SelectComponent
-                          options={teamOptions}
-                          value={selectedTeamOption} // Pass the entire option object
-                          onChange={(selectedOption) =>
-                            handleChange(question.id, selectedOption ? selectedOption.value : '')
-                          }
-                          placeholder="Select East Team"
-                          hasError={errors[question.id]}
-                        />
-                        {errors[question.id] && (
-                          <span className="text-xs text-red-500">{errors[question.id]}</span>
-                        )}
+                                  return (
+                                      <div key={question.id} className="mb-4">
+                                          <label
+                                              className="block text-sm font-medium text-gray-700">{question.text}</label>
+                                          <SelectComponent
+                                              options={teamOptions}
+                                              value={selectedTeamOption} // Pass the entire option object
+                                              onChange={(selectedOption) =>
+                                                  handleChange(question.id, selectedOption ? selectedOption.value : '')
+                                              }
+                                              placeholder="Select East Team"
+                                              hasError={errors[question.id]}
+                                          />
+                                          {errors[question.id] && (
+                                              <span className="text-xs text-red-500">{errors[question.id]}</span>
+                                          )}
+                                      </div>
+                                  );
+                              })}
+                          {/* Wins Selection for East */}
+                          {nbaFinalsQuestions
+                              .filter(q => q.group_name === 'finals_east' && q.text.toLowerCase().includes('wins'))
+                              .map(question => {
+                                  // Generate wins options
+                                  const winsOptions = question.wins_choices.map(wins => ({
+                                      value: wins,
+                                      label: `${wins} wins`,
+                                  }));
+
+                                  // Find the selected wins option based on the stored answer
+                                  const selectedWinsOption = winsOptions.find(option => option.value === answers[question.id]) || null;
+
+                                  return (
+                                      <div key={question.id} className="mb-4">
+                                          <label
+                                              className="block text-sm font-medium text-gray-700">{question.text}</label>
+                                          <SelectComponent
+                                              options={winsOptions}
+                                              value={selectedWinsOption} // Pass the entire option object
+                                              onChange={(selectedOption) =>
+                                                  handleChange(question.id, selectedOption ? selectedOption.value : '')
+                                              }
+                                              placeholder="Select Wins"
+                                              hasError={errors[question.id]}
+                                          />
+                                          {errors[question.id] && (
+                                              <span className="text-xs text-red-500">{errors[question.id]}</span>
+                                          )}
+                                      </div>
+                                  );
+                              })}
                       </div>
-                    );
-                  })}
-                {/* Wins Selection for East */}
-                {nbaFinalsQuestions
-                  .filter(q => q.group_name === 'finals_east' && q.text.toLowerCase().includes('wins'))
-                  .map(question => {
-                    // Generate wins options
-                    const winsOptions = question.wins_choices.map(wins => ({
-                      value: wins,
-                      label: `${wins} wins`,
-                    }));
 
-                    // Find the selected wins option based on the stored answer
-                    const selectedWinsOption = winsOptions.find(option => option.value === answers[question.id]) || null;
+                      {/* Western Conference Finals */}
+                      <div className="p-4 border border-gray-200 rounded-md shadow-sm flex flex-col">
+                          <h3 className="text-lg font-semibold mb-2">Western Conference Finals</h3>
+                          {/* Team Selection for West */}
+                          {nbaFinalsQuestions
+                              .filter(q => q.group_name === 'finals_west' && q.text.toLowerCase().includes('team'))
+                              .map(question => {
+                                  // Generate team options for Western Conference
+                                  const teamOptions = teams
+                                      .filter(team => team.conference === 'West')
+                                      .map(team => ({value: team.id, label: team.name}));
 
-                    return (
-                      <div key={question.id} className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">{question.text}</label>
-                        <SelectComponent
-                          options={winsOptions}
-                          value={selectedWinsOption} // Pass the entire option object
-                          onChange={(selectedOption) =>
-                            handleChange(question.id, selectedOption ? selectedOption.value : '')
-                          }
-                          placeholder="Select Wins"
-                          hasError={errors[question.id]}
-                        />
-                        {errors[question.id] && (
-                          <span className="text-xs text-red-500">{errors[question.id]}</span>
-                        )}
+                                  // Find the selected team option based on the stored answer
+                                  const selectedTeamOption = teamOptions.find(option => option.value === answers[question.id]) || null;
+
+                                  return (
+                                      <div key={question.id} className="mb-4">
+                                          <label
+                                              className="block text-sm font-medium text-gray-700">{question.text}</label>
+                                          <SelectComponent
+                                              options={teamOptions}
+                                              value={selectedTeamOption} // Pass the entire option object
+                                              onChange={(selectedOption) =>
+                                                  handleChange(question.id, selectedOption ? selectedOption.value : '')
+                                              }
+                                              placeholder="Select West Team"
+                                              hasError={errors[question.id]}
+                                          />
+                                          {errors[question.id] && (
+                                              <span className="text-xs text-red-500">{errors[question.id]}</span>
+                                          )}
+                                      </div>
+                                  );
+                              })}
+                          {/* Wins Selection for West */}
+                          {nbaFinalsQuestions
+                              .filter(q => q.group_name === 'finals_west' && q.text.toLowerCase().includes('wins'))
+                              .map(question => {
+                                  // Generate wins options
+                                  const winsOptions = question.wins_choices.map(wins => ({
+                                      value: wins,
+                                      label: `${wins} wins`,
+                                  }));
+
+                                  // Find the selected wins option based on the stored answer
+                                  const selectedWinsOption = winsOptions.find(option => option.value === answers[question.id]) || null;
+
+                                  return (
+                                      <div key={question.id} className="mb-4">
+                                          <label
+                                              className="block text-sm font-medium text-gray-700">{question.text}</label>
+                                          <SelectComponent
+                                              options={winsOptions}
+                                              value={selectedWinsOption} // Pass the entire option object
+                                              onChange={(selectedOption) =>
+                                                  handleChange(question.id, selectedOption ? selectedOption.value : '')
+                                              }
+                                              placeholder="Select Wins"
+                                              hasError={errors[question.id]}
+                                          />
+                                          {errors[question.id] && (
+                                              <span className="text-xs text-red-500">{errors[question.id]}</span>
+                                          )}
+                                      </div>
+                                  );
+                              })}
                       </div>
-                    );
-                  })}
+                  </div>
               </div>
-
-              {/* Western Conference Finals */}
-              <div className="p-4 border border-gray-200 rounded-md shadow-sm flex flex-col">
-                <h3 className="text-lg font-semibold mb-2">Western Conference Finals</h3>
-                {/* Team Selection for West */}
-                {nbaFinalsQuestions
-                  .filter(q => q.group_name === 'finals_west' && q.text.toLowerCase().includes('team'))
-                  .map(question => {
-                    // Generate team options for Western Conference
-                    const teamOptions = teams
-                      .filter(team => team.conference === 'West')
-                      .map(team => ({ value: team.id, label: team.name }));
-
-                    // Find the selected team option based on the stored answer
-                    const selectedTeamOption = teamOptions.find(option => option.value === answers[question.id]) || null;
-
-                    return (
-                      <div key={question.id} className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">{question.text}</label>
-                        <SelectComponent
-                          options={teamOptions}
-                          value={selectedTeamOption} // Pass the entire option object
-                          onChange={(selectedOption) =>
-                            handleChange(question.id, selectedOption ? selectedOption.value : '')
-                          }
-                          placeholder="Select West Team"
-                          hasError={errors[question.id]}
-                        />
-                        {errors[question.id] && (
-                          <span className="text-xs text-red-500">{errors[question.id]}</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                {/* Wins Selection for West */}
-                {nbaFinalsQuestions
-                  .filter(q => q.group_name === 'finals_west' && q.text.toLowerCase().includes('wins'))
-                  .map(question => {
-                    // Generate wins options
-                    const winsOptions = question.wins_choices.map(wins => ({
-                      value: wins,
-                      label: `${wins} wins`,
-                    }));
-
-                    // Find the selected wins option based on the stored answer
-                    const selectedWinsOption = winsOptions.find(option => option.value === answers[question.id]) || null;
-
-                    return (
-                      <div key={question.id} className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">{question.text}</label>
-                        <SelectComponent
-                          options={winsOptions}
-                          value={selectedWinsOption} // Pass the entire option object
-                          onChange={(selectedOption) =>
-                            handleChange(question.id, selectedOption ? selectedOption.value : '')
-                          }
-                          placeholder="Select Wins"
-                          hasError={errors[question.id]}
-                        />
-                        {errors[question.id] && (
-                          <span className="text-xs text-red-500">{errors[question.id]}</span>
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          </div>
-        )}
-      {/* Other Questions (Props) */}
-      {generalProps.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Props</h2>
-          {/* Adjust the grid to have more columns on larger screens */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {generalProps.map(question => (
-              <div
-                key={question.id}
-                className="p-3 border border-gray-200 rounded-md
+          )}
+          {/* Other Questions (Props) */}
+          {generalProps.length > 0 && (
+              <div className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4">Props</h2>
+                  {/* Adjust the grid to have more columns on larger screens */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {generalProps.map(question => (
+                          <div
+                              key={question.id}
+                              className="p-3 border border-gray-200 rounded-md
                 shadow-sm flex flex-col items-center h-36" // Set fixed height
-              >
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <label htmlFor={`question_${question.id}`} className="block text-gray-700 mb-1 text-xs sm:text-sm break-words">
-                    {question.text}
-                  </label>
-                  {/* Display the line for Over/Under questions */}
-                  {question.question_type === 'prop_over_under' && (
-                    <span className="mt-1 text-xs italic text-gray-500">
+                          >
+                              <div className="flex flex-col items-center justify-center h-full text-center">
+                                  <label htmlFor={`question_${question.id}`}
+                                         className="block text-gray-700 mb-1 text-xs sm:text-sm break-words">
+                                      {question.text}
+                                  </label>
+                                  {/* Display the line for Over/Under questions */}
+                                  {question.question_type === 'prop_over_under' && (
+                                      <span className="mt-1 text-xs italic text-gray-500">
                       Line: {question.line}
                     </span>
-                  )}
-                  {renderInput(question)}
-                  {/* Point Value Display */}
-                  <span className="mt-1 text-xs italic text-gray-500 text-center">
+                                  )}
+                                  {renderInput(question)}
+                                  {/* Point Value Display */}
+                                  <span className="mt-1 text-xs italic text-gray-500 text-center">
                     {question.point_value} {question.point_value === 1 ? 'point' : 'points'}
                   </span>
-                  {/* Optional: Error Message for Props (if validation is added) */}
-                  {errors[question.id] && (
-                    <span className="mt-1 text-xxs text-red-500">
+                                  {/* Optional: Error Message for Props (if validation is added) */}
+                                  {errors[question.id] && (
+                                      <span className="mt-1 text-xxs text-red-500">
                       {errors[question.id]}
                     </span>
-                  )}
-                </div>
+                                  )}
+                              </div>
+                          </div>
+                      ))}
+                  </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* Player-Specific Props */}
-      {playerProps.length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold">The Baby GOAT: Bronny James</h2>
-            {/* Image to the right of the header */}
-            <img
-              src="https://fanatics.frgimages.com/los-angeles-lakers/bronny-james-los-angeles-lakers-autographed-16-x-20-stylized-photograph-with-lakeshow-inscription-limited-edition-of-12_ss5_p-202035074+u-0yqp2m3rk6yaaa5chlfk+v-wkgdfmzl4pdes9xsfgtq.jpg?_hv=2&w=900" // Replace with your image URL
-              alt="Bronny James"
-              className="w-16 h-16 rounded-full object-cover"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {playerProps.map(question => (
-              <div
-                key={question.id}
-                className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center h-36" // Set fixed height
-              >
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <label htmlFor={`question_${question.id}`} className="block text-gray-700 mb-1 text-xs sm:text-sm break-words">
-                    {question.text}
-                  </label>
-                  {renderInput(question)}
-                  {/* Display the line for Over/Under questions */}
-                  {question.question_type === 'prop_over_under' && (
-                    <span className="mt-1 text-xs italic text-gray-500">
+          )}
+          {/* Player-Specific Props */}
+          {playerProps.length > 0 && (
+              <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-semibold">The Baby GOAT: Bronny James</h2>
+                      {/* Image to the right of the header */}
+                      <img
+                          src="https://fanatics.frgimages.com/los-angeles-lakers/bronny-james-los-angeles-lakers-autographed-16-x-20-stylized-photograph-with-lakeshow-inscription-limited-edition-of-12_ss5_p-202035074+u-0yqp2m3rk6yaaa5chlfk+v-wkgdfmzl4pdes9xsfgtq.jpg?_hv=2&w=900" // Replace with your image URL
+                          alt="Bronny James"
+                          className="w-16 h-16 rounded-full object-cover"
+                      />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {playerProps.map(question => (
+                          <div
+                              key={question.id}
+                              className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center h-36" // Set fixed height
+                          >
+                              <div className="flex flex-col items-center justify-center h-full text-center">
+                                  <label htmlFor={`question_${question.id}`}
+                                         className="block text-gray-700 mb-1 text-xs sm:text-sm break-words">
+                                      {question.text}
+                                  </label>
+                                  {renderInput(question)}
+                                  {/* Display the line for Over/Under questions */}
+                                  {question.question_type === 'prop_over_under' && (
+                                      <span className="mt-1 text-xs italic text-gray-500">
                       Line: {question.line}
                     </span>
-                  )}
-                  {/* Point Value Display */}
-                  <span className="mt-1 text-xs italic text-gray-500 text-center">
+                                  )}
+                                  {/* Point Value Display */}
+                                  <span className="mt-1 text-xs italic text-gray-500 text-center">
                     {question.point_value} {question.point_value === 1 ? 'point' : 'points'}
                   </span>
-                  {/* Optional: Error Message for Props */}
-                  {errors[question.id] && (
-                    <span className="mt-1 text-xs text-red-500">
+                                  {/* Optional: Error Message for Props */}
+                                  {errors[question.id] && (
+                                      <span className="mt-1 text-xs text-red-500">
                       {errors[question.id]}
                     </span>
-                  )}
-                </div>
+                                  )}
+                              </div>
+                          </div>
+                      ))}
+                  </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* IST Questions */}
-        {istTournamentQuestions.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">NBA Cup Predictions</h2>
-            <body>The following DOES NOT count towards your final point total
-            The winner of the NBA Cup prediction receives a supplementary pool of $50 following the Championship Game</body>
-            {/* Group Winners */}
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Group Winners</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {istTournamentQuestions.filter(q => q.prediction_type === 'group_winner').map(question => (
-                  <div
-                    key={question.id}
-                    className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center"
-                  >
-                    <label htmlFor={`question_${question.id}`} className="block text-gray-700 mb-1 text-xs sm:text-sm text-center">
-                      {question.text}
-                    </label>
-                    {renderInput(question)}
-                    {errors[question.id] && (
-                      <span className="mt-1 text-xs text-red-500">
+          )}
+          {/* IST Questions */}
+          {istTournamentQuestions.length > 0 && (
+              <div className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4">NBA Cup Predictions</h2>
+                  <body>The following DOES NOT count towards your final point total
+                  The winner of the NBA Cup prediction receives a supplementary pool of $50 following the Championship
+                  Game
+                  </body>
+                  {/* Group Winners */}
+                  <div className="mb-6">
+                      <h3 className="text-xl font-semibold mb-2">Group Winners</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {istTournamentQuestions.filter(q => q.prediction_type === 'group_winner').map(question => (
+                              <div
+                                  key={question.id}
+                                  className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center"
+                              >
+                                  <label htmlFor={`question_${question.id}`}
+                                         className="block text-gray-700 mb-1 text-xs sm:text-sm text-center">
+                                      {question.text}
+                                  </label>
+                                  {renderInput(question)}
+                                  {errors[question.id] && (
+                                      <span className="mt-1 text-xs text-red-500">
                         {errors[question.id]}
                       </span>
-                    )}
+                                  )}
+                              </div>
+                          ))}
+                      </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Wildcards */}
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Wildcards</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-                {istTournamentQuestions.filter(q => q.prediction_type === 'wildcard').map(question => (
-                  <div
-                    key={question.id}
-                    className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center"
-                  >
-                    <label htmlFor={`question_${question.id}`} className="block text-gray-700 mb-1 text-xs sm:text-sm text-center">
-                      {question.text}
-                    </label>
-                    {renderInput(question)}
-                    {errors[question.id] && (
-                      <span className="mt-1 text-xs text-red-500">
+                  {/* Wildcards */}
+                  <div className="mb-6">
+                      <h3 className="text-xl font-semibold mb-2">Wildcards</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                          {istTournamentQuestions.filter(q => q.prediction_type === 'wildcard').map(question => (
+                              <div
+                                  key={question.id}
+                                  className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center"
+                              >
+                                  <label htmlFor={`question_${question.id}`}
+                                         className="block text-gray-700 mb-1 text-xs sm:text-sm text-center">
+                                      {question.text}
+                                  </label>
+                                  {renderInput(question)}
+                                  {errors[question.id] && (
+                                      <span className="mt-1 text-xs text-red-500">
                         {errors[question.id]}
                       </span>
-                    )}
+                                  )}
+                              </div>
+                          ))}
+                      </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Conference Winners */}
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Conference Winners</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-                {istTournamentQuestions.filter(q => q.prediction_type === 'conference_winner').map(question => (
-                  <div
-                    key={question.id}
-                    className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center"
-                  >
-                    <label htmlFor={`question_${question.id}`} className="block text-gray-700 mb-1 text-xs sm:text-sm text-center">
-                      {question.text}
-                    </label>
-                    {renderInput(question)}
-                    {errors[question.id] && (
-                      <span className="mt-1 text-xs text-red-500">
+                  {/* Conference Winners */}
+                  <div className="mb-6">
+                      <h3 className="text-xl font-semibold mb-2">Conference Winners</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                          {istTournamentQuestions.filter(q => q.prediction_type === 'conference_winner').map(question => (
+                              <div
+                                  key={question.id}
+                                  className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center"
+                              >
+                                  <label htmlFor={`question_${question.id}`}
+                                         className="block text-gray-700 mb-1 text-xs sm:text-sm text-center">
+                                      {question.text}
+                                  </label>
+                                  {renderInput(question)}
+                                  {errors[question.id] && (
+                                      <span className="mt-1 text-xs text-red-500">
                         {errors[question.id]}
                       </span>
-                    )}
+                                  )}
+                              </div>
+                          ))}
+                      </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Tiebreakers */}
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Tiebreakers</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-                {istTournamentQuestions.filter(q => q.prediction_type === 'tiebreaker').map(question => (
-                  <div
-                    key={question.id}
-                    className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center"
-                  >
-                    <label htmlFor={`question_${question.id}`} className="block text-gray-700 mb-1 text-xs sm:text-sm text-center">
-                      {question.text}
-                    </label>
-                    {renderInput(question)}
-                    {errors[question.id] && (
-                      <span className="mt-1 text-xs text-red-500">
+                  {/* Tiebreakers */}
+                  <div className="mb-6">
+                      <h3 className="text-xl font-semibold mb-2">Tiebreakers</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                          {istTournamentQuestions.filter(q => q.prediction_type === 'tiebreaker').map(question => (
+                              <div
+                                  key={question.id}
+                                  className="p-3 border border-gray-200 rounded-md shadow-sm flex flex-col items-center"
+                              >
+                                  <label htmlFor={`question_${question.id}`}
+                                         className="block text-gray-700 mb-1 text-xs sm:text-sm text-center">
+                                      {question.text}
+                                  </label>
+                                  {renderInput(question)}
+                                  {errors[question.id] && (
+                                      <span className="mt-1 text-xs text-red-500">
                         {errors[question.id]}
                       </span>
-                    )}
+                                  )}
+                              </div>
+                          ))}
+                      </div>
                   </div>
-                ))}
               </div>
-            </div>
-          </div>
-        )}
-      <button
-        type="submit"
-        className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 transition-colors duration-150"
-      >
-        Submit Answers
-      </button>
-    </form>
+          )}
+              <div className="flex justify-center">
+                  <button
+                      type="submit"
+                      className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 transition-colors duration-150"
+                  >
+                      Submit Answers
+                  </button>
+              </div>
+      </form>
   );
 };
 
