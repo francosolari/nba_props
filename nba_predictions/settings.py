@@ -41,7 +41,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '/nba_predictions/persist_db/db.sqlite3',  # Use the correct path for the server's SQLite file
+            'NAME': 'persist_db/db.sqlite3',  # Use the correct path for the server's SQLite file
         }
     }
 
@@ -184,3 +184,5 @@ ACCOUNT_SIGNUP_REDIRECT_URL = '/'
 
 # Redirect after logout
 LOGOUT_REDIRECT_URL = '/'
+
+EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
