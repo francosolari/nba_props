@@ -41,7 +41,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '/var/www/nba_predictions/db.sqlite3',  # Use the correct path for the server's SQLite file
+            'NAME': '/nba_predictions/persist_db/db.sqlite3',  # Use the correct path for the server's SQLite file
         }
     }
 
