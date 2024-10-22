@@ -1,9 +1,38 @@
 docker stop nba_predictions_app
 docker rm nba_predictions_app
 docker build -t nba_predictions_app .
+docker run -d -p 8000:8000 --name nba_predictions_app -v /var/www/nba_predictions/:/nba_predictions/persist_db nba_predictions_app
+
 docker run -d -p 8000:8000 --name nba_predictions_app nba_predictions_app
+
+docker exec -it nba_predictions_app bash
+
 
 docker run -d -p 8000:8000 --name nba_predictions_app -v /var/www/nba_predictions/:/nba_predictions/ nba_predictions_app
 docker run -d -p 8000:8002 --name nba_predictions_app_persist -v /var/www/nba_predictions/:/nba_predictions/persist_db nba_predictions_app
 docker run -d -p 8000:8000 --name nba_predictions_app -v /var/www/nba_predictions/:/nba_predictions/persist_db nba_predictions_app
+
+
+server {
+    listen 80;
+    server_name propspredictions.com www.propspredictions.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;  # Forward requests to your app running on port 8000
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 80;
+    server_name propspredictions.com www.propspredictions.com;
+
+    return 301 https://$host$request_uri;
+}
+
+
+
 

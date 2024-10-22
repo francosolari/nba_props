@@ -186,3 +186,8 @@ ACCOUNT_SIGNUP_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://propspredictions.com',
+    'https://www.propspredictions.com',  # Include both with and without 'www' if necessary
+]
