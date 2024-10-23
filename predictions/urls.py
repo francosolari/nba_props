@@ -11,9 +11,10 @@ from predictions.views.user_views import (submit_predictions, view_predictions, 
 app_name = 'predictions'
 
 predictions_patterns = [
-    path('submit/<slug:season_slug>/', submit_predictions, name='submit_predictions'),
+    # Removing submit predictions for season opening
+    # path('submit/<slug:season_slug>/', submit_predictions, name='submit_predictions'),
     path('view/<slug:season_slug>/', view_predictions, name='view_predictions'),
-    path('submit/questions/<slug:season_slug>/', render_questions, name='render_questions'),
+    # path('submit/questions/<slug:season_slug>/', render_questions, name='render_questions'),
 ]
 
 user_patterns = [
