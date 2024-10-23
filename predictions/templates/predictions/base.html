@@ -23,11 +23,13 @@
         <nav class="bg-gray-800 p-1 h-12 fixed top-0 w-full z-50">
             <div class="container mx-auto flex justify-between items-center h-full">
                 <!-- Left: Navigation Links -->
+                {% comment %}
                 <div class="space-x-4">
-<!--                    <a href="{% url 'predictions:render_questions' season_slug='2024-25' %}" class="text-gray-300 hover:text-white">-->
-<!--                        Submit Predictions-->
-<!--                    </a>-->
+                    <a href="{% url 'predictions:render_questions' season_slug='2024-25' %}" class="text-gray-300 hover:text-white">
+                        Submit Predictions
+                    </a>
                 </div>
+                {% endcomment %}
                 <!-- Center: Logo -->
                 <div class="absolute left-1/2 transform -translate-x-1/2">
                     <img src="{% static 'img/nba_predictions_logo.png' %}" alt="NBA Predictions Logo" class="h-full max-h-10">
