@@ -1,5 +1,5 @@
 # Step 1: Use an official Python runtime as a parent image
-FROM python:3.10
+FROM python:3.11-slim-bullseye
 
 # Step 2: Set environment variables to prevent Python from buffering stdout and stdin
 ENV PYTHONUNBUFFERED=1
