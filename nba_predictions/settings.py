@@ -36,7 +36,7 @@ if IS_DEVELOPMENT:
         }
     }
 
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'predictnetwork']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'predictnetwork', '134.209.213.185']
 
 else:
     # Production settings (default)
