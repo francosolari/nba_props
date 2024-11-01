@@ -1,12 +1,57 @@
-version: '3'
-
 services:
-  web:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mynetwork
+
+  web-blue:
     build: .
-    command: gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000
+    command: sh -c "python manage.py migrate &&
+             gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000"
     ports:
-      - "8000:8000"
+      - "8001:8000"  # Expose web-blue on port 8001 locally
     volumes:
       - .:/nba_predictions
     environment:
       - DJANGO_SETTINGS_MODULE=nba_predictions.settings
+      - DJANGO_DEVELOPMENT=True
+      - DATABASE_HOST=db
+      - DATABASE_NAME=mydb
+      - DATABASE_USER=myuser
+      - DATABASE_PASSWORD=mypassword
+    depends_on:
+      - db
+    networks:
+      - mynetwork
+
+  web-green:
+    build: .
+    command: sh -c "python manage.py migrate &&
+             gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000"
+    ports:
+      - "8002:8000"  # Expose web-green on port 8002 locally
+    volumes:
+      - .:/nba_predictions
+    environment:
+      - DJANGO_SETTINGS_MODULE=nba_predictions.settings
+      - DJANGO_DEVELOPMENT=True
+      - DATABASE_HOST=db
+      - DATABASE_NAME=mydb
+      - DATABASE_USER=myuser
+      - DATABASE_PASSWORD=mypassword
+    depends_on:
+      - db
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+
+volumes:
+  postgres_data:
