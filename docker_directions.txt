@@ -3,6 +3,9 @@ docker rm nba_predictions_app
 docker build -t nba_predictions_app .
 docker run -d -p 8000:8000 --name nba_predictions_app -v /var/www/nba_predictions/:/nba_predictions/persist_db nba_predictions_app
 
+# Postgres run
+docker run -d -p 8000:8000 --name nba_predictions_app --network=predictnetwork nba_predictions_app
+
 # sync db to local scp root@134.209.213.185:/var/www/nba_predictions/db.sqlite3 /Users/francosolari/PycharmProjects/nba_props
 
 docker run -d -p 8000:8000 --name nba_predictions_app nba_predictions_app

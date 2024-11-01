@@ -23,12 +23,12 @@ from predictions.models import Team, Season, Player, \
 
 # Nikola Jokić
 # career = playercareerstats.PlayerCareerStats(player_id='203999')
-def update_standings(df_standings):
+def update_standings(df_standings, season_slug):
     """
 
     :return:
     """
-    season = Season.objects.get(slug="2023-24")
+    season = Season.objects.get(slug=season_slug)
     for index, row in df_standings.iterrows():
         team_name = f"{row['TeamCity']} {row['TeamName']}"
         # abbreviation = row['TeamAbbreviation']
@@ -70,11 +70,11 @@ def fetch_nba_teams():
 
 
 def fetch_nba_standings(season):
-    # print({leaguestandingsv3.LeagueStandingsV3(season='2023-24').get_json()})
+    # print({leaguestandingsv3.LeagueStandingsV3(season='2024-25').get_json()})
     # save_file = open("savedata.json", "w")
     # save_file.close()
     standings_data = leaguestandingsv3.LeagueStandingsV3(season=season).get_data_frames()[0]
-    update_standings(standings_data)
+    update_standings(standings_data, season)
     return standings_data
 
 
@@ -206,7 +206,7 @@ def fetch_active_players():
 # exit(0)
 # print(f"nba teams:{fetch_nba_teams()}")
 
-standings = fetch_nba_standings("2023-24")
+standings = fetch_nba_standings("2024-25")
 print(f"standings: {standings}")
 standings = standings[[
     'TeamCity',
@@ -294,15 +294,15 @@ def get_player_averages(player_name, season):
 
 
 # Example usage:
-season = '2023-24'
-player_name, fouls = get_player_with_most_fouls(season='2023-24')
+season = '2024-25'
+player_name, fouls = get_player_with_most_fouls(season=season)
 print(f"{player_name} has the most personal fouls with {fouls} for the {season} season.")
 
-player_name, ppg = get_player_with_highest_ppg(season='2023-24')
+player_name, ppg = get_player_with_highest_ppg(season=season)
 print(f"{player_name} has the highest points per game with {ppg} for the {season} season.")
 
 player_name = "Victor Wembanyama"  # replace with the desired player's name
-season = '2023-24'
+season = '2024-25'
 averages = get_player_averages(player_name, season=season)
 print(f"{player_name} {season} averages:\n{pd.Series(averages)}")
 print("Updating active player list")

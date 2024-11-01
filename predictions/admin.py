@@ -49,7 +49,7 @@ class RegularSeasonStandings(admin.ModelAdmin):
     def rounded_win_percentage(self, obj):
         return round(obj.win_percentage, 3)
 
-    ordering = ('team__conference', 'position',)  # Order by conference then position
+    ordering = ('-season','team__conference', 'position',)  # Order by conference then position
 
 
 class PostSeasonStandingsAdmin(admin.ModelAdmin):
