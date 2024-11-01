@@ -29,7 +29,6 @@ services:
       - db
     networks:
       - mynetwork
-    network_mode: bridge
 
   web-green:
     build: .
@@ -50,7 +49,6 @@ services:
       - db
     networks:
       - mynetwork
-    network_mode: bridge
 
 networks:
   mynetwork:
