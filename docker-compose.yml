@@ -7,6 +7,8 @@ services:
       POSTGRES_PASSWORD: mypassword
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # Expose Postgresql to port 5432
     networks:
       - mynetwork
 
