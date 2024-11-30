@@ -22,6 +22,11 @@
             <div id="east-standings" class="p-4">
                 <!-- East standings will be populated here -->
             </div>
+            <!-- East Wildcard Standings -->
+                    <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-4 text-center">Wildcard (East)</h3>
+            <div id="east-wildcards" class="p-4">
+                <!-- East wildcard teams will be populated here -->
+            </div>
         </div>
         <!-- West Conference -->
         <div class="border rounded-lg shadow-md bg-white">
@@ -29,22 +34,59 @@
             <div id="west-standings" class="p-4">
                 <!-- West standings will be populated here -->
             </div>
+            <!-- West Wildcard Standings -->
+            <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-4 text-center">Wildcard (West)</h3>
+            <div id="west-wildcards" class="p-4">
+                <!-- West wildcard teams will be populated here -->
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Floating Modal -->
+<!-- Floating Modal for User Predictions -->
 <div id="user-answers-modal" class="hidden fixed top-10 left-10 w-96 bg-white shadow-lg rounded-xl border border-gray-200 z-50">
     <!-- Modal Header -->
     <div class="cursor-move p-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-t-xl flex justify-between items-center" id="modal-header">
-        <h3 class="text-lg font-semibold">User Predictions</h3>
+        <h3 id="modal-title" class="text-lg font-semibold">User Predictions</h3>
         <button id="close-modal" class="text-white hover:text-gray-300 font-bold text-xl">×</button>
     </div>
 
-    <!-- Modal Content -->
-    <div class="p-4 space-y-4 text-sm text-gray-800">
-        <div id="modal-content" class="space-y-2">
-            <!-- User answers will be populated here -->
+    <!-- Modal Content (Table) -->
+    <div class="p-4 text-sm text-gray-800 space-y-4">
+        <div class="flex space-x-4">
+            <!-- East Conference Predictions -->
+            <div class="w-1/2">
+                <h4 class="text-center font-semibold text-gray-700 mb-2">East Conference</h4>
+                <table class="w-full table-auto border-collapse border border-gray-300">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-2 py-1 text-left">Question</th>
+                            <th class="px-2 py-1 text-left">Prediction</th>
+                            <th class="px-2 py-1 text-center">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-east-standings">
+                        <!-- East predictions will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- West Conference Predictions -->
+            <div class="w-1/2">
+                <h4 class="text-center font-semibold text-gray-700 mb-2">West Conference</h4>
+                <table class="w-full table-auto border-collapse border border-gray-300">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-2 py-1 text-left">Question</th>
+                            <th class="px-2 py-1 text-left">Prediction</th>
+                            <th class="px-2 py-1 text-center">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-west-standings">
+                        <!-- West predictions will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -73,30 +115,34 @@
             try {
                 const response = await fetch(`/api/ist-standings/${seasonSlug}/`);
                 if (!response.ok) throw new Error('Failed to fetch standings');
-        
+
                 const data = await response.json();
                 const eastStandingsContainer = document.getElementById('east-standings');
                 const westStandingsContainer = document.getElementById('west-standings');
-        
+                const eastWildcardsContainer = document.getElementById('east-wildcards');
+                const westWildcardsContainer = document.getElementById('west-wildcards');
+
+                // Create tables for East and West conference standings
                 for (const [conference, groups] of Object.entries(data)) {
                     const container = conference === 'East' ? eastStandingsContainer : westStandingsContainer;
-        
-                    // Sort the groups alphabetically
+                    const wildcardContainer = conference === 'East' ? eastWildcardsContainer : westWildcardsContainer;
+
                     const sortedGroups = Object.keys(groups).sort();
-        
+
+                    // Display Group Standings for East and West Conferences
                     sortedGroups.forEach(groupName => {
                         const teams = groups[groupName];
                         const groupDiv = document.createElement('div');
                         groupDiv.classList.add('mb-6');
-        
+
                         const groupHeader = document.createElement('h4');
                         groupHeader.classList.add('text-lg', 'font-semibold', 'text-gray-500', 'mb-2');
                         groupHeader.textContent = groupName;
                         groupDiv.appendChild(groupHeader);
-        
+
                         const table = document.createElement('table');
                         table.classList.add('table-auto', 'w-full', 'border-collapse', 'border', 'border-gray-300', 'bg-white', 'shadow-md', 'rounded-lg', 'text-sm');
-        
+
                         const thead = document.createElement('thead');
                         thead.classList.add('bg-gray-200');
                         thead.innerHTML = `
@@ -109,11 +155,17 @@
                             </tr>
                         `;
                         table.appendChild(thead);
-        
+
                         const tbody = document.createElement('tbody');
                         teams.forEach(team => {
                             const tr = document.createElement('tr');
                             tr.classList.add('hover:bg-gray-100');
+
+                            // Apply a background color if the team has clinched their group or knockout spot
+                            if (team.clinch_group || team.clinch_knockout) {
+                                tr.classList.add('bg-blue-100');  // Change this color as needed
+                            }
+
                             tr.innerHTML = `
                                 <td class="px-2 py-2 border border-gray-300 truncate">${team.team_name}</td>
                                 <td class="px-2 py-2 border border-gray-300 text-center">${team.wins}</td>
@@ -123,17 +175,58 @@
                             `;
                             tbody.appendChild(tr);
                         });
-        
+
                         table.appendChild(tbody);
                         groupDiv.appendChild(table);
                         container.appendChild(groupDiv);
                     });
+
+                    // Filter and display Top 3 Wildcard Teams for East and West Conferences
+                    const wildcardTeams = Object.values(groups)
+                        .flat()  // Flatten the groups array
+                        .filter(team => team.wildcard_rank >= 1 && team.wildcard_rank <= 5 && !team.clinch_group && !team.clinch_knockout); // Exclude clinched teams
+
+                    // Sort wildcard teams by wildcard rank in ascending order
+                    wildcardTeams.sort((a, b) => a.wildcard_rank - b.wildcard_rank);
+
+                    const wildcardTable = document.createElement('table');
+                    wildcardTable.classList.add('table-auto', 'w-full', 'border-collapse', 'border', 'border-gray-300', 'bg-white', 'shadow-md', 'rounded-lg', 'text-sm');
+
+                    const wildcardThead = document.createElement('thead');
+                    wildcardThead.classList.add('bg-gray-200');
+                    wildcardThead.innerHTML = `
+                        <tr>
+                            <th class="px-2 py-2 border border-gray-300 text-left">Team</th>
+                            <th class="px-2 py-2 border border-gray-300 text-center">W</th>
+                            <th class="px-2 py-2 border border-gray-300 text-center">L</th>
+                            <th class="px-2 py-2 border border-gray-300 text-center">Rank</th>
+                            <th class="px-2 py-2 border border-gray-300 text-center">+/-</th>
+                        </tr>
+                    `;
+                    wildcardTable.appendChild(wildcardThead);
+
+                    const wildcardTbody = document.createElement('tbody');
+                    wildcardTeams.forEach(team => {
+                        const tr = document.createElement('tr');
+                        tr.classList.add('hover:bg-gray-100');
+                        tr.innerHTML = `
+                            <td class="px-2 py-2 border border-gray-300 truncate">${team.team_name}</td>
+                            <td class="px-2 py-2 border border-gray-300 text-center">${team.wins}</td>
+                            <td class="px-2 py-2 border border-gray-300 text-center">${team.losses}</td>
+                            <td class="px-2 py-2 border border-gray-300 text-center">${team.wildcard_rank}</td>
+                            <td class="px-2 py-2 border border-gray-300 text-center">${team.point_differential}</td>
+                        `;
+                        wildcardTbody.appendChild(tr);
+                    });
+
+                    wildcardTable.appendChild(wildcardTbody);
+                    wildcardContainer.appendChild(wildcardTable);
                 }
             } catch (error) {
                 console.error('Error fetching IST standings:', error);
             }
         }
-        
+
         // Fetch Leaderboard
         async function fetchLeaderboard() {
             const leaderboardContainer = document.getElementById('leaderboard-container');
@@ -156,17 +249,18 @@
 
                 const tbody = document.createElement('tbody');
                 data.top_users.forEach(user => {
+                    const displayName = `${user.user.first_name} ${user.user.last_name.charAt(0)}`; 
                     const tr = document.createElement('tr');
                     tr.classList.add('hover:bg-gray-100');
                     tr.innerHTML = `
-                        <td class="px-2 py-2 border border-gray-300 text-blue-500 underline cursor-pointer" data-user-id="${user.user.id}">${user.user.username}</td>
+                        <td class="px-2 py-2 border border-gray-300 text-blue-500 underline cursor-pointer" data-user-id="${user.user.id}">${displayName}</td>
                         <td class="px-2 py-2 border border-gray-300 text-center">${user.points}</td>
                     `;
                     tbody.appendChild(tr);
 
                     // Add click event to fetch and display user answers
                     tr.querySelector('[data-user-id]').addEventListener('click', () => {
-                        fetchUserAnswers(user.user.id);
+                        fetchUserAnswers(user.user.id, user.user.first_name);
                     });
                 });
 
@@ -177,52 +271,67 @@
             }
         }
 
-        // Fetch User Answers
-        async function fetchUserAnswers(userId) {
-            const modalContent = document.getElementById('modal-content');
-            modalContent.innerHTML = '';
+         // Fetch User Answers and display them in a table format
+        async function fetchUserAnswers(userId, displayName) {
+            {#const modalContent = document.getElementById('modal-content');#}
+            const eastContent = document.getElementById('modal-east-standings');
+            const westContent = document.getElementById('modal-west-standings');
+            // Clear the modal content before updating
+            eastContent.innerHTML = '';
+            westContent.innerHTML = '';
+            {#modalContent.innerHTML = '';  // Clear existing content#}
+            const modalTitle = document.getElementById('modal-title');
+            modalTitle.textContent = `${displayName}'s Predictions`;  // Update the modal title dynamically
 
-            try {
-                const response = await fetch(`/api/user-answers/${userId}/?season_slug=${seasonSlug}&question_type=inseasontournamentquestion`);
-                const data = await response.json();
 
-                const answersList = document.createElement('ul');
-                answersList.classList.add('list-disc', 'pl-4');
+        try {
+            // Fetch data from API endpoint
+            const response = await fetch(`/api/user-answers/${userId}/?season_slug=${seasonSlug}&question_type=inseasontournamentquestion`);
+            const data = await response.json();
 
-                data.answers.forEach(answer => {
-                    let displayAnswer = answer.answer;
-        
-                    // If the question is a tiebreaker, show the raw answer without team lookup
-                    if (answer.question_type === "inseasontournamentquestion" && answer.question_text.includes("Points Scored")) {
-                        displayAnswer = answer.answer; // Show raw answer for tiebreaker
-                    } else {
-                        // If it's not a tiebreaker, lookup the team name
-                        const teamName = teamCache[answer.answer] || 'Unknown';
-                        displayAnswer = teamName;
-                    }
-        
-                    const listItem = document.createElement('li');
-                    listItem.innerHTML = `
-                        <strong>${answer.question_text}</strong>: ${displayAnswer} (${answer.points_earned} points)
-                    `;
-                    answersList.appendChild(listItem);
-                });
+            // Loop through each answer to categorize them into East or West predictions
+            data.answers.forEach(answer => {
+                let displayAnswer = answer.answer;
 
-                modalContent.appendChild(answersList);
+                // Check if it's a tiebreaker and use raw answer
+                if (answer.question_text.includes("Points Scored")) {
+                    displayAnswer = answer.answer; // Show raw answer for tiebreaker
+                } else {
+                    const teamName = teamCache[answer.answer] || 'Unknown'; // Fallback to 'Unknown' if team is not found
+                    displayAnswer = teamName;
+                }
 
-                // Show modal
-                const modal = document.getElementById('user-answers-modal');
-                modal.classList.remove('hidden');
-                modal.style.left = '10px'; // Reset position for visibility
-                modal.style.top = '10px';
-            } catch (error) {
-                console.error('Error fetching user answers:', error);
-            }
+                // Create table rows for East or West
+                const row = document.createElement('tr');
+                row.classList.add('border-t');
+                row.innerHTML = `
+                    <td class="px-2 py-2 text-left">${answer.question_text}</td>
+                    <td class="px-2 py-2 text-center">${displayAnswer}</td>
+                    <td class="px-2 py-2 text-center">${answer.points_earned}</td>
+                `;
+
+                // Add predictions to the correct section (East or West)
+                if (answer.question_text.includes("East")) {
+                    eastContent.appendChild(row);  // Add to East section
+                } else if (answer.question_text.includes("West")) {
+                    westContent.appendChild(row);  // Add to West section
+                }
+            });
+
+            // Show modal after data is populated
+            const modal = document.getElementById('user-answers-modal');
+            modal.classList.remove('hidden');
+            modal.style.left = '10px'; // Reset position for visibility
+            modal.style.top = '10px';
+
+        } catch (error) {
+            console.error('Error fetching user answers:', error);
         }
+    }
 
-        // Close Modal
-        document.getElementById('close-modal').addEventListener('click', () => {
-            document.getElementById('user-answers-modal').classList.add('hidden');
+    // Close the modal when the close button is clicked
+    document.getElementById('close-modal').addEventListener('click', () => {
+        document.getElementById('user-answers-modal').classList.add('hidden');
         });
 
         // Draggable Modal
@@ -266,6 +375,7 @@
     }
 
     table {
+        width: 100%;
         border-spacing: 0;
     }
 
@@ -299,5 +409,33 @@
     #modal-header {
         user-select: none;
     }
+
+    /* Modal Content for User Predictions */
+    #user-answers-modal {
+        max-width: 80%; /* You can adjust this value */
+        width: 800px;
+    }
+
+    /* Flex container to hold both East and West tables side by side */
+    .flex {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    {#.w-1/2 {#}
+    {#    width: 48%; /* Ensure it is not 50% to leave space between */#}
+    {#    margin-right: 4%; /* Add spacing between tables */#}
+    {#}#}
+
+    /* Add padding to table cells */
+    table th, table td {
+        padding: 6px 10px;
+    }
+
+    /* Modal Background */
+    #user-answers-modal {
+        padding: 20px;
+    }
+
 </style>
 {% endblock %}

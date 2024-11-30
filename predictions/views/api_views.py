@@ -113,6 +113,9 @@ def get_ist_standings_api(request, season_slug):
             # 'points': standing.ist_points,
             'point_differential': standing.ist_differential,
             'wildcard_rank': standing.ist_wildcard_rank,
+            'clinch_group': standing.ist_clinch_group,
+            'clinch_knockout': standing.ist_clinch_knockout,
+            'clinch_wildcard': standing.ist_clinch_wildcard,
         })
 
     return JsonResponse(data, status=200)
@@ -144,7 +147,9 @@ def get_ist_leaderboard_api(request, season_slug):
         try:
             user = User.objects.get(id=entry['user_id'])
             leaderboard.append({
-                'user': {'id': user.id, 'username': user.username},
+                'user': {'id': user.id, 'username': user.username,
+                         'first_name': user.first_name,
+                         'last_name': user.last_name},
                 'points': entry['total_points'] or 0,  # Ensure points are not None
             })
         except User.DoesNotExist:

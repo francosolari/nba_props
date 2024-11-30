@@ -154,7 +154,10 @@ def fetch_ist_standings(season):
             'ist_group_gb': ist.loc[ist['teamName'] == team, 'istGroupGb'].values[0],
             'ist_wildcard_rank': ist.loc[ist['teamName'] == team, 'istWildcardRank'].values[0],
             'ist_wildcard_gb': ist.loc[ist['teamName'] == team, 'istWildcardGb'].fillna(0).values[0],
-            'ist_knockout_rank': ist.loc[ist['teamName'] == team, 'istKnockoutRank'].fillna(0).values[0]
+            'ist_knockout_rank': ist.loc[ist['teamName'] == team, 'istKnockoutRank'].fillna(0).values[0],
+            'ist_clinch_knockout': ist.loc[ist['teamName'] == team, 'clinchedIstKnockout'].fillna(0).values[0],
+            'ist_clinch_group': ist.loc[ist['teamName'] == team, 'clinchedIstGroup'].fillna(0).values[0],
+            'ist_clinch_wildcard': ist.loc[ist['teamName'] == team, 'clinchedIstWildcard'].fillna(0).values[0]
         }
         ist_standings[team_name] = team_ist_stats
         # Update or create the InSeasonTournamentStandings object for the team

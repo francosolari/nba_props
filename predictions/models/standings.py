@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Q, F
 from django.utils.text import slugify
+from pygments.lexer import default
+
 from ..constants import SEASON_TYPES
 from .team import Team
 from .season import Season
@@ -54,7 +56,10 @@ class InSeasonTournamentStandings(BaseStandings):
     ist_differential = models.IntegerField()
     # Total points currently used for tiebreakers
     ist_points = models.IntegerField()
-
+    # Clinching indicators
+    ist_clinch_group = models.BooleanField(default=False)
+    ist_clinch_knockout = models.BooleanField(default=False)
+    ist_clinch_wildcard = models.BooleanField(default=False)
 
 # If you look at the GAME_ID value if the first three digits will tell you what type of game it is. See below:
 # 001* - Preseason Game
