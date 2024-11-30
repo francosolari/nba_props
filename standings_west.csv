@@ -1,16 +1,16 @@
 ,TeamCity,TeamName,Conference,PlayoffRank,WINS,LOSSES,Record,HOME,ROAD,L10,LongWinStreak,strCurrentStreak,ConferenceGamesBack,ClinchedPlayoffBirth,ClinchedPlayIn,EliminatedConference
-0,Denver,Nuggets,West,1,53,29,53-29,34-7,19-22,5-5,9,W 1,0.0,1,0,0
-1,Memphis,Grizzlies,West,2,51,31,51-31,35-6,16-25,6-4,11,L 1,2.0,1,0,0
-2,Sacramento,Kings,West,3,48,34,48-34,23-18,25-16,5-5,7,L 3,5.0,1,0,0
-3,Phoenix,Suns,West,4,45,37,45-37,28-13,17-24,7-3,7,L 2,8.0,1,0,0
-4,LA,Clippers,West,5,44,38,44-38,23-18,21-20,6-4,5,W 3,9.0,1,0,0
-5,Golden State,Warriors,West,6,44,38,44-38,33-8,11-30,8-2,5,W 3,9.0,1,0,0
-6,Los Angeles,Lakers,West,7,43,39,43-39,23-18,20-21,8-2,5,W 2,10.0,0,1,0
-7,Minnesota,Timberwolves,West,8,42,40,42-40,22-19,20-21,7-3,5,W 3,11.0,0,1,0
-8,New Orleans,Pelicans,West,9,42,40,42-40,27-14,15-26,7-3,7,L 1,11.0,0,1,0
-9,Oklahoma City,Thunder,West,10,40,42,40-42,24-17,16-25,4-6,4,W 2,13.0,0,1,0
-10,Dallas,Mavericks,West,11,38,44,38-44,23-18,15-26,2-8,7,L 2,15.0,0,0,1
-11,Utah,Jazz,West,12,37,45,37-45,23-18,14-27,2-8,4,L 1,16.0,0,0,1
-12,Portland,Trail Blazers,West,13,33,49,33-49,17-24,16-25,1-9,4,L 4,20.0,0,0,1
-13,Houston,Rockets,West,14,22,60,22-60,14-27,8-33,4-6,3,W 3,31.0,0,0,0
-14,San Antonio,Spurs,West,15,22,60,22-60,14-27,8-33,3-7,3,W 1,31.0,0,0,0
+0,Oklahoma City,Thunder,West,1,14,4,14-4,8-2  ,6-2  ,7-3  ,7,W 3,0.0,0,0,0
+1,Houston,Rockets,West,2,14,6,14-6,8-3  ,6-3  ,8-2  ,5,W 2,1.0,0,0,0
+2,Golden State,Warriors,West,3,12,6,12-6,5-3  ,7-3  ,5-5  ,5,L 3,2.0,0,0,0
+3,Memphis,Grizzlies,West,4,13,7,13-7,9-3  ,4-4  ,7-3  ,5,W 5,2.0,0,0,0
+4,Los Angeles,Lakers,West,5,11,7,11-7,7-2  ,4-5  ,7-3  ,6,W 1,3.0,0,0,0
+5,Denver,Nuggets,West,6,10,7,10-7,5-4  ,5-3  ,6-4  ,5,W 1,3.5,0,0,0
+6,Dallas,Mavericks,West,7,11,8,11-8,7-3  ,4-5  ,6-4  ,4,W 2,3.5,0,0,0
+7,LA,Clippers,West,8,12,9,12-9,7-4  ,5-5  ,6-4  ,5,L 1,3.5,0,0,0
+8,Phoenix,Suns,West,9,10,8,10-8,6-4  ,4-4  ,3-7  ,7,L 1,4.0,0,0,0
+9,San Antonio,Spurs,West,10,10,9,10-9,8-4  ,2-5  ,6-4  ,4,L 1,4.5,0,0,0
+10,Minnesota,Timberwolves,West,11,9,10,9-10,6-4  ,3-6  ,3-7  ,3,W 1,5.5,0,0,0
+11,Sacramento,Kings,West,12,9,10,9-10,4-6  ,5-4  ,4-6  ,3,W 1,5.5,0,0,0
+12,Portland,Trail Blazers,West,13,7,12,7-12,4-4  ,3-8  ,4-6  ,3,L 2,7.5,0,0,0
+13,Utah,Jazz,West,14,4,14,4-14,2-7  ,2-7  ,3-7  ,1,L 2,10.0,0,0,0
+14,New Orleans,Pelicans,West,15,4,16,4-16,3-7  ,1-9  ,1-9  ,2,L 7,11.0,0,0,0

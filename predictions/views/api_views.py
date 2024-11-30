@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
+from django.db.models import Sum
 from django.forms import formset_factory
 from predictions.models import (Season, Prediction, StandingPrediction, Player,
                                 Question, Answer, Team, RegularSeasonStandings,
@@ -109,10 +110,47 @@ def get_ist_standings_api(request, season_slug):
             'group_rank': standing.ist_group_rank,
             'wins': standing.wins,
             'losses': standing.losses,
-            'points': standing.ist_points,
+            # 'points': standing.ist_points,
+            'point_differential': standing.ist_differential,
         })
 
     return JsonResponse(data, status=200)
+
+from django.db.models import Sum
+from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from predictions.models import Season, Answer, InSeasonTournamentQuestion
+
+@require_http_methods(["GET"])
+def get_ist_leaderboard_api(request, season_slug):
+    season = get_object_or_404(Season, slug=season_slug)
+
+    # Step 1: Fetch all IST questions for the season
+    ist_questions = InSeasonTournamentQuestion.objects.filter(season=season).values_list('id', flat=True)
+
+    # Step 2: Aggregate scores based on the points earned from `Answer`
+    answers = (
+        Answer.objects.filter(question_id__in=ist_questions)
+        .values('user_id')  # Group by user
+        .annotate(total_points=Sum('points_earned'))  # Sum up points for each user
+        .order_by('-total_points')  # Sort by highest points
+    )
+
+    # Step 3: Retrieve user details for the leaderboard
+    leaderboard = []
+    for entry in answers:
+        try:
+            user = User.objects.get(id=entry['user_id'])
+            leaderboard.append({
+                'user': {'id': user.id, 'username': user.username},
+                'points': entry['total_points'] or 0,  # Ensure points are not None
+            })
+        except User.DoesNotExist:
+            # Handle any inconsistencies
+            continue
+
+    return JsonResponse({'top_users': leaderboard})
 
 @login_required
 @require_http_methods(["GET"])
@@ -318,3 +356,55 @@ def submit_answers_api(request, season_slug):
             'message': 'An unexpected error occurred',
             'details': str(e)
         }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_user_answers_api(request, identifier):
+    """
+    Retrieve a user's answers based on either user_id or username,
+    with optional filters for question type and season.
+
+    Query Parameters:
+    - question_type (optional): Filter answers by specific question type
+    - season_slug (optional): Filter answers for a specific season (slug)
+    """
+    try:
+        # Determine if identifier is numeric (user_id) or not (username)
+        if identifier.isdigit():
+            user = get_object_or_404(User, id=identifier)
+        else:
+            user = get_object_or_404(User, username=identifier)
+
+        # Optional filters
+        question_type = request.GET.get('question_type', None)
+        season_slug = request.GET.get('season_slug', None)
+
+        # Initialize queryset
+        answers = Answer.objects.filter(user=user)
+
+        # Filter by season if provided
+        if season_slug:
+            season = get_object_or_404(Season, slug=season_slug)
+            answers = answers.filter(question__season=season)
+
+        # Filter by question type if provided
+        if question_type:
+            answers = answers.filter(question__polymorphic_ctype__model=question_type.lower())
+
+        # Prepare response data
+        data = []
+        for answer in answers.select_related('question'):
+            question = answer.question.get_real_instance()  # Get the real instance of the polymorphic question
+            data.append({
+                'question_id': question.id,
+                'question_text': question.text,
+                'question_type': question._meta.model_name,  # Get the question type
+                'season': question.season.slug,  # Include the season slug
+                'answer': answer.answer,
+                'points_earned': answer.points_earned,
+            })
+
+        return JsonResponse({'user': {'id': user.id, 'username': user.username}, 'answers': data}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

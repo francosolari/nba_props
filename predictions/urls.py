@@ -4,9 +4,11 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from predictions.views.api_views import (get_teams_api, get_players_api, get_standings_api,
                                          get_user_predictions_api, get_api_leaderboard, latest_season_api,
-                                         get_questions_api, submit_answers_api, get_ist_standings_api)
+                                         get_questions_api, submit_answers_api, get_ist_standings_api,
+                                         get_ist_leaderboard_api, get_user_answers_api)
 from predictions.views.user_views import (submit_predictions, view_predictions, home,
-                                          view_leaderboard, what_if_view, profile_view, render_questions)
+                                          view_leaderboard, what_if_view, profile_view, render_questions,
+                                          view_ist_standings)
 
 app_name = 'predictions'
 
@@ -14,6 +16,7 @@ predictions_patterns = [
     # Removing submit predictions for season opening
     # path('submit/<slug:season_slug>/', submit_predictions, name='submit_predictions'),
     path('view/<slug:season_slug>/', view_predictions, name='view_predictions'),
+    path('ist-standings/<slug:season_slug>/', view_ist_standings, name='view_ist_standings'),
     # path('submit/questions/<slug:season_slug>/', render_questions, name='render_questions'),
 ]
 
@@ -33,6 +36,9 @@ api_patterns = [
     path('user_predictions/<slug:season_slug>/', get_user_predictions_api, name='get_user_predictions_api'),
     path('leaderboard/<slug:season_slug>/', get_api_leaderboard, name='get_api_leaderboard'),
     path('latest_season/', latest_season_api, name='latest_season'),
+    path('ist-leaderboard/<slug:season_slug>/', get_ist_leaderboard_api, name='get_ist_leaderboard'),
+    path('user-answers/<str:identifier>/', get_user_answers_api, name='get_user_answers'),
+
 ]
 urlpatterns = [
     path('', home, name='home'),

@@ -307,7 +307,9 @@ averages = get_player_averages(player_name, season=season)
 print(f"{player_name} {season} averages:\n{pd.Series(averages)}")
 print("Updating active player list")
 fetch_ist_standings(season="2024-25")
-fetch_active_players()
+fetch_nba_standings(season="2024-25")
+# fetch_active_players()
+
 # Bronny james
 # data = {'id': 1999503, 'full_name': 'Lebron James Jr',
 #         'first_name': 'Lebron',

@@ -153,3 +153,14 @@ def what_if_view(request, season_slug):
     }
 
     return render(request, 'predictions/what_if_standings.html', context)
+
+@login_required
+def view_ist_standings(request, season_slug):
+    """
+    View to render the IST Standings page for a given season.
+    """
+    # Fetch the season based on the slug
+    season = get_object_or_404(Season, slug=season_slug)
+
+    # Render the template with the season slug passed to the frontend
+    return render(request, 'predictions/ist_standings.html', {'season_slug': season.slug})
