@@ -112,6 +112,7 @@ def get_ist_standings_api(request, season_slug):
             'losses': standing.losses,
             # 'points': standing.ist_points,
             'point_differential': standing.ist_differential,
+            'wildcard_rank': standing.ist_wildcard_rank,
         })
 
     return JsonResponse(data, status=200)
