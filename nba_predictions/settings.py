@@ -20,17 +20,16 @@ IS_DEVELOPMENT = os.getenv('DJANGO_DEVELOPMENT', 'False').lower() == 'true'
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-vz_05dx#kxb^&(95ltkswn%b56hbq4c6y&+opawn%qt7dda$4h'
 if IS_DEVELOPMENT:
     # Development settings (for local environment)
     DEBUG = True
-
+    SECRET_KEY = os.getenv("SECRET_KEY")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DATABASE_NAME', 'mydb'),
-            'USER': os.getenv('DATABASE_USER', 'myuser'),
-            'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mypassword'),
+            'NAME': os.getenv('DATABASE_NAME'),
+            'USER': os.getenv('DATABASE_USER'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD'),
             'HOST': os.getenv('DATABASE_HOST', '134.209.213.185'),
             'PORT': os.getenv('DATABASE_PORT', '5432'),
         }
@@ -41,6 +40,7 @@ if IS_DEVELOPMENT:
 else:
     # Production settings (default)
     DEBUG = False
+    SECRET_KEY = 'django-insecure-vz_05dx#kxb^&(95ltkswn%b56hbq4c6y&+opawn%qt7dda$4h'
 
     DATABASES = {
         'default': {
