@@ -22,7 +22,7 @@ services:
       - .:/nba_predictions
     environment:
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DJANGO_DEVELOPMENT=True
+      - DJANGO_DEVELOPMENT=False
       - DATABASE_HOST=${DATABASE_HOST}
       - DATABASE_PORT=${DATABASE_PORT}
       - DATABASE_NAME=${DATABASE_NAME}
@@ -43,7 +43,7 @@ services:
       - .:/nba_predictions
     environment:
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DJANGO_DEVELOPMENT=True
+      - DJANGO_DEVELOPMENT=False
       - DATABASE_HOST=${DATABASE_HOST}
       - DATABASE_PORT=${DATABASE_PORT}
       - DATABASE_NAME=${DATABASE_NAME}
