@@ -79,7 +79,7 @@ class Command(BaseCommand):
                     # Check if the team is the conference winner
                     standings_entry = ist_standings.filter(team_id=team_id).first()
                     if standings_entry and standings_entry.ist_knockout_rank == 1:
-                        points = 1
+                        points = 0
 
                 # Update the answer points
                 answer.points_earned = points

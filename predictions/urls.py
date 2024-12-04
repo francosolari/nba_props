@@ -8,7 +8,7 @@ from predictions.views.api_views import (get_teams_api, get_players_api, get_sta
                                          get_ist_leaderboard_api, get_user_answers_api)
 from predictions.views.user_views import (submit_predictions, view_predictions, home,
                                           view_leaderboard, what_if_view, profile_view, render_questions,
-                                          view_ist_standings)
+                                          view_ist_standings, user_leaderboard)
 
 app_name = 'predictions'
 
@@ -18,6 +18,8 @@ predictions_patterns = [
     path('view/<slug:season_slug>/', view_predictions, name='view_predictions'),
     path('ist-standings/<slug:season_slug>/', view_ist_standings, name='view_ist_standings'),
     # path('submit/questions/<slug:season_slug>/', render_questions, name='render_questions'),
+    path('regular-leaderboard/<slug:season_slug>/', user_leaderboard, name='get_user_leaderboard'),
+
 ]
 
 user_patterns = [
@@ -38,7 +40,6 @@ api_patterns = [
     path('latest_season/', latest_season_api, name='latest_season'),
     path('ist-leaderboard/<slug:season_slug>/', get_ist_leaderboard_api, name='get_ist_leaderboard'),
     path('user-answers/<str:identifier>/', get_user_answers_api, name='get_user_answers'),
-
 ]
 urlpatterns = [
     path('', home, name='home'),

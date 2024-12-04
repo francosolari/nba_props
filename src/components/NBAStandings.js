@@ -19,18 +19,35 @@ const NBAStandings = memo(({ seasonSlug }) => {
   const [westStandings, setWestStandings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentSeasonSlug, setCurrentSeasonSlug] = useState(seasonSlug);
 
   /**
    * Fetches NBA standings from the API.
    */
   useEffect(() => {
+    // Function to fetch the latest season if seasonSlug is not provided
+    const fetchLatestSeason = async () => {
+      try {
+        const response = await axios.get('/api/latest_season/');  // Assuming this is your endpoint
+        return response.data.slug;  // Assuming the API returns { slug: "2023-24" }
+      } catch (error) {
+        console.error('Error fetching the latest season:', error);
+        return null;
+      }
+    };
+
+    // Fetch latest season if no seasonSlug is provided
     const fetchStandings = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Default to current season if no seasonSlug is provided
-        const slug = seasonSlug || 'current';
+        // Use the seasonSlug passed in or fetch the latest one
+        const slug = currentSeasonSlug || await fetchLatestSeason();
+
+        if (!slug) {
+          throw new Error('Could not fetch season');
+        }
 
         const response = await axios.get(`/api/standings/${slug}/`);
 
@@ -47,7 +64,7 @@ const NBAStandings = memo(({ seasonSlug }) => {
     };
 
     fetchStandings();
-  }, [seasonSlug]);
+  }, [currentSeasonSlug]);
 
   /**
    * Renders a single team's standing row.
@@ -96,7 +113,7 @@ const NBAStandings = memo(({ seasonSlug }) => {
   // Main Render
   return (
     <div className="w-full max-w-2xl mx-auto bg-white shadow-md rounded-md overflow-hidden">
-      <h2 className="text-center text-lg font-semibold bg-gray-100 py-2">NBA Standings {seasonSlug ? `(${seasonSlug})` : ''}</h2>
+      <h2 className="text-center text-lg font-semibold bg-gray-100 py-2">NBA Standings {currentSeasonSlug ? `(${currentSeasonSlug})` : ''}</h2>
       <div className="flex flex-col lg:flex-row">
         {/* Eastern Conference */}
         <div className="w-full lg:w-1/2 border-r lg:border-r-0">

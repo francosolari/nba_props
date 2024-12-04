@@ -46,6 +46,13 @@ def get_standings_api(request, season_slug):
 
     URL: /api/standings/<season_slug>/
     """
+    # If the season_slug is 'current', fetch the latest season from the database
+    if season_slug == "current":
+        # Get the latest season from the database, assuming there's a way to identify it as the latest
+        season = Season.objects.order_by('-start_date').first()  # Fetch the most recent season
+        if not season:
+            return JsonResponse({"error": "Could not find the latest season"}, status=400)
+        season_slug = season.slug  # Update the season_slug to the latest season's slug
     # Step 1: Get the prior season based on the slug
     season = get_object_or_404(Season, slug=season_slug)
 
@@ -158,20 +165,29 @@ def get_ist_leaderboard_api(request, season_slug):
 
     return JsonResponse({'top_users': leaderboard})
 
-@login_required
+# @login_required
 @require_http_methods(["GET"])
 def get_user_predictions_api(request, season_slug):
     season = get_object_or_404(Season, slug=season_slug)
-    predictions = StandingPrediction.objects.filter(user=request.user, season=season)
+    # Get the user_id from the query parameters (if provided)
+    username = request.GET.get('username', None)
 
+    if username:
+        # If user_id is provided, filter predictions for this user
+        user = get_object_or_404(User, username=username)
+        predictions = StandingPrediction.objects.filter(season=season, user=user)
+    else:
+        # Otherwise, fetch predictions for all users
+        predictions = StandingPrediction.objects.filter(season=season)
     # Prepare the data for response
     predictions_data = [
         {
-            'user': request.user.username,
+            'user': pred.user.username,
             'team_id': pred.team.id,
             'team_name': pred.team.name,
             'team_conference': pred.team.conference,
             'predicted_position': pred.predicted_position,
+            'points': pred.points,
         }
         for pred in predictions
     ]
@@ -180,7 +196,7 @@ def get_user_predictions_api(request, season_slug):
 
 def get_api_leaderboard(request, season_slug):
     season = get_object_or_404(Season, slug=season_slug)
-    top_users = UserStats.objects.filter(season=season).order_by('-points')[:10]
+    top_users = UserStats.objects.filter(season=season).order_by('-points')
     data = {
         'top_users': [
             {

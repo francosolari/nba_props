@@ -2,6 +2,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
+from django.db.models import Sum
 from django.views.decorators.http import require_http_methods
 from django.forms import formset_factory
 from django.contrib import messages
@@ -164,3 +165,39 @@ def view_ist_standings(request, season_slug):
 
     # Render the template with the season slug passed to the frontend
     return render(request, 'predictions/ist_standings.html', {'season_slug': season.slug})
+
+
+def user_leaderboard(request, season_slug):
+    """
+    View to display the user leaderboard based on their standing predictions for the regular season.
+    """
+    season = get_object_or_404(Season, slug=season_slug)
+
+    # Fetch all predictions for the given season, annotating the total points per user
+    user_points = (
+        StandingPrediction.objects.filter(season=season)
+        .values('user', 'user__first_name', 'user__last_name')  # Accessing first_name and last_name directly
+        .annotate(total_points=Sum('points'))  # Summing the points for each user
+        .order_by('-total_points')  # Sorting by total points in descending order
+    )
+
+    # Fetch the leaderboard for display
+    leaderboard = []
+    for entry in user_points:
+        user = entry['user']  # This is the user ID
+        total_points = entry['total_points']
+
+        # Get the user's first name and last initial
+        first_name = entry['user__first_name']
+        last_name = entry['user__last_name']
+        display_name = f"{first_name} {last_name[0]}." if first_name and last_name else f"{first_name} {last_name}"
+
+        leaderboard.append({
+            'user': display_name,  # Store the formatted name
+            'total_points': total_points
+        })
+
+    return render(request, 'user_leaderboard.html', {
+        'season_slug': season_slug,
+        'leaderboard': leaderboard
+    })

@@ -91,6 +91,7 @@
     </div>
 </div>
 
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const seasonSlug = "{{ season_slug }}"; // Pass season slug from the backend
@@ -249,7 +250,7 @@
 
                 const tbody = document.createElement('tbody');
                 data.top_users.forEach(user => {
-                    const displayName = `${user.user.first_name} ${user.user.last_name.charAt(0)}`; 
+                    const displayName = `${user.user.first_name} ${user.user.last_name.charAt(0)}`;
                     const tr = document.createElement('tr');
                     tr.classList.add('hover:bg-gray-100');
                     tr.innerHTML = `
@@ -271,67 +272,80 @@
             }
         }
 
-         // Fetch User Answers and display them in a table format
+        // Fetch User Answers and display them in a table format
         async function fetchUserAnswers(userId, displayName) {
-            {#const modalContent = document.getElementById('modal-content');#}
             const eastContent = document.getElementById('modal-east-standings');
             const westContent = document.getElementById('modal-west-standings');
+            
             // Clear the modal content before updating
             eastContent.innerHTML = '';
             westContent.innerHTML = '';
-            {#modalContent.innerHTML = '';  // Clear existing content#}
+
+            // Set the modal title to the user's display name
             const modalTitle = document.getElementById('modal-title');
             modalTitle.textContent = `${displayName}'s Predictions`;  // Update the modal title dynamically
 
+            try {
+                // Fetch data from API endpoint
+                const response = await fetch(`/api/user-answers/${userId}/?season_slug=${seasonSlug}&question_type=inseasontournamentquestion`);
+                const data = await response.json();
 
-        try {
-            // Fetch data from API endpoint
-            const response = await fetch(`/api/user-answers/${userId}/?season_slug=${seasonSlug}&question_type=inseasontournamentquestion`);
-            const data = await response.json();
+                // Define order for the predictions
+                const order = [
+                    "East Group A", "East Group B", "East Group C", "East Wildcard", 
+                    "East Finals Winner", "East Finals Points Scored",
+                    "West Group A", "West Group B", "West Group C", "West Wildcard", 
+                    "West Finals Winner", "West Finals Points Scored"
+                ];
 
-            // Loop through each answer to categorize them into East or West predictions
-            data.answers.forEach(answer => {
-                let displayAnswer = answer.answer;
+                // Sort the answers according to the predefined order
+                const sortedAnswers = data.answers.sort((a, b) => {
+                    return order.indexOf(a.question_text) - order.indexOf(b.question_text);
+                });
 
-                // Check if it's a tiebreaker and use raw answer
-                if (answer.question_text.includes("Points Scored")) {
-                    displayAnswer = answer.answer; // Show raw answer for tiebreaker
-                } else {
-                    const teamName = teamCache[answer.answer] || 'Unknown'; // Fallback to 'Unknown' if team is not found
-                    displayAnswer = teamName;
-                }
+                // Loop through each answer to categorize them into East or West predictions
+                sortedAnswers.forEach(answer => {
+                    let displayAnswer = answer.answer;
 
-                // Create table rows for East or West
-                const row = document.createElement('tr');
-                row.classList.add('border-t');
-                row.innerHTML = `
-                    <td class="px-2 py-2 text-left">${answer.question_text}</td>
-                    <td class="px-2 py-2 text-center">${displayAnswer}</td>
-                    <td class="px-2 py-2 text-center">${answer.points_earned}</td>
-                `;
+                    // Check if it's a tiebreaker and use raw answer
+                    if (answer.question_text.includes("Points Scored")) {
+                        displayAnswer = answer.answer; // Show raw answer for tiebreaker
+                    } else {
+                        const teamName = teamCache[answer.answer] || 'Unknown'; // Fallback to 'Unknown' if team is not found
+                        displayAnswer = teamName;
+                    }
 
-                // Add predictions to the correct section (East or West)
-                if (answer.question_text.includes("East")) {
-                    eastContent.appendChild(row);  // Add to East section
-                } else if (answer.question_text.includes("West")) {
-                    westContent.appendChild(row);  // Add to West section
-                }
-            });
+                    // Create table rows for East or West
+                    const row = document.createElement('tr');
+                    row.classList.add('border-t');
+                    row.innerHTML = `
+                        <td class="px-2 py-2 text-left">${answer.question_text}</td>
+                        <td class="px-2 py-2 text-center">${displayAnswer}</td>
+                        <td class="px-2 py-2 text-center">${answer.points_earned}</td>
+                    `;
 
-            // Show modal after data is populated
-            const modal = document.getElementById('user-answers-modal');
-            modal.classList.remove('hidden');
-            modal.style.left = '10px'; // Reset position for visibility
-            modal.style.top = '10px';
+                    // Add predictions to the correct section (East or West)
+                    if (answer.question_text.includes("East")) {
+                        eastContent.appendChild(row);  // Add to East section
+                    } else if (answer.question_text.includes("West")) {
+                        westContent.appendChild(row);  // Add to West section
+                    }
+                });
 
-        } catch (error) {
-            console.error('Error fetching user answers:', error);
+                // Show modal after data is populated
+                const modal = document.getElementById('user-answers-modal');
+                modal.classList.remove('hidden');
+                modal.style.left = '10px'; // Reset position for visibility
+                modal.style.top = '10px';
+
+            } catch (error) {
+                console.error('Error fetching user answers:', error);
+            }
         }
-    }
 
-    // Close the modal when the close button is clicked
-    document.getElementById('close-modal').addEventListener('click', () => {
-        document.getElementById('user-answers-modal').classList.add('hidden');
+        // Close the modal when the close button is clicked
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('user-answers-modal').classList.add('hidden');
         });
 
         // Draggable Modal
