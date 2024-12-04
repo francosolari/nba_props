@@ -11,12 +11,12 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-# load_dotenv(os.path.join(BASE_DIR, '.env'))
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 IS_DEVELOPMENT = os.getenv('DJANGO_DEVELOPMENT', 'False').lower() == 'true'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -38,24 +38,6 @@ if IS_DEVELOPMENT:
     }
 
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'predictnetwork', '134.209.213.185']
-# else:
-#     # Production settings (default)
-#     DEBUG = False
-#     SECRET_KEY = 'django-insecure-vz_05dx#kxb^&(95ltkswn%b56hbq4c6y&+opawn%qt7dda$4h'
-#
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.postgresql',
-#             'NAME': os.getenv('DATABASE_NAME', 'mydb'),
-#             'USER': os.getenv('DATABASE_USER', 'myuser'),
-#             'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mypassword'),
-#             'HOST': os.getenv('DATABASE_HOST', '134.209.213.185'),
-#             'PORT': os.getenv('DATABASE_PORT', '5432'),
-#         }
-#     }
-#
-#     ALLOWED_HOSTS = ['134.209.213.185', 'propspredictions.com', 'localhost', '127.0.0.1',]
-
 else:
     # Production settings (default)
     DEBUG = False
@@ -63,12 +45,30 @@ else:
 
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'persist_db/db.sqlite3',  # Use the correct path for the server's SQLite file
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DATABASE_NAME', 'mydb'),
+            'USER': os.getenv('DATABASE_USER', 'myuser'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mypassword'),
+            'HOST': os.getenv('DATABASE_HOST', '134.209.213.185'),
+            'PORT': os.getenv('DATABASE_PORT', '5432'),
         }
     }
 
-    ALLOWED_HOSTS = ['134.209.213.185', 'propspredictions.com']
+    ALLOWED_HOSTS = ['134.209.213.185', 'propspredictions.com', 'localhost', '127.0.0.1',]
+
+# else:
+#     # Production settings (default)
+#     DEBUG = False
+#     SECRET_KEY = 'django-insecure-vz_05dx#kxb^&(95ltkswn%b56hbq4c6y&+opawn%qt7dda$4h'
+#
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.sqlite3',
+#             'NAME': 'persist_db/db.sqlite3',  # Use the correct path for the server's SQLite file
+#         }
+#     }
+#
+#     ALLOWED_HOSTS = ['134.209.213.185', 'propspredictions.com']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
