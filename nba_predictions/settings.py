@@ -40,7 +40,7 @@ if IS_DEVELOPMENT:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'predictnetwork', '134.209.213.185']
 else:
     # Production settings (default)
-    DEBUG = False
+    DEBUG = True
     SECRET_KEY = 'django-insecure-vz_05dx#kxb^&(95ltkswn%b56hbq4c6y&+opawn%qt7dda$4h'
 
     DATABASES = {
@@ -49,7 +49,7 @@ else:
             'NAME': os.getenv('DATABASE_NAME', 'mydb'),
             'USER': os.getenv('DATABASE_USER', 'myuser'),
             'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mypassword'),
-            'HOST': os.getenv('DATABASE_HOST', '134.209.213.185'),
+            'HOST': os.getenv('DATABASE_HOST', 'propspredictions.com'),
             'PORT': os.getenv('DATABASE_PORT', '5432'),
         }
     }
