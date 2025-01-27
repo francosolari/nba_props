@@ -72,7 +72,8 @@ def get_standings_api(request, season_slug):
             'conference': team.conference,
             'wins': standing.wins,
             'losses': standing.losses,
-            'position': standing.position
+            'position': standing.position,
+            'win_percentage': standing.win_percentage
         }
         conference_key = team.conference.lower()
         if conference_key in data:
@@ -156,7 +157,9 @@ def get_ist_leaderboard_api(request, season_slug):
             leaderboard.append({
                 'user': {'id': user.id, 'username': user.username,
                          'first_name': user.first_name,
-                         'last_name': user.last_name},
+                         'last_name': user.last_name,
+                         'display_name': uuser.first_name + " " + user.last_name[0],
+                         },
                 'points': entry['total_points'] or 0,  # Ensure points are not None
             })
         except User.DoesNotExist:
@@ -168,6 +171,13 @@ def get_ist_leaderboard_api(request, season_slug):
 # @login_required
 @require_http_methods(["GET"])
 def get_user_predictions_api(request, season_slug):
+    # If the season_slug is 'current', fetch the latest season from the database
+    if season_slug == "current":
+        # Get the latest season from the database, assuming there's a way to identify it as the latest
+        season = Season.objects.order_by('-start_date').first()  # Fetch the most recent season
+        if not season:
+            return JsonResponse({"error": "Could not find the latest season"}, status=400)
+        season_slug = season.slug  # Update the season_slug to the latest season's slug
     season = get_object_or_404(Season, slug=season_slug)
     # Get the user_id from the query parameters (if provided)
     username = request.GET.get('username', None)
@@ -195,7 +205,12 @@ def get_user_predictions_api(request, season_slug):
     return JsonResponse({'predictions': predictions_data}, status=200)
 
 def get_api_leaderboard(request, season_slug):
-    season = get_object_or_404(Season, slug=season_slug)
+    if season_slug == "current":
+        # Get the latest season from the database, assuming there's a way to identify it as the latest
+        season = Season.objects.order_by('-start_date').first()  # Fetch the most recent season
+        if not season:
+            return JsonResponse({"error": "Could not find the latest season"}, status=400)
+        season_slug = season.slug  # Update the season_slug to the latest season's slug
     top_users = UserStats.objects.filter(season=season).order_by('-points')
     data = {
         'top_users': [
@@ -203,6 +218,7 @@ def get_api_leaderboard(request, season_slug):
                 'user': {
                     'id': stat.user.id,
                     'username': stat.user.username,
+                    'display_name': stat.user.first_name + " " + stat.user.last_name[0],
                 },
                 'points': stat.points,
             }

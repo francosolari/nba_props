@@ -4,32 +4,31 @@
 {% block content %}
 <div class="container mx-auto py-8">
     <!-- Title -->
-    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">User Leaderboard - {{ season_slug }}</h1>
+    
+{#    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">#}
+{#        User Leaderboard - {{ season_slug }}#}
+{#    </h1>#}
 
-    <!-- Leaderboard Section -->
-    <div id="leaderboard" class="border rounded-lg shadow-md bg-white mb-8">
-        <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-center py-2 border-b">User Leaderboard</h2>
-        <div id="leaderboard-container" class="p-4 max-h-96 overflow-y-auto">
-            <table class="w-full table-auto border-collapse border border-gray-300">
-                <thead class="bg-gray-200">
-                    <tr>
-                        <th class="px-2 py-1 text-left">User</th>
-                        <th class="px-2 py-1 text-center">Points</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in leaderboard %}
-                        <tr>
-                            <td class="px-2 py-1 border border-gray-300">{{ entry.user }}</td>
-                            <td class="px-2 py-1 text-center border border-gray-300">{{ entry.total_points }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <!-- Optionally, if you still use NBAStandings or other React components: -->
+    <div class="">
+        <div
+          id="nba-standings-root"
+          data-season-slug="{{ season.slug }}"
+        ></div>
     </div>
-<div id="nba-standings-root" data-season-slug="{{ season.slug }}"></div>
-<!-- Your React and JavaScript bundle -->
-<script src="{% static 'js/bundle.js' %}"></script>
+    <!--
+       React Mount Point for the UserPredictionModal
+       We pass season.slug so the component can fetch correct season data.
+    -->
+    <div
+      id="display-user-predictions-root"
+      data-season-slug="{{ season.slug }}"
+      data-logged-in-username="{{ request.user.username }}"
+    ></div>
+
+
+
+    <!-- Your React and JavaScript bundle -->
+    <script src="{% static 'js/bundle.js' %}"></script>
 </div>
 {% endblock %}

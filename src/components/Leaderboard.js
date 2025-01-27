@@ -29,7 +29,6 @@ const Leaderboard = memo(({ seasonSlug }) => {
         setLoading(true); // Start loading
         setError(null); // Reset error
 
-        // Replace '/api/leaderboard/' with your actual API endpoint
         const response = await axios.get(`/api/leaderboard/${seasonSlug}/`);
         console.log(response)
         setLeaderboardData(response.data); // Update leaderboard data

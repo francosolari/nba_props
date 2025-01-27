@@ -1,16 +1,16 @@
 ,TeamCity,TeamName,Conference,PlayoffRank,WINS,LOSSES,Record,HOME,ROAD,L10,LongWinStreak,strCurrentStreak,ConferenceGamesBack,ClinchedPlayoffBirth,ClinchedPlayIn,EliminatedConference
-0,Cleveland,Cavaliers,East,1,17,3,17-3,10-1 ,7-2  ,7-3  ,15,L 2,0.0,0,0,0
-1,Boston,Celtics,East,2,16,3,16-3,7-2  ,9-1  ,9-1  ,7,W 7,0.5,0,0,0
-2,Orlando,Magic,East,3,14,7,14-7,9-0  ,5-7  ,9-1  ,6,W 5,3.5,0,0,0
-3,New York,Knicks,East,4,11,8,11-8,5-2  ,6-6  ,7-3  ,4,W 1,5.5,0,0,0
-4,Miami,Heat,East,5,9,8,9-8,4-4  ,4-4  ,6-4  ,2,W 2,6.5,0,0,0
-5,Milwaukee,Bucks,East,6,9,9,9-9,7-3  ,2-6  ,7-3  ,5,W 5,7.0,0,0,0
-6,Atlanta,Hawks,East,7,9,11,9-11,5-5  ,4-6  ,5-5  ,2,W 2,8.0,0,0,0
-7,Brooklyn,Nets,East,8,9,11,9-11,4-4  ,5-7  ,5-5  ,3,L 1,8.0,0,0,0
-8,Indiana,Pacers,East,9,9,11,9-11,7-3  ,2-8  ,4-6  ,3,L 1,8.0,0,0,0
-9,Detroit,Pistons,East,10,9,12,9-12,4-5  ,5-7  ,5-5  ,2,W 1,8.5,0,0,0
-10,Chicago,Bulls,East,11,8,13,8-13,2-7  ,6-6  ,4-6  ,2,L 2,9.5,0,0,0
-11,Charlotte,Hornets,East,12,6,13,6-13,5-6  ,1-7  ,2-8  ,2,L 4,10.5,0,0,0
-12,Toronto,Raptors,East,13,5,15,5-15,4-4  ,1-11 ,3-7  ,2,L 1,12.0,0,0,0
-13,Philadelphia,76ers,East,14,3,14,3-14,2-7  ,1-7  ,2-8  ,1,L 2,12.5,0,0,0
-14,Washington,Wizards,East,15,2,15,2-15,1-7  ,1-7  ,0-10 ,2,L 13,13.5,0,0,0
+0,Cleveland,Cavaliers,East,1,36,8,36-8,21-2 ,15-6 ,6-4  ,15,L 2,0.0,0,0,0
+1,Boston,Celtics,East,2,31,14,31-14,15-8 ,16-6 ,5-5  ,7,L 1,5.5,0,0,0
+2,New York,Knicks,East,3,29,16,29-16,14-8 ,15-8 ,5-5  ,9,W 2,7.5,0,0,0
+3,Milwaukee,Bucks,East,4,25,17,25-17,16-7 ,8-10 ,8-2  ,7,W 5,10.0,0,0,0
+4,Indiana,Pacers,East,5,25,20,25-20,12-7 ,12-12,8-2  ,6,W 1,11.5,0,0,0
+5,Detroit,Pistons,East,6,23,21,23-21,10-11,13-10,7-3  ,5,W 2,13.0,0,0,0
+6,Orlando,Magic,East,7,23,23,23-23,14-9 ,9-14 ,2-8  ,6,L 5,14.0,0,0,0
+7,Atlanta,Hawks,East,8,22,22,22-22,11-9 ,11-12,4-6  ,6,L 3,14.0,0,0,0
+8,Miami,Heat,East,9,21,22,21-22,11-9 ,9-13 ,4-6  ,4,L 2,14.5,0,0,0
+9,Chicago,Bulls,East,10,19,26,19-26,8-15 ,11-11,3-7  ,3,L 1,17.5,0,0,0
+10,Philadelphia,76ers,East,11,16,27,16-27,7-13 ,9-14 ,2-8  ,4,W 1,19.5,0,0,0
+11,Brooklyn,Nets,East,12,14,31,14-31,5-14 ,9-17 ,1-9  ,3,L 5,22.5,0,0,0
+12,Toronto,Raptors,East,13,12,32,12-32,10-13,2-19 ,4-6  ,2,W 2,24.0,0,0,0
+13,Charlotte,Hornets,East,14,11,30,11-30,7-14 ,4-16 ,4-6  ,3,L 2,23.5,0,0,0
+14,Washington,Wizards,East,15,6,37,6-37,5-17 ,1-19 ,0-10 ,2,L 12,29.5,0,0,0

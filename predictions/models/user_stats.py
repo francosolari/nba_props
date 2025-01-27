@@ -17,4 +17,4 @@ class UserStats(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username} - {self.season.name}: {self.points} points"
+        return f"{self.user.username} - {self.season}: {self.points} points"

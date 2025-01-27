@@ -10,6 +10,8 @@ import whatIfStandings from "./components/whatIfStandings";
 import DisplayPredictions from "./components/DisplayPredictions";
 import EditablePredictionBoard from "./components/EditablePredictionBoard";
 import QuestionForm from "./components/QuestionForm";
+import UserPredictionModal from "./components/UserPredictionModal";
+import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
 
 console.log("React bundle loaded and running!");
 
@@ -44,3 +46,6 @@ mountComponent(EditablePredictionBoard,
 
 mountComponent(QuestionForm,
     'display-qform-predictions-root', "Question-Form");
+mountComponent(UserPredictionModal,
+    'display-user-predictions-root', "User-Predictions");
+

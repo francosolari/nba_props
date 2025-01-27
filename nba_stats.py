@@ -242,7 +242,7 @@ def get_player_with_most_fouls(season):
                                                     measure_type_detailed_defense='Base').get_data_frames()[
             0]
 
-    # Sort players by 'TECHNICAL_FOULS' and get the top player
+    # Sort players by 'PERSONAL_FOULS' and get the top player
     sorted_players = player_stats.sort_values(by='PF', ascending=False)
     top_player = sorted_players.iloc[0]
 
@@ -308,8 +308,8 @@ player_name = "Victor Wembanyama"  # replace with the desired player's name
 season = '2024-25'
 averages = get_player_averages(player_name, season=season)
 print(f"{player_name} {season} averages:\n{pd.Series(averages)}")
-print("Updating active player list")
-fetch_ist_standings(season="2024-25")
+# print("Updating active player list")
+# fetch_ist_standings(season="2024-25")
 fetch_nba_standings(season="2024-25")
 # fetch_active_players()
 
