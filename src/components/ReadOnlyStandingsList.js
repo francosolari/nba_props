@@ -19,12 +19,12 @@ const ReadOnlyStandingsList = memo(({ conference, predictions }) => {
   const sorted = filtered.sort((a, b) => a.predicted_position - b.predicted_position);
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 flex-1">
       {/* Outer container */}
       <div className="w-auto p-1 border rounded bg-gray-100 transition-colors duration-100">
         {/* Header */}
         <div className="flex justify-between items-center mb-1">
-          <h2 className="text-sm font-semibold">
+          <h2 className="text-sm font-semibold whitespace-nowrap truncate">
             {conference}ern Conference
           </h2>
         </div>
@@ -42,11 +42,11 @@ const ReadOnlyStandingsList = memo(({ conference, predictions }) => {
                 key={pred.team_id}
                 className={`flex items-center justify-between p-1 border rounded text-xs ${bgColor}`}
               >
-                <div className="flex items-center">
+                <div className="flex items-center truncate">
                   <span className="w-4 text-right font-medium mr-1">
                     {pred.predicted_position}.
                   </span>
-                  <span className="font-bold" title={pred.team_name}>
+                  <span className="font-bold truncate whitespace-nowrap overflow-hidden" title={pred.team_name}>
                     {pred.team_name}
                   </span>
                 </div>

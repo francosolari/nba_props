@@ -134,15 +134,15 @@ def view_predictions(request, season_slug):
 def view_leaderboard(request, season_slug):
     season = get_object_or_404(Season, slug=season_slug)
     # Assuming you have a method to calculate the leaderboard
-    # leaderboard = calculate_leaderboard(season)
-
     context = {
         'season': season,
         # 'leaderboard': leaderboard,
     }
 
-    return render(request, 'predictions/leaderboard.html', context)
-
+    return render(request, 'predictions/leaderboard.html', {
+        'season': season,
+        'primary_user': request.user if request.user.is_authenticated else None,
+    })
 @login_required
 def what_if_view(request, season_slug):
     season = get_object_or_404(Season, slug=season_slug)

@@ -205,12 +205,13 @@ def get_user_predictions_api(request, season_slug):
     return JsonResponse({'predictions': predictions_data}, status=200)
 
 def get_api_leaderboard(request, season_slug):
+    # Determine season based on slug or 'current'
     if season_slug == "current":
-        # Get the latest season from the database, assuming there's a way to identify it as the latest
-        season = Season.objects.order_by('-start_date').first()  # Fetch the most recent season
+        season = Season.objects.order_by('-end_date').first()
         if not season:
             return JsonResponse({"error": "Could not find the latest season"}, status=400)
-        season_slug = season.slug  # Update the season_slug to the latest season's slug
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
     top_users = UserStats.objects.filter(season=season).order_by('-points')
     data = {
         'top_users': [

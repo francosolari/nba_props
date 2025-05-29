@@ -1,5 +1,6 @@
 from django import forms
-from .models import Question, RegularSeasonStandings,Team,Answer, User
+from .models import Question, RegularSeasonStandings,Team,Answer
+from django.contrib.auth.models import User
 
 
 class PositionPredictionForm(forms.ModelForm):

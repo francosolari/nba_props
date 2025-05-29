@@ -16,11 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from predictions.api.v2.api import api as api_v2
 
 urlpatterns = [
     # Include predictions-related URLs
-    path('', include('predictions.urls')),  # Root includes all your app-level routes
+    # path('', include('predictions.urls')),  # Root includes all your app-level routes
     path('admin/', admin.site.urls),
     # path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/', include('allauth.urls')),
+    path('api/v1/', include('predictions.api.v1.urls')),  # Legacy REST API
+    path('api/v2/', api_v2.urls),  # Modern Ninja API
+    path('api/', include('predictions.api.v1.urls')),
+    path('', include('predictions.routing.view_urls')),  # React frontend and Django views
+
 ]
