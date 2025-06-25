@@ -6,7 +6,7 @@ from .season import Season
 class UserStats(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='season_stats')
     season = models.ForeignKey(Season, on_delete=models.CASCADE, related_name='user_stats')
-    points = models.IntegerField(default=0)
+    points = models.FloatField(default=0)
     # Optional: Add other fields like rank, achievements, etc.
 
     class Meta:

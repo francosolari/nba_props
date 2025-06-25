@@ -7,11 +7,12 @@ import PredictionBoard from './components/PredictionBoard';
 import Leaderboard from './components/Leaderboard';
 import NBAStandings from './components/NBAStandings';
 import whatIfStandings from "./components/whatIfStandings";
-import DisplayPredictions from "./components/DisplayPredictions";
+import DisplayPredictions from "./components/DisplayPredictions.jsx";
 import EditablePredictionBoard from "./components/EditablePredictionBoard";
 import QuestionForm from "./components/QuestionForm";
-import UserPredictionModal from "./components/UserPredictionModal";
-import PredictionsTable from './components/PredictionsTable';
+import UserPredictionModal from "./components/UserPredictionModal.jsx";
+import PredictionsTable from './components/archive/PredictionsTable';
+import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
 
 console.log("React bundle loaded and running!");
@@ -50,5 +51,6 @@ mountComponent(QuestionForm,
 mountComponent(UserPredictionModal,
     'display-user-predictions-root', "User-Predictions");
 // Mounting predictions table
-mountComponent(PredictionsTable, 'predictions-table-root', 'PredictionsTable');
+// mountComponent(PredictionsTable, 'predictions-table-root', 'PredictionsTable');
 
+mountComponent(LeaderboardPage, 'leaderboard-page-root', 'LeaderboardPage');

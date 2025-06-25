@@ -2,11 +2,15 @@
   "name": "nba_predictions",
   "version": "1.0.0",
   "description": "NBA predictions init JSON",
-  "main": "src/index.js",
+  "main": "src/index.jsx",
   "scripts": {
     "start": "webpack serve --open",
-    "dev": "webpack serve",
-    "build": "webpack"
+    "dev22": "webpack serve",
+    "build22": "webpack",
+    "django": "python manage.py runserver 127.0.0.1:8000",
+    "webpack-watch": "webpack --watch --config webpack.config.js",
+    "dev": "concurrently -k -n DJANGO,WEBPACK -c blue,magenta \"npm run django\" \"npm run webpack-watch\"",
+    "build": "webpack --mode production --config webpack.config.js"
   },
   "author": "Franco Solari",
   "license": "ISC",
@@ -14,9 +18,11 @@
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.4",
     "@babel/preset-react": "^7.24.7",
+    "@tanstack/react-query": "^5.79.0",
     "autoprefixer": "^10.4.20",
-    "axios": "^1.7.7",
+    "axios": "^1.9.0",
     "babel-loader": "^9.2.1",
+    "lucide-react": "^0.511.0",
     "postcss": "^8.4.47",
     "react": "^18.3.1",
     "react-beautiful-dnd": "^13.1.1",
@@ -29,11 +35,17 @@
     "webpack-cli": "^5.1.4"
   },
   "devDependencies": {
+    "@babel/preset-typescript": "^7.23.3",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
     "babel-plugin-react-compiler": "^19.0.0-beta-27714ef-20250124",
+    "concurrently": "^9.1.2",
     "css-loader": "^7.1.2",
     "eslint-plugin-react-compiler": "^19.0.0-beta-27714ef-20250124",
     "mini-css-extract-plugin": "^2.9.1",
     "postcss-loader": "^8.1.1",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
     "webpack-dev-server": "^4.15.2"
   },
   "repository": {

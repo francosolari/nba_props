@@ -131,18 +131,18 @@ def view_predictions(request, season_slug):
 
 
 # @login_required
-def view_leaderboard(request, season_slug):
-    season = get_object_or_404(Season, slug=season_slug)
-    # Assuming you have a method to calculate the leaderboard
-    context = {
-        'season': season,
-        # 'leaderboard': leaderboard,
-    }
-
-    return render(request, 'predictions/leaderboard.html', {
-        'season': season,
-        'primary_user': request.user if request.user.is_authenticated else None,
-    })
+# def view_leaderboard(request, season_slug):
+#     season = get_object_or_404(Season, slug=season_slug)
+#     # Assuming you have a method to calculate the leaderboard
+#     context = {
+#         'season': season,
+#         # 'leaderboard': leaderboard,
+#     }
+#
+#     return render(request, 'predictions/leaderboard.html', {
+#         'season': season,
+#         'primary_user': request.user if request.user.is_authenticated else None,
+#     })
 @login_required
 def what_if_view(request, season_slug):
     season = get_object_or_404(Season, slug=season_slug)
@@ -200,4 +200,40 @@ def user_leaderboard(request, season_slug):
     return render(request, 'user_leaderboard.html', {
         'season_slug': season_slug,
         'leaderboard': leaderboard
+    })
+
+
+@login_required
+def leaderboard_page(request, season_slug):
+    """
+    View to render the leaderboard page with user rankings and points.
+    """
+    season = get_object_or_404(Season, slug=season_slug)
+
+    # Calculate user points and rankings
+    leaderboard_data = (
+        StandingPrediction.objects.filter(season=season)
+        .values('user', 'user__username', 'user__first_name', 'user__last_name')
+        .annotate(total_points=Sum('points'))
+        .order_by('-total_points')
+    )
+
+    # Format the data for frontend display
+    formatted_leaderboard = []
+    for entry in leaderboard_data:
+        user_info = {
+            'username': entry['user__username'],
+            'display_name': f"{entry['user__first_name']} {entry['user__last_name'][0]}." if entry[
+                                                                                                 'user__first_name'] and
+                                                                                             entry[
+                                                                                                 'user__last_name'] else
+            entry['user__username'],
+            'points': entry['total_points'] or 0
+        }
+        formatted_leaderboard.append(user_info)
+
+    return render(request, 'predictions/leaderboard_page.html', {
+        'season': season,
+        'leaderboard': formatted_leaderboard,
+        'primary_user': request.user
     })

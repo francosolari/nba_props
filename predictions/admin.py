@@ -6,6 +6,7 @@ from .models import Season, Team, PlayoffPrediction, StandingPrediction, \
     InSeasonTournamentStandings, Question, Answer, \
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion, \
     Award, HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion
+from predictions.api.common.services.answer_lookup_service import AnswerLookupService
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 
 
@@ -225,33 +226,36 @@ class AnswerAdmin(admin.ModelAdmin):
         """
         Display answers dynamically, resolving Player or Team names based on question type.
         """
-        # Load lookup tables (cached or rebuilt)
-        player_lookup, team_lookup = self.get_lookup_tables()
-
-        # If the answer is non-numeric, return it as-is
-        if not str(obj.answer).isdigit():
-            return obj.answer
-
-        # Retrieve the polymorphic question instance
         question = obj.question.get_real_instance()
-
-        # Handle special cases
-        if isinstance(question, InSeasonTournamentQuestion) and question.prediction_type == 'tiebreaker':
-            return obj.answer  # Tiebreaker points are numeric and raw
-        if isinstance(question, NBAFinalsPredictionQuestion) and "How many wins?" in question.text:
-            return obj.answer  # NBA Finals wins are numeric and raw
-
-        # Determine whether the question relates to a Player or Team
-        answer_id = int(obj.answer)
-        if isinstance(question, (SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion)):
-            # Resolve as a Player
-            return player_lookup.get(answer_id, f"Player ID {answer_id} not found")
-        elif isinstance(question, (InSeasonTournamentQuestion, HeadToHeadQuestion, NBAFinalsPredictionQuestion)):
-            # Resolve as a Team
-            return team_lookup.get(answer_id, f"Team ID {answer_id} not found")
-
-        # Fallback for unsupported question types
-        return obj.answer
+        return AnswerLookupService.resolve_answer(obj.answer, question)
+        #
+        # # Load lookup tables (cached or rebuilt)
+        # player_lookup, team_lookup = self.get_lookup_tables()
+        #
+        # # If the answer is non-numeric, return it as-is
+        # if not str(obj.answer).isdigit():
+        #     return obj.answer
+        #
+        # # Retrieve the polymorphic question instance
+        # question = obj.question.get_real_instance()
+        #
+        # # Handle special cases
+        # if isinstance(question, InSeasonTournamentQuestion) and question.prediction_type == 'tiebreaker':
+        #     return obj.answer  # Tiebreaker points are numeric and raw
+        # if isinstance(question, NBAFinalsPredictionQuestion) and "How many wins?" in question.text:
+        #     return obj.answer  # NBA Finals wins are numeric and raw
+        #
+        # # Determine whether the question relates to a Player or Team
+        # answer_id = int(obj.answer)
+        # if isinstance(question, (SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion)):
+        #     # Resolve as a Player
+        #     return player_lookup.get(answer_id, f"Player ID {answer_id} not found")
+        # elif isinstance(question, (InSeasonTournamentQuestion, HeadToHeadQuestion, NBAFinalsPredictionQuestion)):
+        #     # Resolve as a Team
+        #     return team_lookup.get(answer_id, f"Team ID {answer_id} not found")
+        #
+        # # Fallback for unsupported question types
+        # return obj.answer
 
     def question_text(self, obj):
         return obj.question.text

@@ -1,7 +1,7 @@
 // src/components/PredictionsTable.js
 
 import React, { useState, useEffect, useCallback } from 'react';
-import useUserAnswers from '../hooks/useUserAnswers';
+// import useUserAnswers from '../hooks/_archive/useUserAnswers';
 
 export default function PredictionsTable() {
   // Helpers to read your existing mount point

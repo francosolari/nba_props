@@ -43,7 +43,7 @@ function DisplayPredictionsBoard({ seasonSlug }) {
   const fetchLatestSeason = async () => {
     try {
       const response = await axios.get('/api/latest_season/');
-      return response.data.slug;  // Assuming the API returns { slug: "2023-24" }
+      return response.data.slug;
     } catch (error) {
       console.error('Error fetching the latest season:', error);
       return null;

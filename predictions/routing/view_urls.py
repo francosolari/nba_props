@@ -8,9 +8,9 @@ These handle the React frontend mounting points and traditional Django views.
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from predictions.views.user_views import (
-    home, view_predictions, view_leaderboard, what_if_view,
+    home, view_predictions, what_if_view,
     profile_view, view_ist_standings, user_leaderboard,
-    submit_predictions, render_questions, submit_answers
+    submit_predictions, render_questions, submit_answers, leaderboard_page
 )
 
 app_name = 'predictions_views'
@@ -25,10 +25,11 @@ prediction_patterns = [
 
 # Leaderboard and standings patterns
 leaderboard_patterns = [
-    path('leaderboard/<slug:season_slug>/', view_leaderboard, name='view_leaderboard'),
     path('user-leaderboard/<slug:season_slug>/', user_leaderboard, name='user_leaderboard'),
     path('ist-standings/<slug:season_slug>/', view_ist_standings, name='view_ist_standings'),
     path('what-if/<slug:season_slug>/', what_if_view, name='what_if_view'),
+    path('page/<slug:season_slug>/', leaderboard_page, name='leaderboard_page'),
+
 ]
 
 # User authentication patterns

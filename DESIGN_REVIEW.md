@@ -65,7 +65,7 @@ The frontend is organized as follows:
   - `hooks/` - Custom React hooks
   - `utils/` - Utility functions
   - `App.js` - Main React component
-  - `index.js` - Entry point
+  - `index.jsx` - Entry point
 
 ### Deployment Configuration
 - `Dockerfile` - Container configuration for Django

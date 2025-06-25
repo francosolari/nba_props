@@ -1,4 +1,4 @@
-// src/components/SideBySideLeaderboard.js
+// src/components/UserPredictionModal.jsx
 
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
@@ -72,7 +72,7 @@ function SideBySideLeaderboard() {
     const loggedUser = detectLoggedInUser();
     if (loggedUser) {
       setCurrentUsername(loggedUser);
-      /*loadMyPredictions(loggedUser);*/
+      loadMyPredictions(loggedUser);
       // Also default the middle column to show my predictions
       loadUserPredictions(loggedUser);
     }

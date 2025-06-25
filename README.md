@@ -105,7 +105,7 @@ The NBA Predictions Game is a Django application with a React frontend, using Ta
   - `hooks/` - Custom React hooks
   - `utils/` - Utility functions
   - `App.js` - Main React component
-  - `index.js` - Entry point
+  - `index.jsx` - Entry point
 
 ## Deployment
 

@@ -167,7 +167,7 @@ DESCRIPTION: Restructure components directory to organize by feature rather than
 IMPLEMENTATION:
 - Create feature-based directories (predictions, leaderboard, profile, etc.)
 - Move components to appropriate feature directories
-- Create index.js files to export components
+- Create index.jsx files to export components
 - Update imports in all files
 FILES:
 - src/components/**/*.js
