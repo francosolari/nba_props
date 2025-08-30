@@ -5,17 +5,17 @@ FROM python:3.11-slim-bullseye
 ENV PYTHONUNBUFFERED=1
 
 # Step 3: Set the working directory in the container
-WORKDIR /nba_predictions
+WORKDIR /app
 
 # Step 4: Copy the requirements file into the container
-COPY requirements.txt /nba_predictions/
+COPY backend/requirements.txt /app/
 
 # Step 5: Install any necessary dependencies
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# Step 6: Copy the application code into the container at /nba_predictions
-COPY . /nba_predictions/
+# Step 6: Copy the application code into the container at /app
+COPY backend/ /app/
 
 # Step 7: Collect static files
 RUN python manage.py collectstatic --noinput
