@@ -1,0 +1,390 @@
+2024-12-12 14:05:30,808 - INFO - Season "2024-25" found.
+2024-12-12 14:05:30,809 - INFO - Starting grading process for season "2024-25".
+2024-12-12 14:05:31,158 - INFO - Fetched 30 actual standings.
+2024-12-12 14:05:31,323 - DEBUG - Position map created with 30 entries.
+2024-12-12 14:05:31,642 - INFO - Fetched 600 standing predictions.
+2024-12-12 14:05:32,592 - INFO - Updated 4 predictions.
+2024-12-12 14:05:32,770 - DEBUG - Aggregated points for 20 users.
+2024-12-12 14:05:32,927 - INFO - Reset points for 21 users in UserStats.
+2024-12-12 14:05:33,411 - INFO - Updated 20 UserStats entries.
+2024-12-12 14:05:33,568 - INFO - Grading process completed successfully.
+2024-12-12 14:05:33,569 - INFO - Total Predictions Processed: 600
+Predictions Updated: 4
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2024-12-18 14:10:30,823 - INFO - Season "2024-25" found.
+2024-12-18 14:10:30,825 - INFO - Starting grading process for season "2024-25".
+2024-12-18 14:10:31,147 - INFO - Fetched 30 actual standings.
+2024-12-18 14:10:31,318 - DEBUG - Position map created with 30 entries.
+2024-12-18 14:10:31,672 - INFO - Fetched 600 standing predictions.
+2024-12-18 14:10:32,689 - INFO - Updated 125 predictions.
+2024-12-18 14:10:32,875 - DEBUG - Aggregated points for 20 users.
+2024-12-18 14:10:33,036 - INFO - Reset points for 21 users in UserStats.
+2024-12-18 14:10:33,541 - INFO - Updated 20 UserStats entries.
+2024-12-18 14:10:33,711 - INFO - Grading process completed successfully.
+2024-12-18 14:10:33,711 - INFO - Total Predictions Processed: 600
+Predictions Updated: 125
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2024-12-23 13:31:14,987 - INFO - Season "2024-25" found.
+2024-12-23 13:31:14,988 - INFO - Starting grading process for season "2024-25".
+2024-12-23 13:31:15,427 - INFO - Fetched 30 actual standings.
+2024-12-23 13:31:15,610 - DEBUG - Position map created with 30 entries.
+2024-12-23 13:31:15,973 - INFO - Fetched 600 standing predictions.
+2024-12-23 13:31:17,599 - INFO - Updated 50 predictions.
+2024-12-23 13:31:17,778 - DEBUG - Aggregated points for 20 users.
+2024-12-23 13:31:17,953 - INFO - Reset points for 21 users in UserStats.
+2024-12-23 13:31:18,594 - INFO - Updated 20 UserStats entries.
+2024-12-23 13:31:18,824 - INFO - Grading process completed successfully.
+2024-12-23 13:31:18,825 - INFO - Total Predictions Processed: 600
+Predictions Updated: 50
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2024-12-25 14:18:18,632 - INFO - Season "2024-25" found.
+2024-12-25 14:18:18,634 - INFO - Starting grading process for season "2024-25".
+2024-12-25 14:18:18,963 - INFO - Fetched 30 actual standings.
+2024-12-25 14:18:19,156 - DEBUG - Position map created with 30 entries.
+2024-12-25 14:18:19,479 - INFO - Fetched 600 standing predictions.
+2024-12-25 14:18:20,494 - INFO - No predictions needed updating.
+2024-12-25 14:18:20,663 - DEBUG - Aggregated points for 20 users.
+2024-12-25 14:18:20,852 - INFO - Reset points for 21 users in UserStats.
+2024-12-25 14:18:21,369 - INFO - Updated 20 UserStats entries.
+2024-12-25 14:18:21,540 - INFO - Grading process completed successfully.
+2024-12-25 14:18:21,540 - INFO - Total Predictions Processed: 600
+Predictions Updated: 0
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2024-12-25 14:19:37,662 - INFO - Season "2024-25" found.
+2024-12-25 14:19:37,664 - INFO - Starting grading process for season "2024-25".
+2024-12-25 14:19:38,017 - INFO - Fetched 30 actual standings.
+2024-12-25 14:19:38,195 - DEBUG - Position map created with 30 entries.
+2024-12-25 14:19:38,566 - INFO - Fetched 600 standing predictions.
+2024-12-25 14:19:39,731 - INFO - Updated 28 predictions.
+2024-12-25 14:19:39,906 - DEBUG - Aggregated points for 20 users.
+2024-12-25 14:19:40,070 - INFO - Reset points for 21 users in UserStats.
+2024-12-25 14:19:40,603 - INFO - Updated 20 UserStats entries.
+2024-12-25 14:19:40,820 - INFO - Grading process completed successfully.
+2024-12-25 14:19:40,820 - INFO - Total Predictions Processed: 600
+Predictions Updated: 28
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2024-12-26 17:29:32,162 - INFO - Season "2024-25" found.
+2024-12-26 17:29:32,165 - INFO - Starting grading process for season "2024-25".
+2024-12-26 17:29:32,497 - INFO - Fetched 30 actual standings.
+2024-12-26 17:29:32,662 - DEBUG - Position map created with 30 entries.
+2024-12-26 17:29:33,036 - INFO - Fetched 600 standing predictions.
+2024-12-26 17:29:34,096 - INFO - Updated 45 predictions.
+2024-12-26 17:29:34,266 - DEBUG - Aggregated points for 20 users.
+2024-12-26 17:29:34,428 - INFO - Reset points for 21 users in UserStats.
+2024-12-26 17:29:34,961 - INFO - Updated 20 UserStats entries.
+2024-12-26 17:29:35,141 - INFO - Grading process completed successfully.
+2024-12-26 17:29:35,142 - INFO - Total Predictions Processed: 600
+Predictions Updated: 45
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2024-12-30 02:31:19,071 - INFO - Season "2024-25" found.
+2024-12-30 02:31:19,072 - INFO - Starting grading process for season "2024-25".
+2024-12-30 02:31:19,130 - INFO - Fetched 30 actual standings.
+2024-12-30 02:31:19,162 - DEBUG - Position map created with 30 entries.
+2024-12-30 02:31:19,223 - INFO - Fetched 600 standing predictions.
+2024-12-30 02:31:19,370 - INFO - No predictions needed updating.
+2024-12-30 02:31:19,395 - DEBUG - Aggregated points for 20 users.
+2024-12-30 02:31:19,427 - INFO - Reset points for 21 users in UserStats.
+2024-12-30 02:31:19,521 - INFO - Updated 20 UserStats entries.
+2024-12-30 02:31:19,550 - INFO - Grading process completed successfully.
+2024-12-30 02:31:19,550 - INFO - Total Predictions Processed: 600
+Predictions Updated: 0
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2024-12-30 02:31:45,869 - INFO - Season "2024-25" found.
+2024-12-30 02:31:45,869 - INFO - Starting grading process for season "2024-25".
+2024-12-30 02:31:45,929 - INFO - Fetched 30 actual standings.
+2024-12-30 02:31:45,959 - DEBUG - Position map created with 30 entries.
+2024-12-30 02:31:46,016 - INFO - Fetched 600 standing predictions.
+2024-12-30 02:31:46,172 - INFO - Updated 50 predictions.
+2024-12-30 02:31:46,204 - DEBUG - Aggregated points for 20 users.
+2024-12-30 02:31:46,234 - INFO - Reset points for 21 users in UserStats.
+2024-12-30 02:31:46,326 - INFO - Updated 20 UserStats entries.
+2024-12-30 02:31:46,352 - INFO - Grading process completed successfully.
+2024-12-30 02:31:46,352 - INFO - Total Predictions Processed: 600
+Predictions Updated: 50
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-01-03 12:37:31,133 - INFO - Season "2024-25" found.
+2025-01-03 12:37:31,135 - INFO - Starting grading process for season "2024-25".
+2025-01-03 12:37:31,185 - INFO - Fetched 30 actual standings.
+2025-01-03 12:37:31,214 - DEBUG - Position map created with 30 entries.
+2025-01-03 12:37:31,262 - INFO - Fetched 600 standing predictions.
+2025-01-03 12:37:31,429 - INFO - Updated 129 predictions.
+2025-01-03 12:37:31,466 - DEBUG - Aggregated points for 20 users.
+2025-01-03 12:37:31,493 - INFO - Reset points for 21 users in UserStats.
+2025-01-03 12:37:31,574 - INFO - Updated 20 UserStats entries.
+2025-01-03 12:37:31,600 - INFO - Grading process completed successfully.
+2025-01-03 12:37:31,600 - INFO - Total Predictions Processed: 600
+Predictions Updated: 129
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-01-10 22:57:37,922 - INFO - Season "2024-25" found.
+2025-01-10 22:57:37,923 - INFO - Starting grading process for season "2024-25".
+2025-01-10 22:57:37,971 - INFO - Fetched 30 actual standings.
+2025-01-10 22:57:37,993 - DEBUG - Position map created with 30 entries.
+2025-01-10 22:57:38,044 - INFO - Fetched 600 standing predictions.
+2025-01-10 22:57:38,182 - INFO - Updated 65 predictions.
+2025-01-10 22:57:38,204 - DEBUG - Aggregated points for 20 users.
+2025-01-10 22:57:38,231 - INFO - Reset points for 21 users in UserStats.
+2025-01-10 22:57:38,314 - INFO - Updated 20 UserStats entries.
+2025-01-10 22:57:38,342 - INFO - Grading process completed successfully.
+2025-01-10 22:57:38,342 - INFO - Total Predictions Processed: 600
+Predictions Updated: 65
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-01-14 18:56:11,768 - INFO - Season "2024-25" found.
+2025-01-14 18:56:11,769 - INFO - Starting grading process for season "2024-25".
+2025-01-14 18:56:11,826 - INFO - Fetched 30 actual standings.
+2025-01-14 18:56:11,856 - DEBUG - Position map created with 30 entries.
+2025-01-14 18:56:11,907 - INFO - Fetched 600 standing predictions.
+2025-01-14 18:56:12,075 - INFO - Updated 106 predictions.
+2025-01-14 18:56:12,109 - DEBUG - Aggregated points for 20 users.
+2025-01-14 18:56:12,140 - INFO - Reset points for 21 users in UserStats.
+2025-01-14 18:56:12,225 - INFO - Updated 20 UserStats entries.
+2025-01-14 18:56:12,251 - INFO - Grading process completed successfully.
+2025-01-14 18:56:12,251 - INFO - Total Predictions Processed: 600
+Predictions Updated: 106
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-01-19 23:40:24,762 - INFO - Season "2024-25" found.
+2025-01-19 23:40:24,763 - INFO - Starting grading process for season "2024-25".
+2025-01-19 23:40:24,817 - INFO - Fetched 30 actual standings.
+2025-01-19 23:40:24,850 - DEBUG - Position map created with 30 entries.
+2025-01-19 23:40:24,905 - INFO - Fetched 600 standing predictions.
+2025-01-19 23:40:25,078 - INFO - Updated 152 predictions.
+2025-01-19 23:40:25,101 - DEBUG - Aggregated points for 20 users.
+2025-01-19 23:40:25,127 - INFO - Reset points for 21 users in UserStats.
+2025-01-19 23:40:25,216 - INFO - Updated 20 UserStats entries.
+2025-01-19 23:40:25,240 - INFO - Grading process completed successfully.
+2025-01-19 23:40:25,240 - INFO - Total Predictions Processed: 600
+Predictions Updated: 152
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-01-26 00:03:41,266 - INFO - Season "2024-25" found.
+2025-01-26 00:03:41,267 - INFO - Starting grading process for season "2024-25".
+2025-01-26 00:03:41,329 - INFO - Fetched 30 actual standings.
+2025-01-26 00:03:41,360 - DEBUG - Position map created with 30 entries.
+2025-01-26 00:03:41,416 - INFO - Fetched 600 standing predictions.
+2025-01-26 00:03:41,588 - INFO - Updated 72 predictions.
+2025-01-26 00:03:41,616 - DEBUG - Aggregated points for 20 users.
+2025-01-26 00:03:41,648 - INFO - Reset points for 21 users in UserStats.
+2025-01-26 00:03:41,752 - INFO - Updated 20 UserStats entries.
+2025-01-26 00:03:41,782 - INFO - Grading process completed successfully.
+2025-01-26 00:03:41,782 - INFO - Total Predictions Processed: 600
+Predictions Updated: 72
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-01-27 02:26:54,001 - INFO - Season "2024-25" found.
+2025-01-27 02:26:54,003 - INFO - Starting grading process for season "2024-25".
+2025-01-27 02:26:54,048 - INFO - Fetched 30 actual standings.
+2025-01-27 02:26:54,074 - DEBUG - Position map created with 30 entries.
+2025-01-27 02:26:54,123 - INFO - Fetched 600 standing predictions.
+2025-01-27 02:26:54,288 - INFO - Updated 50 predictions.
+2025-01-27 02:26:54,313 - DEBUG - Aggregated points for 20 users.
+2025-01-27 02:26:54,341 - INFO - Reset points for 20 users in UserStats.
+2025-01-27 02:26:54,423 - INFO - Updated 20 UserStats entries.
+2025-01-27 02:26:54,449 - INFO - Grading process completed successfully.
+2025-01-27 02:26:54,450 - INFO - Total Predictions Processed: 600
+Predictions Updated: 50
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-01-28 19:58:39,620 - INFO - Season "2024-25" found.
+2025-01-28 19:58:39,620 - INFO - Starting grading process for season "2024-25".
+2025-01-28 19:58:39,678 - INFO - Fetched 30 actual standings.
+2025-01-28 19:58:39,708 - DEBUG - Position map created with 30 entries.
+2025-01-28 19:58:39,762 - INFO - Fetched 600 standing predictions.
+2025-01-28 19:58:39,941 - INFO - Updated 44 predictions.
+2025-01-28 19:58:39,967 - DEBUG - Aggregated points for 20 users.
+2025-01-28 19:58:39,995 - INFO - Reset points for 20 users in UserStats.
+2025-01-28 19:58:40,091 - INFO - Updated 20 UserStats entries.
+2025-01-28 19:58:40,118 - INFO - Grading process completed successfully.
+2025-01-28 19:58:40,118 - INFO - Total Predictions Processed: 600
+Predictions Updated: 44
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-02-03 02:20:17,802 - INFO - Season "2024-25" found.
+2025-02-03 02:20:17,804 - INFO - Starting grading process for season "2024-25".
+2025-02-03 02:20:17,853 - INFO - Fetched 30 actual standings.
+2025-02-03 02:20:17,885 - DEBUG - Position map created with 30 entries.
+2025-02-03 02:20:17,943 - INFO - Fetched 600 standing predictions.
+2025-02-03 02:20:18,113 - INFO - Updated 36 predictions.
+2025-02-03 02:20:18,144 - DEBUG - Aggregated points for 20 users.
+2025-02-03 02:20:18,177 - INFO - Reset points for 20 users in UserStats.
+2025-02-03 02:20:18,273 - INFO - Updated 20 UserStats entries.
+2025-02-03 02:20:18,303 - INFO - Grading process completed successfully.
+2025-02-03 02:20:18,303 - INFO - Total Predictions Processed: 600
+Predictions Updated: 36
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-02-07 23:17:19,507 - INFO - Season "2024-25" found.
+2025-02-07 23:17:19,508 - INFO - Starting grading process for season "2024-25".
+2025-02-07 23:17:19,566 - INFO - Fetched 30 actual standings.
+2025-02-07 23:17:19,607 - DEBUG - Position map created with 30 entries.
+2025-02-07 23:17:19,673 - INFO - Fetched 600 standing predictions.
+2025-02-07 23:17:19,888 - INFO - Updated 78 predictions.
+2025-02-07 23:17:19,921 - DEBUG - Aggregated points for 20 users.
+2025-02-07 23:17:19,957 - INFO - Reset points for 20 users in UserStats.
+2025-02-07 23:17:20,079 - INFO - Updated 20 UserStats entries.
+2025-02-07 23:17:20,116 - INFO - Grading process completed successfully.
+2025-02-07 23:17:20,116 - INFO - Total Predictions Processed: 600
+Predictions Updated: 78
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-02-12 17:30:49,162 - INFO - Season "2024-25" found.
+2025-02-12 17:30:49,162 - INFO - Starting grading process for season "2024-25".
+2025-02-12 17:30:49,219 - INFO - Fetched 30 actual standings.
+2025-02-12 17:30:49,248 - DEBUG - Position map created with 30 entries.
+2025-02-12 17:30:49,303 - INFO - Fetched 600 standing predictions.
+2025-02-12 17:30:49,527 - INFO - Updated 73 predictions.
+2025-02-12 17:30:49,565 - DEBUG - Aggregated points for 20 users.
+2025-02-12 17:30:49,592 - INFO - Reset points for 20 users in UserStats.
+2025-02-12 17:30:49,754 - INFO - Updated 20 UserStats entries.
+2025-02-12 17:30:49,806 - INFO - Grading process completed successfully.
+2025-02-12 17:30:49,806 - INFO - Total Predictions Processed: 600
+Predictions Updated: 73
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-02-15 14:28:41,777 - INFO - Season "2024-25" found.
+2025-02-15 14:28:41,777 - INFO - Starting grading process for season "2024-25".
+2025-02-15 14:28:41,836 - INFO - Fetched 30 actual standings.
+2025-02-15 14:28:41,866 - DEBUG - Position map created with 30 entries.
+2025-02-15 14:28:41,922 - INFO - Fetched 600 standing predictions.
+2025-02-15 14:28:42,135 - INFO - Updated 22 predictions.
+2025-02-15 14:28:42,168 - DEBUG - Aggregated points for 20 users.
+2025-02-15 14:28:42,203 - INFO - Reset points for 20 users in UserStats.
+2025-02-15 14:28:42,297 - INFO - Updated 20 UserStats entries.
+2025-02-15 14:28:42,334 - INFO - Grading process completed successfully.
+2025-02-15 14:28:42,334 - INFO - Total Predictions Processed: 600
+Predictions Updated: 22
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-02-24 16:09:42,619 - INFO - Season "2024-25" found.
+2025-02-24 16:09:42,619 - INFO - Starting grading process for season "2024-25".
+2025-02-24 16:09:42,681 - INFO - Fetched 30 actual standings.
+2025-02-24 16:09:42,717 - DEBUG - Position map created with 30 entries.
+2025-02-24 16:09:42,777 - INFO - Fetched 600 standing predictions.
+2025-02-24 16:09:43,749 - INFO - Updated 73 predictions.
+2025-02-24 16:09:43,795 - DEBUG - Aggregated points for 20 users.
+2025-02-24 16:09:43,822 - INFO - Reset points for 20 users in UserStats.
+2025-02-24 16:09:43,923 - INFO - Updated 20 UserStats entries.
+2025-02-24 16:09:43,950 - INFO - Grading process completed successfully.
+2025-02-24 16:09:43,950 - INFO - Total Predictions Processed: 600
+Predictions Updated: 73
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-04-01 04:50:24,625 - INFO - Season "2024-25" found.
+2025-04-01 04:50:24,625 - INFO - Starting grading process for season "2024-25".
+2025-04-01 04:50:24,677 - INFO - Fetched 30 actual standings.
+2025-04-01 04:50:24,711 - DEBUG - Position map created with 30 entries.
+2025-04-01 04:50:24,793 - INFO - Fetched 600 standing predictions.
+2025-04-01 04:50:25,060 - INFO - Updated 137 predictions.
+2025-04-01 04:50:25,094 - DEBUG - Aggregated points for 20 users.
+2025-04-01 04:50:25,123 - INFO - Reset points for 20 users in UserStats.
+2025-04-01 04:50:25,240 - INFO - Updated 20 UserStats entries.
+2025-04-01 04:50:25,264 - INFO - Grading process completed successfully.
+2025-04-01 04:50:25,264 - INFO - Total Predictions Processed: 600
+Predictions Updated: 137
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-04-09 02:36:57,061 - INFO - Season "2024-25" found.
+2025-04-09 02:36:57,062 - INFO - Starting grading process for season "2024-25".
+2025-04-09 02:36:57,122 - INFO - Fetched 30 actual standings.
+2025-04-09 02:36:57,152 - DEBUG - Position map created with 30 entries.
+2025-04-09 02:36:57,203 - INFO - Fetched 600 standing predictions.
+2025-04-09 02:36:57,417 - INFO - Updated 102 predictions.
+2025-04-09 02:36:57,460 - DEBUG - Aggregated points for 20 users.
+2025-04-09 02:36:57,488 - INFO - Reset points for 20 users in UserStats.
+2025-04-09 02:36:57,577 - INFO - Updated 20 UserStats entries.
+2025-04-09 02:36:57,609 - INFO - Grading process completed successfully.
+2025-04-09 02:36:57,609 - INFO - Total Predictions Processed: 600
+Predictions Updated: 102
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-04-10 05:44:11,495 - INFO - Season "2024-25" found.
+2025-04-10 05:44:11,496 - INFO - Starting grading process for season "2024-25".
+2025-04-10 05:44:11,576 - INFO - Fetched 30 actual standings.
+2025-04-10 05:44:11,605 - DEBUG - Position map created with 30 entries.
+2025-04-10 05:44:11,721 - INFO - Fetched 600 standing predictions.
+2025-04-10 05:44:11,965 - INFO - Updated 29 predictions.
+2025-04-10 05:44:12,008 - DEBUG - Aggregated points for 20 users.
+2025-04-10 05:44:12,059 - INFO - Reset points for 20 users in UserStats.
+2025-04-10 05:44:12,167 - INFO - Updated 20 UserStats entries.
+2025-04-10 05:44:12,204 - INFO - Grading process completed successfully.
+2025-04-10 05:44:12,204 - INFO - Total Predictions Processed: 600
+Predictions Updated: 29
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-04-12 15:29:02,929 - INFO - Season "2024-25" found.
+2025-04-12 15:29:02,929 - INFO - Starting grading process for season "2024-25".
+2025-04-12 15:29:02,989 - INFO - Fetched 30 actual standings.
+2025-04-12 15:29:03,017 - DEBUG - Position map created with 30 entries.
+2025-04-12 15:29:03,080 - INFO - Fetched 600 standing predictions.
+2025-04-12 15:29:03,232 - INFO - No predictions needed updating.
+2025-04-12 15:29:03,260 - DEBUG - Aggregated points for 20 users.
+2025-04-12 15:29:03,290 - INFO - Reset points for 20 users in UserStats.
+2025-04-12 15:29:03,386 - INFO - Updated 20 UserStats entries.
+2025-04-12 15:29:03,412 - INFO - Grading process completed successfully.
+2025-04-12 15:29:03,412 - INFO - Total Predictions Processed: 600
+Predictions Updated: 0
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-04-12 15:29:14,200 - INFO - Season "2024-25" found.
+2025-04-12 15:29:14,201 - INFO - Starting grading process for season "2024-25".
+2025-04-12 15:29:14,243 - INFO - Fetched 30 actual standings.
+2025-04-12 15:29:14,265 - DEBUG - Position map created with 30 entries.
+2025-04-12 15:29:14,315 - INFO - Fetched 600 standing predictions.
+2025-04-12 15:29:14,465 - INFO - Updated 18 predictions.
+2025-04-12 15:29:14,489 - DEBUG - Aggregated points for 20 users.
+2025-04-12 15:29:14,516 - INFO - Reset points for 20 users in UserStats.
+2025-04-12 15:29:14,595 - INFO - Updated 20 UserStats entries.
+2025-04-12 15:29:14,623 - INFO - Grading process completed successfully.
+2025-04-12 15:29:14,623 - INFO - Total Predictions Processed: 600
+Predictions Updated: 18
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0
+2025-04-13 22:34:17,221 - INFO - Season "2024-25" found.
+2025-04-13 22:34:17,222 - INFO - Starting grading process for season "2024-25".
+2025-04-13 22:34:17,281 - INFO - Fetched 30 actual standings.
+2025-04-13 22:34:17,311 - DEBUG - Position map created with 30 entries.
+2025-04-13 22:34:17,369 - INFO - Fetched 600 standing predictions.
+2025-04-13 22:34:17,554 - INFO - Updated 11 predictions.
+2025-04-13 22:34:17,586 - DEBUG - Aggregated points for 20 users.
+2025-04-13 22:34:17,620 - INFO - Reset points for 20 users in UserStats.
+2025-04-13 22:34:17,715 - INFO - Updated 20 UserStats entries.
+2025-04-13 22:34:17,744 - INFO - Grading process completed successfully.
+2025-04-13 22:34:17,744 - INFO - Total Predictions Processed: 600
+Predictions Updated: 11
+Predictions Skipped: 0
+UserStats Updated: 20
+UserStats Created: 0

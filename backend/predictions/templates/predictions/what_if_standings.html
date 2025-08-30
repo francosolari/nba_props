@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <div id="what-if-standings-root" data-season-slug="{{ season.slug }}"></div>
+    <!-- Your React and JavaScript bundle -->
+    <script src="{% static 'js/bundle.js' %}"></script>
+<!--    &lt;!&ndash; Your custom Tailwind CSS (if not already included in base.html) &ndash;&gt;-->
+<!--    <link href="{% static 'css/styles.css' %}" rel="stylesheet">-->
+{% endblock %}

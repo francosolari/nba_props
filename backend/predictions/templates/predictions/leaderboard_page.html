@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+  <div
+    id="leaderboard-page-root"
+    data-season-slug="{{ season.slug }}"
+    data-logged-in-username="{{ request.user.username }}"
+  ></div>
+</div>
+<script src="{% static 'js/bundle.js' %}"></script>
+{% endblock %}
