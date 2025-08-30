@@ -1,10 +1,20 @@
-# Gemini Development Guide
+# Open Source Contributor's Guide
 
-This document provides a guide for AI-powered development on the NBA Predictions Game project. It outlines the project's architecture, conventions, and key components to ensure that AI-generated code is consistent, maintainable, and aligned with the project's goals.
+This document provides a guide for open-source contributors to the NBA Predictions Game project. It outlines the project's architecture, conventions, and key components to ensure that contributions are consistent, maintainable, and aligned with the project's goals.
 
 ## Project Overview
 
 The NBA Predictions Game is a Django application with a React frontend. The backend is built with Django and Django Ninja, and the frontend is built with React and Tailwind CSS. The project is containerized with Docker and uses a blue-green deployment strategy.
+
+## How to Contribute
+
+We welcome contributions from the open-source community. To contribute, please follow these guidelines:
+
+1.  **Fork the repository** and create a new branch for your changes.
+2.  **Follow the code style** guidelines listed below.
+3.  **Write tests** for your changes.
+4.  **Update the documentation** as needed.
+5.  **Open a pull request** and request a review.
 
 ## Backend
 
@@ -55,6 +65,22 @@ The frontend is styled with Tailwind CSS.
 
 ## Conventions
 
+## Documentation
+
+This project is documented in a series of markdown files. The following is a list of all the markdown files in the project and a brief description of each file:
+
+-   [README.md](./README.md): A brief overview of the project and instructions on how to get started.
+-   [DESIGN_REVIEW.md](./DESIGN_REVIEW.md): A high-level overview of the project's architecture and design.
+-   [CONTRIBUTING.md](./CONTRIBUTING.md): A guide for contributing to the project.
+-   [gemini.md](./gemini.md): A guide for AI-powered development on the project.
+-   [docs/project_overview.md](./docs/project_overview.md): A detailed overview of the project's goals, features, and architecture.
+-   [docs/backend/README.md](./docs/backend/README.md): An overview of the backend, including the project structure, apps, and key components.
+-   [docs/backend/models.md](./docs/backend/models.md): A detailed description of the database schema.
+-   [docs/backend/api.md](./docs/backend/api.md): A detailed description of the v1 and v2 APIs.
+-   [docs/frontend/README.md](./docs/frontend/README.md): An overview of the frontend, including the project structure, components, and state management.
+-   [docs/frontend/components.md](./docs/frontend/components.md): A detailed description of the reusable UI components.
+-   [docs/deployment.md](./docs/deployment.md): Detailed instructions for deploying the application.
+
 ### Code Style
 
 - **Python**: Follow the PEP 8 style guide.
@@ -69,28 +95,3 @@ The frontend is styled with Tailwind CSS.
 
 - **Backend**: Use docstrings for all modules, classes, and functions.
 - **Frontend**: Use JSDoc for all components and functions.
-
-## How to Contribute
-
-## Documentation
-
-This project is documented in a series of markdown files. The following is a list of all the markdown files in the project and a brief description of each file:
-
--   [README.md](./README.md): A brief overview of the project and instructions on how to get started.
--   [DESIGN_REVIEW.md](./DESIGN_REVIEW.md): A high-level overview of the project's architecture and design.
--   [CONTRIBUTING.md](./CONTRIBUTING.md): A guide for contributing to the project.
--   [agents.md](./agents.md): A guide for open-source contributors, both human and AI, on how to contribute to the project.
--   [docs/project_overview.md](./docs/project_overview.md): A detailed overview of the project's goals, features, and architecture.
--   [docs/backend/README.md](./docs/backend/README.md): An overview of the backend, including the project structure, apps, and key components.
--   [docs/backend/models.md](./docs/backend/models.md): A detailed description of the database schema.
--   [docs/backend/api.md](./docs/backend/api.md): A detailed description of the v1 and v2 APIs.
--   [docs/frontend/README.md](./docs/frontend/README.md): An overview of the frontend, including the project structure, components, and state management.
--   [docs/frontend/components.md](./docs/frontend/components.md): A detailed description of the reusable UI components.
--   [docs/deployment.md](./docs/deployment.md): Detailed instructions for deploying the application.
-
-When contributing to the project, please follow these guidelines:
-
-1.  **Create a new branch** for your changes.
-2.  **Write tests** for your changes.
-3.  **Update the documentation** as needed.
-4.  **Open a pull request** and request a review.
