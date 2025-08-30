@@ -12,9 +12,9 @@ const StandingsList = ({ conference, teams }) => (
         <h2 className="text-sm font-semibold">{conference}ern Conference</h2>
       </div>
 
-      <div className="space-y-1 p-1 rounded select-none">
+      <ul className="space-y-1 p-1 rounded select-none list-none">
         {teams.map((team, index) => (
-          <div
+          <li
             key={team.team_id.toString()}
             className={`flex items-center p-1 border rounded text-xs transition-transform duration-100 ease-in-out ${
               conference === 'East' ? 'bg-blue-100' : 'bg-red-100'
@@ -24,9 +24,9 @@ const StandingsList = ({ conference, teams }) => (
             <span className="ml-2 font-bold font-sans" title={team.team_name}>
               {team.team_name}
             </span>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   </div>
 );

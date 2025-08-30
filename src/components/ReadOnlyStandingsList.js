@@ -30,7 +30,7 @@ const ReadOnlyStandingsList = memo(({ conference, predictions }) => {
         </div>
 
         {/* List of teams */}
-        <div className="space-y-1 p-1 rounded">
+        <ul className="space-y-1 p-1 rounded list-none m-0">
           {sorted.map((pred) => {
             let bgColor = '';
             if (pred.points === 3) bgColor = 'bg-green-200';
@@ -38,7 +38,7 @@ const ReadOnlyStandingsList = memo(({ conference, predictions }) => {
             else bgColor = 'bg-white';
 
             return (
-              <div
+              <li
                 key={pred.team_id}
                 className={`flex items-center justify-between p-1 border rounded text-xs ${bgColor}`}
               >
@@ -53,10 +53,10 @@ const ReadOnlyStandingsList = memo(({ conference, predictions }) => {
                 <span className="text-gray-700 font-medium mr-2">
                   {pred.points} pts
                 </span>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
     </div>
   );

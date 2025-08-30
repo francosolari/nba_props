@@ -185,6 +185,7 @@ function SideBySideLeaderboard() {
                 <button
                   onClick={handleCompare}
                   className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 ml-2"
+                  aria-expanded={comparing}
                 >
                   Compare with Myself
                 </button>
@@ -192,6 +193,7 @@ function SideBySideLeaderboard() {
                 <button
                   onClick={() => alert('Please log in first!')}
                   className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 ml-2"
+                  aria-expanded="false"
                 >
                   Log in to Compare
                 </button>
@@ -228,6 +230,7 @@ function SideBySideLeaderboard() {
               <button
                 onClick={handleStopCompare}
                 className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 ml-2"
+                aria-expanded="true"
               >
                 Close
               </button>

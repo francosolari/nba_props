@@ -3,6 +3,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './styles.css';  // Ensure Tailwind CSS is included if not via CDN
+import './styles/utilities.css';  // Import accessibility utilities
 import PredictionBoard from './components/PredictionBoard';
 import Leaderboard from './components/Leaderboard';
 import NBAStandings from './components/NBAStandings';

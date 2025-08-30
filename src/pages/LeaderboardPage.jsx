@@ -1,6 +1,7 @@
 /* LeaderboardPage.jsx */
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
+import useLeaderboard from '../hooks/useLeaderboard';
+import ProgressBar from '../components/ProgressBar';
 import {
   ChevronDown,
   ChevronUp,
@@ -20,31 +21,14 @@ const categoryIcons = {
 };
 
 function LeaderboardPage() {
-  const [leaderboardData, setLeaderboardData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  /* ‣ Set of expanded user‑IDs to keep multiple rows open at once. */
+  // Use our custom hook to fetch and process leaderboard data
+  const { data: leaderboardData, error, isLoading, totals } = useLeaderboard('current');
+
+  /* ‣ Set of expanded user-IDs to keep multiple rows open at once. */
   const [expandedUsers, setExpandedUsers] = useState(new Set());
 
-  // Function to fetch leaderboard data
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        setLoading(true);
-        // Replace 'current' with a dynamic season slug if needed, e.g., from props or route params
-        const response = await axios.get('/api/v2/leaderboard/current');
-        // The API returns {'top_users': [...]}
-        setLeaderboardData(response.data.top_users);
-      } catch (err) {
-        console.error('Error fetching leaderboard:', err);
-        setError('Failed to load leaderboard data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLeaderboard();
-  }, []); // Empty dependency array means this effect runs once on mount
+  /* ‣ Control how many players are visible (for client-side pagination) */
+  const [visibleCount, setVisibleCount] = useState(20); // Default to showing 20 players initially
 
   const toggleUserExpansion = (userId) => {
     const next = new Set(expandedUsers);
@@ -52,7 +36,7 @@ function LeaderboardPage() {
     setExpandedUsers(next);
   };
 
-  /* ‣ Render a little badge or icon for 1st‑3rd place. */
+  /* ‣ Render a little badge or icon for 1st-3rd place. */
   const rankIcon = (rank) => {
     if (rank === 1) return <Trophy className="w-5 h-5 text-yellow-400" />;
     if (rank === 2) return <Star className="w-5 h-5 text-slate-300" />;
@@ -64,7 +48,7 @@ function LeaderboardPage() {
     );
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-indigo-50 to-red-100 p-4 flex items-center justify-center">
         <p className="text-xl text-gray-700">Loading leaderboard...</p>
@@ -89,38 +73,44 @@ function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-indigo-50 to-red-100 p-4">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* ──────────────────────── Header */}
-        <header className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-gray-800">NBA Predictions Leaderboard</h1>
-          <p className="text-lg text-slate-300">
-            Track your predictions and compete with other fans
-          </p>
+        {/* ──────────────────────── Header Section with Title and Metrics Grid */}
+        <section>
+          <header className="text-center space-y-4 mb-6">
+            <h1 className="text-4xl font-bold text-gray-800">NBA Predictions Leaderboard</h1>
+            <p className="text-lg text-slate-400">
+              Track your predictions and compete with other fans
+            </p>
+          </header>
 
-          {/* ─── Stats Cards (You might want to fetch these from API too) */}
-          <section className="grid grid-cols-1 gap-4 mt-8 md:grid-cols-3">
-            {/* Players */}
+          {/* ─── Stats Cards Grid - Stacks on mobile, grid on ≥md */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            {/* Players Card */}
             <div className="bg-gradient-to-br from-white/80 to-indigo-100/80 backdrop-blur-md border border-gray-200 p-6 text-center rounded-xl shadow-lg">
               <Users className="w-8 h-8 mx-auto mb-2 text-blue-400" />
-              <p className="text-2xl font-bold text-indigo-600">{leaderboardData.length}</p>
+              <p className="text-2xl font-bold text-indigo-600">{totals.totalPlayers}</p>
               <p className="text-slate-400">Total Players</p>
             </div>
-            {/* Predictions (Placeholder) */}
+            {/* Predictions Card */}
             <div className="bg-gradient-to-br from-white/80 to-indigo-100/80 backdrop-blur-md border border-gray-200 p-6 text-center rounded-xl shadow-lg">
               <Target className="w-8 h-8 mx-auto mb-2 text-green-400" />
-              <p className="text-2xl font-bold text-indigo-600">N/A</p> {/* Needs API */}
+              <p className="text-2xl font-bold text-indigo-600">
+                {totals.totalPredictions || 'N/A'}
+              </p>
               <p className="text-slate-400">Total Predictions</p>
             </div>
-            {/* Accuracy (Placeholder) */}
+            {/* Accuracy Card */}
             <div className="bg-gradient-to-br from-white/80 to-indigo-100/80 backdrop-blur-md border border-gray-200 p-6 text-center rounded-xl shadow-lg">
               <TrendingUp className="w-8 h-8 mx-auto mb-2 text-purple-400" />
-              <p className="text-2xl font-bold text-indigo-600">N/A</p> {/* Needs API */}
+              <p className="text-2xl font-bold text-indigo-600">
+                {totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(1)}%` : 'N/A'}
+              </p>
               <p className="text-slate-400">Avg Accuracy</p>
             </div>
-          </section>
-        </header>
+          </div>
+        </section>
 
-        {/* ──────────────────────── Leaderboard */}
-        <section className="bg-white/70 border border-gray-200 rounded-xl shadow-lg">
+        {/* ──────────────────────── Leaderboard Table Section */}
+        <section className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg">
           {/* Title */}
           <div className="flex items-center gap-2 p-4 border-b border-gray-200">
             <Trophy className="w-6 h-6 text-yellow-500" />
@@ -129,9 +119,9 @@ function LeaderboardPage() {
 
           {/* Rows */}
           <div className="divide-y divide-gray-200">
-            {leaderboardData.map((entry, index) => (
+            {leaderboardData.slice(0, visibleCount).map((entry) => (
               <div key={entry.user.id} className="bg-white/60">
-                {/* ─── Collapsed row */}
+                {/* ─── Row (click to expand/collapse) */}
                 <button
                   type="button"
                   onClick={() => toggleUserExpansion(entry.user.id)}
@@ -139,21 +129,32 @@ function LeaderboardPage() {
                 >
                   {/* Left side (rank, avatar, name) */}
                   <div className="flex items-center gap-4">
-                    {rankIcon(index + 1)} {/* Rank based on index */}
+                    {rankIcon(entry.rank)}
+
                     <div className="relative w-10 h-10">
                       <img
-                        src="/placeholder.svg?height=40&width=40" // Placeholder for now
-                        alt={`${entry.user.display_name} avatar`}
+                        src={entry.user.avatar || '/placeholder.svg?height=40&width=40'}
+                        alt={`${entry.user.display_name || entry.user.username} avatar`}
                         className="w-full h-full rounded-full object-cover border border-slate-600"
-                        onError={(e) => (e.target.style.display = 'none')}
+                        onError={(e) => (e.currentTarget.style.display = 'none')}
                       />
                       <span className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-700 text-xs font-semibold text-gray-800">
-                        {entry.user.display_name ? entry.user.display_name.slice(0, 2).toUpperCase() : '??'}
+                        {(entry.user.display_name || entry.user.username)
+                          .slice(0, 2)
+                          .toUpperCase()}
                       </span>
                     </div>
+
                     <div>
-                      <p className="font-semibold text-gray-800">{entry.user.display_name || entry.user.username}</p>
-                      <p className="text-sm text-slate-400">Accuracy: N/A</p> {/* Needs API */}
+                      <p className="font-semibold text-gray-800">
+                        {entry.user.display_name || entry.user.username}
+                      </p>
+                      <p className="text-sm text-slate-400">
+                        Accuracy:{' '}
+                        {entry.user.accuracy !== undefined
+                          ? `${entry.user.accuracy}%`
+                          : '—%'}
+                      </p>
                     </div>
                   </div>
 
@@ -162,33 +163,28 @@ function LeaderboardPage() {
                     {/* Points */}
                     <div className="text-right">
                       <p className="text-2xl font-bold text-gray-800">
-                        {entry.points*1000}
+                        {entry.user.total_points.toLocaleString()}
                       </p>
                       <p className="text-sm text-slate-400">Total Points</p>
                     </div>
 
-                    {/* Small progress bars for each category (Placeholder for now) */}
+                    {/* Small progress bars for each category */}
                     <div className="flex items-center gap-2">
-                      {/* You'll need to extend your API to provide this data */}
-                      {/*
-                      {Object.entries(user.categories).map(([cat, data]) => {
-                        const pct = (data.points / data.maxPoints) * 100
-                        return (
-                          <div key={cat} className="text-center">
-                            <p className="mb-1 text-xs text-slate-400">
-                              {cat.split(' ')[0]}
-                            </p>
-                            <div className="w-12 h-2 rounded-full bg-gray-200 overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-indigo-500 to-pink-500"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                            <p className="mt-1 text-xs text-black">{data.points}</p>
-                          </div>
-                        )
-                      })}
-                      */}
+                      {Object.entries(entry.user.categories).map(([category, data]) => (
+                        <div key={category} className="text-center">
+                          <p className="mb-1 text-xs text-slate-400">
+                            {category.split(' ')[0]}
+                          </p>
+                          <ProgressBar
+                            value={data.points}
+                            max={data.max_points}
+                            size="sm"
+                            color="bg-blue-500"
+                            bgColor="bg-gray-200"
+                          />
+                          <p className="mt-1 text-xs text-black">{data.points}</p>
+                        </div>
+                      ))}
                     </div>
 
                     {/* Expand / collapse icon */}
@@ -205,7 +201,9 @@ function LeaderboardPage() {
                   <div className="px-4 pb-4">
                     <div className="grid gap-4 lg:grid-cols-3">
                       {/* You'll need to extend your API to provide this data */}
-                      <p className="text-gray-500 col-span-3">Detailed prediction breakdown not available yet.</p>
+                      <p className="text-gray-500 col-span-3">
+                        Detailed prediction breakdown not available yet.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -214,12 +212,17 @@ function LeaderboardPage() {
           </div>
         </section>
 
-        {/* ──────────────────────── Load More (placeholder) */}
-        <div className="text-center">
-          <button className="px-4 py-2 border rounded-lg bg-slate-800 text-white border-slate-600 hover:bg-slate-700">
-            Load More Players
-          </button>
-        </div>
+        {/* ──────────────────────── Load More */}
+        {visibleCount < leaderboardData.length && (
+          <div className="text-center mt-6 mb-8">
+            <button
+              className="px-4 py-2 border rounded-lg bg-slate-800 text-white border-slate-600 hover:bg-slate-700 transition-colors"
+              onClick={() => setVisibleCount((prevCount) => prevCount + 20)} // Show 20 more players when clicked
+            >
+              Load More Players ({visibleCount} of {leaderboardData.length})
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
