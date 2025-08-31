@@ -10,7 +10,8 @@
     "django": "venv/bin/python backend/manage.py runserver 127.0.0.1:8000",
     "webpack-watch": "./frontend/node_modules/.bin/webpack --watch --config frontend/webpack.config.js",
     "dev": "bash ./scripts/dev.sh",
-    "build": "./frontend/node_modules/.bin/webpack --mode production --config frontend/webpack.config.js"
+    "build": "./frontend/node_modules/.bin/webpack --mode production --config frontend/webpack.config.js",
+    "fetch:team-slugs": "node scripts/fetch_nba_team_slugs.js"
   },
   "author": "Franco Solari",
   "license": "ISC",
