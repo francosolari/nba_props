@@ -237,17 +237,22 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                     {rankIcon(entry.rank)}
 
                     <div className="relative w-10 h-10">
-                      <img
-                        src={entry.user.avatar || '/placeholder.svg?height=40&width=40'}
-                        alt={`${entry.user.display_name || entry.user.username} avatar`}
-                        className="w-full h-full rounded-full object-cover border border-slate-600"
-                        onError={(e) => (e.currentTarget.style.display = 'none')}
-                      />
-                      <span className="absolute inset-0 flex items-center justify-center rounded-full bg-slate-700 text-xs font-semibold text-gray-800">
-                        {(entry.user.display_name || entry.user.username)
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </span>
+                      {entry.user.avatar ? (
+                        <img
+                          src={entry.user.avatar}
+                          alt={`${entry.user.display_name || entry.user.username} avatar`}
+                          className="w-full h-full rounded-full object-cover border border-slate-300"
+                          onError={(e) => (e.currentTarget.style.display = 'none')}
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-full border border-slate-300 bg-slate-100 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-slate-600">
+                            {(entry.user.display_name || entry.user.username)
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div>
