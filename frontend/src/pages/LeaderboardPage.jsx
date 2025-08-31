@@ -54,7 +54,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-fuchsia-100 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
         <div className="w-full max-w-3xl animate-pulse space-y-6">
           <div className="h-10 bg-white/70 rounded-xl" />
           {[...Array(6)].map((_, i) => (
@@ -67,7 +67,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-fuchsia-100 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
         <div className="bg-white/80 border border-rose-200 rounded-xl shadow-lg p-6">
           <p className="text-lg text-rose-600 font-semibold">{String(error)}</p>
         </div>
@@ -100,20 +100,49 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
     return { rights: pick(rights, 3), wrongs: pick(wrongs, 3) };
   };
 
-  const CategoryCard = ({ icon: Icon, title, data, detailsHref }) => {
+  const CategoryCard = ({ icon: Icon, title, data, detailsHref, userId }) => {
     const pts = data?.points || 0;
     const max = data?.max_points || 0;
     const pct = max > 0 ? Math.round((pts / max) * 100) : 0;
-    const { rights, wrongs } = getSamples(data?.predictions, data?.interesting);
+    // Stable sampling per user+category to avoid changing lists across re-renders
+    const { rights, wrongs } = React.useMemo(() => {
+      if (data?.interesting && (data.interesting.hard_wins?.length || data.interesting.easy_misses?.length)) {
+        return {
+          rights: (data.interesting.hard_wins || []).slice(0, 3),
+          wrongs: (data.interesting.easy_misses || []).slice(0, 3),
+        };
+      }
+      const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
+      const withFlags = predictions.map(p => ({
+        ...p,
+        _isRight: typeof p.correct === 'boolean' ? p.correct : (typeof p.points === 'number' && p.points > 0),
+      }));
+      const r = withFlags.filter(p => p._isRight);
+      const w = withFlags.filter(p => p._isRight === false);
+      // Simple seeded pick based on userId + title
+      const seedStr = String(userId || '') + '|' + String(title || '');
+      let seed = 0; for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+      const pickN = (arr, n) => {
+        const out = [];
+        if (!arr.length) return out;
+        let s = seed ^ (n * 2654435761 >>> 0);
+        for (let i = 0; i < Math.min(n, arr.length); i++) {
+          s = (s * 1664525 + 1013904223) >>> 0; // LCG
+          const idx = s % arr.length;
+          out.push(arr[idx]);
+        }
+        return out;
+      };
+      return { rights: pickN(r, 3), wrongs: pickN(w, 3) };
+    }, [data?.predictions, data?.interesting, userId, title]);
     return (
-      <div className={`group relative overflow-hidden rounded-2xl border ${data?.is_best ? 'border-emerald-300' : 'border-slate-200/70'} bg-gradient-to-br from-white/80 to-white/40 shadow-xl backdrop-blur-md`}>
-        <div className="absolute -top-10 -right-10 h-32 w-32 rotate-12 bg-gradient-to-tr from-indigo-100 to-fuchsia-100 rounded-full blur-2xl opacity-70" />
+      <div className={`group relative overflow-hidden rounded-2xl border ${data?.is_best ? 'border-emerald-300' : 'border-slate-200/70'} bg-white/80 shadow-xl backdrop-blur-md`}>
         <div className="p-5 space-y-4 relative">
           {data?.is_best && (
             <div className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">Top in category</div>
           )}
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+            <div className="p-2.5 rounded-xl bg-teal-50 text-teal-600 border border-teal-100">
               <Icon className="w-5 h-5" />
             </div>
             <div>
@@ -163,8 +192,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* ──────────────────────── Header Section with Title and Metrics Grid */}
         <section>
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white/70 shadow-2xl mb-6">
-            <div className="absolute inset-0 bg-[radial-gradient(40%_60%_at_0%_0%,rgba(56,189,248,0.12),transparent_60%),radial-gradient(40%_60%_at_100%_0%,rgba(16,185,129,0.12),transparent_60%)]" />
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white/70 shadow-xl mb-6">
             <div className="relative px-6 py-10 md:px-10 md:py-12">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div>
@@ -174,44 +202,22 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                 <div className="grid grid-cols-3 divide-x divide-slate-200 rounded-2xl bg-white/60 backdrop-blur px-4 py-3 border border-slate-200">
                   <div className="px-3 text-center">
                     <div className="text-xs uppercase tracking-wide text-slate-400">Players</div>
-                    <div className="text-xl font-bold text-indigo-600">{totals.totalPlayers}</div>
+                    <div className="text-xl font-bold text-teal-600">{totals.totalPlayers}</div>
                   </div>
                   <div className="px-3 text-center">
                     <div className="text-xs uppercase tracking-wide text-slate-400">Predictions</div>
-                    <div className="text-xl font-bold text-indigo-600">{totals.totalPredictions || '—'}</div>
+                    <div className="text-xl font-bold text-teal-600">{totals.totalPredictions || '—'}</div>
                   </div>
                   <div className="px-3 text-center">
                     <div className="text-xs uppercase tracking-wide text-slate-400">Avg Accuracy</div>
-                    <div className="text-xl font-bold text-indigo-600">{totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(0)}%` : '—'}</div>
+                    <div className="text-xl font-bold text-teal-600">{totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(0)}%` : '—'}</div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ─── Stats Cards Grid - Stacks on mobile, grid on ≥md */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            {/* Players Card */}
-            <div className="bg-gradient-to-br from-white/80 to-indigo-100/80 backdrop-blur-md border border-gray-200 p-6 text-center rounded-xl shadow-lg">
-              <Users className="w-8 h-8 mx-auto mb-2 text-blue-400" />
-              <p className="text-2xl font-bold text-indigo-600">{totals.totalPlayers}</p>
-              <p className="text-slate-400">Total Players</p>
-            </div>
-            {/* Predictions Card */}
-            <div className="bg-gradient-to-br from-white/80 to-indigo-100/80 backdrop-blur-md border border-gray-200 p-6 text-center rounded-xl shadow-lg">
-              <Target className="w-8 h-8 mx-auto mb-2 text-green-400" />
-              <p className="text-2xl font-bold text-indigo-600">
-                {totals.totalPredictions || 'N/A'}
-              </p>
-              <p className="text-slate-400">Total Predictions</p>
-            </div>
-            {/* Accuracy Card */}
-            <div className="bg-gradient-to-br from-white/80 to-indigo-100/80 backdrop-blur-md border border-gray-200 p-6 text-center rounded-xl shadow-lg">
-              <TrendingUp className="w-8 h-8 mx-auto mb-2 text-purple-400" />
-              <p className="text-2xl font-bold text-indigo-600">{totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(1)}%` : 'N/A'}</p>
-              <p className="text-slate-400">Avg Accuracy</p>
-            </div>
-          </div>
+          {/* Removed duplicate stats cards (players, predictions, accuracy) per request */}
         </section>
 
         {/* ──────────────────────── Leaderboard Table Section */}
@@ -230,7 +236,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                 <button
                   type="button"
                   onClick={() => toggleUserExpansion(entry.user.id)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-indigo-50/60 transition-colors"
+                  className="w-full p-4 flex items-center justify-between hover:bg-teal-50/60 transition-colors"
                 >
                   {/* Left side (rank, avatar, name) */}
                   <div className="flex items-center gap-4">
@@ -287,7 +293,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                           <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">
                             {category.replace('Regular Season ', 'Reg. ')}
                           </p>
-                          <ProgressBar value={data.points} max={data.max_points} size="sm" color="bg-indigo-500" bgColor="bg-slate-200" />
+                          <ProgressBar value={data.points} max={data.max_points} size="sm" color="bg-teal-500" bgColor="bg-slate-200" />
                           <p className="mt-1 text-[11px] text-slate-600">{data.points}/{data.max_points}</p>
                         </div>
                       ))}
@@ -306,9 +312,9 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                 {expandedUsers.has(entry.user.id) && (
                   <div className="px-4 pb-6">
                     <div className="grid gap-4 lg:grid-cols-3">
-                      <CategoryCard icon={BarChart3} title="Regular Season Standings" data={getCategory(entry, 'Regular Season Standings')} detailsHref={`/page-detail/${seasonSlug}/?section=standings&user=${entry.user.id}`} />
-                      <CategoryCard icon={Award} title="Player Awards" data={getCategory(entry, 'Player Awards')} detailsHref={`/page-detail/${seasonSlug}/?section=awards&user=${entry.user.id}`} />
-                      <CategoryCard icon={ListChecks} title="Props & Yes/No" data={getCategory(entry, 'Props & Yes/No')} detailsHref={`/page-detail/${seasonSlug}/?section=props&user=${entry.user.id}`} />
+                      <CategoryCard icon={BarChart3} title="Regular Season Standings" userId={entry.user.id} data={getCategory(entry, 'Regular Season Standings')} detailsHref={`/page-detail/${seasonSlug}/?section=standings&user=${entry.user.id}`} />
+                      <CategoryCard icon={Award} title="Player Awards" userId={entry.user.id} data={getCategory(entry, 'Player Awards')} detailsHref={`/page-detail/${seasonSlug}/?section=awards&user=${entry.user.id}`} />
+                      <CategoryCard icon={ListChecks} title="Props & Yes/No" userId={entry.user.id} data={getCategory(entry, 'Props & Yes/No')} detailsHref={`/page-detail/${seasonSlug}/?section=props&user=${entry.user.id}`} />
                     </div>
                   </div>
                 )}

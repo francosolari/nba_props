@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Base typography tweaks for modern, Apple-like rendering */
+@layer base {
+  html {
+    @apply font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  /* Optional: slightly tighter headings; components already set sizes */
+  h1, h2, h3 {
+    letter-spacing: -0.01em;
+  }
+}
