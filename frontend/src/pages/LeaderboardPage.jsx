@@ -208,9 +208,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
             {/* Accuracy Card */}
             <div className="bg-gradient-to-br from-white/80 to-indigo-100/80 backdrop-blur-md border border-gray-200 p-6 text-center rounded-xl shadow-lg">
               <TrendingUp className="w-8 h-8 mx-auto mb-2 text-purple-400" />
-              <p className="text-2xl font-bold text-indigo-600">
-                {totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(1)}%` : 'N/A'}
-              </p>
+              <p className="text-2xl font-bold text-indigo-600">{totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(1)}%` : 'N/A'}</p>
               <p className="text-slate-400">Avg Accuracy</p>
             </div>
           </div>
@@ -263,12 +261,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                           </span>
                         ))}
                       </div>
-                      <p className="text-sm text-slate-400">
-                        Accuracy:{' '}
-                        {entry.user.accuracy !== undefined
-                          ? `${entry.user.accuracy}%`
-                          : '—%'}
-                      </p>
+                      {/* Per-row accuracy removed by request (keep per-category only) */}
                     </div>
                   </div>
 

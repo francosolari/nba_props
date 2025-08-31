@@ -90,35 +90,32 @@ function useLeaderboard(seasonSlug = 'current') {
     if (!Array.isArray(leaderboardData) || leaderboardData.length === 0) {
       return { totalPlayers: 0, totalPredictions: 0, avgAccuracy: 0 };
     }
-    
+
     const totalPlayers = leaderboardData.length;
-    
-    // Calculate total predictions if categories data is available
+
+    // Aggregate totals across all users/categories
     let totalPredictions = 0;
-    let totalAccuracy = 0;
-    let usersWithAccuracy = 0;
-    
+    let correctCount = 0;
+    let consideredCount = 0;
+
     leaderboardData.forEach((entry) => {
       const cats = entry?.user?.categories || entry?.categories || {};
-      if (Array.isArray(cats)) {
-        totalPredictions += cats.reduce((sum, c) => sum + (c?.predictions?.length || 0), 0);
-      } else if (cats && typeof cats === 'object') {
-        totalPredictions += Object.values(cats).reduce((sum, c) => sum + (c?.predictions?.length || 0), 0);
-      }
-      
-      // Handle accuracy calculation if available
-      if (entry.user && typeof entry.user.accuracy === 'number') {
-        totalAccuracy += entry.user.accuracy;
-        usersWithAccuracy++;
-      } else if (typeof entry.accuracy === 'number') {
-        totalAccuracy += entry.accuracy;
-        usersWithAccuracy++;
-      }
+      const catList = Array.isArray(cats) ? cats : Object.values(cats || {});
+      catList.forEach((c) => {
+        const preds = c?.predictions || [];
+        totalPredictions += preds.length;
+        preds.forEach((p) => {
+          // Only consider predictions with a resolved result
+          if (p && typeof p.correct === 'boolean') {
+            consideredCount += 1;
+            if (p.correct) correctCount += 1;
+          }
+        });
+      });
     });
-    
-    // Calculate average accuracy
-    const avgAccuracy = usersWithAccuracy > 0 ? totalAccuracy / usersWithAccuracy : 0;
-    
+
+    const avgAccuracy = consideredCount > 0 ? correctCount / consideredCount : 0;
+
     return { totalPlayers, totalPredictions, avgAccuracy };
   }, [leaderboardData]);
   

@@ -192,10 +192,10 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
         preds = [
             p for cat in u["categories"].values()
             for p in cat["predictions"]
-            if p["correct"] is not None
+            if p.get("correct") is not None
         ]
         if preds:
-            correct_cnt = sum(1 for p in preds if p["correct"])
+            correct_cnt = sum(1 for p in preds if p.get("correct"))
             u["accuracy"] = round(100 * correct_cnt / len(preds))
         leaderboard.append(u)
 
