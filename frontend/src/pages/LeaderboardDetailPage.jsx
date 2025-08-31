@@ -24,6 +24,9 @@ function LeaderboardDetailPage({ seasonSlug = 'current' }) {
   const [whatIfEnabled, setWhatIfEnabled] = useState(false);
   const [showWhatIfConfirm, setShowWhatIfConfirm] = useState(false);
   const [pinnedUserIds, setPinnedUserIds] = useState([]);
+  const [collapsedWest, setCollapsedWest] = useState(false);
+  const [collapsedEast, setCollapsedEast] = useState(false);
+  
 
   const usersMap = useMemo(() => {
     const m = new Map();
@@ -121,6 +124,7 @@ useEffect(() => {
       const newTotal = otherPts + simStandPts;
       return {
         ...e,
+        __orig_total_points: e.user.total_points,
         user: {
           ...e.user,
           total_points: newTotal,
@@ -229,12 +233,15 @@ useEffect(() => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {['standings','awards','props'].map(s => (
-            <button key={s} onClick={() => setSection(s)}
-              className={`px-3 py-1.5 rounded-lg border text-sm ${section===s? 'bg-slate-900 text-white border-slate-900':'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
-              {fromSectionKey(s)}
-            </button>
-          ))}
+          {['standings','awards','props'].map(s => {
+            const Icon = s==='standings'? Trophy : (s==='awards'? Award : Target);
+            return (
+              <button key={s} onClick={() => setSection(s)}
+                className={`px-3 py-1.5 rounded-full border text-sm inline-flex items-center gap-2 ${section===s? 'bg-slate-900 text-white border-slate-900 shadow-sm':'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
+                <Icon className="w-4 h-4" /> {fromSectionKey(s)}
+              </button>
+            );
+          })}
           <div className="h-6 w-px bg-slate-200 mx-1" />
           {['showcase','compare'].map(m => (
             <button key={m} onClick={() => setMode(m)}
@@ -252,8 +259,8 @@ useEffect(() => {
               <option value="total">Sort: Total pts</option>
               <option value="name">Sort: Name</option>
             </select>
-            <label className={`inline-flex items-center gap-2 text-sm rounded-lg px-2 py-1 border ${section==='standings' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-400'}`} title={section==='standings' ? 'Simulate by dragging rows in the grid' : 'What‑If available in Regular Season Standings tab'}>
-              <input type="checkbox" className="accent-emerald-600" checked={whatIfEnabled && section==='standings'} onChange={(e)=> setWhatIfEnabled(e.target.checked)} disabled={section!=='standings'} /> What‑If
+            <label className={`inline-flex items-center gap-2 text-sm rounded-lg px-2 py-1 border ${section==='standings' ? (whatIfEnabled ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-300') : 'bg-slate-50 text-slate-400 border-slate-200'}`} title={section==='standings' ? 'Simulate by dragging rows in the grid' : 'What‑If available in Regular Season Standings tab'}>
+              <input type="checkbox" className="accent-slate-700" checked={whatIfEnabled && section==='standings'} onChange={(e)=> setWhatIfEnabled(e.target.checked)} disabled={section!=='standings'} /> What‑If
             </label>
             {section==='standings' && whatIfEnabled && (
               <button className="text-sm px-2 py-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50" onClick={()=>{ setWhatIfEnabled(false); setWestOrder([]); setEastOrder([]); }} title="Reset to actual">
@@ -445,15 +452,15 @@ useEffect(() => {
                      <col key={`u-${idx}`} style={{ width: 108 }} />
                    ))}
                  </colgroup>
-                 <thead className="bg-slate-50/80">
-                   <tr>
-                     <th className="sticky left-0 z-10 bg-slate-50/80 backdrop-blur px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200" style={{ minWidth: teamColWidth, width: teamColWidth }}>Team</th>
-                     <th className="text-left text-xs font-semibold text-slate-500 border-b border-slate-200" style={{ position:'sticky', left: teamColWidth, background:'rgba(248,250,252,0.8)', backdropFilter:'blur(4px)' }}>Actual</th>
+                 <thead className="bg-slate-50/80 sticky top-0 z-20">
+                  <tr>
+                     <th className="sticky left-0 z-10 bg-slate-50/80 backdrop-blur px-3 py-2 text-left text-sm font-semibold text-slate-600 border-b border-slate-200" style={{ minWidth: teamColWidth, width: teamColWidth }}>Team</th>
+                     <th className="text-left text-sm font-semibold text-slate-600 border-b border-slate-200" style={{ position:'sticky', left: teamColWidth, background:'rgba(248,250,252,0.8)', backdropFilter:'blur(4px)' }}>Actual</th>
                     {displayedUsers.map((e) => {
                       const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
                       const totalPts = e.user.total_points || 0;
                       return (
-                        <th key={`h-${e.user.id}`} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200 align-top" title={`Stand: ${standPts} • Total: ${totalPts}`}>
+                        <th key={`h-${e.user.id}`} className="px-3 py-2 text-left text-sm font-semibold text-slate-600 border-b border-slate-200 align-top" title={`Stand: ${standPts} • Total: ${totalPts}`}>
                           <div className="flex items-center gap-2">
                             <span className="text-slate-700">{e.user.display_name || e.user.username}</span>
                             <button onClick={()=> setPinnedUserIds(prev => prev.includes(String(e.user.id)) ? prev.filter(id => String(id)!==String(e.user.id)) : [...prev, String(e.user.id)])} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600':''}`}>
@@ -476,8 +483,15 @@ useEffect(() => {
                  </thead>
                  <tbody>
                 {/* West header */}
-                <tr><td className="sticky left-0 z-10 bg-rose-50/60 backdrop-blur px-3 py-2 text-[11px] uppercase tracking-wide text-slate-500 border-b border-slate-200" colSpan={2+displayedUsers.length}>West</td></tr>
-                 </tbody>
+                <tr>
+                  <td className="sticky left-0 z-10 bg-rose-50/60 backdrop-blur px-3 py-2 text-[11px] uppercase tracking-wide text-slate-600 border-b border-slate-200" colSpan={2+displayedUsers.length}>
+                    <button onClick={()=>setCollapsedWest(v=>!v)} className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900">
+                      <span className={`inline-block transition-transform ${collapsedWest? '-rotate-90' : 'rotate-0'}`}>▾</span>
+                      West
+                    </button>
+                  </td>
+                </tr>
+                </tbody>
                 <DragDropContext onDragEnd={(result)=>{
                   const {source, destination} = result; if(!destination) return; if(!whatIfEnabled){ setShowWhatIfConfirm(true); return; }
                   if(source.droppableId==='west' && destination.droppableId==='west'){
@@ -486,13 +500,13 @@ useEffect(() => {
                 }}>
                   <Droppable droppableId="west" isDropDisabled={!whatIfEnabled}>
                     {(provided)=> (
-                      <tbody ref={provided.innerRef} {...provided.droppableProps}>
+                      <tbody ref={provided.innerRef} {...provided.droppableProps} style={{ display: collapsedWest ? 'none' : undefined }}>
                         {(westOrder.length? westOrder.map((it,idx)=>({team: it.team, conference:'West', actual_position: standingsTeams.find(r=>r.team===it.team)?.actual_position })) : standingsTeams.filter(r=> (r.conference||'').toLowerCase().startsWith('w'))).map((row, index)=> (
                           <Draggable key={`W-${row.team}`} draggableId={`W-${row.team}`} index={index} isDragDisabled={!whatIfEnabled}>
                             {(prov)=> {
                               const isChanged = whatIfEnabled && ((simActualMap.get(row.team) ?? row.actual_position) !== (row.actual_position ?? null));
                               return (
-                              <tr ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps} className={isChanged ? 'bg-amber-50' : ''}>
+                              <tr ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps} className={isChanged ? 'bg-amber-50' : (index % 2 === 0 ? 'bg-white/70' : 'bg-white/40')}>
                                 <td className="sticky left-0 z-10 bg-white/90 backdrop-blur px-3 py-2 text-sm font-medium text-slate-800 border-b border-slate-100" style={{ minWidth: teamColWidth, width: teamColWidth }}>
                                   <div className="flex items-center gap-2">
                                     <span className="inline-flex w-1.5 h-1.5 rounded-full" style={{backgroundColor:'#ef4444'}}/>
@@ -548,7 +562,14 @@ useEffect(() => {
                 </DragDropContext>
                 {/* East header */}
                 <tbody>
-                <tr><td className="sticky left-0 z-10 bg-sky-50/60 backdrop-blur px-3 py-2 text-[11px] uppercase tracking-wide text-slate-500 border-b border-slate-200" colSpan={2+displayedUsers.length}>East</td></tr>
+                <tr>
+                  <td className="sticky left-0 z-10 bg-sky-50/60 backdrop-blur px-3 py-2 text-[11px] uppercase tracking-wide text-slate-600 border-b border-slate-200" colSpan={2+displayedUsers.length}>
+                    <button onClick={()=>setCollapsedEast(v=>!v)} className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900">
+                      <span className={`inline-block transition-transform ${collapsedEast? '-rotate-90' : 'rotate-0'}`}>▾</span>
+                      East
+                    </button>
+                  </td>
+                </tr>
                 </tbody>
                 <DragDropContext onDragEnd={(result)=>{
                   const {source, destination} = result; if(!destination) return; if(!whatIfEnabled){ setShowWhatIfConfirm(true); return; }
@@ -558,13 +579,13 @@ useEffect(() => {
                 }}>
                   <Droppable droppableId="east" isDropDisabled={!whatIfEnabled}>
                     {(provided)=> (
-                      <tbody ref={provided.innerRef} {...provided.droppableProps}>
+                      <tbody ref={provided.innerRef} {...provided.droppableProps} style={{ display: collapsedEast ? 'none' : undefined }}>
                         {(eastOrder.length? eastOrder.map((it,idx)=>({team: it.team, conference:'East', actual_position: standingsTeams.find(r=>r.team===it.team)?.actual_position })) : standingsTeams.filter(r=> (r.conference||'').toLowerCase().startsWith('e'))).map((row, index)=> (
                           <Draggable key={`E-${row.team}`} draggableId={`E-${row.team}`} index={index} isDragDisabled={!whatIfEnabled}>
                             {(prov)=> {
                               const isChanged = whatIfEnabled && ((simActualMap.get(row.team) ?? row.actual_position) !== (row.actual_position ?? null));
                               return (
-                              <tr ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps} className={isChanged ? 'bg-amber-50' : ''}>
+                              <tr ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps} className={isChanged ? 'bg-amber-50' : (index % 2 === 0 ? 'bg-white/70' : 'bg-white/40')}>
                                 <td className="sticky left-0 z-10 bg-white/90 backdrop-blur px-3 py-2 text-sm font-medium text-slate-800 border-b border-slate-100" style={{ minWidth: teamColWidth, width: teamColWidth }}>
                                   <div className="flex items-center gap-2">
                                     <span className="inline-flex w-1.5 h-1.5 rounded-full" style={{backgroundColor:'#0ea5e9'}}/>
@@ -783,17 +804,29 @@ useEffect(() => {
           </div>
         )}
       </div>
-      {/* Floating Top 3 */}
+      {/* Floating Top 3 card (simple) with delta */}
       <div className="fixed bottom-4 right-4 z-40">
-        <div className="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur shadow-xl p-3 w-64">
+        <div className="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur shadow-xl p-3 w-72">
           <div className="text-xs uppercase tracking-wide text-slate-400 mb-2">{whatIfEnabled ? 'Simulated' : 'Current'} Top 3</div>
           <ol className="space-y-1">
-            {(withSimTotals||[]).slice(0,3).map((e,idx)=> (
+            {(withSimTotals||[]).slice(0,3).map((e,idx)=> {
+              const medal = idx===0? 'bg-yellow-100 text-yellow-800 border-yellow-200' : idx===1? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-amber-100 text-amber-800 border-amber-200';
+              const delta = whatIfEnabled && typeof e.__orig_total_points === 'number' ? (e.user.total_points - e.__orig_total_points) : 0;
+              return (
               <li key={`f-${e.user.id}`} className="flex items-center justify-between text-sm">
-                <span className="text-slate-700">{idx+1}. {e.user.display_name || e.user.username}</span>
-                <span className="font-semibold text-emerald-700">{e.user.total_points}</span>
+                <span className="flex items-center gap-2 text-slate-700">
+                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full border text-[11px] ${medal}`}>{idx+1}</span>
+                  {e.user.display_name || e.user.username}
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="font-semibold text-emerald-700">{e.user.total_points}</span>
+                  {whatIfEnabled && delta !== 0 && (
+                    <span className={`text-[11px] ${delta>0? 'text-emerald-600' : 'text-rose-600'}`} title="Δ vs. current">{delta>0? '+' : ''}{delta}</span>
+                  )}
+                </span>
               </li>
-            ))}
+              );
+            })}
           </ol>
         </div>
       </div>
