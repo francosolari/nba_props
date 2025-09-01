@@ -46,7 +46,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
     if (rank === 2) return <Star className="w-5 h-5 text-slate-300" />;
     if (rank === 3) return <Award className="w-5 h-5 text-amber-500" />;
     return (
-      <span className="w-5 h-5 flex items-center justify-center text-sm font-bold text-black">
+      <span className="w-5 h-5 flex items-center justify-center text-sm font-bold text-black dark:text-white">
         {rank}
       </span>
     );
@@ -54,11 +54,11 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-center">
         <div className="w-full max-w-3xl animate-pulse space-y-6">
-          <div className="h-10 bg-white/70 rounded-xl" />
+          <div className="h-10 bg-slate-200/70 dark:bg-slate-800/70 rounded-xl" />
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-16 bg-white/60 rounded-xl shadow-sm" />
+            <div key={i} className="h-16 bg-slate-200/60 dark:bg-slate-800/60 rounded-xl shadow-sm" />
           ))}
         </div>
       </div>
@@ -67,9 +67,9 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
-        <div className="bg-white/80 border border-rose-200 rounded-xl shadow-lg p-6">
-          <p className="text-lg text-rose-600 font-semibold">{String(error)}</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-center">
+        <div className="bg-white/80 dark:bg-slate-800/80 border border-rose-200 dark:border-rose-500/30 rounded-xl shadow-lg p-6">
+          <p className="text-lg text-rose-600 dark:text-rose-400 font-semibold">{String(error)}</p>
         </div>
       </div>
     );
@@ -136,42 +136,42 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
       return { rights: pickN(r, 3), wrongs: pickN(w, 3) };
     }, [data?.predictions, data?.interesting, userId, title]);
     return (
-      <div className={`group relative overflow-hidden rounded-2xl border ${data?.is_best ? 'border-emerald-300' : 'border-slate-200/70'} bg-white/80 shadow-xl backdrop-blur-md`}>
+      <div className={`group relative overflow-hidden rounded-2xl border ${data?.is_best ? 'border-emerald-400 dark:border-emerald-500' : 'border-slate-200/70 dark:border-slate-700'} bg-white/80 dark:bg-slate-800/60 shadow-xl backdrop-blur-md`}>
         <div className="p-5 space-y-4 relative">
           {data?.is_best && (
-            <div className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">Top in category</div>
+            <div className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">Top in category</div>
           )}
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-teal-50 text-teal-600 border border-teal-100">
+            <div className="p-2.5 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 dark:bg-teal-400/10 dark:text-teal-300 dark:border-teal-500/30">
               <Icon className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold tracking-wide text-slate-700">{title}</h3>
-              <p className="text-xs text-slate-400">Points {pts} / {max} • {pct}%</p>
+              <h3 className="text-sm font-semibold tracking-wide text-slate-800 dark:text-slate-100">{title}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Points {pts} / {max} • {pct}%</p>
             </div>
           </div>
-          <ProgressBar value={pts} max={max || 1} size="lg" color="bg-gradient-to-r from-sky-500 to-emerald-500" bgColor="bg-slate-200" />
+          <ProgressBar value={pts} max={max || 1} size="lg" color="bg-teal-500 dark:bg-teal-400" bgColor="bg-slate-200 dark:bg-slate-700" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <div className="flex items-center gap-2 mb-1 text-emerald-600 text-xs font-medium"><CircleCheck className="w-4 h-4" />Right answers</div>
+              <div className="flex items-center gap-2 mb-1 text-emerald-600 dark:text-emerald-400 text-xs font-medium"><CircleCheck className="w-4 h-4" />Right answers</div>
               <ul className="space-y-1.5">
-                {rights.length === 0 && <li className="text-xs text-slate-400">No items yet</li>}
+                {rights.length === 0 && <li className="text-xs text-slate-500 dark:text-slate-400">No items yet</li>}
                 {rights.map((p, i) => (
-                  <li key={`r-${i}`} className="text-xs text-slate-600 bg-emerald-50/80 border border-emerald-100 rounded-lg px-2 py-1" title={p.global_correct_rate !== undefined ? `Hard win • only ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
+                  <li key={`r-${i}`} className="text-xs text-emerald-900 dark:text-emerald-200 bg-emerald-100/80 dark:bg-emerald-400/10 border border-emerald-200/80 dark:border-emerald-500/30 rounded-lg px-2 py-1" title={p.global_correct_rate !== undefined ? `Hard win • only ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
                     {(p.question || p.team || '').toString().slice(0, 80)}{(p.question || p.team || '').length > 80 ? '…' : ''}
-                    <span className="ml-1 text-emerald-700 font-semibold">+{p.points ?? 0}</span>
+                    <span className="ml-1 font-semibold">+{p.points ?? 0}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1 text-rose-600 text-xs font-medium"><CircleX className="w-4 h-4" />Wrong answers</div>
+              <div className="flex items-center gap-2 mb-1 text-rose-600 dark:text-rose-400 text-xs font-medium"><CircleX className="w-4 h-4" />Wrong answers</div>
               <ul className="space-y-1.5">
-                {wrongs.length === 0 && <li className="text-xs text-slate-400">No items yet</li>}
+                {wrongs.length === 0 && <li className="text-xs text-slate-500 dark:text-slate-400">No items yet</li>}
                 {wrongs.map((p, i) => (
-                  <li key={`w-${i}`} className="text-xs text-slate-600 bg-rose-50/80 border border-rose-100 rounded-lg px-2 py-1" title={p.global_correct_rate !== undefined ? `Surprising miss • ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
+                  <li key={`w-${i}`} className="text-xs text-rose-900 dark:text-rose-200 bg-rose-100/80 dark:bg-rose-400/10 border border-rose-200/80 dark:border-rose-500/30 rounded-lg px-2 py-1" title={p.global_correct_rate !== undefined ? `Surprising miss • ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
                     {(p.question || p.team || '').toString().slice(0, 80)}{(p.question || p.team || '').length > 80 ? '…' : ''}
-                    <span className="ml-1 text-rose-700 font-semibold">{p.points ? `+${p.points}` : '+0'}</span>
+                    <span className="ml-1 font-semibold">{p.points ? `+${p.points}` : '+0'}</span>
                   </li>
                 ))}
               </ul>
@@ -179,7 +179,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
           </div>
           {detailsHref && (
             <div className="flex items-center justify-end">
-              <a href={detailsHref} className="text-xs text-slate-600 hover:text-slate-900 underline underline-offset-2">Open detailed view</a>
+              <a href={detailsHref} className="text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 underline underline-offset-2">Open detailed view</a>
             </div>
           )}
         </div>
@@ -188,29 +188,29 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50 to-emerald-100 p-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* ──────────────────────── Header Section with Title and Metrics Grid */}
         <section>
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white/70 shadow-xl mb-6">
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 shadow-xl mb-6">
             <div className="relative px-6 py-10 md:px-10 md:py-12">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800">NBA Predictions Leaderboard</h1>
-                  <p className="mt-2 text-slate-500">Season {seasonSlug.replace('-', '–')}. Track your rank in real time.</p>
+                  <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">NBA Predictions Leaderboard</h1>
+                  <p className="mt-2 text-slate-500 dark:text-slate-400">Season {seasonSlug.replace('-', '–')}. Track your rank in real time.</p>
                 </div>
-                <div className="grid grid-cols-3 divide-x divide-slate-200 rounded-2xl bg-white/60 backdrop-blur px-4 py-3 border border-slate-200">
+                <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700 rounded-2xl bg-white/60 dark:bg-slate-800/60 backdrop-blur px-4 py-3 border border-slate-200 dark:border-slate-700">
                   <div className="px-3 text-center">
-                    <div className="text-xs uppercase tracking-wide text-slate-400">Players</div>
-                    <div className="text-xl font-bold text-teal-600">{totals.totalPlayers}</div>
+                    <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Players</div>
+                    <div className="text-xl font-bold text-teal-600 dark:text-teal-400">{totals.totalPlayers}</div>
                   </div>
                   <div className="px-3 text-center">
-                    <div className="text-xs uppercase tracking-wide text-slate-400">Predictions</div>
-                    <div className="text-xl font-bold text-teal-600">{totals.totalPredictions || '—'}</div>
+                    <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Predictions</div>
+                    <div className="text-xl font-bold text-teal-600 dark:text-teal-400">{totals.totalPredictions || '—'}</div>
                   </div>
                   <div className="px-3 text-center">
-                    <div className="text-xs uppercase tracking-wide text-slate-400">Avg Accuracy</div>
-                    <div className="text-xl font-bold text-teal-600">{totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(0)}%` : '—'}</div>
+                    <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Avg Accuracy</div>
+                    <div className="text-xl font-bold text-teal-600 dark:text-teal-400">{totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(0)}%` : '—'}</div>
                   </div>
                 </div>
               </div>
@@ -221,22 +221,22 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
         </section>
 
         {/* ──────────────────────── Leaderboard Table Section */}
-        <section className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-xl">
+        <section className="bg-white/80 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl">
           {/* Title */}
-          <div className="flex items-center gap-2 p-4 border-b border-slate-200">
+          <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
             <Trophy className="w-6 h-6 text-amber-500" />
-            <h2 className="text-lg font-semibold text-slate-800">Season Leaderboard</h2>
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Season Leaderboard</h2>
           </div>
 
           {/* Rows */}
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
             {leaderboardData.slice(0, visibleCount).map((entry) => (
-              <div key={entry.user.id} className="bg-white/60">
+              <div key={entry.user.id} className="bg-white/60 dark:bg-slate-800/50">
                 {/* ─── Row (click to expand/collapse) */}
                 <button
                   type="button"
                   onClick={() => toggleUserExpansion(entry.user.id)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-teal-50/60 transition-colors"
+                  className="w-full p-4 flex items-center justify-between hover:bg-teal-50/60 dark:hover:bg-slate-700/60 transition-colors"
                 >
                   {/* Left side (rank, avatar, name) */}
                   <div className="flex items-center gap-4">
@@ -247,12 +247,12 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                         <img
                           src={entry.user.avatar}
                           alt={`${entry.user.display_name || entry.user.username} avatar`}
-                          className="w-full h-full rounded-full object-cover border border-slate-300"
+                          className="w-full h-full rounded-full object-cover border border-slate-300 dark:border-slate-600"
                           onError={(e) => (e.currentTarget.style.display = 'none')}
                         />
                       ) : (
-                        <div className="w-full h-full rounded-full border border-slate-300 bg-slate-100 flex items-center justify-center">
-                          <span className="text-xs font-semibold text-slate-600">
+                        <div className="w-full h-full rounded-full border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                             {(entry.user.display_name || entry.user.username)
                               .slice(0, 2)
                               .toUpperCase()}
@@ -263,11 +263,11 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-800">
+                        <p className="font-semibold text-slate-800 dark:text-slate-100">
                           {entry.user.display_name || entry.user.username}
                         </p>
                         {Array.isArray(entry.user.badges) && entry.user.badges.slice(0,3).map((b, i) => (
-                          <span key={i} title={b.type === 'category_best' ? `Top in ${b.category}` : ''} className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                          <span key={i} title={b.type === 'category_best' ? `Top in ${b.category}` : ''} className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
                             {b.category?.split(' ')[0] || 'Best'}
                           </span>
                         ))}
@@ -280,30 +280,30 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                   <div className="flex items-center gap-6">
                     {/* Points */}
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-800">
+                      <p className="text-2xl font-bold text-slate-800 dark:text-white">
                         {entry.user.total_points.toLocaleString()}
                       </p>
-                      <p className="text-sm text-slate-400">Total Points</p>
+                      <p className="text-sm text-slate-400 dark:text-slate-400">Total Points</p>
                     </div>
 
                     {/* Small progress bars for each category */}
                     <div className="hidden md:flex items-center gap-4">
                       {Object.entries(entry.user.categories).map(([category, data]) => (
                         <div key={category} className="text-center min-w-[90px]">
-                          <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">
+                          <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
                             {category.replace('Regular Season ', 'Reg. ')}
                           </p>
-                          <ProgressBar value={data.points} max={data.max_points} size="sm" color="bg-teal-500" bgColor="bg-slate-200" />
-                          <p className="mt-1 text-[11px] text-slate-600">{data.points}/{data.max_points}</p>
+                          <ProgressBar value={data.points} max={data.max_points} size="sm" color="bg-teal-500" bgColor="bg-slate-200 dark:bg-slate-700" />
+                          <p className="mt-1 text-[11px] text-slate-600 dark:text-slate-300">{data.points}/{data.max_points}</p>
                         </div>
                       ))}
                     </div>
 
                     {/* Expand / collapse icon */}
                     {expandedUsers.has(entry.user.id) ? (
-                      <ChevronUp className="w-5 h-5 text-slate-400" />
+                      <ChevronUp className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-slate-400" />
+                      <ChevronDown className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                     )}
                   </div>
                 </button>
@@ -327,7 +327,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
         {visibleCount < leaderboardData.length && (
           <div className="text-center mt-6 mb-8">
             <button
-              className="px-4 py-2 border rounded-lg bg-slate-800 text-white border-slate-600 hover:bg-slate-700 transition-colors"
+              className="px-4 py-2 border rounded-lg bg-white text-slate-700 border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
               onClick={() => setVisibleCount((prevCount) => prevCount + 20)} // Show 20 more players when clicked
             >
               Load More Players ({visibleCount} of {leaderboardData.length})

@@ -9,6 +9,11 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    color-scheme: light dark;
+  }
+  body { @apply bg-slate-50 text-slate-800; }
+  @media (prefers-color-scheme: dark) {
+    body { @apply bg-slate-900 text-slate-200; }
   }
   /* Optional: slightly tighter headings; components already set sizes */
   h1, h2, h3 {
