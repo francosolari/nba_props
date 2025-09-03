@@ -1,8 +1,15 @@
 {% extends "allauth/layouts/manage.html" %}
-{% load allauth %}
+{% load static %}
+
 {% block content %}
-    {% element h1 %}
-        Profile
-    {% endelement %}
-    <p>Your profile</p>
-{% endblock content %}
+  <div
+    id="profile-root"
+    data-user-id="{{ request.user.id }}"
+    data-username="{{ request.user.username }}"
+    data-display-name="{{ request.user.get_full_name|default:request.user.username }}"
+    data-season-slug="{{ current_season.slug|default:'current' }}"
+    data-seasons="{{ seasons_csv }}"
+  ></div>
+  <script src="{% static 'js/bundle.js' %}"></script>
+{% endblock %}
+

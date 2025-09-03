@@ -15,6 +15,7 @@ from predictions.models import (Season, Prediction, StandingPrediction, Player,
                                 NBAFinalsPredictionQuestion, PlayoffPrediction)
 from predictions.api.common.question_processor import process_questions_for_season
 import json
+from django.utils import timezone
 
 @require_http_methods(["GET"])
 def get_players_api(request):
@@ -307,6 +308,58 @@ def submit_answers_api(request, season_slug):
             'message': 'An unexpected error occurred',
             'details': str(e)
         }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def submit_user_predictions_api(request, season_slug):
+    """
+    Save or update the logged-in user's regular season standings predictions for a season.
+    Accepts a JSON list: [{ team_id, predicted_position }]
+    Only allowed while submission window is open (between submission_start_date and submission_end_date).
+    """
+    # Resolve season (support 'current')
+    if season_slug == "current":
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            return JsonResponse({'error': 'Could not find the latest season'}, status=400)
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
+
+    # Check submission window
+    now = timezone.now().date()
+    if season.submission_start_date and now < season.submission_start_date:
+        return JsonResponse({'error': 'Submission window has not opened yet.'}, status=403)
+    if season.submission_end_date and now > season.submission_end_date:
+        return JsonResponse({'error': 'Submission window has closed.'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        if not isinstance(data, list):
+            return JsonResponse({'error': 'Expected a list payload.'}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON.'}, status=400)
+
+    # Upsert predictions
+    team_ids = [item.get('team_id') for item in data if item.get('team_id') is not None]
+    teams = {t.id: t for t in Team.objects.filter(id__in=team_ids)}
+
+    for item in data:
+        team_id = item.get('team_id')
+        pos = item.get('predicted_position')
+        if team_id is None or pos is None:
+            return JsonResponse({'error': 'Missing team_id or predicted_position.'}, status=400)
+        team = teams.get(team_id)
+        if not team:
+            return JsonResponse({'error': f'Team id {team_id} not found.'}, status=400)
+        StandingPrediction.objects.update_or_create(
+            user=request.user,
+            team=team,
+            season=season,
+            defaults={'predicted_position': int(pos)}
+        )
+
+    return JsonResponse({'message': 'Predictions saved successfully.'}, status=200)
 
 
 @require_http_methods(["GET"])

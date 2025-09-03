@@ -33,6 +33,7 @@ from .endpoints.standings import router as standings_router
 from .endpoints.homepage import router as homepage_router
 from .endpoints.answers import router as answers_router
 from .endpoints.leaderboard import router as leaderboards_router
+from .endpoints.seasons import router as seasons_router
 
 # Import schemas for documentation
 from .schemas import ErrorSchema
@@ -211,6 +212,7 @@ api.add_router("/standings", standings_router)
 api.add_router("/homepage/", homepage_router)
 api.add_router("/answers/", answers_router)
 api.add_router("/leaderboards/", leaderboards_router)
+api.add_router("/seasons/", seasons_router)
 
 # ====================
 # TEMPORARY PLACEHOLDER ENDPOINTS

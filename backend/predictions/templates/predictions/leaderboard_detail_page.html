@@ -8,8 +8,8 @@
     data-season-slug="{{ season.slug }}"
     data-initial-section="{{ initial_section }}"
     data-initial-user-id="{{ initial_user_id }}"
+    data-logged-in-username="{{ request.user.username }}"
   ></div>
 </div>
 <script src="{% static 'js/bundle.js' %}"></script>
 {% endblock %}
-

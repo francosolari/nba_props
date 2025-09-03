@@ -39,10 +39,18 @@ def profile_view(request):
     # Fetch existing predictions for the user, if any
     user_predictions = StandingPrediction.objects.filter(user=user)
 
-    # Render the profile template
-    return render(request, 'account/profile.html', {
+    # Seasons for dropdown (latest first). Also determine current season.
+    seasons = Season.objects.order_by('-start_date').only('slug', 'year', 'start_date', 'end_date')
+    current_season = seasons.first() if seasons.exists() else None
+
+    # Render the enhanced profile template
+    seasons_csv = ",".join(seasons.values_list('slug', flat=True)) if seasons else ""
+    return render(request, 'profile.html', {
         'profile_form': profile_form,
         'user_predictions': user_predictions,
+        'seasons': seasons,
+        'current_season': current_season,
+        'seasons_csv': seasons_csv,
     })
 
 @login_required

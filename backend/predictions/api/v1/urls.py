@@ -27,7 +27,10 @@ urlpatterns = [
 
     # User predictions and leaderboards
     path('user-predictions/<slug:season_slug>/', get_user_predictions_api, name='user_predictions'),
+    # Compatibility aliases (underscored paths used by frontend)
+    path('user_predictions/<slug:season_slug>/', get_user_predictions_api, name='user_predictions_alias'),
     path('leaderboard/<slug:season_slug>/', get_api_leaderboard, name='leaderboard'),
+    # path('submit_predictions/<slug:season_slug>/', submit_answers_api, name='submit_user_predictions'),
     path('ist-leaderboard/<slug:season_slug>/', get_ist_leaderboard_api, name='ist_leaderboard'),
 
     # Questions and answers

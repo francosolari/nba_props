@@ -13,7 +13,7 @@ function LeaderboardDetailPage({ seasonSlug = 'current' }) {
   const { data: leaderboardData, isLoading, error } = useLeaderboard(seasonSlug);
 
   const [section, setSection] = useState(initialSection); // 'standings' | 'awards' | 'props'
-  const [mode, setMode] = useState('showcase'); // 'showcase' | 'compare'
+  const [mode, setMode] = useState('compare'); // 'showcase' | 'compare'
   const [showAll, setShowAll] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState(() => {
     const top = leaderboardData?.slice(0, 4).map(e => String(e.user.id)) || [];
@@ -26,6 +26,9 @@ function LeaderboardDetailPage({ seasonSlug = 'current' }) {
   const [pinnedUserIds, setPinnedUserIds] = useState([]);
   const [collapsedWest, setCollapsedWest] = useState(false);
   const [collapsedEast, setCollapsedEast] = useState(false);
+  const [pinPulseId, setPinPulseId] = useState(null);
+  const [showManagePlayers, setShowManagePlayers] = useState(false);
+  const [manageQuery, setManageQuery] = useState('');
   
 
   const usersMap = useMemo(() => {
@@ -48,6 +51,33 @@ function LeaderboardDetailPage({ seasonSlug = 'current' }) {
     return (leaderboardData || []).find(e => String(e.user.username) === String(loggedInUsername));
   }, [leaderboardData, loggedInUsername]);
   const loggedInUserId = loggedInEntry?.user?.id ? String(loggedInEntry.user.id) : null;
+  // Auto-pin and include logged-in user by default (without overriding explicit URL selections)
+  useEffect(() => {
+    if (!loggedInUserId) return;
+    setPinnedUserIds(prev => (prev.includes(loggedInUserId) ? prev : [...prev, loggedInUserId]));
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const usersParam = sp.get('users');
+      if (!usersParam) {
+        setSelectedUserIds(prev => (prev.map(String).includes(loggedInUserId) ? prev : [loggedInUserId, ...prev]));
+      }
+    } catch (_) { /* no-op */ }
+  }, [loggedInUserId]);
+
+  // Fallback: if no logged-in user was resolved but we have an initialUserId, pin/select it.
+  useEffect(() => {
+    if (loggedInUserId) return; // primary handler above
+    if (!initialUserId) return;
+    const id = String(initialUserId);
+    setPinnedUserIds(prev => (prev.map(String).includes(id) ? prev : [...prev, id]));
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const usersParam = sp.get('users');
+      if (!usersParam) {
+        setSelectedUserIds(prev => (prev.map(String).includes(id) ? prev : [id, ...prev]));
+      }
+    } catch (_) { /* no-op */ }
+  }, [loggedInUserId, initialUserId]);
 
   const standingsTeams = useMemo(() => {
     // build ordered teams list by conference then actual position
@@ -192,6 +222,13 @@ useEffect(() => {
     setSelectedUserIds(prev => Array.from(new Set([...prev, String(id)])));
   };
 
+  const togglePin = (id) => {
+    if (!id) return;
+    setPinnedUserIds(prev => prev.includes(String(id)) ? prev.filter(x => String(x)!==String(id)) : [...prev, String(id)]);
+    setPinPulseId(String(id));
+    window.setTimeout(() => setPinPulseId(null), 350);
+  };
+
   // URL persistence: read once
   const didReadUrlRef = useRef(false);
   useEffect(() => {
@@ -249,7 +286,8 @@ useEffect(() => {
     };
 
     return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-3">
+    <>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-3 overflow-x-hidden no-scrollbar">
         <div className="max-w-4xl mx-auto space-y-3">
           <div className="flex items-center justify-between">
             <a href={`/page/${seasonSlug}/`} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
@@ -258,12 +296,29 @@ useEffect(() => {
             <div className="text-xs text-slate-500 dark:text-slate-400">Season {seasonSlug.replace('-', '–')}</div>
           </div>
 
-          {/* Section tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            {['standings','awards','props'].map(s => (
-              <button key={s} onClick={() => setSection(s)} className={`whitespace-nowrap px-3 py-1.5 rounded-full border text-sm ${section===s? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200' : 'bg-white text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>{fromSectionKey(s)}</button>
-            ))}
-          </div>
+          {/* Section tabs: segmented control with sliding highlight */}
+          {(() => {
+            const sections = ['standings','awards','props'];
+            const activeIdx = Math.max(0, sections.indexOf(section));
+            const segWidth = `${100/sections.length}%`;
+            return (
+              <div className="relative flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                <div
+                  className="absolute top-0 bottom-0 left-0 rounded-lg bg-white dark:bg-slate-700 shadow transition-transform duration-200 will-change-transform"
+                  style={{ width: segWidth, transform: `translateX(${activeIdx * 100}%)` }}
+                />
+                {sections.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSection(s)}
+                    className={`relative z-10 flex-1 basis-0 text-center px-3 py-1.5 text-sm transition-colors duration-200 ${section===s? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}
+                  >
+                    {fromSectionKey(s)}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
 
           {/* User chips */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -273,12 +328,7 @@ useEffect(() => {
                 {!showAll && (<button onClick={()=> setSelectedUserIds(prev => prev.filter(id => String(id)!==String(e.user.id)))} className="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300"><X className="w-3.5 h-3.5"/></button>)}
               </span>
             ))}
-            <select className="text-sm border border-slate-300 rounded-md px-2 py-1 bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300" onChange={(ev)=> addUser(ev.target.value)} value="">
-              <option value="">Add player…</option>
-              {Array.isArray(withSimTotals) ? withSimTotals.map(e => (
-                <option key={e.user.id} value={e.user.id}>{e.user.display_name || e.user.username}</option>
-              )) : null}
-            </select>
+            <button onClick={()=> setShowManagePlayers(true)} className="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">Manage</button>
           </div>
 
           {section === 'standings' && (
@@ -355,17 +405,31 @@ useEffect(() => {
                 const qArr = Array.from(qMap.entries()).sort((a,b)=> a[1].localeCompare(b[1]));
                 return qArr.map(([id, text], idx) => (
                   <div key={`mq-${id}`} className={`rounded-xl border border-slate-200 dark:border-slate-700 p-3 ${idx%2===0? 'bg-white/70 dark:bg-slate-800/50':'bg-white/40 dark:bg-slate-800/20'}`}>
-                    <div className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">{text}</div>
+                    <div className="flex items-start gap-2 mb-2">
+                      <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-semibold rounded-full bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">{idx+1}</span>
+                      <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{text}</div>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       {mobileDisplayedUsers.map(e => {
                         const preds = e.user.categories?.[catKey]?.predictions || [];
                         const p = preds.find(x => String(x.question_id) === String(id));
                         const pts = p?.points || 0;
-                        const ans = (p?.answer || '').toString() || '—';
-                        const color = pts > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600';
+                        const ansRaw = (p?.answer || '').toString();
+                        const ans = ansRaw || '—';
+                        const isYes = /^yes$/i.test(ansRaw);
+                        const isNo = /^no$/i.test(ansRaw);
+                        const isWrong = p?.correct === false;
+                        const color = isWrong
+                          ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30'
+                          : (pts > 0
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
+                            : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600');
                         return (
-                          <span key={`mq-${id}-${e.user.id}`} className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs ${color}`}>
-                            {(e.user.display_name || e.user.username).slice(0,8)}: {ans}
+                          <span key={`mq-${id}-${e.user.id}`} className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs ${color} transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm`}>
+                            {(e.user.display_name || e.user.username).slice(0,8)}:
+                            {isYes && <CheckCircle2 className="w-3.5 h-3.5" />}
+                            {isNo && <XCircle className="w-3.5 h-3.5" />}
+                            <span className="truncate max-w-[160px]">{ans}</span>
                             {pts>0 && <span className="text-emerald-600 dark:text-emerald-400 font-semibold">+{pts}</span>}
                           </span>
                         );
@@ -378,6 +442,65 @@ useEffect(() => {
           )}
         </div>
       </div>
+      {/* Manage Players modal (mobile) */}
+      {showManagePlayers && (
+        <div className="fixed inset-0 z-50 bg-black/40">
+          <div className="absolute inset-x-0 bottom-0 top-[10%] bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl flex flex-col">
+            <div className="px-4 pt-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+              <div className="mx-auto h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700" />
+              <div className="mt-2 flex items-center justify-between">
+                <div className="font-semibold text-slate-800 dark:text-slate-200">Manage Players</div>
+                <button onClick={()=> setShowManagePlayers(false)} className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">Done</button>
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input value={manageQuery} onChange={(e)=> setManageQuery(e.target.value)} placeholder="Search players" className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300" />
+                </div>
+                <button onClick={()=> {
+                  const ids = (withSimTotals||[])
+                    .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
+                    .map(e => String(e.user.id));
+                  setSelectedUserIds(prev => Array.from(new Set([...prev.map(String), ...ids])));
+                }} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">Select All</button>
+                <button onClick={()=> {
+                  const ids = new Set((withSimTotals||[])
+                    .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
+                    .map(e => String(e.user.id)));
+                  setSelectedUserIds(prev => prev.filter(id => !ids.has(String(id))));
+                }} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">Clear All</button>
+              </div>
+            </div>
+            <div className="px-2 py-2 text-xs text-slate-500 dark:text-slate-400">Selected {selectedUserIds.length}{pinnedUserIds.length? ` • Pinned ${pinnedUserIds.length}`:''}</div>
+            <div className="flex-1 overflow-y-auto no-scrollbar px-2 pb-4 grid grid-cols-1 gap-2">
+              {(withSimTotals||[])
+                .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
+                .map(e => {
+                  const id = String(e.user.id);
+                  const isSel = selectedUserIds.map(String).includes(id);
+                  const isPin = pinnedUserIds.map(String).includes(id);
+                  return (
+                    <div key={`mrow-${id}`} className={`flex items-center justify-between rounded-xl border ${isSel? 'border-emerald-300 bg-emerald-50/60 dark:border-emerald-700/60 dark:bg-emerald-900/30':'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'} px-3 py-2`}>
+                      <label className="flex items-center gap-3 min-w-0">
+                        <input type="checkbox" className="accent-emerald-600" checked={isSel} onChange={(ev)=> {
+                          if (ev.target.checked) addUser(id); else setSelectedUserIds(prev => prev.filter(x => String(x)!==id));
+                        }} />
+                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-semibold">
+                          {(e.user.display_name || e.user.username).slice(0,2).toUpperCase()}
+                        </div>
+                        <span className="truncate text-sm text-slate-800 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
+                      </label>
+                      <button type="button" onClick={()=> togglePin(id)} title={isPin? 'Unpin':'Pin'} className={`px-2 py-1 rounded-lg border ${isPin? 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300':'border-slate-300 bg-white text-slate-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'} ${pinPulseId===id? 'pin-pulse':''}`}>
+                        {isPin ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
     );
   }
 
@@ -404,15 +527,33 @@ useEffect(() => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {['standings','awards','props'].map(s => {
-            const Icon = s==='standings'? Trophy : (s==='awards'? Award : Target);
+          {/* Segmented control for sections with sliding highlight */}
+          {(() => {
+            const sections = ['standings','awards','props'];
+            const activeIdx = Math.max(0, sections.indexOf(section));
+            const iconFor = (s) => (s==='standings'? Trophy : (s==='awards'? Award : Target));
+            const segWidth = `${100/sections.length}%`;
             return (
-              <button key={s} onClick={() => setSection(s)}
-                className={`px-3 py-1.5 rounded-full border text-sm inline-flex items-center gap-2 ${section===s? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200 shadow-sm':'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'}`}>
-                <Icon className="w-4 h-4" /> {fromSectionKey(s)}
-              </button>
+              <div className="relative flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                <div
+                  className="absolute top-0 bottom-0 left-0 rounded-lg bg-white dark:bg-slate-700 shadow transition-transform duration-200 will-change-transform"
+                  style={{ width: segWidth, transform: `translateX(${activeIdx * 100}%)` }}
+                />
+                {sections.map((s) => {
+                  const Icon = iconFor(s);
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setSection(s)}
+                      className={`relative z-10 flex-1 basis-0 text-center px-3 py-1.5 text-sm inline-flex items-center justify-center gap-2 transition-colors duration-200 ${section===s? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}
+                    >
+                      <Icon className="w-4 h-4" /> {fromSectionKey(s)}
+                    </button>
+                  );
+                })}
+              </div>
             );
-          })}
+          })()}
           <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
           {['showcase','compare'].map(m => (
             <button key={m} onClick={() => setMode(m)}
@@ -423,13 +564,18 @@ useEffect(() => {
           <div className="ml-auto flex items-center gap-2">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-2 top-1/2 -translate-y-1/2" />
-              <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search players" className="pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 bg-white text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 dark:placeholder-slate-500" />
+              <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search players" className="pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 bg-white text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 dark:placeholder-slate-500 transition-colors duration-200" />
             </div>
-            <select className="text-sm border border-slate-300 rounded-md px-2 py-1 bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300" value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
+            <select className="text-sm border border-slate-300 rounded-md px-2 py-1 bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 transition-colors duration-200" value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
               <option value="standings">Sort: Standings pts</option>
               <option value="total">Sort: Total pts</option>
               <option value="name">Sort: Name</option>
             </select>
+            {mode==='compare' && (
+              <button onClick={()=>setShowAll(v=>!v)} className="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300 transition-colors duration-200">
+                {showAll ? (<><Minimize2 className="w-4 h-4" /> Collapse All Players</>) : (<><Expand className="w-4 h-4" /> Compare All Players</>)}
+              </button>
+            )}
             <label className={`inline-flex items-center gap-2 text-sm rounded-lg px-2 py-1 border ${section==='standings' ? (whatIfEnabled ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200' : 'bg-white text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700') : 'bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-800/50 dark:text-slate-500 dark:border-slate-700'}`} title={section==='standings' ? 'Simulate by dragging rows in the grid' : 'What‑If available in Regular Season Standings tab'}>
               <input type="checkbox" className="accent-slate-700" checked={whatIfEnabled && section==='standings'} onChange={(e)=> setWhatIfEnabled(e.target.checked)} disabled={section!=='standings'} /> What‑If
             </label>
@@ -442,7 +588,7 @@ useEffect(() => {
         </div>
         {/* Showcase mode */}
         {mode === 'showcase' && (
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/70 shadow-xl overflow-hidden">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/70 shadow-xl overflow-hidden transition-shadow duration-200 hover:shadow-2xl">
             {/* Hero */}
             <div className="px-5 py-6 bg-gradient-to-r from-emerald-50 to-sky-50 dark:from-emerald-900/20 dark:to-sky-900/20 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -450,7 +596,7 @@ useEffect(() => {
                   {(primaryUser?.user?.display_name || primaryUser?.user?.username || '?').slice(0,2).toUpperCase()}
                 </div>
                 <div>
-                  <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">{primaryUser?.user?.display_name || primaryUser?.user?.username || 'Select a player'}</div>
+                  <div className="text-lg font-semibold text-slate-800 dark:text-slate-200 transition-colors duration-200">{primaryUser?.user?.display_name || primaryUser?.user?.username || 'Select a player'}</div>
                   {primaryUser && (
                     <div className="text-xs text-slate-500 dark:text-slate-400">Rank #{primaryUser.rank} • {primaryUser.user.total_points} pts</div>
                   )}
@@ -582,7 +728,7 @@ useEffect(() => {
 
         {/* Compare mode */}
         {mode === 'compare' && section === 'standings' && (
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 shadow-xl">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 shadow-xl transition-shadow duration-200 hover:shadow-2xl">
             <div className="p-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Grid className="w-4 h-4" />
@@ -591,22 +737,27 @@ useEffect(() => {
               <div className="flex items-center gap-2">
                 <select className="text-sm border border-slate-300 rounded-md px-2 py-1 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>addUser(e.target.value)} value="">
                   <option value="">Add player…</option>
-                  {(withSimTotals||[]).map(e => (
-                    <option key={e.user.id} value={e.user.id}>{e.user.display_name || e.user.username}</option>
+                  {(withSimTotals||[])
+                    .filter(e => !selectedUserIds.map(String).includes(String(e.user.id)))
+                    .map(e => (
+                      <option key={e.user.id} value={e.user.id}>{e.user.display_name || e.user.username}</option>
                   ))}
                 </select>
                 {loggedInUserId && (
-                  <button
-                    onClick={()=> {
-                      if (!selectedUserIds.map(String).includes(loggedInUserId)) addUser(loggedInUserId);
-                      setPinnedUserIds(prev => prev.includes(loggedInUserId) ? prev.filter(id => String(id)!==String(loggedInUserId)) : [...prev, loggedInUserId]);
-                    }}
-                    className={`text-sm inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border ${pinnedUserIds.includes(loggedInUserId)?'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300':'border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300'}`}
-                    title={pinnedUserIds.includes(loggedInUserId) ? 'Unpin my column' : (selectedUserIds.map(String).includes(loggedInUserId) ? 'Pin my column' : 'Add and pin my column')}
-                  >
-                    {pinnedUserIds.includes(loggedInUserId) ? 'Unpin Me' : 'Pin Me'}
-                  </button>
+                  <span className={pinPulseId===loggedInUserId? 'pin-pulse' : ''}>
+                    <button
+                      onClick={()=> {
+                        if (!selectedUserIds.map(String).includes(loggedInUserId)) addUser(loggedInUserId);
+                        togglePin(loggedInUserId);
+                      }}
+                      className={`text-sm inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border ${pinnedUserIds.includes(loggedInUserId)?'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300':'border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300'}`}
+                      title={pinnedUserIds.includes(loggedInUserId) ? 'Unpin my column' : (selectedUserIds.map(String).includes(loggedInUserId) ? 'Pin my column' : 'Add and pin my column')}
+                    >
+                      {pinnedUserIds.includes(loggedInUserId) ? 'Unpin Me' : 'Pin Me'}
+                    </button>
+                  </span>
                 )}
+                <button onClick={()=> setShowManagePlayers(true)} className="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">Manage</button>
                 <button onClick={()=>setShowAll(v=>!v)} className="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">
                   {showAll ? (<><Minimize2 className="w-4 h-4" /> Collapse All Players</>) : (<><Expand className="w-4 h-4" /> Compare All Players</>)}
                 </button>
@@ -634,7 +785,7 @@ useEffect(() => {
                         <th key={`h-${e.user.id}`} className="px-3 py-2 text-left text-sm font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 align-top" title={`Stand: ${standPts} • Total: ${totalPts}`}>
                           <div className="flex items-center gap-2">
                             <span className="text-slate-700 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
-                            <button onClick={()=> setPinnedUserIds(prev => prev.includes(String(e.user.id)) ? prev.filter(id => String(id)!==String(e.user.id)) : [...prev, String(e.user.id)])} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''}`}>
+                            <button onClick={()=> togglePin(e.user.id)} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
                               {pinnedUserIds.includes(String(e.user.id)) ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
                             </button>
                             {!showAll && (
@@ -677,7 +828,7 @@ useEffect(() => {
                             {(prov)=> {
                               const isChanged = whatIfEnabled && ((simActualMap.get(row.team) ?? row.actual_position) !== (row.actual_position ?? null));
                               return (
-                              <tr ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps} className={isChanged ? 'bg-amber-50 dark:bg-amber-400/10' : (index % 2 === 0 ? 'bg-white/70 dark:bg-slate-800/60' : 'bg-white/40 dark:bg-slate-800/40')}>
+                              <tr ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps} className={`${isChanged ? 'bg-amber-50 dark:bg-amber-400/10' : (index % 2 === 0 ? 'bg-white/70 dark:bg-slate-800/60' : 'bg-white/40 dark:bg-slate-800/40)')} transition-colors duration-200`}>
                                 <td className="sticky left-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-700/50" style={{ minWidth: teamColWidth, width: teamColWidth }}>
                                   <div className="flex items-center gap-2">
                                     <span className="inline-flex w-1.5 h-1.5 rounded-full" style={{backgroundColor:'#ef4444'}}/>
@@ -698,9 +849,9 @@ useEffect(() => {
                                         img.onerror = null; img.src = '/static/img/teams/unknown.svg';
                                       }}
                                     />
-                                    <span>{row.team}</span>
-                                  </div>
-                                </td>
+                                    <span className="transition-colors duration-200">{row.team}</span>
+                                 </div>
+                               </td>
                                 <td className="px-3 py-2 text-sm text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/90" style={{ position:'sticky', left: teamColWidth }}>{whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}</td>
                                 {displayedUsers.map((e) => {
                                   const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
@@ -712,7 +863,7 @@ useEffect(() => {
                                     <td key={`c-${e.user.id}-${row.team}`} className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/50">
                                       <div className="flex justify-center">
                                         <div className="relative inline-block group">
-                                          <span className={`inline-block min-w-[80px] text-center px-2 py-1 rounded-md border text-xs ${color}`} title={`Pred: ${predPos}`}>{predPos}</span>
+                                          <span className={`inline-block min-w-[80px] text-center px-2 py-1 rounded-md border text-xs ${color} transition-transform duration-200` } title={`Pred: ${predPos}`}>{predPos}</span>
                                           {pts > 0 && (
                                             <span className={`pointer-events-none absolute -top-1 -right-1 text-[10px] px-1 py-[1px] rounded border shadow-sm opacity-0 group-hover:opacity-100 ${pts>=3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-800 dark:text-emerald-200 dark:border-emerald-700' : 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-800 dark:text-amber-200 dark:border-amber-700'}`} title={`+${pts} points`}>+{pts}</span>
                                           )}
@@ -756,7 +907,7 @@ useEffect(() => {
                             {(prov)=> {
                               const isChanged = whatIfEnabled && ((simActualMap.get(row.team) ?? row.actual_position) !== (row.actual_position ?? null));
                               return (
-                              <tr ref={prov.innerRef} {...prov.dragHandleProps} {...prov.draggableProps} className={isChanged ? 'bg-amber-50 dark:bg-amber-400/10' : (index % 2 === 0 ? 'bg-white/70 dark:bg-slate-800/60' : 'bg-white/40 dark:bg-slate-800/40')}>
+                              <tr ref={prov.innerRef} {...prov.dragHandleProps} {...prov.draggableProps} className={`${isChanged ? 'bg-amber-50 dark:bg-amber-400/10' : (index % 2 === 0 ? 'bg-white/70 dark:bg-slate-800/60' : 'bg-white/40 dark:bg-slate-800/40)')} transition-colors duration-200`}>
                                 <td className="sticky left-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-700/50" style={{ minWidth: teamColWidth, width: teamColWidth }}>
                                   <div className="flex items-center gap-2">
                                     <span className="inline-flex w-1.5 h-1.5 rounded-full" style={{backgroundColor:'#0ea5e9'}}/>
@@ -818,7 +969,7 @@ useEffect(() => {
 
             {showWhatIfConfirm && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md w-full p-5">
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md w-full p-5 transform-gpu transition-transform duration-200">
                   <div className="flex items-center gap-2 mb-2 text-slate-800 dark:text-slate-200 font-semibold"><AlertTriangle className="w-4 h-4 text-amber-500"/> Enable What‑If Simulation?</div>
                   <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">This lets you drag to reorder actual standings locally and simulates category and total points. It doesn’t change real data.</p>
                   <div className="flex items-center justify-end gap-2">
@@ -870,23 +1021,30 @@ useEffect(() => {
               <div className="flex items-center gap-2">
                 <select className="text-sm border border-slate-300 rounded-md px-2 py-1 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>addUser(e.target.value)} value="">
                   <option value="">Add player…</option>
-                  {(withSimTotals||[]).map(e => (
-                    <option key={e.user.id} value={e.user.id}>{e.user.display_name || e.user.username}</option>
+                  {(withSimTotals||[])
+                    .filter(e => !selectedUserIds.map(String).includes(String(e.user.id)))
+                    .map(e => (
+                      <option key={e.user.id} value={e.user.id}>{e.user.display_name || e.user.username}</option>
                   ))}
                 </select>
                 {loggedInUserId && (
-                  <button
-                    onClick={()=> {
-                      if (!selectedUserIds.map(String).includes(loggedInUserId)) addUser(loggedInUserId);
-                      setPinnedUserIds(prev => prev.includes(loggedInUserId) ? prev.filter(id => String(id)!==String(loggedInUserId)) : [...prev, loggedInUserId]);
-                    }}
-                    className={`text-sm inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border ${pinnedUserIds.includes(loggedInUserId)?'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300':'border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300'}`}
-                    title={pinnedUserIds.includes(loggedInUserId) ? 'Unpin my column' : (selectedUserIds.map(String).includes(loggedInUserId) ? 'Pin my column' : 'Add and pin my column')}
-                  >
-                    {pinnedUserIds.includes(loggedInUserId) ? 'Unpin Me' : 'Pin Me'}
-                  </button>
+                  <span className={pinPulseId===loggedInUserId? 'pin-pulse' : ''}>
+                    <button
+                      onClick={()=> {
+                        if (!selectedUserIds.map(String).includes(loggedInUserId)) addUser(loggedInUserId);
+                        togglePin(loggedInUserId);
+                      }}
+                      className={`text-sm inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border ${pinnedUserIds.includes(loggedInUserId)?'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300':'border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300'}`}
+                      title={pinnedUserIds.includes(loggedInUserId) ? 'Unpin my column' : (selectedUserIds.map(String).includes(loggedInUserId) ? 'Pin my column' : 'Add and pin my column')}
+                    >
+                      {pinnedUserIds.includes(loggedInUserId) ? 'Unpin Me' : 'Pin Me'}
+                    </button>
+                  </span>
                 )}
-                <label className="text-xs px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 dark:bg-slate-800/50 dark:text-slate-500 dark:border-slate-700" title="What‑If available in Regular Season Standings tab">What‑If</label>
+                <button onClick={()=> setShowManagePlayers(true)} className="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">Manage</button>
+                <button onClick={()=>setShowAll(v=>!v)} className="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">
+                  {showAll ? (<><Minimize2 className="w-4 h-4" /> Collapse All Players</>) : (<><Expand className="w-4 h-4" /> Compare All Players</>)}
+                </button>
               </div>
             </div>
 
@@ -909,7 +1067,7 @@ useEffect(() => {
                         <th key={`h2-${e.user.id}`} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 align-top">
                           <div className="flex items-center gap-2">
                             <span className="text-slate-700 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
-                            <button onClick={()=> setPinnedUserIds(prev => prev.includes(String(e.user.id)) ? prev.filter(id => String(id)!==String(e.user.id)) : [...prev, String(e.user.id)])} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''}`}>
+                            <button onClick={()=> togglePin(e.user.id)} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
                               {pinnedUserIds.includes(String(e.user.id)) ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
                             </button>
                             {!showAll && (
@@ -939,20 +1097,37 @@ useEffect(() => {
                       });
                     });
                     const qArr = Array.from(qMap.values()).sort((a,b)=> a.text.localeCompare(b.text));
-                    return qArr.map(q => (
+                    return qArr.map((q, idx) => (
                       <tr key={`q-${q.id}`} className="odd:bg-white/70 even:bg-white/40 dark:odd:bg-slate-800/50 dark:even:bg-slate-800/20">
-                        <td className="sticky left-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-200">{q.text}</td>
+                        <td className="sticky left-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-200">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-semibold rounded-full bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">{idx+1}</span>
+                            <span className="inline-block px-2 py-1 rounded-md border border-slate-200 bg-white text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 max-w-[360px] truncate" title={q.text}>{q.text}</span>
+                          </div>
+                        </td>
                         {displayedUsers.map(e => {
                           const preds = e.user.categories?.[catKey]?.predictions || [];
                           const p = preds.find(x => String(x.question_id) === String(q.id));
                           const pts = p?.points || 0;
-                          const color = pts > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600';
-                          const answer = (p?.answer || '').toString();
+                          const answerRaw = (p?.answer || '').toString();
+                          const answer = answerRaw || '—';
+                          const isYes = /^yes$/i.test(answerRaw);
+                          const isNo = /^no$/i.test(answerRaw);
+                          const isWrong = p?.correct === false;
+                          const color = isWrong
+                            ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30'
+                            : (pts > 0
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
+                              : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600');
                           return (
                         <td key={`q-${q.id}-${e.user.id}`} className="px-3 py-2">
                           <div className="flex justify-center">
                             <div className="relative inline-block group">
-                              <span className={`inline-block max-w-[160px] truncate text-center px-2 py-1 rounded-md border text-xs ${color}`} title={`${answer}`}>{answer || '—'}</span>
+                          <span className={`inline-flex items-center gap-1 max-w-[180px] truncate text-center px-2 py-1 rounded-md border text-xs ${color} transition-transform duration-200`} title={`${answer}`}>
+                                {isYes && <CheckCircle2 className="w-3.5 h-3.5" />}
+                                {isNo && <XCircle className="w-3.5 h-3.5" />}
+                                <span className="truncate">{answer}</span>
+                              </span>
                               {pts > 0 && (
                                 <span
                                   className="pointer-events-none absolute -top-1 -right-1 text-[9px] px-1 py-[1px] rounded bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-800 dark:text-emerald-200 dark:border-emerald-700 shadow-sm opacity-0 group-hover:opacity-100"
@@ -976,8 +1151,64 @@ useEffect(() => {
         )}
       </div>
       {/* Floating Top 3 card (simple) with delta */}
+      {showManagePlayers && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg p-0 max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="px-4 pt-4 pb-2 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div className="font-semibold text-slate-800 dark:text-slate-200">Manage Players</div>
+                <button onClick={()=> setShowManagePlayers(false)} className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">Close</button>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input value={manageQuery} onChange={(e)=> setManageQuery(e.target.value)} placeholder="Search players" className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" />
+                </div>
+                <button onClick={()=> {
+                  const ids = (withSimTotals||[])
+                    .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
+                    .map(e => String(e.user.id));
+                  setSelectedUserIds(prev => Array.from(new Set([...prev.map(String), ...ids])));
+                }} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">Select All</button>
+                <button onClick={()=> {
+                  const ids = new Set((withSimTotals||[])
+                    .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
+                    .map(e => String(e.user.id)));
+                  setSelectedUserIds(prev => prev.filter(id => !ids.has(String(id))));
+                }} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">Clear All</button>
+              </div>
+              <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">Selected {selectedUserIds.length}{pinnedUserIds.length? ` • Pinned ${pinnedUserIds.length}`:''}</div>
+            </div>
+            <div className="flex-1 overflow-y-auto no-scrollbar p-3 grid grid-cols-1 gap-2">
+              {(withSimTotals||[])
+                .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
+                .map(e => {
+                  const id = String(e.user.id);
+                  const isSel = selectedUserIds.map(String).includes(id);
+                  const isPin = pinnedUserIds.map(String).includes(id);
+                  return (
+                    <div key={`drow-${id}`} className={`flex items-center justify-between rounded-xl border ${isSel? 'border-emerald-300 bg-emerald-50/60 dark:border-emerald-700/60 dark:bg-emerald-900/30':'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'} px-3 py-2`}>
+                      <label className="flex items-center gap-3 min-w-0">
+                        <input type="checkbox" className="accent-emerald-600" checked={isSel} onChange={(ev)=> {
+                          if (ev.target.checked) addUser(id); else setSelectedUserIds(prev => prev.filter(x => String(x)!==id));
+                        }} />
+                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-semibold">
+                          {(e.user.display_name || e.user.username).slice(0,2).toUpperCase()}
+                        </div>
+                        <span className="truncate text-sm text-slate-800 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
+                      </label>
+                      <button type="button" onClick={()=> togglePin(id)} title={isPin? 'Unpin':'Pin'} className={`px-2 py-1 rounded-lg border ${isPin? 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300':'border-slate-300 bg-white text-slate-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'} ${pinPulseId===id? 'pin-pulse':''}`}>
+                        {isPin ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="fixed bottom-4 right-4 z-40">
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl p-3 w-72">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 backdrop-blur shadow-xl p-3 w-72 transition-shadow duration-200 hover:shadow-2xl">
           <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-2">{whatIfEnabled ? 'Simulated' : 'Current'} Top 3</div>
           <ol className="space-y-1">
             {(withSimTotals||[]).slice(0,3).map((e,idx)=> {
