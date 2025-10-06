@@ -56,40 +56,56 @@ const StandingsList = memo(({ conference, teams, handleReset, isEditable }) => (
   </div>
 ));
 
-function EditablePredictionBoard({ seasonSlug }) {
+function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true, username }) {
   const [eastStandings, setEastStandings] = useState([]);
   const [westStandings, setWestStandings] = useState([]);
   const [initialEastStandings, setInitialEastStandings] = useState([]);
   const [initialWestStandings, setInitialWestStandings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [seasonSlug, setSeasonSlug] = useState(initialSeasonSlug);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchSeasonAndPredictions = async () => {
+      let currentSeasonSlug = seasonSlug;
       try {
-        // Fetch the latest season slug if not provided
-        if (!seasonSlug) {
+        if (!currentSeasonSlug) {
           const latestSeasonResponse = await axios.get('/api/latest_season/');
-          seasonSlug = latestSeasonResponse.data.slug;
+          currentSeasonSlug = latestSeasonResponse.data.slug;
+          setSeasonSlug(currentSeasonSlug);
         }
 
-        // Fetch the user predictions
-        const predictionsResponse = await axios.get(`/api/user_predictions/${seasonSlug}/`);
-        const { east, west } = predictionsResponse.data;
+        const predictionsResponse = await axios.get(`/api/user_predictions/${currentSeasonSlug}/`, {
+          params: { username },
+        });
+        const body = predictionsResponse.data || {};
+        let east = body.east;
+        let west = body.west;
+        if (!east || !west) {
+          const preds = Array.isArray(body.predictions) ? body.predictions : [];
+          const eastFlat = preds.filter((t) => t.team_conference === 'East')
+            .sort((a, b) => (a.predicted_position || 0) - (b.predicted_position || 0))
+            .map(t => ({ team_id: t.team_id, team_name: t.team_name, predicted_position: t.predicted_position }));
+          const westFlat = preds.filter((t) => t.team_conference === 'West')
+            .sort((a, b) => (a.predicted_position || 0) - (b.predicted_position || 0))
+            .map(t => ({ team_id: t.team_id, team_name: t.team_name, predicted_position: t.predicted_position }));
+          east = eastFlat;
+          west = westFlat;
+        }
 
         setEastStandings(east);
         setWestStandings(west);
         setInitialEastStandings(east);
         setInitialWestStandings(west);
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching user predictions or latest season:', error);
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [seasonSlug]);
+    fetchSeasonAndPredictions();
+  }, [seasonSlug, username]);
 
   const onDragEnd = useCallback(
     (result) => {
@@ -115,6 +131,21 @@ function EditablePredictionBoard({ seasonSlug }) {
     [eastStandings, westStandings]
   );
 
+  const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  };
+
   const handleSave = () => {
     // Submit the updated standings to the server
     const eastPayload = eastStandings.map((team, index) => ({
@@ -130,7 +161,12 @@ function EditablePredictionBoard({ seasonSlug }) {
     const payload = [...eastPayload, ...westPayload];
 
     axios
-      .post(`/api/submit_predictions/${seasonSlug}/`, payload)
+      .post(`/api/submit_predictions/${seasonSlug}/`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+      })
       .then(() => {
         alert('Predictions saved successfully!');
         setIsEditing(false);  // Exit edit mode
@@ -192,12 +228,14 @@ function EditablePredictionBoard({ seasonSlug }) {
             </button>
           </>
         ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors duration-100"
-          >
-            Edit Predictions
-          </button>
+          canEdit && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors duration-100"
+            >
+              Edit Predictions
+            </button>
+          )
         )}
       </div>
     </div>

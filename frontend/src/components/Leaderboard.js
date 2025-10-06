@@ -26,22 +26,66 @@ const Leaderboard = memo(({ seasonSlug }) => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        setLoading(true); // Start loading
-        setError(null); // Reset error
+        setLoading(true);
+        setError(null);
 
-        const response = await axios.get(`/api/leaderboard/${seasonSlug}/`);
-        console.log(response)
-        setLeaderboardData(response.data); // Update leaderboard data
-        setLoading(false); // End loading
+        // Try optimized v2 route first
+        let items = [];
+        try {
+          const resV2 = await axios.get(`/api/v2/leaderboards/${seasonSlug}`);
+          const raw = resV2.data;
+          if (Array.isArray(raw)) {
+            items = raw.map((u) => ({
+              id: u.id ?? u.user?.id,
+              name: u.display_name || u.username || u.user?.display_name || u.user?.username,
+              points: u.total_points ?? u.points ?? u.user?.total_points ?? 0,
+            }));
+          }
+        } catch (_) {
+          // fall through to legacy
+        }
+
+        if (!items.length) {
+          // Legacy temp v2 route
+          try {
+            const resTemp = await axios.get(`/api/v2/leaderboard/${seasonSlug}`);
+            const raw = resTemp.data;
+            if (raw && Array.isArray(raw.top_users)) {
+              items = raw.top_users.map((t) => ({
+                id: t.user?.id,
+                name: t.user?.display_name || t.user?.username,
+                points: t.points ?? 0,
+              }));
+            }
+          } catch (_) { /* no-op */ }
+        }
+
+        if (!items.length) {
+          // Old v1 route fallback
+          const resV1 = await axios.get(`/api/leaderboard/${seasonSlug}/`);
+          const raw = resV1.data;
+          if (raw && Array.isArray(raw.top_users)) {
+            items = raw.top_users.map((t) => ({
+              id: t.user?.id,
+              name: t.user?.display_name || t.user?.username,
+              points: t.points ?? 0,
+            }));
+          } else if (Array.isArray(raw)) {
+            items = raw.map((u) => ({ id: u.id, name: u.name || u.username, points: u.points || 0 }));
+          }
+        }
+
+        setLeaderboardData(items);
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching leaderboard:', err);
         setError('Failed to load leaderboard. Please try again later.');
-        setLoading(false); // End loading even if there's an error
+        setLoading(false);
       }
     };
 
-    fetchLeaderboard(); // Initiate data fetching
-  }, [seasonSlug]); // Re-run effect if seasonSlug changes
+    fetchLeaderboard();
+  }, [seasonSlug]);
 
   /**
    * Renders a single leaderboard row.
@@ -94,7 +138,13 @@ const Leaderboard = memo(({ seasonSlug }) => {
             </tr>
           </thead>
           <tbody>
-            {leaderboardData.map((user, index) => renderLeaderboardRow(user, index))}
+            {Array.isArray(leaderboardData) && leaderboardData.length > 0 ? (
+              leaderboardData.map((user, index) => renderLeaderboardRow(user, index))
+            ) : (
+              <tr>
+                <td colSpan="3" className="py-4 text-center text-gray-500">No leaderboard data available.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

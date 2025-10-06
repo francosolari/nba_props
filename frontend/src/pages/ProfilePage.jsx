@@ -7,6 +7,7 @@ import Leaderboard from '../components/Leaderboard';
 import UserExpandedView from '../components/UserExpandedView';
 import CategoryIcon from '../components/CategoryIcon';
 import QuestionForm from '../components/QuestionForm';
+import DisplayPredictionsBoard from '../components/DisplayPredictions';
 
 function getRootProps() {
   const el = document.getElementById('profile-root');
@@ -253,45 +254,54 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
 
       {/* Tab Panels */}
       {activeTab === 'overview' && (
-        <>
-          {/* Quick Stats */}
-          <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-              <p className="text-sm text-gray-500">Total Points</p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight">{(me?.user?.total_points || 0).toLocaleString()}</p>
-              <p className="mt-1 text-xs text-gray-500">Rank: {me?.rank ?? '—'}</p>
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Leaderboard */}
+          <section className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-800">Leaderboard</h3>
+              <a href={`/page/${encodeURIComponent(selectedSeason)}/`} className="text-sm text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1">
+                View Full <ExternalLink className="w-4 h-4" />
+              </a>
             </div>
-            <div className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-              <p className="text-sm text-gray-500">Regular Season</p>
-              <div className="mt-2 flex items-end justify-between">
-                <p className="text-3xl font-semibold tracking-tight">{(standings.points || 0).toLocaleString()}</p>
-                <p className="text-xs text-gray-500">/ {(standings.max_points || 0).toLocaleString()}</p>
-              </div>
-              <ProgressBar value={pct(standings.points, standings.max_points)} />
-            </div>
-            <div className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-              <p className="text-sm text-gray-500">Accuracy</p>
-              <div className="mt-2 flex items-end justify-between">
-                <p className="text-3xl font-semibold tracking-tight">{accuracyPct}%</p>
-                <p className="text-xs text-gray-500">Correct answers rate</p>
-              </div>
-              <div className="mt-3 h-2 w-full overflow-hidden rounded bg-gray-100">
-                <div className="h-full bg-emerald-500" style={{ width: `${accuracyPct}%` }} />
+            <div className="mt-4">
+              <div className="space-y-4">
+                {data && data.length > 0 ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-10 h-10">
+                        <img
+                          src={avatarUrl(me?.user?.display_name || me?.user?.username)}
+                          alt="Avatar"
+                          className="w-full h-full rounded-full object-cover border border-slate-300 dark:border-slate-600"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800 dark:text-slate-100">
+                          {me?.user?.display_name || me?.user?.username}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-slate-800 dark:text-white">
+                        {me?.user?.total_points.toLocaleString() || '0'}
+                      </p>
+                      <p className="text-sm text-slate-400 dark:text-slate-400">Total Points</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">No leaderboard data available</div>
+                )}
               </div>
             </div>
           </section>
 
-          {/* Current Leaderboard Snapshot */}
-          <section className="mt-6 rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-800">Current Leaderboard</h3>
-              <a href={`/page/${encodeURIComponent(selectedSeason)}/`} className="text-sm text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1">Open full leaderboard <ExternalLink className="w-4 h-4" /></a>
-            </div>
-            <div className="mt-4">
-              <Leaderboard seasonSlug={selectedSeason} />
-            </div>
+
+          {/* Predictions */}
+          <section className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
+            <h3 className="text-base font-semibold text-gray-800 mb-4">My Regular Season Predictions</h3>
+            <DisplayPredictionsBoard seasonSlug={selectedSeason} />
           </section>
-        </>
+        </div>
       )}
 
       {activeTab === 'leaderboard' && (
