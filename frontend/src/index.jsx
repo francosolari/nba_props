@@ -17,6 +17,7 @@ import PredictionsTable from './components/archive/PredictionsTable';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import LeaderboardDetailPage from './pages/LeaderboardDetailPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import SubmissionsPage from './pages/SubmissionsPage.jsx';
 import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
 
 console.log("React bundle loaded and running!");
@@ -69,3 +70,4 @@ mountComponent(UserPredictionModal,
 mountComponent(LeaderboardPage, 'leaderboard-page-root', 'LeaderboardPage');
 mountComponent(LeaderboardDetailPage, 'leaderboard-detail-root', 'LeaderboardDetailPage');
 mountComponent(ProfilePage, 'profile-root', 'ProfilePage');
+mountComponent(SubmissionsPage, 'submissions-root', 'SubmissionsPage');
