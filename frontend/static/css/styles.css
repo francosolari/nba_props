@@ -568,3 +568,267 @@ video {
   animation: pinPulse 0.35s ease-out;
 }
 
+/*!************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[1].use[2]!./src/styles/palette.css ***!
+  \************************************************************************************************************************************************/
+:root {
+  --nba-blue-50: #e8f1ff;
+  --nba-blue-100: #d2e2ff;
+  --nba-blue-200: #a5c5ff;
+  --nba-blue-400: #3d7eff;
+  --nba-blue-500: #1f6bff;
+  --nba-blue-600: #1553cc;
+  --nba-blue-700: #0e3b99;
+
+  --nba-red-50: #ffecec;
+  --nba-red-100: #ffd6d6;
+  --nba-red-200: #ffa9a9;
+  --nba-red-400: #ff4747;
+  --nba-red-500: #ff2d2d;
+  --nba-red-600: #d42020;
+  --nba-red-700: #a31818;
+
+  --nba-slate-50: #f8fafc;
+  --nba-slate-100: #f1f5f9;
+  --nba-slate-200: #e2e8f0;
+  --nba-slate-300: #cbd5f5;
+  --nba-slate-400: #94a3b8;
+  --nba-slate-500: #64748b;
+  --nba-slate-600: #475569;
+  --nba-slate-900: #0f172a;
+
+  --standings-card-bg: #ffffff;
+  --standings-card-border: rgba(15, 23, 42, 0.08);
+  --standings-card-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  --standings-card-shadow-hover: 0 16px 40px rgba(15, 23, 42, 0.08);
+
+  --east-gradient: linear-gradient(135deg, rgba(31, 107, 255, 0.18), rgba(14, 59, 153, 0.18));
+  --west-gradient: linear-gradient(135deg, rgba(255, 45, 45, 0.18), rgba(163, 24, 24, 0.18));
+}
+
+.standings-shell {
+  width: 100%;
+  background: var(--standings-card-bg);
+  border: 1px solid var(--standings-card-border);
+  border-radius: 1.25rem;
+  box-shadow: var(--standings-card-shadow);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.standings-shell:hover {
+  box-shadow: var(--standings-card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.standings-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+.standings-grid {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.standings-column {
+  flex: 0 0 260px;
+  width: 260px;
+}
+
+.standings-loading {
+  padding: 3rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--nba-slate-500);
+}
+
+.conference-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0 0.2rem;
+  font-weight: 600;
+  color: var(--nba-slate-900);
+  font-size: 0.85rem;
+}
+
+.conference-header .badge {
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.conference-header .badge.east {
+  background: var(--nba-blue-500);
+}
+
+.conference-header .badge.west {
+  background: var(--nba-red-500);
+}
+
+.conference-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border-radius: 0.9rem;
+  padding: 0.6rem;
+  background: rgba(248, 250, 252, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  min-height: 22rem;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.conference-list.east {
+  border-left: 4px solid var(--nba-blue-500);
+}
+
+.conference-list.west {
+  border-left: 4px solid var(--nba-red-500);
+}
+
+.conference-team {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--nba-slate-600);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  cursor: grab;
+}
+
+.conference-team.dragging {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 12px 20px rgba(15, 23, 42, 0.12);
+}
+
+.conference-team:active {
+  cursor: grabbing;
+}
+
+.conference-team .position {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 0.45rem;
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--nba-slate-600);
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.conference-team .name {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--nba-slate-900);
+}
+
+.conference-team .logo {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+
+.standings-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--nba-slate-500);
+}
+
+.standings-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.standings-button {
+  padding: 0.55rem 1.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.standings-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+}
+
+.standings-button.edit {
+  background: var(--nba-blue-500);
+  color: #fff;
+}
+
+.standings-button.save {
+  background: var(--nba-blue-600);
+  color: #fff;
+}
+
+.standings-button.cancel {
+  background: var(--nba-red-500);
+  color: #fff;
+}
+
+.standings-button.ghost {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--nba-slate-600);
+}
+
+.standings-button.ghost:hover {
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.standings-button:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+@media (max-width: 1024px) {
+  .conference-list {
+    min-height: 20rem;
+  }
+  .standings-wrapper {
+    padding: 1.25rem 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .conference-list {
+    min-height: 16rem;
+  }
+}
+

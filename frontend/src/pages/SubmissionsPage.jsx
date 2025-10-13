@@ -6,8 +6,15 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
-import { useQuestions, useUserAnswers, useSubmitAnswers, useSubmissionStatus } from '../hooks/useSubmissions';
+import {
+  useQuestions,
+  useUserAnswers,
+  useSubmitAnswers,
+  useSubmissionStatus,
+  useUserContext,
+} from '../hooks/useSubmissions';
 import SelectComponent from '../components/SelectComponent';
+import EditablePredictionBoard from '../components/EditablePredictionBoard';
 
 const QUESTION_GROUP_META = {
   superlative: {
@@ -51,22 +58,71 @@ const QUESTION_GROUP_ORDER = [
 ];
 
 const SubmissionsPage = ({ seasonSlug }) => {
+  const [activeSeasonSlug, setActiveSeasonSlug] = useState(seasonSlug || null);
+  const [seasonLoading, setSeasonLoading] = useState(!seasonSlug);
   const [answers, setAnswers] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
   const [playerOptions, setPlayerOptions] = useState([]);
   const [teamOptions, setTeamOptions] = useState([]);
   const [loadingAuxData, setLoadingAuxData] = useState(false);
 
-  // Fetch data
-  const { data: questionsData, isLoading: questionsLoading } = useQuestions(seasonSlug);
-  const { data: userAnswersData } = useUserAnswers(seasonSlug);
-  const { data: statusData } = useSubmissionStatus(seasonSlug);
-  const submitMutation = useSubmitAnswers(seasonSlug);
+  const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
+  const { data: userContext, isLoading: userContextLoading } = useUserContext();
+  const username = userContext?.username || null;
 
-  // Load cached answers from localStorage on mount
+  // Discover the latest season when no slug provided
   useEffect(() => {
-    if (!seasonSlug) return;
-    const cached = localStorage.getItem(`submissions_${seasonSlug}`);
+    if (seasonSlug || activeSeasonSlug) {
+      setSeasonLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchLatestSeason = async () => {
+      setSeasonLoading(true);
+      try {
+        const { data } = await axios.get('/api/v2/latest-season');
+        if (!cancelled && data?.slug) {
+          setActiveSeasonSlug(data.slug);
+        }
+      } catch (error) {
+        console.error('Failed to fetch latest season slug', error);
+      } finally {
+        if (!cancelled) {
+          setSeasonLoading(false);
+        }
+      }
+    };
+
+    fetchLatestSeason();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [seasonSlug, activeSeasonSlug]);
+
+  const storageKey = useMemo(() => {
+    return effectiveSeasonSlug ? `submissions_${effectiveSeasonSlug}` : null;
+  }, [effectiveSeasonSlug]);
+
+  // Fetch data
+  const { data: questionsData, isLoading: questionsLoading } = useQuestions(effectiveSeasonSlug);
+  const { data: userAnswersData } = useUserAnswers(effectiveSeasonSlug);
+  const { data: statusData } = useSubmissionStatus(effectiveSeasonSlug);
+  const submitMutation = useSubmitAnswers(effectiveSeasonSlug);
+
+  // Reset answers when season changes
+  useEffect(() => {
+    if (!effectiveSeasonSlug) return;
+    setAnswers({});
+    setHasChanges(false);
+  }, [effectiveSeasonSlug]);
+
+  // Load cached answers from localStorage on season changes
+  useEffect(() => {
+    if (!storageKey) return;
+    const cached = localStorage.getItem(storageKey);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
@@ -78,9 +134,9 @@ const SubmissionsPage = ({ seasonSlug }) => {
         console.warn('Failed to parse cached submissions', err);
       }
     }
-  }, [seasonSlug]);
+  }, [storageKey]);
 
-  // Load existing answers
+  // Load existing answers from server
   useEffect(() => {
     if (userAnswersData?.answers) {
       const existingAnswers = {};
@@ -94,10 +150,11 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
   // Auto-save to localStorage
   useEffect(() => {
+    if (!storageKey) return;
     if (hasChanges && Object.keys(answers).length > 0) {
-      localStorage.setItem(`submissions_${seasonSlug}`, JSON.stringify(answers));
+      localStorage.setItem(storageKey, JSON.stringify(answers));
     }
-  }, [answers, seasonSlug, hasChanges]);
+  }, [answers, storageKey, hasChanges]);
 
   const handleAnswerChange = useCallback((questionId, value) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -174,6 +231,11 @@ const SubmissionsPage = ({ seasonSlug }) => {
   }, [questionsData, playerOptions.length, teamOptions.length]);
 
   const handleSubmit = async () => {
+    if (!effectiveSeasonSlug) {
+      alert('Season is not ready yet. Please try again shortly.');
+      return;
+    }
+
     const answersArray = Object.entries(answers).map(([question_id, answer]) => ({
       question_id: parseInt(question_id, 10),
       answer: String(answer),
@@ -182,7 +244,9 @@ const SubmissionsPage = ({ seasonSlug }) => {
     try {
       await submitMutation.mutateAsync(answersArray);
       setHasChanges(false);
-      localStorage.removeItem(`submissions_${seasonSlug}`);
+      if (storageKey) {
+        localStorage.removeItem(storageKey);
+      }
       alert('Answers submitted successfully!');
     } catch (error) {
       alert(`Error: ${error.response?.data?.message || 'Failed to submit'}`);
@@ -219,6 +283,14 @@ const SubmissionsPage = ({ seasonSlug }) => {
     });
   }, [questions]);
 
+  if (seasonLoading || !effectiveSeasonSlug) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-slate-600 text-2xl">Loading season...</div>
+      </div>
+    );
+  }
+
   if (questionsLoading) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
@@ -239,7 +311,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Submit Your Predictions</h1>
-          <p className="text-slate-500">{seasonSlug} Season</p>
+          <p className="text-slate-500">{effectiveSeasonSlug} Season</p>
         </div>
 
         {/* Deadline Banner */}
@@ -272,8 +344,33 @@ const SubmissionsPage = ({ seasonSlug }) => {
           </div>
         )}
 
+        {/* Regular Season Standings */}
+        <section className="mb-10">
+          <header className="mb-4">
+            <h2 className="text-2xl font-semibold text-slate-900">Regular Season Standings</h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Drag and drop teams in each conference to set your projected final standings.
+            </p>
+          </header>
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
+            {userContextLoading ? (
+              <div className="p-6 text-center text-sm text-slate-500">Loading standings...</div>
+            ) : userContext ? (
+              <EditablePredictionBoard
+                seasonSlug={effectiveSeasonSlug}
+                canEdit={!isReadOnly}
+                username={username}
+              />
+            ) : (
+              <div className="p-6 text-center text-sm text-slate-500">
+                Sign in to manage your regular season standings predictions.
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Progress Bar */}
-        {!isReadOnly && (
+        {!isReadOnly && questions.length > 0 && (
           <div className="mb-6">
             <div className="flex justify-between text-sm text-slate-500 mb-2">
               <span>Progress</span>
@@ -321,7 +418,9 @@ const SubmissionsPage = ({ seasonSlug }) => {
           <div className="mt-8 text-center">
             <button
               onClick={handleSubmit}
-              disabled={submitMutation.isPending || Object.keys(answers).length === 0}
+              disabled={
+                submitMutation.isPending || !effectiveSeasonSlug || Object.keys(answers).length === 0
+              }
               className="bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
             >
               {submitMutation.isPending ? 'Submitting...' : 'Submit Predictions'}

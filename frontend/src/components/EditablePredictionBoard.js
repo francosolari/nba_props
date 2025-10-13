@@ -1,53 +1,83 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import axios from 'axios';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import '../styles/palette.css';
 
-const StandingsList = memo(({ conference, teams, handleReset, isEditable }) => (
-  <div className="w-full lg:w-1/3 mb-4 px-1 no-select">
-    <div className="w-auto max-w-md p-1 border rounded bg-gray-100 transition-colors duration-100">
-      <div className="flex justify-between items-center mb-1">
-        <h2 className="text-sm font-semibold">{conference}ern Conference</h2>
-        {isEditable && (
-          <button
-            onClick={handleReset}
-            className="px-2 py-0.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors duration-100"
-          >
-            Reset
-          </button>
-        )}
+const teamSlug = (name = '') =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+
+const StandingsList = memo(({ conference, teams, isEditable }) => (
+  <div className="standings-column">
+    <div className="standings-shell">
+      <div className="conference-header">
+        <span>{conference}ern Conference</span>
+        <span className={`badge ${conference === 'East' ? 'east' : 'west'}`}>{conference}</span>
       </div>
 
       <Droppable droppableId={`${conference}-standings`} direction="vertical">
         {(provided) => (
           <div
-            className="space-y-1 p-1 rounded select-none"
+            className={`conference-list ${conference === 'East' ? 'east' : 'west'}`}
             ref={provided.innerRef}
             {...provided.droppableProps}
           >
-            {teams.map((team, index) => (
-              <Draggable
-                key={team.team_id.toString()}
-                draggableId={team.team_id.toString()}
-                index={index}
-                isDragDisabled={!isEditable}  // Disable dragging if not editable
-              >
-                {(provided) => (
-                  <div
-                    className={`flex items-center p-1 border rounded text-xs transition-transform duration-100 ease-in-out ${
-                      conference === 'East' ? 'bg-blue-100' : 'bg-red-100'
-                    }`}
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                  >
-                    <span className="w-4 text-right font-medium">{index + 1}.</span>
-                    <span className="ml-2 font-bold font-sans" title={team.team_name}>
-                      {team.team_name}
-                    </span>
-                  </div>
-                )}
-              </Draggable>
-            ))}
+            {teams.length > 0 ? (
+              teams.map((team, index) => (
+                <Draggable
+                  key={team.team_id.toString()}
+                  draggableId={team.team_id.toString()}
+                  index={index}
+                  isDragDisabled={!isEditable}
+                >
+                  {(provided, snapshot) => (
+                    <div
+                      className={`conference-team ${snapshot.isDragging ? 'dragging' : ''}`}
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                    >
+                      <span className="position">{index + 1}</span>
+                      <img
+                        className="logo"
+                        src={`/static/img/teams/${teamSlug(team.team_name)}.png`}
+                        alt={team.team_name}
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          const slug = teamSlug(team.team_name);
+                          const step = parseInt(img.dataset.step || '0', 10);
+                          if (step === 0) {
+                            img.dataset.step = '1';
+                            img.src = `/static/img/teams/${slug}.svg`;
+                            return;
+                          }
+                          if (step === 1) {
+                            img.dataset.step = '2';
+                            img.src = `/static/img/teams/${slug}.PNG`;
+                            return;
+                          }
+                          if (step === 2) {
+                            img.dataset.step = '3';
+                            img.src = `/static/img/teams/${slug}.SVG`;
+                            return;
+                          }
+                          img.onerror = null;
+                          img.src = '/static/img/teams/unknown.svg';
+                        }}
+                      />
+                      <span className="name" title={team.team_name}>
+                        {team.team_name}
+                      </span>
+                    </div>
+                  )}
+                </Draggable>
+              ))
+            ) : (
+              <div className="standings-empty">No teams available.</div>
+            )}
             {provided.placeholder}
           </div>
         )}
@@ -63,48 +93,186 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
   const [initialWestStandings, setInitialWestStandings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [seasonSlug, setSeasonSlug] = useState(initialSeasonSlug);
 
   useEffect(() => {
-    const fetchSeasonAndPredictions = async () => {
-      let currentSeasonSlug = seasonSlug;
+    if (initialSeasonSlug) {
+      setSeasonSlug(initialSeasonSlug);
+    }
+  }, [initialSeasonSlug]);
+
+  useEffect(() => {
+    setIsEditing(false);
+    setSaving(false);
+  }, [seasonSlug]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const sortPredictions = (list) =>
+      [...list].sort((a, b) => (a.predicted_position || 0) - (b.predicted_position || 0));
+
+    const orderTeamsForFallback = (teams = []) =>
+      [...teams].sort((a, b) => {
+        const aMetric =
+          a?.seed ?? a?.rank ?? a?.projected_rank ?? a?.predicted_position ?? Number.MAX_SAFE_INTEGER;
+        const bMetric =
+          b?.seed ?? b?.rank ?? b?.projected_rank ?? b?.predicted_position ?? Number.MAX_SAFE_INTEGER;
+        if (aMetric !== bMetric) return aMetric - bMetric;
+        const aName = a?.name || '';
+        const bName = b?.name || '';
+        return aName.localeCompare(bName);
+      });
+
+    const fetchPreviousSeasonSlug = async (currentSlug) => {
       try {
-        if (!currentSeasonSlug) {
-          const latestSeasonResponse = await axios.get('/api/latest_season/');
-          currentSeasonSlug = latestSeasonResponse.data.slug;
-          setSeasonSlug(currentSeasonSlug);
+        const { data: seasons } = await axios.get('/api/v2/seasons/');
+        if (!Array.isArray(seasons) || seasons.length === 0) return null;
+        const currentIndex = seasons.findIndex((s) => s.slug === currentSlug);
+        if (currentIndex === -1) {
+          return seasons.length > 1 ? seasons[1].slug : seasons[0].slug;
         }
-
-        const predictionsResponse = await axios.get(`/api/user_predictions/${currentSeasonSlug}/`, {
-          params: { username },
-        });
-        const body = predictionsResponse.data || {};
-        let east = body.east;
-        let west = body.west;
-        if (!east || !west) {
-          const preds = Array.isArray(body.predictions) ? body.predictions : [];
-          const eastFlat = preds.filter((t) => t.team_conference === 'East')
-            .sort((a, b) => (a.predicted_position || 0) - (b.predicted_position || 0))
-            .map(t => ({ team_id: t.team_id, team_name: t.team_name, predicted_position: t.predicted_position }));
-          const westFlat = preds.filter((t) => t.team_conference === 'West')
-            .sort((a, b) => (a.predicted_position || 0) - (b.predicted_position || 0))
-            .map(t => ({ team_id: t.team_id, team_name: t.team_name, predicted_position: t.predicted_position }));
-          east = eastFlat;
-          west = westFlat;
-        }
-
-        setEastStandings(east);
-        setWestStandings(west);
-        setInitialEastStandings(east);
-        setInitialWestStandings(west);
+        const previous = seasons[currentIndex + 1];
+        return previous?.slug || seasons[currentIndex]?.slug || null;
       } catch (error) {
-        console.error('Error fetching user predictions or latest season:', error);
-      } finally {
+        console.error('Error fetching seasons list:', error);
+        return null;
+      }
+    };
+
+    const mapStandingsToPredictions = (entries = []) =>
+      entries
+        .sort((a, b) => (a.position || 0) - (b.position || 0))
+        .map((entry, idx) => ({
+          team_id: entry.id,
+          team_name: entry.name,
+          predicted_position: entry.position || idx + 1,
+        }));
+
+    const fetchSeasonAndPredictions = async (slugToUse) => {
+      setLoading(true);
+      let body = {};
+
+      try {
+        const params = username ? { params: { username } } : undefined;
+        const response = await axios.get(`/api/user_predictions/${slugToUse}/`, params);
+        body = response.data || {};
+      } catch (error) {
+        console.error('Error fetching user standings predictions:', error);
+      }
+
+      let east = Array.isArray(body.east) && body.east.length ? sortPredictions(body.east) : [];
+      let west = Array.isArray(body.west) && body.west.length ? sortPredictions(body.west) : [];
+
+      if (east.length === 0 || west.length === 0) {
+        const preds = Array.isArray(body.predictions) ? body.predictions : [];
+        if (east.length === 0) {
+          east = preds
+            .filter((t) => t.team_conference === 'East')
+            .sort((a, b) => (a.predicted_position || 0) - (b.predicted_position || 0))
+            .map((t, idx) => ({
+              team_id: t.team_id,
+              team_name: t.team_name,
+              predicted_position: t.predicted_position || idx + 1,
+            }));
+        }
+        if (west.length === 0) {
+          west = preds
+            .filter((t) => t.team_conference === 'West')
+            .sort((a, b) => (a.predicted_position || 0) - (b.predicted_position || 0))
+            .map((t, idx) => ({
+              team_id: t.team_id,
+              team_name: t.team_name,
+              predicted_position: t.predicted_position || idx + 1,
+            }));
+        }
+      }
+
+      if (east.length === 0 || west.length === 0) {
+        try {
+          const previousSlug = await fetchPreviousSeasonSlug(slugToUse);
+          if (previousSlug) {
+            const { data: previousStandings } = await axios.get(`/api/v2/standings/${previousSlug}`);
+            if (east.length === 0 && Array.isArray(previousStandings?.east)) {
+              east = mapStandingsToPredictions(previousStandings.east);
+            }
+            if (west.length === 0 && Array.isArray(previousStandings?.west)) {
+              west = mapStandingsToPredictions(previousStandings.west);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching previous season standings:', error);
+        }
+      }
+
+      if (east.length === 0 || west.length === 0) {
+        try {
+          const { data: teamsResponse } = await axios.get('/api/v2/teams/');
+          const teams = teamsResponse?.teams || [];
+          if (east.length === 0) {
+            const eastTeams = orderTeamsForFallback(
+              teams.filter((team) => (team.conference || '').toLowerCase().startsWith('east'))
+            );
+            east = eastTeams.map((team, idx) => ({
+              team_id: team.id,
+              team_name: team.name,
+              predicted_position: idx + 1,
+            }));
+          }
+          if (west.length === 0) {
+            const westTeams = orderTeamsForFallback(
+              teams.filter((team) => (team.conference || '').toLowerCase().startsWith('west'))
+            );
+            west = westTeams.map((team, idx) => ({
+              team_id: team.id,
+              team_name: team.name,
+              predicted_position: idx + 1,
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching fallback team list:', error);
+        }
+      }
+
+      if (isMounted) {
+        const eastClone = east.map((team) => ({ ...team }));
+        const westClone = west.map((team) => ({ ...team }));
+        const eastBaseline = eastClone.map((team) => ({ ...team }));
+        const westBaseline = westClone.map((team) => ({ ...team }));
+        setEastStandings(eastClone);
+        setWestStandings(westClone);
+        setInitialEastStandings(eastBaseline);
+        setInitialWestStandings(westBaseline);
         setLoading(false);
       }
     };
 
-    fetchSeasonAndPredictions();
+    const hydrate = async () => {
+      if (!seasonSlug) {
+        try {
+          const latestSeasonResponse = await axios.get('/api/v2/latest-season');
+          const latestSlug = latestSeasonResponse.data?.slug;
+          if (latestSlug && isMounted) {
+            setSeasonSlug(latestSlug);
+          }
+        } catch (error) {
+          console.error('Error determining latest season:', error);
+          if (isMounted) {
+            setLoading(false);
+          }
+        }
+        return;
+      }
+
+      await fetchSeasonAndPredictions(seasonSlug);
+    };
+
+    hydrate();
+
+    return () => {
+      isMounted = false;
+    };
   }, [seasonSlug, username]);
 
   const onDragEnd = useCallback(
@@ -146,7 +314,8 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
     return cookieValue;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaving(true);
     // Submit the updated standings to the server
     const eastPayload = eastStandings.map((team, index) => ({
       team_id: team.team_id,
@@ -160,80 +329,85 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
 
     const payload = [...eastPayload, ...westPayload];
 
-    axios
-      .post(`/api/submit_predictions/${seasonSlug}/`, payload, {
+    try {
+      await axios.post(`/api/submit_predictions/${seasonSlug}/`, payload, {
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': getCookie('csrftoken'),
         },
-      })
-      .then(() => {
-        alert('Predictions saved successfully!');
-        setIsEditing(false);  // Exit edit mode
-      })
-      .catch((error) => {
-        console.error('Error saving predictions:', error);
-        alert('There was an error saving your predictions.');
       });
+      setIsEditing(false);
+      setInitialEastStandings(eastStandings.map((team) => ({ ...team })));
+      setInitialWestStandings(westStandings.map((team) => ({ ...team })));
+    } catch (error) {
+      console.error('Error saving predictions:', error);
+      alert('There was an error saving your predictions.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
-    setEastStandings(initialEastStandings);
-    setWestStandings(initialWestStandings);
+    setEastStandings(initialEastStandings.map((team) => ({ ...team })));
+    setWestStandings(initialWestStandings.map((team) => ({ ...team })));
     setIsEditing(false);
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const handleResetAll = () => {
+    setEastStandings(initialEastStandings.map((team) => ({ ...team })));
+    setWestStandings(initialWestStandings.map((team) => ({ ...team })));
+  };
 
   return (
-    <div className="container mx-auto px-4 py-2">
-      <h1 className="text-xl font-bold mb-4 text-center">Edit Your Predictions for {seasonSlug}</h1>
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex flex-col lg:flex-row justify-center items-start lg:space-x-8">
-          {/* Eastern Conference Standings */}
-          <StandingsList
-            conference="East"
-            teams={eastStandings}
-            handleReset={() => setEastStandings(initialEastStandings)}
-            isEditable={isEditing}
-          />
+    <div className="standings-wrapper">
+      {loading ? (
+        <div className="standings-loading">Loading standings...</div>
+      ) : (
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="standings-grid">
+            <StandingsList conference="East" teams={eastStandings} isEditable={isEditing} />
+            <StandingsList conference="West" teams={westStandings} isEditable={isEditing} />
+          </div>
+        </DragDropContext>
+      )}
 
-          {/* Western Conference Standings */}
-          <StandingsList
-            conference="West"
-            teams={westStandings}
-            handleReset={() => setWestStandings(initialWestStandings)}
-            isEditable={isEditing}
-          />
-        </div>
-      </DragDropContext>
-
-      {/* Edit Mode Buttons */}
-      <div className="flex justify-center mt-4 space-x-4">
+      <div className="standings-actions">
         {isEditing ? (
           <>
             <button
+              type="button"
               onClick={handleCancel}
-              className="px-4 py-2 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors duration-100"
+              className="standings-button cancel"
+              disabled={saving}
             >
               Cancel
             </button>
             <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors duration-100"
+              type="button"
+              onClick={handleResetAll}
+              className="standings-button ghost"
+              disabled={saving}
             >
-              Save Predictions
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="standings-button save"
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </>
         ) : (
           canEdit && (
             <button
+              type="button"
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors duration-100"
+              className="standings-button edit"
+              disabled={loading}
             >
-              Edit Predictions
+              Edit Standings
             </button>
           )
         )}
