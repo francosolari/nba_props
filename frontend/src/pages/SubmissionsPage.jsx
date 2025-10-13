@@ -539,31 +539,49 @@ const QuestionInput = ({
 
     case 'prop': {
       if (question.outcome_type === 'over_under') {
+        const numericLine = Number(question.line);
+        const hasNumericLine = Number.isFinite(numericLine);
+        const formattedLine = hasNumericLine
+          ? (Math.abs(numericLine) % 1 === 0 ? numericLine.toFixed(0) : numericLine.toFixed(1))
+          : question.line ?? '—';
+        const overDescriptor = hasNumericLine ? `≥ ${formattedLine}` : 'Higher outcome';
+        const underDescriptor = hasNumericLine ? `≤ ${formattedLine}` : 'Lower outcome';
+
         return (
-          <div className="flex gap-4">
+          <div
+            className={`overunder-scale${isReadOnly ? ' overunder-scale--disabled' : ''}`}
+            role="group"
+            aria-label={`Choose over or under for line ${formattedLine}`}
+          >
             <button
               type="button"
+              className={`overunder-choice overunder-choice--over ${
+                answer === 'over' ? 'is-selected' : ''
+              } ${isReadOnly ? 'is-disabled' : ''}`}
               onClick={() => onChange('over')}
               disabled={isReadOnly}
-              className={`flex-1 py-3 rounded-lg font-semibold transition-colors border ${
-                answer === 'over'
-                  ? 'bg-emerald-500 text-white border-emerald-500'
-                  : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-              } ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+              aria-pressed={answer === 'over'}
+              aria-label={`Over ${formattedLine}`}
             >
-              Over {question.line}
+              <span className="overunder-choice-label">Over</span>
+              <span className="overunder-choice-sub">{overDescriptor}</span>
             </button>
+            <div className="overunder-divider">
+              <span className="overunder-divider-label">Line</span>
+              <span className="overunder-divider-value">{formattedLine}</span>
+            </div>
             <button
               type="button"
+              className={`overunder-choice overunder-choice--under ${
+                answer === 'under' ? 'is-selected' : ''
+              } ${isReadOnly ? 'is-disabled' : ''}`}
               onClick={() => onChange('under')}
               disabled={isReadOnly}
-              className={`flex-1 py-3 rounded-lg font-semibold transition-colors border ${
-                answer === 'under'
-                  ? 'bg-rose-500 text-white border-rose-500'
-                  : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-              } ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+              aria-pressed={answer === 'under'}
+              aria-label={`Under ${formattedLine}`}
             >
-              Under {question.line}
+              <span className="overunder-choice-label">Under</span>
+              <span className="overunder-choice-sub">{underDescriptor}</span>
             </button>
           </div>
         );

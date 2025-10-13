@@ -856,3 +856,200 @@ video {
   }
 }
 
+.overunder-scale {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.55), rgba(255, 255, 255, 0.95));
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.overunder-scale::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top, rgba(148, 163, 184, 0.2), transparent 55%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.overunder-scale--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.overunder-choice {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--nba-slate-600);
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.overunder-choice::before {
+  content: '';
+  position: absolute;
+  inset: 0.35rem;
+  border-radius: 1.1rem;
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 200ms ease, transform 220ms ease;
+  z-index: -1;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.12);
+}
+
+.overunder-choice--over::before {
+  background: linear-gradient(135deg, rgba(61, 126, 255, 0.18), rgba(31, 107, 255, 0.35));
+}
+
+.overunder-choice--under::before {
+  background: linear-gradient(135deg, rgba(255, 71, 71, 0.18), rgba(255, 45, 45, 0.32));
+}
+
+.overunder-choice:not(.is-disabled):hover {
+  color: var(--nba-slate-900);
+}
+
+.overunder-choice:not(.is-disabled):hover::before {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.overunder-choice.is-selected {
+  transform: translateY(-2px);
+}
+
+.overunder-choice--over.is-selected {
+  color: var(--nba-blue-600);
+}
+
+.overunder-choice--under.is-selected {
+  color: var(--nba-red-600);
+}
+
+.overunder-choice.is-selected::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.overunder-choice.is-disabled,
+.overunder-choice.is-disabled:hover {
+  cursor: not-allowed;
+  color: rgba(100, 116, 139, 0.8);
+}
+
+.overunder-choice.is-disabled::before,
+.overunder-choice.is-disabled:hover::before {
+  opacity: 0;
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+.overunder-choice-label {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.overunder-choice-sub {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(100, 116, 139, 0.85);
+}
+
+.overunder-divider {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.85rem 1.15rem;
+  min-width: 90px;
+  background: rgba(255, 255, 255, 0.65);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+  border-left: 1px dashed rgba(148, 163, 184, 0.35);
+  border-right: 1px dashed rgba(148, 163, 184, 0.35);
+}
+
+.overunder-divider::before,
+.overunder-divider::after {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 36%;
+  background: linear-gradient(to bottom, transparent, rgba(148, 163, 184, 0.45), transparent);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.overunder-divider::before {
+  top: 0.35rem;
+}
+
+.overunder-divider::after {
+  bottom: 0.35rem;
+}
+
+.overunder-divider-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: rgba(100, 116, 139, 0.85);
+}
+
+.overunder-divider-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--nba-slate-900);
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 640px) {
+  .overunder-scale {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    border-radius: 1.25rem;
+  }
+  .overunder-choice {
+    padding: 0.85rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  .overunder-choice::before {
+    inset: 0.25rem;
+    border-radius: 1rem;
+  }
+  .overunder-divider {
+    padding: 0.65rem 0.85rem;
+    min-width: 70px;
+  }
+  .overunder-divider-value {
+    font-size: 1.05rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overunder-choice,
+  .overunder-choice::before {
+    transition: none;
+    transform: none !important;
+  }
+}
+
