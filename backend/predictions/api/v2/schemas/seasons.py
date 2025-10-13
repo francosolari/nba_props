@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime, date
 from ninja import Schema
 
 
@@ -7,5 +7,5 @@ class SeasonCreateSchema(Schema):
     year: str
     start_date: date
     end_date: date
-    submission_start_date: date
-    submission_end_date: date
+    submission_start_date: datetime
+    submission_end_date: datetime

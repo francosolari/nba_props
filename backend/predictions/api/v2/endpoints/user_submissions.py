@@ -4,10 +4,12 @@ User-facing endpoints for question retrieval and answer submission.
 Handles all polymorphic question types with proper serialization.
 """
 
+from datetime import datetime, time
 from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from typing import List
+from django.utils import timezone
 from predictions.models import (
     Season, Question, Answer, 
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion,
@@ -179,8 +181,8 @@ def get_questions(request, season_slug: str):
     return {
         "season_slug": season_slug,
         "submission_open": submission_status["is_open"],
-        "submission_start_date": season.submission_start_date,
-        "submission_end_date": season.submission_end_date,
+        "submission_start_date": _serialize_datetime(season.submission_start_date),
+        "submission_end_date": _serialize_datetime(season.submission_end_date),
         "submission_status": submission_status,
         "questions": serialized_questions,
     }
@@ -303,3 +305,13 @@ def get_submission_window_status(request, season_slug: str):
     """
     season = get_object_or_404(Season, slug=season_slug)
     return get_submission_status(season)
+
+
+def _serialize_datetime(value):
+    if not value:
+        return None
+    if not isinstance(value, datetime):
+        value = datetime.combine(value, time.min)
+    if timezone.is_naive(value):
+        value = timezone.make_aware(value)
+    return timezone.localtime(value)

@@ -327,10 +327,18 @@ def submit_user_predictions_api(request, season_slug):
         season = get_object_or_404(Season, slug=season_slug)
 
     # Check submission window
-    now = timezone.now().date()
-    if season.submission_start_date and now < season.submission_start_date:
+    now = timezone.now()
+    submission_start = season.submission_start_date
+    submission_end = season.submission_end_date
+
+    if submission_start and timezone.is_naive(submission_start):
+        submission_start = timezone.make_aware(submission_start)
+    if submission_end and timezone.is_naive(submission_end):
+        submission_end = timezone.make_aware(submission_end)
+
+    if submission_start and now < submission_start:
         return JsonResponse({'error': 'Submission window has not opened yet.'}, status=403)
-    if season.submission_end_date and now > season.submission_end_date:
+    if submission_end and now > submission_end:
         return JsonResponse({'error': 'Submission window has closed.'}, status=403)
 
     try:

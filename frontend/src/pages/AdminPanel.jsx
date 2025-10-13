@@ -30,6 +30,26 @@ const defaultSeasonForm = {
   submission_end_date: '',
 };
 
+const formatDate = (value) => {
+  if (!value) return '—';
+  try {
+    return new Date(value).toLocaleDateString(undefined, { dateStyle: 'medium' });
+  } catch (error) {
+    console.warn('Failed to format date', error);
+    return value;
+  }
+};
+
+const formatDateTime = (value) => {
+  if (!value) return '—';
+  try {
+    return new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  } catch (error) {
+    console.warn('Failed to format datetime', error);
+    return value;
+  }
+};
+
 const AdminPanel = ({ seasonSlug }) => {
   const { data: userContext, isLoading: userLoading } = useUserContext();
   const { data: seasons = [], isLoading: seasonsLoading } = useSeasons();
@@ -110,10 +130,18 @@ const AdminPanel = ({ seasonSlug }) => {
   const handleSeasonCreate = async (event) => {
     event.preventDefault();
     try {
-      const response = await createSeason.mutateAsync({
-        ...seasonForm,
+      const payload = {
         year: seasonForm.year.trim(),
-      });
+        start_date: seasonForm.start_date,
+        end_date: seasonForm.end_date,
+        submission_start_date: seasonForm.submission_start_date
+          ? new Date(seasonForm.submission_start_date).toISOString()
+          : null,
+        submission_end_date: seasonForm.submission_end_date
+          ? new Date(seasonForm.submission_end_date).toISOString()
+          : null,
+      };
+      const response = await createSeason.mutateAsync(payload);
       setSuccess('Season created successfully.');
       setSeasonForm(defaultSeasonForm);
       setShowSeasonForm(false);
@@ -167,8 +195,8 @@ const AdminPanel = ({ seasonSlug }) => {
               {seasonMeta && (
                 <div className="mt-4 space-y-1 text-sm text-slate-300">
                   <p>{seasonMeta.year}</p>
-                  <p className="text-slate-500">{seasonMeta.start_date} → {seasonMeta.end_date}</p>
-                  <p className="text-slate-500">Submissions {seasonMeta.submission_start_date} → {seasonMeta.submission_end_date}</p>
+                  <p className="text-slate-500">{formatDate(seasonMeta.start_date)} → {formatDate(seasonMeta.end_date)}</p>
+                  <p className="text-slate-500">Submissions {formatDateTime(seasonMeta.submission_start_date)} → {formatDateTime(seasonMeta.submission_end_date)}</p>
                 </div>
               )}
               <button
@@ -211,8 +239,22 @@ const AdminPanel = ({ seasonSlug }) => {
                 <DateInput label="Season ends" value={seasonForm.end_date} onChange={(e) => handleSeasonField('end_date', e.target.value)} required />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <DateInput label="Submissions open" value={seasonForm.submission_start_date} onChange={(e) => handleSeasonField('submission_start_date', e.target.value)} required />
-                <DateInput label="Submissions close" value={seasonForm.submission_end_date} onChange={(e) => handleSeasonField('submission_end_date', e.target.value)} required />
+                <DateInput
+                  label="Submissions open"
+                  value={seasonForm.submission_start_date}
+                  onChange={(e) => handleSeasonField('submission_start_date', e.target.value)}
+                  required
+                  type="datetime-local"
+                  step="60"
+                />
+                <DateInput
+                  label="Submissions close"
+                  value={seasonForm.submission_end_date}
+                  onChange={(e) => handleSeasonField('submission_end_date', e.target.value)}
+                  required
+                  type="datetime-local"
+                  step="60"
+                />
               </div>
               <div className="flex items-center justify-end gap-3 lg:col-span-2">
                 <button
@@ -566,14 +608,15 @@ const NumberInput = ({ label, value, onChange, step = '1', min, required }) => (
   </label>
 );
 
-const DateInput = ({ label, value, onChange, required }) => (
+const DateInput = ({ label, value, onChange, required, type = 'date', step }) => (
   <label className="flex flex-col gap-2 text-sm text-slate-200">
     {label}
     <input
-      type="date"
+      type={type}
       value={value}
       onChange={onChange}
       required={required}
+      step={step}
       className="rounded-2xl bg-slate-900/70 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
     />
   </label>

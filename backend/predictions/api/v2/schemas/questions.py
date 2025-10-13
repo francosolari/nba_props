@@ -6,7 +6,7 @@ Supports all polymorphic question types with proper serialization.
 
 from ninja import Schema
 from typing import Optional, List, Literal, Union, Dict
-from datetime import datetime, date
+from datetime import datetime
 
 
 # ============================================
@@ -93,8 +93,8 @@ class SubmissionStatusSchema(Schema):
     """Detailed submission window status"""
     is_open: bool
     message: str
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
     days_until_open: Optional[int] = None
     days_until_close: Optional[int] = None
 
@@ -142,8 +142,8 @@ class QuestionsListResponse(Schema):
     """Response schema for getting questions list"""
     season_slug: str
     submission_open: bool
-    submission_start_date: Optional[date] = None
-    submission_end_date: Optional[date] = None
+    submission_start_date: Optional[datetime] = None
+    submission_end_date: Optional[datetime] = None
     submission_status: SubmissionStatusSchema
     questions: List[QuestionSchema]
 
@@ -231,4 +231,3 @@ class QuestionDeleteResponseSchema(Schema):
     status: str
     message: str
     deleted_id: int
-

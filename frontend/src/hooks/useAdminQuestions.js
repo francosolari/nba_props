@@ -15,7 +15,7 @@ export const useAdminQuestions = (seasonSlug) =>
   useQuery({
     queryKey: ['adminQuestions', seasonSlug],
     queryFn: async () => {
-      const { data } = await axios.get(`/api/v2/admin/questions/${seasonSlug}`);
+      const { data } = await axios.get(`/api/v2/admin/seasons/${seasonSlug}/questions`);
       return data;
     },
     enabled: !!seasonSlug,
@@ -265,7 +265,16 @@ export const useCreateSeason = () => {
 
   return useMutation({
     mutationFn: async (seasonData) => {
-      const { data } = await axios.post('/api/v2/seasons/', seasonData, {
+      const payload = {
+        ...seasonData,
+        submission_start_date: seasonData?.submission_start_date
+          ? new Date(seasonData.submission_start_date).toISOString()
+          : seasonData?.submission_start_date,
+        submission_end_date: seasonData?.submission_end_date
+          ? new Date(seasonData.submission_end_date).toISOString()
+          : seasonData?.submission_end_date,
+      };
+      const { data } = await axios.post('/api/v2/seasons/', payload, {
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': getCSRFToken(),

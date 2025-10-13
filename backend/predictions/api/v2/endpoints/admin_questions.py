@@ -34,7 +34,7 @@ router = Router(tags=["Admin - Questions"])
 
 
 @router.get(
-    "/questions/{season_slug}",
+    "/seasons/{season_slug}/questions",
     response=List[QuestionSchema],
     summary="[Admin] List All Questions",
     description="Get all questions for a season (admin view with full details)"
@@ -49,7 +49,6 @@ def admin_list_questions(request, season_slug: str):
     questions = (
         Question.objects.filter(season=season)
         .select_related('season')
-        .prefetch_related('superlativequestion__winners')
         .order_by('id')
     )
     
@@ -352,4 +351,3 @@ def get_awards(request):
         }
         for award in awards
     ]
-

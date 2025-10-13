@@ -3,9 +3,21 @@
 Utilities for handling submission deadline validation and enforcement.
 """
 
+from datetime import datetime, time
 from django.utils import timezone
 from predictions.models import Season
 from ninja.errors import HttpError
+
+
+def _ensure_aware(value):
+    """Ensure datetimes are timezone-aware for reliable comparisons."""
+    if value is None:
+        return None
+    if not isinstance(value, datetime):
+        value = datetime.combine(value, time.min)
+    if timezone.is_naive(value):
+        value = timezone.make_aware(value)
+    return timezone.localtime(value)
 
 
 def validate_submission_window(season: Season) -> bool:
@@ -21,20 +33,23 @@ def validate_submission_window(season: Season) -> bool:
     Raises:
         HttpError: If submission window is not open (403 Forbidden)
     """
-    now = timezone.now().date()
+    now = timezone.localtime(timezone.now())
     
     # Check if submission window has started
-    if season.submission_start_date and now < season.submission_start_date:
+    submission_start = _ensure_aware(season.submission_start_date)
+    submission_end = _ensure_aware(season.submission_end_date)
+
+    if submission_start and now < submission_start:
         raise HttpError(
             403,
-            f"Submission window has not opened yet. Opens on {season.submission_start_date}."
+            f"Submission window has not opened yet. Opens on {submission_start}."
         )
-    
+
     # Check if submission window has ended
-    if season.submission_end_date and now > season.submission_end_date:
+    if submission_end and now > submission_end:
         raise HttpError(
             403,
-            f"Submission window has closed. Deadline was {season.submission_end_date}."
+            f"Submission window has closed. Deadline was {submission_end}."
         )
     
     return True
@@ -50,14 +65,17 @@ def is_submission_open(season: Season) -> bool:
     Returns:
         True if submissions are currently allowed, False otherwise
     """
-    now = timezone.now().date()
+    now = timezone.localtime(timezone.now())
     
     # Check if window has started
-    if season.submission_start_date and now < season.submission_start_date:
+    submission_start = _ensure_aware(season.submission_start_date)
+    submission_end = _ensure_aware(season.submission_end_date)
+
+    if submission_start and now < submission_start:
         return False
-    
+
     # Check if window has ended
-    if season.submission_end_date and now > season.submission_end_date:
+    if submission_end and now > submission_end:
         return False
     
     return True
@@ -73,36 +91,41 @@ def get_submission_status(season: Season) -> dict:
     Returns:
         Dictionary with submission status information
     """
-    now = timezone.now().date()
+    now = timezone.localtime(timezone.now())
     
+    submission_start = _ensure_aware(season.submission_start_date)
+    submission_end = _ensure_aware(season.submission_end_date)
+
     status = {
         "is_open": False,
         "message": "",
-        "start_date": season.submission_start_date,
-        "end_date": season.submission_end_date,
+        "start_date": submission_start,
+        "end_date": submission_end,
         "days_until_open": None,
         "days_until_close": None,
     }
     
     # Window hasn't opened yet
-    if season.submission_start_date and now < season.submission_start_date:
-        days_until = (season.submission_start_date - now).days
+    if submission_start and now < submission_start:
+        delta = submission_start - now
+        days_until = max(int(delta.total_seconds() // 86400), 0)
         status["is_open"] = False
-        status["message"] = f"Submission window opens in {days_until} day(s)"
+        status["message"] = f"Submission window opens in {days_until} day(s)" if days_until else "Submission window opens later today"
         status["days_until_open"] = days_until
         return status
     
     # Window has closed
-    if season.submission_end_date and now > season.submission_end_date:
+    if submission_end and now > submission_end:
         status["is_open"] = False
         status["message"] = "Submission window has closed"
         return status
     
     # Window is open
-    if season.submission_end_date:
-        days_remaining = (season.submission_end_date - now).days
+    if submission_end:
+        delta = submission_end - now
+        days_remaining = max(int(delta.total_seconds() // 86400), 0)
         status["is_open"] = True
-        status["message"] = f"Submission window closes in {days_remaining} day(s)"
+        status["message"] = f"Submission window closes in {days_remaining} day(s)" if days_remaining else "Submission window closes later today"
         status["days_until_close"] = days_remaining
     else:
         status["is_open"] = True
