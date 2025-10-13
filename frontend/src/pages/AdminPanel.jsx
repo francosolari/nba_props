@@ -18,8 +18,65 @@ import {
 } from '../hooks/useAdminQuestions';
 import { useSeasons, useUserContext } from '../hooks/useSubmissions';
 import SelectComponent from '../components/SelectComponent';
+import QuestionBatchWizard from '../components/admin/QuestionBatchWizard';
 
-const GLASS_CARD = 'backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 shadow-xl shadow-slate-950/30 rounded-3xl';
+const THEME_CONFIG = {
+  dark: {
+    mode: 'dark',
+    background: 'bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100',
+    glassCard: 'backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 shadow-xl shadow-slate-950/30 rounded-3xl',
+    panelCard: 'bg-slate-900/60 border border-slate-700/40',
+    heading: 'text-slate-100',
+    textSecondary: 'text-slate-200',
+    subheading: 'text-slate-400',
+    muted: 'text-slate-500',
+    subtle: 'text-slate-400',
+    chip: 'bg-slate-200/10 text-slate-200',
+    inputBg: 'bg-slate-900/70',
+    inputText: 'text-slate-100',
+    focusRing: 'focus:ring-blue-500/60',
+    divider: 'divide-slate-700/40',
+    overlay: 'bg-slate-950/70',
+    sheet: 'bg-slate-950/95',
+    sheetCard: 'bg-slate-900/60 border border-slate-700/40 shadow-lg shadow-slate-950/40',
+    summaryCard: 'bg-slate-900/50 border border-slate-700/40 shadow-lg shadow-slate-950/30',
+    softSurface: 'bg-slate-800/70',
+    secondaryButton: 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/80',
+    dangerButton: 'bg-rose-500/20 text-rose-200 hover:bg-rose-500/30',
+    primaryButton: 'bg-blue-500 text-white shadow-lg shadow-blue-500/40 hover:bg-blue-400',
+    accentButton: 'bg-cyan-500/20 text-cyan-200 hover:bg-cyan-400/20',
+    note: 'text-slate-300',
+    cardShadow: '0 30px 120px -60px rgba(99, 102, 241, 0.35)',
+  },
+  light: {
+    mode: 'light',
+    background: 'bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900',
+    glassCard: 'backdrop-blur-xl bg-white/80 border border-slate-200/80 shadow-xl shadow-blue-200/50 rounded-3xl',
+    panelCard: 'bg-white/80 border border-slate-200/80',
+    heading: 'text-slate-900',
+    textSecondary: 'text-slate-700',
+    subheading: 'text-slate-600',
+    muted: 'text-slate-500',
+    subtle: 'text-slate-500',
+    chip: 'bg-slate-200 text-slate-700',
+    inputBg: 'bg-white/90',
+    inputText: 'text-slate-900',
+    focusRing: 'focus:ring-blue-500/50',
+    divider: 'divide-slate-200',
+    overlay: 'bg-slate-900/20',
+    sheet: 'bg-white',
+    sheetCard: 'bg-white border border-slate-200 shadow-lg shadow-slate-300/40',
+    summaryCard: 'bg-white border border-slate-200 shadow-lg shadow-slate-300/30',
+    softSurface: 'bg-slate-100/70',
+    secondaryButton: 'bg-slate-200 text-slate-700 hover:bg-slate-300/80',
+    dangerButton: 'bg-rose-500/10 text-rose-600 hover:bg-rose-500/20',
+    primaryButton: 'bg-blue-500 text-white shadow-lg shadow-blue-300/40 hover:bg-blue-600',
+    accentButton: 'bg-cyan-500/15 text-cyan-700 hover:bg-cyan-500/25',
+    note: 'text-slate-600',
+    cardShadow: '0 30px 120px -60px rgba(59, 130, 246, 0.25)',
+  },
+};
+
 const defaultPointValue = 0.5;
 
 const defaultSeasonForm = {
@@ -54,10 +111,19 @@ const AdminPanel = ({ seasonSlug }) => {
   const { data: userContext, isLoading: userLoading } = useUserContext();
   const { data: seasons = [], isLoading: seasonsLoading } = useSeasons();
 
+  const getPreferredTheme = useCallback(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return 'dark';
+    }
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }, []);
+
+  const [theme, setTheme] = useState(getPreferredTheme);
   const [activeSeason, setActiveSeason] = useState(seasonSlug || '');
   const [feedback, setFeedback] = useState(null);
   const [showSeasonForm, setShowSeasonForm] = useState(false);
   const [seasonForm, setSeasonForm] = useState(defaultSeasonForm);
+  const [showBatchWizard, setShowBatchWizard] = useState(false);
 
   useEffect(() => {
     if (!activeSeason && seasons.length) {
@@ -66,6 +132,48 @@ const AdminPanel = ({ seasonSlug }) => {
   }, [activeSeason, seasons, seasonSlug]);
 
   const { data: questions = [], isLoading: questionsLoading, refetch } = useAdminQuestions(activeSeason);
+  const themeStyles = useMemo(() => THEME_CONFIG[theme] || THEME_CONFIG.dark, [theme]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const media = window.matchMedia('(prefers-color-scheme: light)');
+    const listener = (event) => setTheme(event.matches ? 'light' : 'dark');
+    media.addEventListener ? media.addEventListener('change', listener) : media.addListener(listener);
+    return () => {
+      media.removeEventListener ? media.removeEventListener('change', listener) : media.removeListener(listener);
+    };
+  }, [setTheme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const labelClass = `flex flex-col gap-2 text-sm ${themeStyles.textSecondary}`;
+  const inputClass = `rounded-2xl ${themeStyles.inputBg} px-4 py-3 text-sm ${themeStyles.inputText} focus:outline-none ${themeStyles.focusRing}`;
+  const textareaClass = `${inputClass} resize-none`;
+  const selectClass = inputClass;
+  const checkboxClass =
+    theme === 'dark'
+      ? 'h-4 w-4 rounded border-slate-600 bg-slate-900 text-blue-500 focus:ring-blue-500/60'
+      : 'h-4 w-4 rounded border-slate-300 bg-white text-blue-500 focus:ring-blue-500/40';
+  const primaryButtonClass = `rounded-xl px-5 py-2 text-sm font-semibold transition ${themeStyles.primaryButton} disabled:cursor-not-allowed disabled:opacity-60`;
+  const secondaryButtonClass = `rounded-xl px-4 py-2 text-sm transition ${themeStyles.secondaryButton} disabled:cursor-not-allowed disabled:opacity-60`;
+  const accentButtonClass = `rounded-xl px-4 py-2 text-sm font-medium transition ${themeStyles.accentButton}`;
+  const dangerButtonClass = `rounded-xl px-3 py-2 text-sm font-medium transition ${themeStyles.dangerButton} disabled:cursor-not-allowed disabled:opacity-60`;
+  const themeCardClass = `${themeStyles.glassCard} w-full max-w-xs p-5`;
+  const batchCardClass = `${themeStyles.glassCard} p-6 flex flex-col gap-6 md:flex-row md:items-center md:justify-between`;
+  const headingClass = `text-lg font-semibold tracking-wide ${themeStyles.heading}`;
+  const subheadingClass = `text-sm ${themeStyles.subheading}`;
+  const mutedTextClass = `text-xs ${themeStyles.muted}`;
+  const chipClass = `${themeStyles.chip} rounded-full px-3 py-1 text-xs uppercase tracking-[0.3em]`;
+  const successBannerClass =
+    theme === 'dark'
+      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
+      : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700';
+  const errorBannerClass =
+    theme === 'dark'
+      ? 'border-rose-500/30 bg-rose-500/10 text-rose-200'
+      : 'border-rose-500/30 bg-rose-100 text-rose-700';
   const { data: awards = [] } = useAwards();
   const { data: teams = [] } = useTeams();
   const { data: players = [] } = usePlayers();
@@ -80,6 +188,17 @@ const AdminPanel = ({ seasonSlug }) => {
   const deleteQuestion = useDeleteQuestion();
   const reorderQuestions = useReorderQuestions();
   const createSeason = useCreateSeason();
+  const batchMutations = useMemo(
+    () => ({
+      superlative: createSuperlative,
+      prop: createProp,
+      head_to_head: createHeadToHead,
+      player_stat: createPlayerStat,
+      ist: createIST,
+      nba_finals: createNBAFinals,
+    }),
+    [createSuperlative, createProp, createHeadToHead, createPlayerStat, createIST, createNBAFinals]
+  );
 
   const [superForm, setSuperForm] = useState({ text: '', awardId: '', pointValue: defaultPointValue });
   const [propForm, setPropForm] = useState({ text: '', pointValue: defaultPointValue, outcomeType: 'over_under', line: '', relatedPlayerId: null });
@@ -107,6 +226,10 @@ const AdminPanel = ({ seasonSlug }) => {
     }
     return true;
   }, [activeSeason, setError]);
+  const handleLaunchBatchWizard = () => {
+    if (!ensureSeasonSelected()) return;
+    setShowBatchWizard(true);
+  };
 
   const handleMutation = useCallback(
     async (mutation, payload, successMessage) => {
@@ -157,129 +280,167 @@ const AdminPanel = ({ seasonSlug }) => {
     reorderQuestions.mutate({ seasonSlug: activeSeason, questionIds: questions.map((q) => q.id) });
     setSuccess('Reorder request submitted.');
   };
+  const handleBatchCompleted = useCallback(
+    async (count) => {
+      setShowBatchWizard(false);
+      setSuccess(`${count} question${count === 1 ? '' : 's'} created.`);
+      await refetch();
+    },
+    [refetch, setSuccess]
+  );
 
   if (userLoading || seasonsLoading) {
     return (
-      <ScreenMessage title="Loading admin tools" message="Fetching configuration..." />
+      <ScreenMessage title="Loading admin tools" message="Fetching configuration..." themeStyles={themeStyles} />
     );
   }
 
   if (!userContext?.is_admin) {
     return (
-      <ScreenMessage title="Access restricted" message="You do not have permission to view the admin panel." variant="error" />
+      <ScreenMessage title="Access restricted" message="You do not have permission to view the admin panel." variant="error" themeStyles={themeStyles} />
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100">
-      <div className="mx-auto max-w-6xl px-4 pb-20 pt-16">
-        <header className="mb-12">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.45em] text-slate-400">Control Center</p>
-              <h1 className="mt-3 text-4xl font-bold text-slate-50 md:text-5xl">Predictions Admin Panel</h1>
-              <p className="mt-4 max-w-2xl text-slate-400">
-                Craft, organise, and launch the season&apos;s prediction slate with a glassmorphism powered interface built for dark mode.
-              </p>
-            </div>
-            <div className={`${GLASS_CARD} w-full max-w-xs p-5`}>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Current season</p>
-              <div className="mt-3">
-                <SelectComponent
-                  options={seasonOptions}
-                  value={seasonOptions.find((option) => option.value === activeSeason) || null}
-                  onChange={(option) => setActiveSeason(option ? option.value : '')}
-                  placeholder="Select season"
-                />
+    <>
+      <div className={`min-h-screen transition-colors duration-300 ${themeStyles.background}`}>
+        <div className="mx-auto max-w-6xl px-4 pb-20 pt-16">
+          <div className="mb-6 flex justify-end">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`${secondaryButtonClass} items-center gap-2`}
+            >
+              {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            </button>
+          </div>
+
+          <header className="mb-12">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className={`text-xs uppercase tracking-[0.45em] ${themeStyles.subtle}`}>Control Center</p>
+                <h1 className={`mt-3 text-4xl font-bold md:text-5xl ${themeStyles.heading}`}>Predictions Admin Panel</h1>
+                <p className={`mt-4 max-w-2xl ${themeStyles.subtle}`}>
+                  Craft, organise, and launch the season&apos;s prediction slate with a flexible interface tuned for batch workflows.
+                </p>
               </div>
-              {seasonMeta && (
-                <div className="mt-4 space-y-1 text-sm text-slate-300">
-                  <p>{seasonMeta.year}</p>
-                  <p className="text-slate-500">{formatDate(seasonMeta.start_date)} → {formatDate(seasonMeta.end_date)}</p>
-                  <p className="text-slate-500">Submissions {formatDateTime(seasonMeta.submission_start_date)} → {formatDateTime(seasonMeta.submission_end_date)}</p>
+              <div className={themeCardClass}>
+                <p className={`text-xs uppercase tracking-[0.3em] ${themeStyles.subtle}`}>Current season</p>
+                <div className="mt-3">
+                  <SelectComponent
+                    options={seasonOptions}
+                    value={seasonOptions.find((option) => option.value === activeSeason) || null}
+                    onChange={(option) => setActiveSeason(option ? option.value : '')}
+                    placeholder="Select season"
+                    mode={themeStyles.mode}
+                  />
                 </div>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowSeasonForm((open) => !open)}
-                className="mt-6 w-full rounded-xl bg-slate-100/10 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-100/20"
-              >
-                {showSeasonForm ? 'Close season creator' : 'Create new season'}
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {feedback && (
-          <div
-            className={`mb-10 rounded-2xl border px-6 py-4 text-sm backdrop-blur-xl transition ${
-              feedback.type === 'success'
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
-                : 'border-rose-500/30 bg-rose-500/10 text-rose-200'
-            }`}
-          >
-            {feedback.message}
-          </div>
-        )}
-
-        {showSeasonForm && (
-          <section className={`${GLASS_CARD} mb-12 p-8`}>
-            <h2 className="text-lg font-semibold text-slate-100 tracking-wide">Create a new season</h2>
-            <p className="mt-1 text-sm text-slate-400">Define the dates and submission window. The slug is generated automatically.</p>
-            <form onSubmit={handleSeasonCreate} className="mt-6 grid gap-6 lg:grid-cols-2">
-              <TextInput
-                label="Display year"
-                value={seasonForm.year}
-                onChange={(e) => handleSeasonField('year', e.target.value)}
-                placeholder="2024-25"
-                required
-              />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <DateInput label="Season starts" value={seasonForm.start_date} onChange={(e) => handleSeasonField('start_date', e.target.value)} required />
-                <DateInput label="Season ends" value={seasonForm.end_date} onChange={(e) => handleSeasonField('end_date', e.target.value)} required />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <DateInput
-                  label="Submissions open"
-                  value={seasonForm.submission_start_date}
-                  onChange={(e) => handleSeasonField('submission_start_date', e.target.value)}
-                  required
-                  type="datetime-local"
-                  step="60"
-                />
-                <DateInput
-                  label="Submissions close"
-                  value={seasonForm.submission_end_date}
-                  onChange={(e) => handleSeasonField('submission_end_date', e.target.value)}
-                  required
-                  type="datetime-local"
-                  step="60"
-                />
-              </div>
-              <div className="flex items-center justify-end gap-3 lg:col-span-2">
+                {seasonMeta && (
+                  <div className={`mt-4 space-y-1 text-sm ${themeStyles.textSecondary}`}>
+                    <p>{seasonMeta.year}</p>
+                    <p className={`text-sm ${themeStyles.muted}`}>{formatDate(seasonMeta.start_date)} → {formatDate(seasonMeta.end_date)}</p>
+                    <p className={`text-sm ${themeStyles.muted}`}>Submissions {formatDateTime(seasonMeta.submission_start_date)} → {formatDateTime(seasonMeta.submission_end_date)}</p>
+                  </div>
+                )}
                 <button
                   type="button"
-                  onClick={() => {
-                    setSeasonForm(defaultSeasonForm);
-                    setShowSeasonForm(false);
-                  }}
-                  className="rounded-xl border border-slate-600/60 px-4 py-2 text-sm text-slate-300 hover:border-slate-400/60 hover:text-slate-100"
+                  onClick={() => setShowSeasonForm((open) => !open)}
+                  className={`${secondaryButtonClass} mt-6 w-full justify-center font-medium`}
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createSeason.isPending}
-                  className="rounded-xl bg-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/40 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-blue-500/50"
-                >
-                  {createSeason.isPending ? 'Creating…' : 'Save season'}
+                  {showSeasonForm ? 'Close season creator' : 'Create new season'}
                 </button>
               </div>
-            </form>
-          </section>
-        )}
+            </div>
+          </header>
 
-        <section className="grid gap-8 lg:grid-cols-2">
+          {feedback && (
+            <div
+              className={`mb-10 rounded-2xl border px-6 py-4 text-sm backdrop-blur-xl transition ${feedback.type === 'success' ? successBannerClass : errorBannerClass}`}
+            >
+              {feedback.message}
+            </div>
+          )}
+
+          {showSeasonForm && (
+            <section className={`${themeStyles.glassCard} mb-12 p-6`}>
+              <h2 className={`text-lg font-semibold tracking-wide ${themeStyles.heading}`}>Create a new season</h2>
+              <p className={`mt-1 text-sm ${themeStyles.subtle}`}>Define the dates and submission window. The slug is generated automatically.</p>
+              <form onSubmit={handleSeasonCreate} className="mt-6 grid gap-6 lg:grid-cols-2">
+                <TextInput
+                  label="Display year"
+                  value={seasonForm.year}
+                  onChange={(value) => handleSeasonField('year', value)}
+                  placeholder="2024-25"
+                  required
+                  labelClass={labelClass}
+                  inputClass={inputClass}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <DateInput label="Season starts" value={seasonForm.start_date} onChange={(e) => handleSeasonField('start_date', e.target.value)} required labelClass={labelClass} inputClass={inputClass} />
+                  <DateInput label="Season ends" value={seasonForm.end_date} onChange={(e) => handleSeasonField('end_date', e.target.value)} required labelClass={labelClass} inputClass={inputClass} />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <DateInput
+                    label="Submissions open"
+                    value={seasonForm.submission_start_date}
+                    onChange={(e) => handleSeasonField('submission_start_date', e.target.value)}
+                    required
+                    type="datetime-local"
+                    step="60"
+                    labelClass={labelClass}
+                    inputClass={inputClass}
+                  />
+                  <DateInput
+                    label="Submissions close"
+                    value={seasonForm.submission_end_date}
+                    onChange={(e) => handleSeasonField('submission_end_date', e.target.value)}
+                    required
+                    type="datetime-local"
+                    step="60"
+                    labelClass={labelClass}
+                    inputClass={inputClass}
+                  />
+                </div>
+                <div className="flex items-center justify-end gap-3 lg:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSeasonForm(defaultSeasonForm);
+                      setShowSeasonForm(false);
+                    }}
+                    className={secondaryButtonClass}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createSeason.isPending}
+                    className={primaryButtonClass}
+                  >
+                    {createSeason.isPending ? 'Creating…' : 'Save season'}
+                  </button>
+                </div>
+              </form>
+            </section>
+          )}
+
+          <section className={batchCardClass}>
+            <div>
+              <h2 className={headingClass}>Launch batch creator</h2>
+              <p className={subheadingClass}>
+                Draft multiple questions with a guided flow. Perfect when seeding a new season.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleLaunchBatchWizard}
+              className={`${primaryButtonClass} md:w-auto`}
+            >
+              Batch create questions
+            </button>
+          </section>
+
+          <section className="mt-10 grid gap-8 lg:grid-cols-2">
           <GlassFormCard
             title="Superlative"
             subtitle="Award-style predictions"
@@ -299,15 +460,18 @@ const AdminPanel = ({ seasonSlug }) => {
               }, 'Superlative question created.');
               setSuperForm({ text: '', awardId: '', pointValue: defaultPointValue });
             }}
+            themeStyles={themeStyles}
+            primaryButtonClass={primaryButtonClass}
           >
-            <Textarea label="Question" value={superForm.text} onChange={(value) => setSuperForm((prev) => ({ ...prev, text: value }))} placeholder="Who wins Sixth Man of the Year?" required />
-            <NumberInput label="Point value" value={superForm.pointValue} onChange={(value) => setSuperForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" />
+            <Textarea label="Question" value={superForm.text} onChange={(value) => setSuperForm((prev) => ({ ...prev, text: value }))} placeholder="Who wins Sixth Man of the Year?" required labelClass={labelClass} textareaClass={textareaClass} />
+            <NumberInput label="Point value" value={superForm.pointValue} onChange={(value) => setSuperForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" labelClass={labelClass} inputClass={inputClass} />
             <SelectComponent
               options={awardOptions}
               value={awardOptions.find((option) => option.value === superForm.awardId) || null}
               onChange={(option) => setSuperForm((prev) => ({ ...prev, awardId: option ? option.value : '' }))}
               placeholder="Select award"
               isClearable
+              mode={themeStyles.mode}
             />
           </GlassFormCard>
 
@@ -328,16 +492,18 @@ const AdminPanel = ({ seasonSlug }) => {
               }, 'Prop question created.');
               setPropForm({ text: '', pointValue: defaultPointValue, outcomeType: 'over_under', line: '', relatedPlayerId: null });
             }}
+            themeStyles={themeStyles}
+            primaryButtonClass={primaryButtonClass}
           >
-            <Textarea label="Question" value={propForm.text} onChange={(value) => setPropForm((prev) => ({ ...prev, text: value }))} placeholder="Does Luka average 32.5 PPG?" required />
+            <Textarea label="Question" value={propForm.text} onChange={(value) => setPropForm((prev) => ({ ...prev, text: value }))} placeholder="Does Luka average 32.5 PPG?" required labelClass={labelClass} textareaClass={textareaClass} />
             <div className="grid gap-4 sm:grid-cols-2">
-              <NumberInput label="Point value" value={propForm.pointValue} onChange={(value) => setPropForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" />
-              <label className="text-sm text-slate-200">
-                <span className="mb-2 block">Outcome type</span>
+              <NumberInput label="Point value" value={propForm.pointValue} onChange={(value) => setPropForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" labelClass={labelClass} inputClass={inputClass} />
+              <label className={labelClass}>
+                Outcome type
                 <select
                   value={propForm.outcomeType}
                   onChange={(e) => setPropForm((prev) => ({ ...prev, outcomeType: e.target.value }))}
-                  className="w-full rounded-2xl bg-slate-900/70 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                  className={selectClass}
                 >
                   <option value="over_under">Over / Under</option>
                   <option value="yes_no">Yes / No</option>
@@ -345,7 +511,7 @@ const AdminPanel = ({ seasonSlug }) => {
               </label>
             </div>
             {propForm.outcomeType === 'over_under' && (
-              <NumberInput label="Line" value={propForm.line} onChange={(value) => setPropForm((prev) => ({ ...prev, line: value }))} step="0.1" required />
+              <NumberInput label="Line" value={propForm.line} onChange={(value) => setPropForm((prev) => ({ ...prev, line: value }))} step="0.1" required labelClass={labelClass} inputClass={inputClass} />
             )}
             <SelectComponent
               options={playerOptions}
@@ -353,6 +519,7 @@ const AdminPanel = ({ seasonSlug }) => {
               onChange={(option) => setPropForm((prev) => ({ ...prev, relatedPlayerId: option ? option.value : null }))}
               placeholder="Search related player"
               isClearable
+              mode={themeStyles.mode}
             />
           </GlassFormCard>
 
@@ -377,14 +544,16 @@ const AdminPanel = ({ seasonSlug }) => {
               }, 'Player stat question created.');
               setPlayerStatForm({ text: '', pointValue: defaultPointValue, playerStatId: '', statType: '', fixedValue: '' });
             }}
+            themeStyles={themeStyles}
+            primaryButtonClass={primaryButtonClass}
           >
-            <Textarea label="Question" value={playerStatForm.text} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, text: value }))} placeholder="Who leads the league in assists?" required />
+            <Textarea label="Question" value={playerStatForm.text} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, text: value }))} placeholder="Who leads the league in assists?" required labelClass={labelClass} textareaClass={textareaClass} />
             <div className="grid gap-4 sm:grid-cols-2">
-              <NumberInput label="Point value" value={playerStatForm.pointValue} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" />
-              <TextInput label="Stat type" value={playerStatForm.statType} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, statType: value }))} placeholder="assists" required />
+              <NumberInput label="Point value" value={playerStatForm.pointValue} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" labelClass={labelClass} inputClass={inputClass} />
+              <TextInput label="Stat type" value={playerStatForm.statType} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, statType: value }))} placeholder="assists" required labelClass={labelClass} inputClass={inputClass} />
             </div>
-            <NumberInput label="Player stat ID" value={playerStatForm.playerStatId} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, playerStatId: value }))} required />
-            <NumberInput label="Fixed value (optional)" value={playerStatForm.fixedValue} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, fixedValue: value }))} step="0.1" />
+            <NumberInput label="Player stat ID" value={playerStatForm.playerStatId} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, playerStatId: value }))} required labelClass={labelClass} inputClass={inputClass} />
+            <NumberInput label="Fixed value (optional)" value={playerStatForm.fixedValue} onChange={(value) => setPlayerStatForm((prev) => ({ ...prev, fixedValue: value }))} step="0.1" labelClass={labelClass} inputClass={inputClass} />
           </GlassFormCard>
 
           <GlassFormCard
@@ -407,15 +576,18 @@ const AdminPanel = ({ seasonSlug }) => {
               }, 'Head-to-head question created.');
               setHeadToHeadForm({ text: '', pointValue: defaultPointValue, team1Id: null, team2Id: null });
             }}
+            themeStyles={themeStyles}
+            primaryButtonClass={primaryButtonClass}
           >
-            <Textarea label="Question" value={headToHeadForm.text} onChange={(value) => setHeadToHeadForm((prev) => ({ ...prev, text: value }))} placeholder="Who wins opening night?" required />
-            <NumberInput label="Point value" value={headToHeadForm.pointValue} onChange={(value) => setHeadToHeadForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" />
+            <Textarea label="Question" value={headToHeadForm.text} onChange={(value) => setHeadToHeadForm((prev) => ({ ...prev, text: value }))} placeholder="Who wins opening night?" required labelClass={labelClass} textareaClass={textareaClass} />
+            <NumberInput label="Point value" value={headToHeadForm.pointValue} onChange={(value) => setHeadToHeadForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" labelClass={labelClass} inputClass={inputClass} />
             <SelectComponent
               options={teamOptions}
               value={teamOptions.find((option) => option.value === headToHeadForm.team1Id) || null}
               onChange={(option) => setHeadToHeadForm((prev) => ({ ...prev, team1Id: option ? option.value : null }))}
               placeholder="Select team"
               isClearable
+              mode={themeStyles.mode}
             />
             <SelectComponent
               options={teamOptions}
@@ -423,6 +595,7 @@ const AdminPanel = ({ seasonSlug }) => {
               onChange={(option) => setHeadToHeadForm((prev) => ({ ...prev, team2Id: option ? option.value : null }))}
               placeholder="Select opponent"
               isClearable
+              mode={themeStyles.mode}
             />
           </GlassFormCard>
 
@@ -443,16 +616,18 @@ const AdminPanel = ({ seasonSlug }) => {
               }, 'IST question created.');
               setIstForm({ text: '', pointValue: defaultPointValue, predictionType: 'group_winner', istGroup: '', isTiebreaker: false });
             }}
+            themeStyles={themeStyles}
+            primaryButtonClass={primaryButtonClass}
           >
-            <Textarea label="Question" value={istForm.text} onChange={(value) => setIstForm((prev) => ({ ...prev, text: value }))} placeholder="Who wins East Group A?" required />
+            <Textarea label="Question" value={istForm.text} onChange={(value) => setIstForm((prev) => ({ ...prev, text: value }))} placeholder="Who wins East Group A?" required labelClass={labelClass} textareaClass={textareaClass} />
             <div className="grid gap-4 sm:grid-cols-2">
-              <NumberInput label="Point value" value={istForm.pointValue} onChange={(value) => setIstForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" />
-              <label className="text-sm text-slate-200">
-                <span className="mb-2 block">Prediction type</span>
+              <NumberInput label="Point value" value={istForm.pointValue} onChange={(value) => setIstForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" labelClass={labelClass} inputClass={inputClass} />
+              <label className={labelClass}>
+                Prediction type
                 <select
                   value={istForm.predictionType}
                   onChange={(e) => setIstForm((prev) => ({ ...prev, predictionType: e.target.value, isTiebreaker: e.target.value === 'tiebreaker' }))}
-                  className="w-full rounded-2xl bg-slate-900/70 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                  className={selectClass}
                 >
                   <option value="group_winner">Group Winner</option>
                   <option value="wildcard">Wildcard</option>
@@ -461,13 +636,13 @@ const AdminPanel = ({ seasonSlug }) => {
                 </select>
               </label>
             </div>
-            <TextInput label="IST group (optional)" value={istForm.istGroup} onChange={(value) => setIstForm((prev) => ({ ...prev, istGroup: value }))} placeholder="East Group A" />
-            <label className="mt-2 flex items-center gap-3 text-sm text-slate-300">
+            <TextInput label="IST group (optional)" value={istForm.istGroup} onChange={(value) => setIstForm((prev) => ({ ...prev, istGroup: value }))} placeholder="East Group A" labelClass={labelClass} inputClass={inputClass} />
+            <label className={`mt-2 flex items-center gap-3 text-sm ${themeStyles.textSecondary}`}>
               <input
                 type="checkbox"
                 checked={Boolean(istForm.isTiebreaker)}
                 onChange={(e) => setIstForm((prev) => ({ ...prev, isTiebreaker: e.target.checked }))}
-                className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-blue-500 focus:ring-blue-500/60"
+                className={checkboxClass}
               />
               Tiebreaker question
             </label>
@@ -488,35 +663,37 @@ const AdminPanel = ({ seasonSlug }) => {
               }, 'NBA Finals question created.');
               setNbaFinalsForm({ text: '', pointValue: defaultPointValue, groupName: '' });
             }}
+            themeStyles={themeStyles}
+            primaryButtonClass={primaryButtonClass}
           >
-            <Textarea label="Question" value={nbaFinalsForm.text} onChange={(value) => setNbaFinalsForm((prev) => ({ ...prev, text: value }))} placeholder="Who wins the NBA Finals?" required />
+            <Textarea label="Question" value={nbaFinalsForm.text} onChange={(value) => setNbaFinalsForm((prev) => ({ ...prev, text: value }))} placeholder="Who wins the NBA Finals?" required labelClass={labelClass} textareaClass={textareaClass} />
             <div className="grid gap-4 sm:grid-cols-2">
-              <NumberInput label="Point value" value={nbaFinalsForm.pointValue} onChange={(value) => setNbaFinalsForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" />
-              <TextInput label="Grouping (optional)" value={nbaFinalsForm.groupName} onChange={(value) => setNbaFinalsForm((prev) => ({ ...prev, groupName: value }))} placeholder="Finals" />
+              <NumberInput label="Point value" value={nbaFinalsForm.pointValue} onChange={(value) => setNbaFinalsForm((prev) => ({ ...prev, pointValue: value }))} step="0.5" min="0" labelClass={labelClass} inputClass={inputClass} />
+              <TextInput label="Grouping (optional)" value={nbaFinalsForm.groupName} onChange={(value) => setNbaFinalsForm((prev) => ({ ...prev, groupName: value }))} placeholder="Finals" labelClass={labelClass} inputClass={inputClass} />
             </div>
           </GlassFormCard>
         </section>
 
-        <section className={`${GLASS_CARD} mt-12 overflow-hidden`}>
-          <div className="flex flex-col gap-4 border-b border-slate-600/40 px-8 py-6 md:flex-row md:items-center md:justify-between">
+        <section className={`${themeStyles.glassCard} mt-12 overflow-hidden`}>
+          <div className={`flex flex-col gap-4 border-b px-8 py-6 md:flex-row md:items-center md:justify-between ${theme === 'dark' ? 'border-slate-600/40' : 'border-slate-200'}`}>
             <div>
-              <h2 className="text-lg font-semibold text-slate-100 tracking-wide">Existing questions</h2>
-              <p className="text-sm text-slate-400">Review, edit, or prune questions for this season.</p>
+              <h2 className={headingClass}>Existing questions</h2>
+              <p className={subheadingClass}>Review, edit, or prune questions for this season.</p>
             </div>
             <button
               type="button"
               onClick={handleReorder}
-              className="rounded-xl bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/20"
+              className={`${accentButtonClass} px-4`}
             >
               Sync order
             </button>
           </div>
           {questionsLoading ? (
-            <div className="px-8 py-12 text-center text-slate-400">Loading questions…</div>
+            <div className={`px-8 py-12 text-center ${themeStyles.subtle}`}>Loading questions…</div>
           ) : questions.length === 0 ? (
-            <div className="px-8 py-12 text-center text-slate-500">No questions added yet for this season.</div>
+            <div className={`px-8 py-12 text-center ${themeStyles.subtle}`}>No questions added yet for this season.</div>
           ) : (
-            <div className="divide-y divide-slate-700/40">
+            <div className={`divide-y ${themeStyles.divider}`}>
               {questions.map((question) => (
                 <QuestionRow
                   key={question.id}
@@ -537,42 +714,64 @@ const AdminPanel = ({ seasonSlug }) => {
                       seasonSlug: activeSeason,
                     }, 'Question deleted.');
                   }}
+                  themeStyles={themeStyles}
+                  inputClass={inputClass}
+                  secondaryButtonClass={secondaryButtonClass}
+                  dangerButtonClass={dangerButtonClass}
+                  chipClass={chipClass}
+                  mutedTextClass={mutedTextClass}
                 />
               ))}
             </div>
           )}
         </section>
       </div>
+      </div>
+      <QuestionBatchWizard
+        isOpen={showBatchWizard}
+        onClose={() => setShowBatchWizard(false)}
+        seasonSlug={activeSeason}
+        defaultPointValue={defaultPointValue}
+        awards={awards}
+        teams={teams}
+        players={players}
+        mutations={batchMutations}
+        onCompleted={handleBatchCompleted}
+        theme={themeStyles.mode}
+      />
+    </>
+  );
+};
+
+const ScreenMessage = ({ title, message, variant = 'default', themeStyles = THEME_CONFIG.dark }) => {
+  const errorClass = themeStyles.mode === 'dark' ? 'text-rose-300' : 'text-rose-600';
+  return (
+    <div className={`flex min-h-screen items-center justify-center ${themeStyles.background}`}>
+      <div className={`${themeStyles.glassCard} mx-6 max-w-md p-10 text-center`} style={{ boxShadow: themeStyles.cardShadow }}>
+        <h1 className={`text-2xl font-semibold ${themeStyles.heading}`}>{title}</h1>
+        <p className={`mt-4 ${themeStyles.subtle}`}>{message}</p>
+        {variant === 'error' && <div className={`mt-6 text-sm ${errorClass}`}>Contact an administrator to request access.</div>}
+      </div>
     </div>
   );
 };
 
-const ScreenMessage = ({ title, message, variant = 'default' }) => (
-  <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200">
-    <div className={`${GLASS_CARD} mx-6 max-w-md p-10 text-center`}>
-      <h1 className="text-2xl font-semibold text-slate-50">{title}</h1>
-      <p className="mt-4 text-slate-400">{message}</p>
-      {variant === 'error' && <div className="mt-6 text-sm text-rose-300">Contact an administrator to request access.</div>}
-    </div>
-  </div>
-);
-
-const GlassFormCard = ({ title, subtitle, children, isSubmitting, onSubmit }) => (
+const GlassFormCard = ({ title, subtitle, children, isSubmitting, onSubmit, themeStyles = THEME_CONFIG.dark, primaryButtonClass }) => (
   <form
     onSubmit={onSubmit}
-    className={`${GLASS_CARD} p-8`}
-    style={{ boxShadow: '0 30px 120px -60px rgba(99, 102, 241, 0.35)' }}
+    className={`${themeStyles.glassCard} p-6`}
+    style={{ boxShadow: themeStyles.cardShadow }}
   >
-    <div className="mb-6">
-      <h3 className="text-lg font-semibold text-slate-100 tracking-wide">{title}</h3>
-      <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
+    <div className="mb-4">
+      <h3 className={`text-lg font-semibold tracking-wide ${themeStyles.heading}`}>{title}</h3>
+      <p className={`mt-1 text-sm ${themeStyles.subtle}`}>{subtitle}</p>
     </div>
-    <div className="space-y-5">{children}</div>
-    <div className="mt-8 flex justify-end">
+    <div className="space-y-4">{children}</div>
+    <div className="mt-6 flex justify-end">
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded-xl bg-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/40 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-blue-500/50"
+        className={primaryButtonClass}
       >
         {isSubmitting ? 'Saving…' : 'Create question'}
       </button>
@@ -580,36 +779,36 @@ const GlassFormCard = ({ title, subtitle, children, isSubmitting, onSubmit }) =>
   </form>
 );
 
-const TextInput = ({ label, value, onChange, placeholder, required }) => (
-  <label className="flex flex-col gap-2 text-sm text-slate-200">
+const TextInput = ({ label, value, onChange, placeholder, required, labelClass, inputClass }) => (
+  <label className={labelClass}>
     {label}
     <input
       value={value}
-      onChange={onChange}
+      onChange={(event) => onChange?.(event.target.value)}
       placeholder={placeholder}
       required={required}
-      className="rounded-2xl bg-slate-900/70 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+      className={inputClass}
     />
   </label>
 );
 
-const NumberInput = ({ label, value, onChange, step = '1', min, required }) => (
-  <label className="flex flex-col gap-2 text-sm text-slate-200">
+const NumberInput = ({ label, value, onChange, step = '1', min, required, labelClass, inputClass }) => (
+  <label className={labelClass}>
     {label}
     <input
       type="number"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(event) => onChange?.(event.target.value)}
       step={step}
       min={min}
       required={required}
-      className="rounded-2xl bg-slate-900/70 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+      className={inputClass}
     />
   </label>
 );
 
-const DateInput = ({ label, value, onChange, required, type = 'date', step }) => (
-  <label className="flex flex-col gap-2 text-sm text-slate-200">
+const DateInput = ({ label, value, onChange, required, type = 'date', step, labelClass, inputClass }) => (
+  <label className={labelClass}>
     {label}
     <input
       type={type}
@@ -617,26 +816,36 @@ const DateInput = ({ label, value, onChange, required, type = 'date', step }) =>
       onChange={onChange}
       required={required}
       step={step}
-      className="rounded-2xl bg-slate-900/70 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+      className={inputClass}
     />
   </label>
 );
 
-const Textarea = ({ label, value, onChange, placeholder, required }) => (
-  <label className="flex flex-col gap-2 text-sm text-slate-200">
+const Textarea = ({ label, value, onChange, placeholder, required, labelClass, textareaClass }) => (
+  <label className={labelClass}>
     {label}
     <textarea
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(event) => onChange?.(event.target.value)}
       placeholder={placeholder}
       rows={3}
       required={required}
-      className="rounded-2xl bg-slate-900/70 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+      className={textareaClass}
     />
   </label>
 );
 
-const QuestionRow = ({ question, onUpdate, onDelete }) => {
+const QuestionRow = ({
+  question,
+  onUpdate,
+  onDelete,
+  themeStyles = THEME_CONFIG.dark,
+  inputClass,
+  secondaryButtonClass,
+  dangerButtonClass,
+  chipClass,
+  mutedTextClass,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState({ text: question.text, point_value: question.point_value });
   const [busy, setBusy] = useState(false);
@@ -648,31 +857,33 @@ const QuestionRow = ({ question, onUpdate, onDelete }) => {
     setIsEditing(false);
   };
 
+  const bodyTextClass = `text-sm leading-relaxed ${themeStyles.textSecondary}`;
+  const metaTextClass = `text-xs ${themeStyles.muted}`;
   return (
     <div className="flex flex-col gap-4 px-8 py-6 md:flex-row md:items-start md:justify-between">
       <div className="space-y-3">
-        <div className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-slate-500">
-          <span className="rounded-full bg-slate-200/10 px-3 py-1 font-semibold text-slate-200">{question.question_type}</span>
-          <span className="text-slate-600">ID #{question.id}</span>
+        <div className={`flex items-center gap-3 text-xs uppercase tracking-[0.3em] ${themeStyles.subtle}`}>
+          <span className={chipClass || `rounded-full bg-slate-200/10 px-3 py-1 text-slate-200`}>{question.question_type}</span>
+          <span className={mutedTextClass || metaTextClass}>ID #{question.id}</span>
         </div>
         {isEditing ? (
           <textarea
             value={draft.text}
             onChange={(e) => setDraft((prev) => ({ ...prev, text: e.target.value }))}
-            className="w-full rounded-2xl bg-slate-900/70 px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+            className={`${inputClass} w-full`}
             rows={3}
           />
         ) : (
-          <p className="text-sm leading-relaxed text-slate-300">{question.text}</p>
+          <p className={bodyTextClass}>{question.text}</p>
         )}
-        <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+        <div className={`flex flex-wrap gap-3 text-xs ${themeStyles.muted}`}>
           <span>Points: {question.point_value}</span>
           <span>Updated: {new Date(question.last_updated).toLocaleString()}</span>
         </div>
       </div>
       <div className="flex w-full max-w-xs flex-col gap-3">
         {isEditing && (
-          <label className="text-xs text-slate-400">
+          <label className={`text-xs ${themeStyles.subtle}`}>
             Point value
             <input
               type="number"
@@ -680,7 +891,7 @@ const QuestionRow = ({ question, onUpdate, onDelete }) => {
               min="0"
               step="0.5"
               onChange={(e) => setDraft((prev) => ({ ...prev, point_value: e.target.value }))}
-              className="mt-2 w-full rounded-2xl bg-slate-900/70 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+              className={`${inputClass} mt-2`}
             />
           </label>
         )}
@@ -689,7 +900,7 @@ const QuestionRow = ({ question, onUpdate, onDelete }) => {
             type="button"
             onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
             disabled={busy}
-            className="flex-1 rounded-xl bg-emerald-500/20 px-3 py-2 text-sm font-medium text-emerald-200 hover:bg-emerald-500/30 disabled:bg-emerald-500/20"
+            className={`${secondaryButtonClass} flex-1`}
           >
             {isEditing ? (busy ? 'Saving…' : 'Save') : 'Edit'}
           </button>
@@ -697,7 +908,7 @@ const QuestionRow = ({ question, onUpdate, onDelete }) => {
             type="button"
             onClick={onDelete}
             disabled={busy}
-            className="rounded-xl bg-rose-500/20 px-3 py-2 text-sm font-medium text-rose-200 hover:bg-rose-500/30 disabled:bg-rose-500/20"
+            className={dangerButtonClass}
           >
             Delete
           </button>
@@ -709,7 +920,7 @@ const QuestionRow = ({ question, onUpdate, onDelete }) => {
               setIsEditing(false);
               setDraft({ text: question.text, point_value: question.point_value });
             }}
-            className="text-xs text-slate-500 hover:text-slate-300"
+            className={`text-xs ${themeStyles.subtle} transition hover:opacity-80`}
           >
             Cancel edits
           </button>

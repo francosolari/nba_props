@@ -17,7 +17,9 @@ const SelectComponent = ({
   isClearable = true,
   isSearchable = true,
   className = '',
+  mode = 'dark',
 }) => {
+  const isLight = mode === 'light';
   const normalizedValue = useMemo(() => {
     if (!value) return null;
     if (typeof value === 'object' && 'value' in value) {
@@ -48,40 +50,57 @@ const SelectComponent = ({
         control: (provided, state) => ({
           ...provided,
           minHeight: '42px',
-          backgroundColor: state.isDisabled ? '#1f2937' : provided.backgroundColor,
+          backgroundColor: state.isDisabled
+            ? isLight
+              ? '#f8fafc'
+              : '#1e293b'
+            : isLight
+              ? '#ffffff'
+              : '#0f172a',
           borderColor: hasError
             ? '#f87171'
             : state.isFocused
               ? '#2563eb'
-              : provided.borderColor,
+              : isLight
+                ? '#cbd5f5'
+                : '#334155',
           boxShadow: hasError
             ? '0 0 0 1px #f87171'
             : state.isFocused
               ? '0 0 0 1px #2563eb'
-              : provided.boxShadow,
+              : 'none',
           '&:hover': {
             borderColor: hasError ? '#f87171' : '#2563eb',
           },
-          backgroundColor: '#0f172a',
-          color: '#e2e8f0',
+          color: isLight ? '#0f172a' : '#e2e8f0',
         }),
         placeholder: (provided) => ({
           ...provided,
-          color: '#9ca3af',
+          color: isLight ? '#64748b' : '#94a3b8',
         }),
-        singleValue: (provided) => ({
+        singleValue: (provided, state) => ({
           ...provided,
-          color: '#e2e8f0',
+          color: state.isDisabled
+            ? isLight
+              ? '#475569'
+              : '#94a3b8'
+            : isLight
+              ? '#0f172a'
+              : '#e2e8f0',
         }),
         input: (provided) => ({
           ...provided,
-          color: '#f8fafc',
+          color: isLight ? '#0f172a' : '#f8fafc',
         }),
         menu: (provided) => ({
           ...provided,
-          backgroundColor: 'rgba(15, 23, 42, 0.92)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(148, 163, 184, 0.2)',
+          backgroundColor: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.95)',
+          border: isLight
+            ? '1px solid rgba(203, 213, 225, 0.8)'
+            : '1px solid rgba(148, 163, 184, 0.35)',
+          boxShadow: isLight
+            ? '0 10px 25px rgba(15, 23, 42, 0.08)'
+            : '0 10px 25px rgba(15, 23, 42, 0.45)',
         }),
         menuList: (provided) => ({
           ...provided,
@@ -89,8 +108,12 @@ const SelectComponent = ({
         }),
         option: (provided, state) => ({
           ...provided,
-          backgroundColor: state.isFocused ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-          color: '#e2e8f0',
+          backgroundColor: state.isFocused
+            ? isLight
+              ? 'rgba(59, 130, 246, 0.12)'
+              : 'rgba(59, 130, 246, 0.18)'
+            : 'transparent',
+          color: isLight ? '#0f172a' : '#e2e8f0',
         }),
         menuPortal: (provided) => ({ ...provided, zIndex: 9999 }),
       }}

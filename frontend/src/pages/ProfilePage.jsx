@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import EditablePredictionBoard from '../components/EditablePredictionBoard';
-import { Trophy, Target, Award, ChevronRight, Lock, Unlock, User as UserIcon, Mail, Key, ExternalLink, TrendingUp, BarChart3, CheckCircle2, XCircle, Hourglass } from 'lucide-react';
+import { Trophy, Target, Award, ChevronRight, ChevronDown, Lock, Unlock, User as UserIcon, Mail, Key, ExternalLink, TrendingUp, BarChart3, CheckCircle2, XCircle, Hourglass } from 'lucide-react';
 import useLeaderboard from '../hooks/useLeaderboard';
 import UserExpandedView from '../components/UserExpandedView';
 import QuestionForm from '../components/QuestionForm';
@@ -190,15 +190,23 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <select
-                  value={selectedSeason}
-                  onChange={(e) => setSelectedSeason(e.target.value)}
-                  className="rounded-lg bg-white/95 text-slate-900 text-xs font-medium px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/60 border-0"
-                >
-                  {seasons.map((s) => (
-                    <option key={s.slug} value={s.slug}>{s.slug}</option>
-                  ))}
-                </select>
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-white/75 font-semibold">
+                    Season
+                  </span>
+                  <div className="relative mt-1">
+                    <select
+                      value={selectedSeason}
+                      onChange={(e) => setSelectedSeason(e.target.value)}
+                      className="appearance-none rounded-lg border border-white/70 bg-white text-slate-900 text-sm font-semibold px-3 py-2 pr-10 shadow focus:outline-none focus:ring-2 focus:ring-white/70 focus:border-white/80 transition dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-sky-500 dark:focus:border-sky-500"
+                    >
+                      {seasons.map((s) => (
+                        <option key={s.slug} value={s.slug}>{s.slug}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-400" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -422,8 +430,12 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
                 )}
               </div>
               {canEdit ? (
-                <QuestionForm seasonSlug={selectedSeason} />
-              ) : (
+                <QuestionForm
+                  seasonSlug={selectedSeason}
+                  canEdit={!!canEdit}
+                  submissionEndDate={selectedSeasonObj?.submission_end_date || null}
+                />
+            ) : (
                 answers.length === 0 ? (
                   <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">
                     No answers submitted for {selectedSeason}.
@@ -504,14 +516,14 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
                                                                                                   <div className="flex items-center gap-1.5">
                                                                                                     {isCorrect && (
                                                                                                       <>
-                                                                                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                                                                                        <span className="font-bold text-emerald-700">Correct</span>
+                                                                                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />
+                                                                                                        <span className="font-bold text-emerald-700 dark:text-emerald-400">Correct</span>
                                                                                                       </>
                                                                                                     )}
                                                                                                     {isIncorrect && (
                                                                                                       <>
-                                                                                                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                                                                                                        <span className="font-bold text-rose-700">Incorrect</span>
+                                                                                                        <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-500" />
+                                                                                                        <span className="font-bold text-rose-700 dark:text-rose-400">Incorrect</span>
                                                                                                       </>
                                                                                                     )}
                                                                                                                                             {isPending && (
@@ -521,7 +533,7 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
                                                                                                                                               </>
                                                                                                                                             )}                                      </div>
                                       {typeof a.points_earned === 'number' && (
-                                        <span className={`font-bold ${a.points_earned > 0 ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                        <span className={`font-bold ${a.points_earned > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
                                           +{a.points_earned} pts
                                         </span>
                                       )}
