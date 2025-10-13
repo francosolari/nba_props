@@ -135,6 +135,47 @@ class AnswerSubmitResponseSchema(Schema):
 
 
 # ============================================
+# STANDINGS PREDICTION SCHEMAS
+# ============================================
+
+
+class StandingPredictionEntrySchema(Schema):
+    """Single standings prediction entry"""
+    team_id: int
+    predicted_position: int
+
+
+class StandingPredictionsSubmitSchema(Schema):
+    """Payload schema for submitting standings predictions"""
+    predictions: List[StandingPredictionEntrySchema]
+
+
+class StandingPredictionResponseSchema(Schema):
+    """Single saved standings prediction record"""
+    team_id: int
+    team_name: str
+    team_conference: str
+    predicted_position: int
+
+
+class StandingPredictionsResponseSchema(Schema):
+    """Response schema for fetching standings predictions"""
+    season_slug: str
+    username: Optional[str] = None
+    predictions: List[StandingPredictionResponseSchema]
+    east: List[StandingPredictionResponseSchema]
+    west: List[StandingPredictionResponseSchema]
+
+
+class StandingPredictionsSubmitResponseSchema(Schema):
+    """Response schema after submitting standings predictions"""
+    status: str
+    message: str
+    saved_count: int
+    errors: Optional[Dict[str, str]] = None
+
+
+# ============================================
 # QUESTION LIST RESPONSE
 # ============================================
 

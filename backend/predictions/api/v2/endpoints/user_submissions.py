@@ -8,12 +8,14 @@ from datetime import datetime, time
 from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from typing import List
+from typing import List, Optional
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 from predictions.models import (
     Season, Question, Answer, 
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion,
-    HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion
+    HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion,
+    StandingPrediction, Team
 )
 from predictions.api.v2.schemas import (
     QuestionsListResponse,
@@ -23,6 +25,9 @@ from predictions.api.v2.schemas import (
     BulkAnswerSubmitSchema,
     AnswerSubmitResponseSchema,
     SubmissionStatusSchema,
+    StandingPredictionsResponseSchema,
+    StandingPredictionsSubmitSchema,
+    StandingPredictionsSubmitResponseSchema,
 )
 from predictions.utils.deadlines import validate_submission_window, is_submission_open, get_submission_status
 from ninja.errors import HttpError
@@ -48,6 +53,34 @@ QUESTION_MODEL_NAME_MAP = {
     InSeasonTournamentQuestion._meta.model_name: "ist",
     NBAFinalsPredictionQuestion._meta.model_name: "nba_finals",
 }
+
+
+UserModel = get_user_model()
+
+
+def _resolve_season(season_slug: str) -> Season:
+    """Resolve a season slug, supporting the 'current' shortcut."""
+    if season_slug == "current":
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            raise HttpError(404, "Latest season not found")
+        return season
+    return get_object_or_404(Season, slug=season_slug)
+
+
+def _resolve_prediction_user(username: Optional[str], request) -> Optional[UserModel]:
+    """
+    Resolve the user whose predictions should be viewed.
+    Prefers explicit username, otherwise falls back to the request user.
+    """
+    if username:
+        try:
+            return UserModel.objects.get(username=username)
+        except UserModel.DoesNotExist:
+            return None
+    if request.user.is_authenticated:
+        return request.user
+    return None
 
 
 def get_question_type_slug(question: Question) -> str:
@@ -150,6 +183,150 @@ def serialize_question(question: Question) -> dict:
             **base_data,
             "question_type": "unknown",
         }
+
+
+@router.get(
+    "/standings/{season_slug}",
+    response=StandingPredictionsResponseSchema,
+    summary="Get standings predictions for a user",
+    description="Retrieve regular season standings predictions for a specific user and season."
+)
+def get_standing_predictions(request, season_slug: str, username: Optional[str] = None):
+    """
+    Retrieve standings predictions for the requested user.
+    Falls back to the authenticated user when no username is provided.
+    """
+    season = _resolve_season(season_slug)
+    user = _resolve_prediction_user(username, request)
+
+    if user is None:
+        return {
+            "season_slug": season.slug,
+            "username": username or (request.user.username if request.user.is_authenticated else None),
+            "predictions": [],
+            "east": [],
+            "west": [],
+        }
+
+    predictions_qs = (
+        StandingPrediction.objects.filter(user=user, season=season)
+        .select_related("team")
+        .order_by("predicted_position")
+    )
+
+    predictions = []
+    east = []
+    west = []
+
+    for pred in predictions_qs:
+        team = pred.team
+        entry = {
+            "team_id": team.id,
+            "team_name": team.name,
+            "team_conference": team.conference,
+            "predicted_position": pred.predicted_position,
+        }
+        predictions.append(entry)
+        conference_key = (team.conference or "").lower()
+        if conference_key.startswith("e"):
+            east.append(entry)
+        else:
+            west.append(entry)
+
+    east.sort(key=lambda item: item["predicted_position"])
+    west.sort(key=lambda item: item["predicted_position"])
+
+    return {
+        "season_slug": season.slug,
+        "username": user.username,
+        "predictions": predictions,
+        "east": east,
+        "west": west,
+    }
+
+
+@router.post(
+    "/standings/{season_slug}",
+    response=StandingPredictionsSubmitResponseSchema,
+    summary="Submit standings predictions",
+    description="Create or update the authenticated user's regular season standings predictions."
+)
+def submit_standing_predictions(request, season_slug: str, payload: StandingPredictionsSubmitSchema):
+    """
+    Submit standings predictions for the authenticated user.
+    Enforces submission windows and validates payload integrity.
+    """
+    if not request.user.is_authenticated:
+        raise HttpError(401, "Authentication required")
+
+    season = _resolve_season(season_slug)
+
+    # Ensure submissions are allowed
+    validate_submission_window(season)
+
+    predictions_payload = payload.predictions or []
+    if not predictions_payload:
+        raise HttpError(400, "No predictions provided")
+
+    team_ids = [entry.team_id for entry in predictions_payload]
+    if len(team_ids) != len(set(team_ids)):
+        raise HttpError(400, "Duplicate team_id values provided")
+
+    teams = Team.objects.in_bulk(team_ids)
+    missing = [team_id for team_id in team_ids if team_id not in teams]
+    if missing:
+        raise HttpError(400, f"Invalid team IDs: {', '.join(map(str, missing))}")
+
+    errors = {}
+    east_positions = set()
+    west_positions = set()
+
+    for entry in predictions_payload:
+        team = teams[entry.team_id]
+        position = entry.predicted_position
+
+        if position < 1 or position > 15:
+            errors[str(entry.team_id)] = "Predicted position must be between 1 and 15"
+            continue
+
+        conference = (team.conference or "").lower()
+        position_set = east_positions if conference.startswith("e") else west_positions
+        if position in position_set:
+            errors[str(entry.team_id)] = f"Duplicate predicted position {position} in {team.conference} conference"
+        else:
+            position_set.add(position)
+
+    if errors:
+        return {
+            "status": "error",
+            "message": "Validation errors occurred",
+            "saved_count": 0,
+            "errors": errors,
+        }
+
+    saved_count = 0
+    with transaction.atomic():
+        StandingPrediction.objects.filter(
+            user=request.user,
+            season=season
+        ).exclude(team_id__in=team_ids).delete()
+
+        for entry in predictions_payload:
+            team = teams[entry.team_id]
+            StandingPrediction.objects.update_or_create(
+                user=request.user,
+                season=season,
+                team=team,
+                defaults={"predicted_position": entry.predicted_position},
+            )
+            saved_count += 1
+
+    return {
+        "status": "success",
+        "message": "Standings predictions saved",
+        "saved_count": saved_count,
+        "errors": None,
+    }
 
 
 @router.get(

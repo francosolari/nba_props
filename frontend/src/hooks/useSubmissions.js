@@ -56,11 +56,14 @@ export const useSubmissionStatus = (seasonSlug) => {
 /**
  * Submit answers mutation
  */
-export const useSubmitAnswers = (seasonSlug) => {
+export const useSubmitAnswers = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (answers) => {
+    mutationFn: async ({ seasonSlug, answers }) => {
+      if (!seasonSlug) {
+        throw new Error('seasonSlug is required to submit answers');
+      }
       const { data } = await axios.post(
         `/api/v2/submissions/answers/${seasonSlug}`,
         { answers },
@@ -73,9 +76,10 @@ export const useSubmitAnswers = (seasonSlug) => {
       );
       return data;
     },
-    onSuccess: () => {
-      // Invalidate and refetch answers
-      queryClient.invalidateQueries(['userAnswers', seasonSlug]);
+    onSuccess: (_data, variables) => {
+      if (variables?.seasonSlug) {
+        queryClient.invalidateQueries(['userAnswers', variables.seasonSlug]);
+      }
     },
   });
 };

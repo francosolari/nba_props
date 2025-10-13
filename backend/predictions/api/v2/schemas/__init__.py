@@ -45,6 +45,11 @@ from .questions import (
     AnswerSubmitSchema,
     BulkAnswerSubmitSchema,
     AnswerSubmitResponseSchema,
+    StandingPredictionEntrySchema,
+    StandingPredictionsSubmitSchema,
+    StandingPredictionResponseSchema,
+    StandingPredictionsResponseSchema,
+    StandingPredictionsSubmitResponseSchema,
     
     # Response schemas
     QuestionsListResponse,
@@ -103,6 +108,11 @@ __all__ = [
     'AnswerSubmitSchema',
     'BulkAnswerSubmitSchema',
     'AnswerSubmitResponseSchema',
+    'StandingPredictionEntrySchema',
+    'StandingPredictionsSubmitSchema',
+    'StandingPredictionResponseSchema',
+    'StandingPredictionsResponseSchema',
+    'StandingPredictionsSubmitResponseSchema',
     
     # Response schemas
     'QuestionsListResponse',

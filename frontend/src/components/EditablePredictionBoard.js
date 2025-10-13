@@ -1,4 +1,13 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  memo,
+  useMemo,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import axios from 'axios';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import '../styles/palette.css';
@@ -33,46 +42,61 @@ const StandingsList = memo(({ conference, teams, isEditable }) => (
                   index={index}
                   isDragDisabled={!isEditable}
                 >
-                  {(provided, snapshot) => (
-                    <div
-                      className={`conference-team ${snapshot.isDragging ? 'dragging' : ''}`}
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                    >
-                      <span className="position">{index + 1}</span>
-                      <img
-                        className="logo"
-                        src={`/static/img/teams/${teamSlug(team.team_name)}.png`}
-                        alt={team.team_name}
-                        onError={(e) => {
-                          const img = e.currentTarget;
-                          const slug = teamSlug(team.team_name);
-                          const step = parseInt(img.dataset.step || '0', 10);
-                          if (step === 0) {
-                            img.dataset.step = '1';
-                            img.src = `/static/img/teams/${slug}.svg`;
-                            return;
-                          }
-                          if (step === 1) {
-                            img.dataset.step = '2';
-                            img.src = `/static/img/teams/${slug}.PNG`;
-                            return;
-                          }
-                          if (step === 2) {
-                            img.dataset.step = '3';
-                            img.src = `/static/img/teams/${slug}.SVG`;
-                            return;
-                          }
-                          img.onerror = null;
-                          img.src = '/static/img/teams/unknown.svg';
-                        }}
-                      />
-                      <span className="name" title={team.team_name}>
-                        {team.team_name}
-                      </span>
-                    </div>
-                  )}
+                  {(provided, snapshot) => {
+                    const { style: draggableStyle, ...draggableProps } = provided.draggableProps;
+                    const baseStyle = draggableStyle || {};
+                    const itemStyle = {
+                      ...baseStyle,
+                      transition: snapshot.isDropAnimating ? 'transform 0.0001s linear' : baseStyle.transition,
+                      boxSizing: 'border-box',
+                    };
+
+                    if (!snapshot.isDragging && typeof baseStyle.width === 'undefined') {
+                      itemStyle.width = '100%';
+                    }
+
+                    return (
+                      <div
+                        className={`conference-team ${snapshot.isDragging ? 'dragging' : ''}`}
+                        ref={provided.innerRef}
+                        {...draggableProps}
+                        {...provided.dragHandleProps}
+                        style={itemStyle}
+                      >
+                        <span className="position">{index + 1}</span>
+                        <img
+                          className="logo"
+                          src={`/static/img/teams/${teamSlug(team.team_name)}.png`}
+                          alt={team.team_name}
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            const slug = teamSlug(team.team_name);
+                            const step = parseInt(img.dataset.step || '0', 10);
+                            if (step === 0) {
+                              img.dataset.step = '1';
+                              img.src = `/static/img/teams/${slug}.svg`;
+                              return;
+                            }
+                            if (step === 1) {
+                              img.dataset.step = '2';
+                              img.src = `/static/img/teams/${slug}.PNG`;
+                              return;
+                            }
+                            if (step === 2) {
+                              img.dataset.step = '3';
+                              img.src = `/static/img/teams/${slug}.SVG`;
+                              return;
+                            }
+                            img.onerror = null;
+                            img.src = '/static/img/teams/unknown.svg';
+                          }}
+                        />
+                        <span className="name" title={team.team_name}>
+                          {team.team_name}
+                        </span>
+                      </div>
+                    );
+                  }}
                 </Draggable>
               ))
             ) : (
@@ -86,15 +110,47 @@ const StandingsList = memo(({ conference, teams, isEditable }) => (
   </div>
 ));
 
-function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true, username }) {
+const EditablePredictionBoard = forwardRef(function EditablePredictionBoard(
+  { seasonSlug: initialSeasonSlug, canEdit = true, username },
+  ref
+) {
   const [eastStandings, setEastStandings] = useState([]);
   const [westStandings, setWestStandings] = useState([]);
   const [initialEastStandings, setInitialEastStandings] = useState([]);
   const [initialWestStandings, setInitialWestStandings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(canEdit);
   const [saving, setSaving] = useState(false);
   const [seasonSlug, setSeasonSlug] = useState(initialSeasonSlug);
+  const [isDragging, setIsDragging] = useState(false);
+  const bodyOverflowRef = useRef('');
+
+  const computeOrderSignature = useCallback(
+    (list) => (Array.isArray(list) ? list.map((team) => team.team_id).join('|') : ''),
+    []
+  );
+
+  const eastOrderSignature = useMemo(
+    () => computeOrderSignature(eastStandings),
+    [computeOrderSignature, eastStandings]
+  );
+  const initialEastSignature = useMemo(
+    () => computeOrderSignature(initialEastStandings),
+    [computeOrderSignature, initialEastStandings]
+  );
+  const westOrderSignature = useMemo(
+    () => computeOrderSignature(westStandings),
+    [computeOrderSignature, westStandings]
+  );
+  const initialWestSignature = useMemo(
+    () => computeOrderSignature(initialWestStandings),
+    [computeOrderSignature, initialWestStandings]
+  );
+
+  const hasUnsavedChanges = useMemo(
+    () => eastOrderSignature !== initialEastSignature || westOrderSignature !== initialWestSignature,
+    [eastOrderSignature, initialEastSignature, westOrderSignature, initialWestSignature]
+  );
 
   useEffect(() => {
     if (initialSeasonSlug) {
@@ -103,9 +159,26 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
   }, [initialSeasonSlug]);
 
   useEffect(() => {
-    setIsEditing(false);
+    setIsEditing(canEdit);
     setSaving(false);
-  }, [seasonSlug]);
+  }, [seasonSlug, canEdit]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    if (isDragging) {
+      bodyOverflowRef.current = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = bodyOverflowRef.current || '';
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = bodyOverflowRef.current || '';
+      }
+    };
+  }, [isDragging]);
 
   useEffect(() => {
     let isMounted = true;
@@ -155,8 +228,8 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
       let body = {};
 
       try {
-        const params = username ? { params: { username } } : undefined;
-        const response = await axios.get(`/api/user_predictions/${slugToUse}/`, params);
+        const config = username ? { params: { username } } : {};
+        const response = await axios.get(`/api/v2/submissions/standings/${slugToUse}`, config);
         body = response.data || {};
       } catch (error) {
         console.error('Error fetching user standings predictions:', error);
@@ -249,20 +322,34 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
     };
 
     const hydrate = async () => {
-      if (!seasonSlug) {
+      if (!seasonSlug || seasonSlug === 'current') {
         try {
           const latestSeasonResponse = await axios.get('/api/v2/latest-season');
           const latestSlug = latestSeasonResponse.data?.slug;
-          if (latestSlug && isMounted) {
-            setSeasonSlug(latestSlug);
+          if (latestSlug) {
+            if (seasonSlug !== latestSlug && isMounted) {
+              setSeasonSlug(latestSlug);
+              return;
+            }
+            if (!seasonSlug) {
+              // If we started without a slug but resolved immediately, avoid duplicate fetch
+              setSeasonSlug(latestSlug);
+              return;
+            }
           }
         } catch (error) {
           console.error('Error determining latest season:', error);
+          if (!seasonSlug && isMounted) {
+            setLoading(false);
+            return;
+          }
+        }
+        if (!seasonSlug) {
           if (isMounted) {
             setLoading(false);
           }
+          return;
         }
-        return;
       }
 
       await fetchSeasonAndPredictions(seasonSlug);
@@ -275,8 +362,13 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
     };
   }, [seasonSlug, username]);
 
-  const onDragEnd = useCallback(
+  const handleDragStart = useCallback(() => {
+    setIsDragging(true);
+  }, []);
+
+  const handleDragEnd = useCallback(
     (result) => {
+      setIsDragging(false);
       const { source, destination } = result;
 
       if (!destination) return;
@@ -314,38 +406,106 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
     return cookieValue;
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    // Submit the updated standings to the server
-    const eastPayload = eastStandings.map((team, index) => ({
-      team_id: team.team_id,
-      predicted_position: index + 1,
-    }));
+  const handleSave = useCallback(
+    async ({ slugOverride, silent = false, force = false } = {}) => {
+      if (!force && !hasUnsavedChanges) {
+        // Nothing to do – return success so parent flows can continue.
+        return {
+          success: true,
+          skipped: true,
+          slug: slugOverride || seasonSlug,
+        };
+      }
 
-    const westPayload = westStandings.map((team, index) => ({
-      team_id: team.team_id,
-      predicted_position: index + 1,
-    }));
+      setSaving(true);
 
-    const payload = [...eastPayload, ...westPayload];
+      const eastPayload = eastStandings.map((team, index) => ({
+        team_id: team.team_id,
+        predicted_position: index + 1,
+      }));
 
-    try {
-      await axios.post(`/api/submit_predictions/${seasonSlug}/`, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-        },
-      });
-      setIsEditing(false);
-      setInitialEastStandings(eastStandings.map((team) => ({ ...team })));
-      setInitialWestStandings(westStandings.map((team) => ({ ...team })));
-    } catch (error) {
-      console.error('Error saving predictions:', error);
-      alert('There was an error saving your predictions.');
-    } finally {
-      setSaving(false);
-    }
-  };
+      const westPayload = westStandings.map((team, index) => ({
+        team_id: team.team_id,
+        predicted_position: index + 1,
+      }));
+
+      const payload = [...eastPayload, ...westPayload];
+
+      try {
+        let targetSlug = slugOverride || seasonSlug;
+
+        if (!targetSlug || targetSlug === 'current') {
+          try {
+            const { data } = await axios.get('/api/v2/latest-season');
+            if (data?.slug) {
+              targetSlug = data.slug;
+              if (seasonSlug !== data.slug) {
+                setSeasonSlug(data.slug);
+              }
+            }
+          } catch (resolveError) {
+            console.error('Error resolving season slug before save:', resolveError);
+          }
+        }
+
+        if (!targetSlug) {
+          throw new Error('Unable to determine the active season for saving predictions.');
+        }
+
+        const { data } = await axios.post(
+          `/api/v2/submissions/standings/${targetSlug}`,
+          { predictions: payload },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken'),
+            },
+          }
+        );
+
+        if (!data || data.status !== 'success') {
+          const message = data?.message || 'There was an error saving your predictions.';
+          const details = data?.errors;
+          const validationError = new Error(message);
+          validationError.details = details;
+          throw validationError;
+        }
+
+        setInitialEastStandings(eastStandings.map((team) => ({ ...team })));
+        setInitialWestStandings(westStandings.map((team) => ({ ...team })));
+        if (!canEdit) {
+          setIsEditing(false);
+        }
+
+        return {
+          success: true,
+          slug: targetSlug,
+          updated: true,
+        };
+      } catch (error) {
+        console.error('Error saving predictions:', error);
+        if (!silent) {
+          alert(
+            error?.message ||
+              (error?.response?.data?.message ?? 'There was an error saving your predictions.')
+          );
+        }
+        return {
+          success: false,
+          error,
+        };
+      } finally {
+        setSaving(false);
+      }
+    },
+    [
+      canEdit,
+      eastStandings,
+      hasUnsavedChanges,
+      seasonSlug,
+      westStandings,
+    ]
+  );
 
   const handleCancel = () => {
     setEastStandings(initialEastStandings.map((team) => ({ ...team })));
@@ -358,12 +518,25 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
     setWestStandings(initialWestStandings.map((team) => ({ ...team })));
   };
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      async saveStandings(options = {}) {
+        const { slugOverride, silent = true, force = false } = options;
+        return handleSave({ slugOverride, silent, force });
+      },
+      hasUnsavedChanges: () => hasUnsavedChanges,
+      isSaving: () => saving,
+    }),
+    [handleSave, hasUnsavedChanges, saving]
+  );
+
   return (
-    <div className="standings-wrapper">
+    <div className={`standings-wrapper${isDragging ? ' standings-wrapper--dragging' : ''}`}>
       {loading ? (
         <div className="standings-loading">Loading standings...</div>
       ) : (
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="standings-grid">
             <StandingsList conference="East" teams={eastStandings} isEditable={isEditing} />
             <StandingsList conference="West" teams={westStandings} isEditable={isEditing} />
@@ -392,7 +565,7 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
             </button>
             <button
               type="button"
-              onClick={handleSave}
+              onClick={() => handleSave()}
               className="standings-button save"
               disabled={saving}
             >
@@ -414,6 +587,6 @@ function EditablePredictionBoard({ seasonSlug: initialSeasonSlug, canEdit = true
       </div>
     </div>
   );
-}
+});
 
 export default EditablePredictionBoard;

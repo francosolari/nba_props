@@ -4,7 +4,7 @@
  * Features: deadline enforcement, auto-save, progress tracking, grouped sections
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
 import {
   useQuestions,
@@ -65,6 +65,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const [playerOptions, setPlayerOptions] = useState([]);
   const [teamOptions, setTeamOptions] = useState([]);
   const [loadingAuxData, setLoadingAuxData] = useState(false);
+  const standingsBoardRef = useRef(null);
 
   const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
   const { data: userContext, isLoading: userContextLoading } = useUserContext();
@@ -110,7 +111,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const { data: questionsData, isLoading: questionsLoading } = useQuestions(effectiveSeasonSlug);
   const { data: userAnswersData } = useUserAnswers(effectiveSeasonSlug);
   const { data: statusData } = useSubmissionStatus(effectiveSeasonSlug);
-  const submitMutation = useSubmitAnswers(effectiveSeasonSlug);
+  const submitMutation = useSubmitAnswers();
 
   // Reset answers when season changes
   useEffect(() => {
@@ -231,9 +232,47 @@ const SubmissionsPage = ({ seasonSlug }) => {
   }, [questionsData, playerOptions.length, teamOptions.length]);
 
   const handleSubmit = async () => {
-    if (!effectiveSeasonSlug) {
+    let slugToUse = effectiveSeasonSlug;
+    if (!slugToUse) {
+      try {
+        const { data } = await axios.get('/api/v2/latest-season');
+        if (data?.slug) {
+          slugToUse = data.slug;
+          setActiveSeasonSlug((prev) => prev || data.slug);
+        }
+      } catch (error) {
+        alert('Season is not ready yet. Please try again shortly.');
+        return;
+      }
+    }
+
+    if (!slugToUse) {
       alert('Season is not ready yet. Please try again shortly.');
       return;
+    }
+
+    if (standingsBoardRef.current) {
+      const standingsResult = await standingsBoardRef.current.saveStandings({
+        slugOverride: slugToUse,
+        silent: true,
+        force: true,
+      });
+
+      if (!standingsResult?.success) {
+        const errorMessage =
+          standingsResult?.error?.message ||
+          standingsResult?.error?.response?.data?.message ||
+          'We could not save your standings predictions. Please try again.';
+        alert(errorMessage);
+        return;
+      }
+
+      if (standingsResult.slug && standingsResult.slug !== slugToUse) {
+        slugToUse = standingsResult.slug;
+        if (!effectiveSeasonSlug) {
+          setActiveSeasonSlug((prev) => prev || standingsResult.slug);
+        }
+      }
     }
 
     const answersArray = Object.entries(answers).map(([question_id, answer]) => ({
@@ -242,11 +281,12 @@ const SubmissionsPage = ({ seasonSlug }) => {
     }));
 
     try {
-      await submitMutation.mutateAsync(answersArray);
-      setHasChanges(false);
-      if (storageKey) {
-        localStorage.removeItem(storageKey);
+      await submitMutation.mutateAsync({ seasonSlug: slugToUse, answers: answersArray });
+      if (!effectiveSeasonSlug) {
+        setActiveSeasonSlug(slugToUse);
       }
+      setHasChanges(false);
+      localStorage.removeItem(`submissions_${slugToUse}`);
       alert('Answers submitted successfully!');
     } catch (error) {
       alert(`Error: ${error.response?.data?.message || 'Failed to submit'}`);
@@ -306,11 +346,11 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const isReadOnly = !submissionStatus?.is_open;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 py-10">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 py-8 md:py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Submit Your Predictions</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Submit Your Predictions</h1>
           <p className="text-slate-500">{effectiveSeasonSlug} Season</p>
         </div>
 
@@ -347,7 +387,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
         {/* Regular Season Standings */}
         <section className="mb-10">
           <header className="mb-4">
-            <h2 className="text-2xl font-semibold text-slate-900">Regular Season Standings</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Regular Season Standings</h2>
             <p className="text-sm text-slate-500 mt-1">
               Drag and drop teams in each conference to set your projected final standings.
             </p>
@@ -357,6 +397,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
               <div className="p-6 text-center text-sm text-slate-500">Loading standings...</div>
             ) : userContext ? (
               <EditablePredictionBoard
+                ref={standingsBoardRef}
                 seasonSlug={effectiveSeasonSlug}
                 canEdit={!isReadOnly}
                 username={username}
@@ -392,10 +433,10 @@ const SubmissionsPage = ({ seasonSlug }) => {
           {groupedQuestions.map((group) => (
             <section key={group.type}>
               <header className="mb-4">
-                <h2 className="text-2xl font-semibold text-slate-900">{group.title}</h2>
+                <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">{group.title}</h2>
                 {group.description && <p className="text-sm text-slate-500 mt-1">{group.description}</p>}
               </header>
-              <div className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
                 {group.questions.map((question) => (
                   <QuestionCard
                     key={question.id}
@@ -415,17 +456,20 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
         {/* Submit Button */}
         {!isReadOnly && (
-          <div className="mt-8 text-center">
+          <div className="mt-10 flex flex-col items-center gap-3">
             <button
               onClick={handleSubmit}
               disabled={
                 submitMutation.isPending || !effectiveSeasonSlug || Object.keys(answers).length === 0
               }
-              className="bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto inline-flex items-center justify-center bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-semibold py-3.5 px-8 sm:px-12 rounded-full shadow-md hover:shadow-lg transition-all duration-200 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {submitMutation.isPending ? 'Submitting...' : 'Submit Predictions'}
             </button>
             {hasChanges && <p className="text-amber-500 text-sm mt-2">You have unsaved changes</p>}
+            <p className="text-xs text-slate-400 text-center">
+              Your regular season standings submit alongside these answers—no extra save needed.
+            </p>
           </div>
         )}
       </div>
@@ -444,7 +488,7 @@ const QuestionCard = ({
   loadingAuxData,
 }) => {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white/95 border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-md hover:shadow-lg transition-all">
       <div className="mb-4">
         <h3 className="text-slate-900 font-semibold text-lg mb-2">{question.text}</h3>
         <div className="flex items-center gap-4 text-sm text-slate-500">
@@ -488,6 +532,7 @@ const QuestionInput = ({
           onChange={(option) => onChange(option ? option.value : '')}
           placeholder={loadingAuxData ? 'Loading players...' : 'Select a player'}
           isDisabled={isReadOnly || loadingAuxData || playerOptions.length === 0}
+          mode="light"
         />
       );
     }
@@ -656,6 +701,7 @@ const QuestionInput = ({
             loadingAuxData ? 'Loading teams...' : filteredTeams.length ? 'Select a team' : 'No teams available'
           }
           isDisabled={isReadOnly || loadingAuxData || filteredTeams.length === 0}
+          mode="light"
         />
       );
     }
@@ -671,6 +717,7 @@ const QuestionInput = ({
           onChange={(option) => onChange(option ? option.value : '')}
           placeholder={loadingAuxData ? 'Loading teams...' : 'Select a team'}
           isDisabled={isReadOnly || loadingAuxData || teamOptions.length === 0}
+          mode="light"
         />
       );
     }
