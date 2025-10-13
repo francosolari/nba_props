@@ -8,13 +8,23 @@ Provides all Pydantic schemas for request/response validation.
 # These will be deprecated and moved here eventually
 from predictions.api.v2.schemas_legacy import (
     PlayerSchema,
+    PlayersResponseSchema,
     TeamSchema,
+    TeamsResponseSchema,
     StandingSchema,
     ISTStandingSchema,
     UserDisplaySchema,
     LeaderboardEntrySchema,
     PredictionSchema,
     ErrorSchema,
+    StandingsResponseSchema,
+    LeaderboardResponseSchema,
+    PredictionsResponseSchema,
+    UserAnswersResponseSchema,
+    SeasonResponseSchema,
+    RandomPredictionsResponseSchema,
+    RandomPropsResponseSchema,
+    HomepageDataResponseSchema,
 )
 
 # Import new question-related schemas
@@ -50,18 +60,34 @@ from .questions import (
     QuestionUpdateSchema,
     QuestionReorderSchema,
     QuestionDeleteResponseSchema,
+    QuestionSchema,
+    SubmissionStatusSchema,
+)
+
+from .seasons import (
+    SeasonCreateSchema,
 )
 
 __all__ = [
     # Legacy schemas
     'PlayerSchema',
+    'PlayersResponseSchema',
     'TeamSchema',
+    'TeamsResponseSchema',
     'StandingSchema',
     'ISTStandingSchema',
     'UserDisplaySchema',
     'LeaderboardEntrySchema',
     'PredictionSchema',
     'ErrorSchema',
+    'StandingsResponseSchema',
+    'LeaderboardResponseSchema',
+    'PredictionsResponseSchema',
+    'UserAnswersResponseSchema',
+    'SeasonResponseSchema',
+    'RandomPredictionsResponseSchema',
+    'RandomPropsResponseSchema',
+    'HomepageDataResponseSchema',
     
     # Question schemas
     'QuestionBaseSchema',
@@ -92,4 +118,7 @@ __all__ = [
     'QuestionUpdateSchema',
     'QuestionReorderSchema',
     'QuestionDeleteResponseSchema',
+    'QuestionSchema',
+    'SubmissionStatusSchema',
+    'SeasonCreateSchema',
 ]

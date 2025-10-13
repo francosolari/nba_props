@@ -5,8 +5,8 @@ Supports all polymorphic question types with proper serialization.
 """
 
 from ninja import Schema
-from typing import Optional, List, Literal
-from datetime import datetime
+from typing import Optional, List, Literal, Union, Dict
+from datetime import datetime, date
 
 
 # ============================================
@@ -79,6 +79,26 @@ class NBAFinalsPredictionQuestionSchema(QuestionBaseSchema):
     group_name: Optional[str] = None
 
 
+QuestionSchema = Union[
+    SuperlativeQuestionSchema,
+    PropQuestionSchema,
+    PlayerStatPredictionQuestionSchema,
+    HeadToHeadQuestionSchema,
+    InSeasonTournamentQuestionSchema,
+    NBAFinalsPredictionQuestionSchema,
+]
+
+
+class SubmissionStatusSchema(Schema):
+    """Detailed submission window status"""
+    is_open: bool
+    message: str
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    days_until_open: Optional[int] = None
+    days_until_close: Optional[int] = None
+
+
 # ============================================
 # ANSWER SCHEMAS
 # ============================================
@@ -111,7 +131,7 @@ class AnswerSubmitResponseSchema(Schema):
     status: str
     message: str
     saved_count: int
-    errors: Optional[dict] = None
+    errors: Optional[Dict[str, str]] = None
 
 
 # ============================================
@@ -122,9 +142,10 @@ class QuestionsListResponse(Schema):
     """Response schema for getting questions list"""
     season_slug: str
     submission_open: bool
-    submission_start_date: Optional[datetime] = None
-    submission_end_date: Optional[datetime] = None
-    questions: List[QuestionBaseSchema]
+    submission_start_date: Optional[date] = None
+    submission_end_date: Optional[date] = None
+    submission_status: SubmissionStatusSchema
+    questions: List[QuestionSchema]
 
 
 class UserAnswersResponse(Schema):
@@ -210,3 +231,4 @@ class QuestionDeleteResponseSchema(Schema):
     status: str
     message: str
     deleted_id: int
+

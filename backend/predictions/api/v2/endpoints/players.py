@@ -11,6 +11,8 @@ Endpoints:
 - GET /players - Retrieve all players
 """
 
+from typing import Optional
+
 from ninja import Router
 from django.http import JsonResponse
 
@@ -56,36 +58,24 @@ router = Router(tags=["Players"])
     - Data is cacheable and changes infrequently
     """
 )
-def get_all_players(request):
+def get_all_players(request, search: Optional[str] = None):
     """
-    Retrieve all NBA players.
+    Retrieve all NBA players, optionally filtering by name.
 
-    This endpoint fetches all players from the database and returns them
-    in a standardized format. The query is optimized to only fetch
-    necessary fields (id, name) to minimize data transfer.
-
-    Returns:
-        PlayersResponseSchema: JSON response containing all players
-
-    Raises:
-        404: If no players exist in the database (should not happen in normal operation)
+    Args:
+        search: Optional substring to filter player names (case-insensitive).
     """
     try:
-        # Query database for all players, selecting only needed fields
-        # Using .values() for performance - only fetches id and name
-        players_queryset = Player.objects.all().values('id', 'name')
+        players_queryset = Player.objects.all()
+        if search:
+            players_queryset = players_queryset.filter(name__icontains=search.strip())
 
-        # Convert queryset to list for JSON serialization
-        players_list = list(players_queryset)
+        players_list = list(players_queryset.values('id', 'name'))
 
-        # Return standardized response format
         return {'players': players_list}
 
     except Exception as e:
-        # Log error for debugging (in production, use proper logging)
         print(f"Error fetching players: {str(e)}")
-
-        # Return error response
         return JsonResponse(
             {'error': 'Unable to fetch players', 'details': str(e)},
             status=500

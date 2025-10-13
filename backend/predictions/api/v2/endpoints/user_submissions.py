@@ -13,18 +13,53 @@ from predictions.models import (
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion,
     HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion
 )
-from predictions.api.v2.schemas.questions import (
-    QuestionsListResponse, QuestionBaseSchema,
-    SuperlativeQuestionSchema, PropQuestionSchema, PlayerStatPredictionQuestionSchema,
-    HeadToHeadQuestionSchema, InSeasonTournamentQuestionSchema, NBAFinalsPredictionQuestionSchema,
-    UserAnswersResponse, AnswerSchema,
-    BulkAnswerSubmitSchema, AnswerSubmitResponseSchema
+from predictions.api.v2.schemas import (
+    QuestionsListResponse,
+    QuestionSchema,
+    UserAnswersResponse,
+    AnswerSchema,
+    BulkAnswerSubmitSchema,
+    AnswerSubmitResponseSchema,
+    SubmissionStatusSchema,
 )
 from predictions.utils.deadlines import validate_submission_window, is_submission_open, get_submission_status
 from ninja.errors import HttpError
 
 
 router = Router(tags=["User Submissions"])
+
+
+QUESTION_TYPE_MAP = {
+    SuperlativeQuestion: "superlative",
+    PropQuestion: "prop",
+    PlayerStatPredictionQuestion: "player_stat",
+    HeadToHeadQuestion: "head_to_head",
+    InSeasonTournamentQuestion: "ist",
+    NBAFinalsPredictionQuestion: "nba_finals",
+}
+
+QUESTION_MODEL_NAME_MAP = {
+    SuperlativeQuestion._meta.model_name: "superlative",
+    PropQuestion._meta.model_name: "prop",
+    PlayerStatPredictionQuestion._meta.model_name: "player_stat",
+    HeadToHeadQuestion._meta.model_name: "head_to_head",
+    InSeasonTournamentQuestion._meta.model_name: "ist",
+    NBAFinalsPredictionQuestion._meta.model_name: "nba_finals",
+}
+
+
+def get_question_type_slug(question: Question) -> str:
+    """
+    Return the short question type identifier used by the API/Frontend.
+    Defaults to 'unknown' if a new question type is introduced without mapping.
+    """
+    for model, slug in QUESTION_TYPE_MAP.items():
+        if isinstance(question, model):
+            return slug
+    polymorphic_ctype = getattr(question, "polymorphic_ctype", None)
+    if polymorphic_ctype is not None:
+        return QUESTION_MODEL_NAME_MAP.get(polymorphic_ctype.model, "unknown")
+    return "unknown"
 
 
 def serialize_question(question: Question) -> dict:
@@ -37,76 +72,74 @@ def serialize_question(question: Question) -> dict:
     Returns:
         Dictionary with question data
     """
-    base_data = {
-        "id": question.id,
-        "season_slug": question.season.slug,
-        "text": question.text,
-        "point_value": question.point_value,
-        "is_manual": question.is_manual,
-        "last_updated": question.last_updated,
+    real_question = question.get_real_instance() if hasattr(question, "get_real_instance") else question
+    question_type = get_question_type_slug(real_question)
+
+    base_data: dict = {
+        "id": real_question.id,
+        "season_slug": real_question.season.slug,
+        "text": real_question.text,
+        "point_value": real_question.point_value,
+        "is_manual": real_question.is_manual,
+        "last_updated": real_question.last_updated,
+        "question_type": question_type,
     }
     
     # Superlative Question
-    if isinstance(question, SuperlativeQuestion):
+    if isinstance(real_question, SuperlativeQuestion):
         return {
             **base_data,
-            "question_type": "superlative",
-            "award_id": question.award.id,
-            "award_name": question.award.name,
-            "is_finalized": question.is_finalized,
-            "winners": list(question.winners.values_list('id', flat=True)) if question.winners.exists() else None,
+            "award_id": real_question.award.id,
+            "award_name": real_question.award.name,
+            "is_finalized": real_question.is_finalized,
+            "winners": list(real_question.winners.values_list('id', flat=True)) if real_question.pk else [],
         }
     
     # Prop Question
-    elif isinstance(question, PropQuestion):
+    elif isinstance(real_question, PropQuestion):
         return {
             **base_data,
-            "question_type": "prop",
-            "outcome_type": question.outcome_type,
-            "related_player_id": question.related_player.id if question.related_player else None,
-            "related_player_name": question.related_player.name if question.related_player else None,
-            "line": question.line,
+            "outcome_type": real_question.outcome_type,
+            "related_player_id": real_question.related_player.id if real_question.related_player else None,
+            "related_player_name": real_question.related_player.name if real_question.related_player else None,
+            "line": real_question.line,
         }
     
     # Player Stat Prediction Question
-    elif isinstance(question, PlayerStatPredictionQuestion):
+    elif isinstance(real_question, PlayerStatPredictionQuestion):
         return {
             **base_data,
-            "question_type": "player_stat",
-            "player_stat_id": question.player_stat.id,
-            "stat_type": question.stat_type,
-            "fixed_value": question.fixed_value,
-            "current_leaders": question.current_leaders,
-            "top_performers": question.top_performers,
+            "player_stat_id": real_question.player_stat.id,
+            "stat_type": real_question.stat_type,
+            "fixed_value": real_question.fixed_value,
+            "current_leaders": real_question.current_leaders,
+            "top_performers": real_question.top_performers,
         }
     
     # Head-to-Head Question
-    elif isinstance(question, HeadToHeadQuestion):
+    elif isinstance(real_question, HeadToHeadQuestion):
         return {
             **base_data,
-            "question_type": "head_to_head",
-            "team1_id": question.team1.id,
-            "team1_name": question.team1.name,
-            "team2_id": question.team2.id,
-            "team2_name": question.team2.name,
+            "team1_id": real_question.team1.id,
+            "team1_name": real_question.team1.name,
+            "team2_id": real_question.team2.id,
+            "team2_name": real_question.team2.name,
         }
     
     # In-Season Tournament Question
-    elif isinstance(question, InSeasonTournamentQuestion):
+    elif isinstance(real_question, InSeasonTournamentQuestion):
         return {
             **base_data,
-            "question_type": "ist",
-            "prediction_type": question.prediction_type,
-            "ist_group": question.ist_group,
-            "is_tiebreaker": question.is_tiebreaker,
+            "prediction_type": real_question.prediction_type,
+            "ist_group": real_question.ist_group,
+            "is_tiebreaker": real_question.is_tiebreaker,
         }
     
     # NBA Finals Prediction Question
-    elif isinstance(question, NBAFinalsPredictionQuestion):
+    elif isinstance(real_question, NBAFinalsPredictionQuestion):
         return {
             **base_data,
-            "question_type": "nba_finals",
-            "group_name": question.group_name,
+            "group_name": real_question.group_name,
         }
     
     # Fallback for base Question (shouldn't normally happen)
@@ -131,12 +164,11 @@ def get_questions(request, season_slug: str):
     season = get_object_or_404(Season, slug=season_slug)
     
     # Get all questions for the season
-    questions = Question.objects.filter(season=season).select_related(
-        'season', 'award'
-    ).prefetch_related('winners').order_by('id')
-    
-    # Get polymorphic instances (important!)
-    questions = questions.select_subclasses()
+    questions = (
+        Question.objects.filter(season=season)
+        .select_related('season')
+        .order_by('id')
+    )
     
     # Serialize each question
     serialized_questions = [serialize_question(q) for q in questions]
@@ -149,6 +181,7 @@ def get_questions(request, season_slug: str):
         "submission_open": submission_status["is_open"],
         "submission_start_date": season.submission_start_date,
         "submission_end_date": season.submission_end_date,
+        "submission_status": submission_status,
         "questions": serialized_questions,
     }
 
@@ -180,7 +213,7 @@ def get_user_answers(request, season_slug: str):
             "id": answer.id,
             "question_id": answer.question.id,
             "question_text": answer.question.text,
-            "question_type": answer.question.polymorphic_ctype.model if answer.question.polymorphic_ctype else "unknown",
+            "question_type": get_question_type_slug(answer.question),
             "answer": answer.answer,
             "points_earned": answer.points_earned,
             "is_correct": answer.is_correct,
@@ -260,7 +293,7 @@ def submit_answers(request, season_slug: str, payload: BulkAnswerSubmitSchema):
 
 @router.get(
     "/submission-status/{season_slug}",
-    response=dict,
+    response=SubmissionStatusSchema,
     summary="Get Submission Status",
     description="Check if submission window is open for a season"
 )
