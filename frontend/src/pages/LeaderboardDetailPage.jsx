@@ -517,13 +517,13 @@ useEffect(() => {
   const teamColWidth = 160; // px
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-4">
+      <div className="max-w-7xl mx-auto space-y-3">
         <div className="flex items-center justify-between">
-          <a href={`/page/${seasonSlug}/`} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
-            <ChevronLeft className="w-4 h-4" /> Back to leaderboard
+          <a href={`/page/${seasonSlug}/`} className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors">
+            <ChevronLeft className="w-4 h-4" /> Back
           </a>
-          <div className="text-sm text-slate-500 dark:text-slate-400">Season {seasonSlug.replace('-', '–')}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Season {seasonSlug.replace('-', '–')}</div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -534,9 +534,9 @@ useEffect(() => {
             const iconFor = (s) => (s==='standings'? Trophy : (s==='awards'? Award : Target));
             const segWidth = `${100/sections.length}%`;
             return (
-              <div className="relative flex overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+              <div className="relative flex overflow-hidden rounded-lg border border-slate-200/60 dark:border-slate-700/50 bg-slate-100/80 dark:bg-slate-800/60">
                 <div
-                  className="absolute top-0 bottom-0 left-0 rounded-lg bg-white dark:bg-slate-700 shadow transition-transform duration-200 will-change-transform"
+                  className="absolute top-0 bottom-0 left-0 rounded-md bg-white dark:bg-slate-700 shadow-sm transition-transform duration-200 will-change-transform"
                   style={{ width: segWidth, transform: `translateX(${activeIdx * 100}%)` }}
                 />
                 {sections.map((s) => {
@@ -545,42 +545,41 @@ useEffect(() => {
                     <button
                       key={s}
                       onClick={() => setSection(s)}
-                      className={`relative z-10 flex-1 basis-0 text-center px-3 py-1.5 text-sm inline-flex items-center justify-center gap-2 transition-colors duration-200 ${section===s? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}
-                    >
-                      <Icon className="w-4 h-4" /> {fromSectionKey(s)}
+                      className={`relative z-10 flex-1 basis-0 text-center px-2.5 py-1.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors duration-200 ${section===s? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                      <Icon className="w-3.5 h-3.5" /> {fromSectionKey(s)}
                     </button>
                   );
                 })}
               </div>
             );
           })()}
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+          <div className="h-5 w-px bg-slate-300 dark:bg-slate-700 mx-0.5" />
           {['showcase','compare'].map(m => (
             <button key={m} onClick={() => setMode(m)}
-              className={`px-3 py-1.5 rounded-lg border text-sm ${mode===m? 'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500':'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'}`}>
+              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${mode===m? 'bg-emerald-600 text-white border-emerald-600 shadow-sm dark:bg-emerald-500 dark:border-emerald-500':'bg-white text-slate-700 border-slate-200/60 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/50 dark:hover:bg-slate-700'}`}>
               {m === 'showcase' ? 'Showcase' : 'Compare'}
             </button>
           ))}
           <div className="ml-auto flex items-center gap-2">
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-2 top-1/2 -translate-y-1/2" />
-              <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search players" className="pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 bg-white text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 dark:placeholder-slate-500 transition-colors duration-200" />
+              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2 top-1/2 -translate-y-1/2" />
+              <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search" className="pl-7 pr-2 py-1.5 rounded-lg border border-slate-200/60 bg-white text-xs dark:bg-slate-800 dark:border-slate-700/50 dark:text-slate-300 dark:placeholder-slate-500 transition-colors w-32 focus:w-48 focus:ring-2 focus:ring-teal-500/20" />
             </div>
-            <select className="text-sm border border-slate-300 rounded-md px-2 py-1 bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 transition-colors duration-200" value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
-              <option value="standings">Sort: Standings pts</option>
-              <option value="total">Sort: Total pts</option>
-              <option value="name">Sort: Name</option>
+            <select className="text-xs font-medium border border-slate-200/60 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-800 dark:border-slate-700/50 dark:text-slate-300 transition-colors" value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
+              <option value="standings">Standings pts</option>
+              <option value="total">Total pts</option>
+              <option value="name">Name</option>
             </select>
             {mode==='compare' && (
-              <button onClick={()=>setShowAll(v=>!v)} className="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300 transition-colors duration-200">
-                {showAll ? (<><Minimize2 className="w-4 h-4" /> Collapse All Players</>) : (<><Expand className="w-4 h-4" /> Compare All Players</>)}
+              <button onClick={()=>setShowAll(v=>!v)} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
+                {showAll ? (<><Minimize2 className="w-3.5 h-3.5" /> Collapse</>) : (<><Expand className="w-3.5 h-3.5" /> All</>)}
               </button>
             )}
-            <label className={`inline-flex items-center gap-2 text-sm rounded-lg px-2 py-1 border ${section==='standings' ? (whatIfEnabled ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200' : 'bg-white text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700') : 'bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-800/50 dark:text-slate-500 dark:border-slate-700'}`} title={section==='standings' ? 'Simulate by dragging rows in the grid' : 'What‑If available in Regular Season Standings tab'}>
-              <input type="checkbox" className="accent-slate-700" checked={whatIfEnabled && section==='standings'} onChange={(e)=> setWhatIfEnabled(e.target.checked)} disabled={section!=='standings'} /> What‑If
+            <label className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-all ${section==='standings' ? (whatIfEnabled ? 'bg-slate-900 text-white border-slate-900 shadow-sm dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200' : 'bg-white text-slate-700 border-slate-200/60 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/50') : 'bg-slate-100 text-slate-400 border-slate-200/60 cursor-not-allowed dark:bg-slate-800/50 dark:text-slate-500 dark:border-slate-700/50'}`} title={section==='standings' ? 'Simulate by dragging rows in the grid' : 'What‑If available in Regular Season Standings tab'}>
+              <input type="checkbox" className="accent-slate-700 w-3 h-3" checked={whatIfEnabled && section==='standings'} onChange={(e)=> setWhatIfEnabled(e.target.checked)} disabled={section!=='standings'} /> What‑If
             </label>
             {section==='standings' && whatIfEnabled && (
-              <button className="text-sm px-2 py-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300" onClick={()=>{ setWhatIfEnabled(false); setWestOrder([]); setEastOrder([]); }} title="Reset to actual">
+              <button className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all" onClick={()=>{ setWhatIfEnabled(false); setWestOrder([]); setEastOrder([]); }} title="Reset to actual">
                 Reset
               </button>
             )}
@@ -588,23 +587,23 @@ useEffect(() => {
         </div>
         {/* Showcase mode */}
         {mode === 'showcase' && (
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/70 shadow-xl overflow-hidden transition-shadow duration-200 hover:shadow-2xl">
+          <div className="rounded-xl border border-slate-200/60 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/80 shadow-lg overflow-hidden transition-shadow hover:shadow-xl">
             {/* Hero */}
-            <div className="px-5 py-6 bg-gradient-to-r from-emerald-50 to-sky-50 dark:from-emerald-900/20 dark:to-sky-900/20 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-4">
+            <div className="px-4 py-4 bg-gradient-to-r from-emerald-50/60 to-sky-50/60 dark:from-emerald-900/10 dark:to-sky-900/10 border-b border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 font-semibold">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-sm">
                   {(primaryUser?.user?.display_name || primaryUser?.user?.username || '?').slice(0,2).toUpperCase()}
                 </div>
                 <div>
-                  <div className="text-lg font-semibold text-slate-800 dark:text-slate-200 transition-colors duration-200">{primaryUser?.user?.display_name || primaryUser?.user?.username || 'Select a player'}</div>
+                  <div className="text-base font-bold text-slate-900 dark:text-white">{primaryUser?.user?.display_name || primaryUser?.user?.username || 'Select a player'}</div>
                   {primaryUser && (
-                    <div className="text-xs text-slate-500 dark:text-slate-400">Rank #{primaryUser.rank} • {primaryUser.user.total_points} pts</div>
+                    <div className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Rank #{primaryUser.rank} • {primaryUser.user.total_points} pts</div>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <select className="text-sm border border-slate-300 rounded-md px-2 py-1 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>setSelectedUserIds([String(e.target.value)])} value={primaryUserId || ''}>
-                  <option value="">Select player…</option>
+                <select className="text-xs font-medium border border-slate-200/60 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>setSelectedUserIds([String(e.target.value)])} value={primaryUserId || ''}>
+                  <option value="">Select…</option>
                   {(leaderboardData||[]).map(e => (
                     <option key={e.user.id} value={e.user.id}>{e.user.display_name || e.user.username}</option>
                   ))}
@@ -612,23 +611,23 @@ useEffect(() => {
                 {loggedInUserId && (
                   <button
                     onClick={()=>{ setSelectedUserIds([loggedInUserId]); setMode('showcase'); }}
-                    className="text-sm inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900"
+                    className="text-xs font-semibold inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-300/60 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700/50 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900 transition-all"
                     disabled={primaryUserId === loggedInUserId}
                     title="Focus on me"
                   >
                     Me
                   </button>
                 )}
-                <button onClick={()=>setMode('compare')} className="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">Enter Compare Mode</button>
+                <button onClick={()=>setMode('compare')} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">Compare</button>
               </div>
             </div>
 
             {/* Content */}
-            <div className="p-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-3">
               {!primaryUser && (
-                <div className="lg:col-span-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 p-6 text-center">
-                  <div className="text-slate-700 dark:text-slate-200 font-semibold mb-1">No player selected</div>
-                  <div className="text-slate-500 dark:text-slate-400 text-sm">Use the selector above to pick a player to showcase.</div>
+                <div className="lg:col-span-3 rounded-lg border border-slate-200/60 dark:border-slate-700/50 bg-white/70 dark:bg-slate-800/70 p-5 text-center">
+                  <div className="text-slate-800 dark:text-slate-200 font-bold mb-1">No player selected</div>
+                  <div className="text-slate-600 dark:text-slate-400 text-xs">Use the selector above to pick a player to showcase.</div>
                 </div>
               )}
               {/* Category cards */}
@@ -640,37 +639,37 @@ useEffect(() => {
                 const wrongs = preds.filter(p => p.correct === false).slice(0,3);
                 const Icon = catKey === 'Regular Season Standings' ? Trophy : (catKey === 'Player Awards' ? Award : Target);
                 return (
-                  <div key={catKey} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/50 p-4">
+                  <div key={catKey} className="rounded-lg border border-slate-200/60 dark:border-slate-700/50 bg-white/80 dark:bg-slate-800/60 p-3.5 shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="p-1.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
-                          <Icon className="w-4 h-4" />
+                        <span className="p-1.5 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 text-slate-700 border border-slate-200/60 dark:from-slate-700 dark:to-slate-800 dark:text-slate-300 dark:border-slate-600">
+                          <Icon className="w-3.5 h-3.5" />
                         </span>
-                  <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{catKey}</div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{catKey}</div>
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{pts}/{max} • {pct}%</div>
+                      <div className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">{pts}/{max} • {pct}%</div>
                     </div>
-                    <div className="w-full h-2 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden mb-3">
-                      <div className="h-full bg-emerald-500" style={{ width: `${Math.min(100, pct)}%` }} />
+                    <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mb-2.5">
+                      <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-400 dark:to-emerald-500" style={{ width: `${Math.min(100, pct)}%` }} />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2.5">
                       <div>
-                        <div className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1 inline-flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Notable Wins</div>
+                        <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-400 mb-1 inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Wins</div>
                         <ul className="space-y-1">
-                          {rights.length===0 && <li className="text-xs text-slate-400 dark:text-slate-500">No wins recorded yet</li>}
+                          {rights.length===0 && <li className="text-[10px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
                           {rights.map((p,i)=> (
-                            <li key={`r-${i}`} className="text-xs text-emerald-800 bg-emerald-50/80 border border-emerald-200 dark:text-emerald-300 dark:bg-emerald-900/50 dark:border-emerald-800 rounded px-2 py-1 truncate" title={`+${p.points || 0}`}>
+                            <li key={`r-${i}`} className="text-[10px] text-emerald-900 bg-emerald-50/70 border border-emerald-200/60 dark:text-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-800/50 rounded px-1.5 py-1 truncate leading-tight" title={`+${p.points || 0}`}>
                               {(p.question || p.team || '').toString()}
                             </li>
                           ))}
                         </ul>
                       </div>
                       <div>
-                        <div className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1 inline-flex items-center gap-1"><XCircle className="w-3.5 h-3.5 text-rose-500" /> Tough Misses</div>
+                        <div className="text-[10px] uppercase tracking-wider font-bold text-rose-600 dark:text-rose-400 mb-1 inline-flex items-center gap-1"><XCircle className="w-3 h-3" /> Misses</div>
                         <ul className="space-y-1">
-                          {wrongs.length===0 && <li className="text-xs text-slate-400 dark:text-slate-500">No misses yet</li>}
+                          {wrongs.length===0 && <li className="text-[10px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
                           {wrongs.map((p,i)=> (
-                            <li key={`w-${i}`} className="text-xs text-rose-800 bg-rose-50/80 border border-rose-200 dark:text-rose-300 dark:bg-rose-900/50 dark:border-rose-800 rounded px-2 py-1 truncate" title={`+${p.points || 0}`}>
+                            <li key={`w-${i}`} className="text-[10px] text-rose-900 bg-rose-50/70 border border-rose-200/60 dark:text-rose-200 dark:bg-rose-900/40 dark:border-rose-800/50 rounded px-1.5 py-1 truncate leading-tight" title={`+${p.points || 0}`}>
                               {(p.question || p.team || '').toString()}
                             </li>
                           ))}
@@ -682,40 +681,40 @@ useEffect(() => {
               })}
 
               {/* Highlights & Misses lists */}
-              <div className="lg:col-span-3 grid md:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/50 p-4">
-                  <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Recent Highlights</div>
-                  <ul className="space-y-2">
+              <div className="lg:col-span-3 grid md:grid-cols-2 gap-3">
+                <div className="rounded-lg border border-slate-200/60 dark:border-slate-700/50 bg-white/80 dark:bg-slate-800/60 p-3.5 shadow-sm">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white mb-2">Recent Highlights</div>
+                  <ul className="space-y-1.5">
                     {(() => {
                       const all = ['Regular Season Standings','Player Awards','Props & Yes/No']
                         .flatMap(k => primaryUser?.user?.categories?.[k]?.predictions || [])
                         .filter(Boolean)
                         .filter(p => (p.points||0) > 0)
                         .slice(0,8);
-                      if (all.length === 0) return [<li key="empty" className="text-sm text-slate-400 dark:text-slate-500">No highlights yet</li>];
+                      if (all.length === 0) return [<li key="empty" className="text-xs text-slate-500 dark:text-slate-400 italic">No highlights yet</li>];
                       return all.map((p, i) => (
-                        <li key={`hi-${i}`} className="flex items-center justify-between gap-3 text-sm">
-                          <span className="truncate text-slate-700 dark:text-slate-300">{(p.question || p.team || '').toString()}</span>
-                          <span className="text-emerald-700 dark:text-emerald-400 font-semibold">+{p.points || 0}</span>
+                        <li key={`hi-${i}`} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="truncate text-slate-800 dark:text-slate-200 leading-tight">{(p.question || p.team || '').toString()}</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">+{p.points || 0}</span>
                         </li>
                       ));
                     })()}
                   </ul>
                 </div>
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/50 p-4">
-                  <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Missed Opportunities</div>
-                  <ul className="space-y-2">
+                <div className="rounded-lg border border-slate-200/60 dark:border-slate-700/50 bg-white/80 dark:bg-slate-800/60 p-3.5 shadow-sm">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white mb-2">Missed Opportunities</div>
+                  <ul className="space-y-1.5">
                     {(() => {
                       const all = ['Regular Season Standings','Player Awards','Props & Yes/No']
                         .flatMap(k => primaryUser?.user?.categories?.[k]?.predictions || [])
                         .filter(Boolean)
                         .filter(p => p.correct === false || (p.points||0) === 0)
                         .slice(0,8);
-                      if (all.length === 0) return [<li key="empty" className="text-sm text-slate-400 dark:text-slate-500">Nothing here — nice!</li>];
+                      if (all.length === 0) return [<li key="empty" className="text-xs text-slate-500 dark:text-slate-400 italic">Nothing here — nice!</li>];
                       return all.map((p, i) => (
-                        <li key={`mi-${i}`} className="flex items-center justify-between gap-3 text-sm">
-                          <span className="truncate text-slate-700 dark:text-slate-300">{(p.question || p.team || '').toString()}</span>
-                          <span className="text-slate-500 dark:text-slate-400">{p.points ? `+${p.points}` : '+0'}</span>
+                        <li key={`mi-${i}`} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="truncate text-slate-800 dark:text-slate-200 leading-tight">{(p.question || p.team || '').toString()}</span>
+                          <span className="text-slate-500 dark:text-slate-400 font-semibold text-[11px]">{p.points ? `+${p.points}` : '0'}</span>
                         </li>
                       ));
                     })()}
@@ -728,15 +727,15 @@ useEffect(() => {
 
         {/* Compare mode */}
         {mode === 'compare' && section === 'standings' && (
-                  <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 shadow-xl transition-shadow duration-200 hover:shadow-2xl">
-            <div className="p-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                  <div className="rounded-xl border border-slate-200/60 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/80 shadow-lg transition-shadow hover:shadow-xl">
+            <div className="px-3 py-3 md:px-4 md:py-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white">
                 <Grid className="w-4 h-4" />
-                <div className="font-semibold">Regular Season Standings — Detailed Grid</div>
+                <div className="text-sm font-bold">Regular Season Standings</div>
               </div>
               <div className="flex items-center gap-2">
-                <select className="text-sm border border-slate-300 rounded-md px-2 py-1 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>addUser(e.target.value)} value="">
-                  <option value="">Add player…</option>
+                <select className="text-xs font-medium border border-slate-200/60 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>addUser(e.target.value)} value="">
+                  <option value="">Add…</option>
                   {(withSimTotals||[])
                     .filter(e => !selectedUserIds.map(String).includes(String(e.user.id)))
                     .map(e => (
@@ -750,16 +749,16 @@ useEffect(() => {
                         if (!selectedUserIds.map(String).includes(loggedInUserId)) addUser(loggedInUserId);
                         togglePin(loggedInUserId);
                       }}
-                      className={`text-sm inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border ${pinnedUserIds.includes(loggedInUserId)?'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300':'border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300'}`}
+                      className={`text-xs font-semibold inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-all ${pinnedUserIds.includes(loggedInUserId)?'border-emerald-400/60 bg-emerald-50 text-emerald-700 dark:border-emerald-600/50 dark:bg-emerald-900/50 dark:text-emerald-300':'border-slate-200/60 bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300'}`}
                       title={pinnedUserIds.includes(loggedInUserId) ? 'Unpin my column' : (selectedUserIds.map(String).includes(loggedInUserId) ? 'Pin my column' : 'Add and pin my column')}
                     >
                       {pinnedUserIds.includes(loggedInUserId) ? 'Unpin Me' : 'Pin Me'}
                     </button>
                   </span>
                 )}
-                <button onClick={()=> setShowManagePlayers(true)} className="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">Manage</button>
-                <button onClick={()=>setShowAll(v=>!v)} className="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">
-                  {showAll ? (<><Minimize2 className="w-4 h-4" /> Collapse All Players</>) : (<><Expand className="w-4 h-4" /> Compare All Players</>)}
+                <button onClick={()=> setShowManagePlayers(true)} className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">Manage</button>
+                <button onClick={()=>setShowAll(v=>!v)} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
+                  {showAll ? (<><Minimize2 className="w-3.5 h-3.5" /> Collapse</>) : (<><Expand className="w-3.5 h-3.5" /> All</>)}
                 </button>
               </div>
             </div>
@@ -774,29 +773,30 @@ useEffect(() => {
                      <col key={`u-${idx}`} style={{ width: 108 }} />
                    ))}
                  </colgroup>
-                 <thead className="bg-slate-50/80 dark:bg-slate-800/80 sticky top-0 z-20">
+                 <thead className="bg-slate-50/90 dark:bg-slate-800/90 sticky top-0 z-20">
                    <tr>
-                     <th className="sticky left-0 z-10 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur px-3 py-2 text-left text-sm font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700" style={{ minWidth: teamColWidth, width: teamColWidth }}>Team</th>
-                     <th className="text-left text-sm font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80" style={{ position:'sticky', left: teamColWidth }}>Actual</th>
-                    {displayedUsers.map((e) => {
+                     <th className="sticky left-0 z-10 bg-slate-50/90 dark:bg-slate-800/90 backdrop-blur px-2.5 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60" style={{ minWidth: teamColWidth, width: teamColWidth }}>Team</th>
+                     <th className="text-left text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 bg-slate-50/90 dark:bg-slate-800/90 px-2" style={{ position:'sticky', left: teamColWidth }}>Pos</th>
+                    {displayedUsers.map((e, index) => {
                       const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
                       const totalPts = e.user.total_points || 0;
+                      const isPinned = pinnedUserIds.includes(String(e.user.id));
                       return (
-                        <th key={`h-${e.user.id}`} className="px-3 py-2 text-left text-sm font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 align-top" title={`Stand: ${standPts} • Total: ${totalPts}`}>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-700 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
-                            <button onClick={()=> togglePin(e.user.id)} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
-                              {pinnedUserIds.includes(String(e.user.id)) ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
+                        <th key={`h-${e.user.id}`} className={`px-2.5 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 align-top ${isPinned ? 'sticky bg-slate-50/90 dark:bg-slate-800/90' : ''}`} style={isPinned ? { left: teamColWidth + 72 + (index * 108), zIndex: 10 } : {}} title={`Stand: ${standPts} • Total: ${totalPts}`}>
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate">{e.user.display_name || e.user.username}</span>
+                            <button onClick={()=> togglePin(e.user.id)} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
+                              {pinnedUserIds.includes(String(e.user.id)) ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
                             </button>
                             {!showAll && (
-                              <button onClick={()=>setSelectedUserIds(prev => prev.filter(id => String(id)!==String(e.user.id)))} title="Remove from comparison" className="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300">
-                                <X className="w-3.5 h-3.5" />
+                              <button onClick={()=>setSelectedUserIds(prev => prev.filter(id => String(id)!==String(e.user.id)))} title="Remove from comparison" className="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors">
+                                <X className="w-3 h-3" />
                               </button>
                             )}
                           </div>
-                          <div className="mt-1 flex flex-col gap-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                            <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Stand: <span className="font-semibold text-slate-700 dark:text-slate-200">{standPts}</span></span>
-                            <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span> Total: <span className="font-semibold text-slate-700 dark:text-slate-200">{totalPts}</span></span>
+                          <div className="mt-1 flex flex-col gap-0.5 text-[10px] text-slate-600 dark:text-slate-400 font-medium">
+                            <span className="inline-flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-emerald-500"></span> {standPts}</span>
+                            <span className="inline-flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-sky-500"></span> {totalPts}</span>
                           </div>
                         </th>
                       );

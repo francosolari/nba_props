@@ -136,50 +136,50 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
       return { rights: pickN(r, 3), wrongs: pickN(w, 3) };
     }, [data?.predictions, data?.interesting, userId, title]);
     return (
-      <div className={`group relative overflow-hidden rounded-2xl border ${data?.is_best ? 'border-emerald-400 dark:border-emerald-500' : 'border-slate-200/70 dark:border-slate-700'} bg-white/80 dark:bg-slate-800/60 shadow-xl backdrop-blur-md`}>
-        <div className="p-5 space-y-4 relative">
+      <div className={`group relative overflow-hidden rounded-xl border ${data?.is_best ? 'border-emerald-400/60 dark:border-emerald-500/50 shadow-emerald-100/50 dark:shadow-emerald-900/30' : 'border-slate-200/70 dark:border-slate-700/50'} bg-white/90 dark:bg-slate-800/70 shadow-md backdrop-blur-sm transition-shadow hover:shadow-lg`}>
+        <div className="p-4 space-y-3 relative">
           {data?.is_best && (
-            <div className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">Top in category</div>
+            <div className="absolute top-2 right-2 text-[9px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">Top</div>
           )}
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 dark:bg-teal-400/10 dark:text-teal-300 dark:border-teal-500/30">
-              <Icon className="w-5 h-5" />
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-teal-50 to-teal-100/50 text-teal-600 border border-teal-200/60 dark:from-teal-400/10 dark:to-teal-500/5 dark:text-teal-300 dark:border-teal-500/30">
+              <Icon className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-sm font-semibold tracking-wide text-slate-800 dark:text-slate-100">{title}</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Points {pts} / {max} • {pct}%</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{title}</h3>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium mt-0.5">{pts} / {max} pts • {pct}%</p>
             </div>
           </div>
-          <ProgressBar value={pts} max={max || 1} size="lg" color="bg-teal-500 dark:bg-teal-400" bgColor="bg-slate-200 dark:bg-slate-700" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <ProgressBar value={pts} max={max || 1} size="md" color="bg-gradient-to-r from-teal-500 to-teal-600 dark:from-teal-400 dark:to-teal-500" bgColor="bg-slate-200 dark:bg-slate-700" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <div>
-              <div className="flex items-center gap-2 mb-1 text-emerald-600 dark:text-emerald-400 text-xs font-medium"><CircleCheck className="w-4 h-4" />Right answers</div>
-              <ul className="space-y-1.5">
-                {rights.length === 0 && <li className="text-xs text-slate-500 dark:text-slate-400">No items yet</li>}
+              <div className="flex items-center gap-1.5 mb-1.5 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold"><CircleCheck className="w-3.5 h-3.5" />Correct</div>
+              <ul className="space-y-1">
+                {rights.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
                 {rights.map((p, i) => (
-                  <li key={`r-${i}`} className="text-xs text-emerald-900 dark:text-emerald-200 bg-emerald-100/80 dark:bg-emerald-400/10 border border-emerald-200/80 dark:border-emerald-500/30 rounded-lg px-2 py-1" title={p.global_correct_rate !== undefined ? `Hard win • only ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
-                    {(p.question || p.team || '').toString().slice(0, 80)}{(p.question || p.team || '').length > 80 ? '…' : ''}
-                    <span className="ml-1 font-semibold">+{p.points ?? 0}</span>
+                  <li key={`r-${i}`} className="text-[11px] text-emerald-900 dark:text-emerald-100 bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Hard win • only ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
+                    {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
+                    <span className="ml-1 font-bold">+{p.points ?? 0}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1 text-rose-600 dark:text-rose-400 text-xs font-medium"><CircleX className="w-4 h-4" />Wrong answers</div>
-              <ul className="space-y-1.5">
-                {wrongs.length === 0 && <li className="text-xs text-slate-500 dark:text-slate-400">No items yet</li>}
+              <div className="flex items-center gap-1.5 mb-1.5 text-rose-600 dark:text-rose-400 text-[11px] font-bold"><CircleX className="w-3.5 h-3.5" />Missed</div>
+              <ul className="space-y-1">
+                {wrongs.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
                 {wrongs.map((p, i) => (
-                  <li key={`w-${i}`} className="text-xs text-rose-900 dark:text-rose-200 bg-rose-100/80 dark:bg-rose-400/10 border border-rose-200/80 dark:border-rose-500/30 rounded-lg px-2 py-1" title={p.global_correct_rate !== undefined ? `Surprising miss • ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
-                    {(p.question || p.team || '').toString().slice(0, 80)}{(p.question || p.team || '').length > 80 ? '…' : ''}
-                    <span className="ml-1 font-semibold">{p.points ? `+${p.points}` : '+0'}</span>
+                  <li key={`w-${i}`} className="text-[11px] text-rose-900 dark:text-rose-100 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Surprising miss • ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
+                    {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
+                    <span className="ml-1 font-bold">{p.points ? `+${p.points}` : '0'}</span>
                   </li>
                 ))}
               </ul>
             </div>
           </div>
           {detailsHref && (
-            <div className="flex items-center justify-end">
-              <a href={detailsHref} className="text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 underline underline-offset-2">Open detailed view</a>
+            <div className="flex items-center justify-end pt-1">
+              <a href={detailsHref} className="text-[11px] text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 underline underline-offset-2 font-medium transition-colors">View details</a>
             </div>
           )}
         </div>
@@ -188,71 +188,69 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* ──────────────────────── Header Section with Title and Metrics Grid */}
         <section>
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 shadow-xl mb-6">
-            <div className="relative px-6 py-10 md:px-10 md:py-12">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-700/50 bg-gradient-to-br from-white via-white to-slate-50/30 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-900/50 shadow-lg backdrop-blur-sm mb-4">
+            <div className="relative px-4 py-6 md:px-8 md:py-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">NBA Predictions Leaderboard</h1>
-                  <p className="mt-2 text-slate-500 dark:text-slate-400">Season {seasonSlug.replace('-', '–')}. Track your rank in real time.</p>
+                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">NBA Predictions Leaderboard</h1>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Season {seasonSlug.replace('-', '–')} • Live rankings</p>
                 </div>
-                <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700 rounded-2xl bg-white/60 dark:bg-slate-800/60 backdrop-blur px-4 py-3 border border-slate-200 dark:border-slate-700">
-                  <div className="px-3 text-center">
-                    <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Players</div>
-                    <div className="text-xl font-bold text-teal-600 dark:text-teal-400">{totals.totalPlayers}</div>
+                <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900/40 backdrop-blur px-3 py-2.5 border border-slate-200/60 dark:border-slate-700/40 shadow-sm">
+                  <div className="px-2.5 text-center">
+                    <div className="text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400">Players</div>
+                    <div className="text-lg font-bold text-teal-600 dark:text-teal-400 mt-0.5">{totals.totalPlayers}</div>
                   </div>
-                  <div className="px-3 text-center">
-                    <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Predictions</div>
-                    <div className="text-xl font-bold text-teal-600 dark:text-teal-400">{totals.totalPredictions || '—'}</div>
+                  <div className="px-2.5 text-center">
+                    <div className="text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400">Predictions</div>
+                    <div className="text-lg font-bold text-teal-600 dark:text-teal-400 mt-0.5">{totals.totalPredictions || '—'}</div>
                   </div>
-                  <div className="px-3 text-center">
-                    <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Avg Accuracy</div>
-                    <div className="text-xl font-bold text-teal-600 dark:text-teal-400">{totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(0)}%` : '—'}</div>
+                  <div className="px-2.5 text-center">
+                    <div className="text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400">Accuracy</div>
+                    <div className="text-lg font-bold text-teal-600 dark:text-teal-400 mt-0.5">{totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(0)}%` : '—'}</div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Removed duplicate stats cards (players, predictions, accuracy) per request */}
         </section>
 
         {/* ──────────────────────── Leaderboard Table Section */}
-        <section className="bg-white/80 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl">
+        <section className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/50 rounded-xl shadow-lg">
           {/* Title */}
-          <div className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
-            <Trophy className="w-6 h-6 text-amber-500" />
-            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Season Leaderboard</h2>
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200/80 dark:border-slate-700/60">
+            <Trophy className="w-5 h-5 text-amber-500" />
+            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Rankings</h2>
           </div>
 
           {/* Rows */}
-          <div className="divide-y divide-slate-200 dark:divide-slate-700">
+          <div className="divide-y divide-slate-100 dark:divide-slate-700/40">
             {leaderboardData.slice(0, visibleCount).map((entry) => (
-              <div key={entry.user.id} className="bg-white/60 dark:bg-slate-800/50">
+              <div key={entry.user.id} className="bg-white/60 dark:bg-slate-800/40 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/30">
                 {/* ─── Row (click to expand/collapse) */}
                 <button
                   type="button"
                   onClick={() => toggleUserExpansion(entry.user.id)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-teal-50/60 dark:hover:bg-slate-700/60 transition-colors"
+                  className="w-full px-3 py-3 md:px-4 md:py-3.5 flex items-center justify-between transition-colors"
                 >
                   {/* Left side (rank, avatar, name) */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     {rankIcon(entry.rank)}
 
-                    <div className="relative w-10 h-10">
+                    <div className="relative w-9 h-9">
                       {entry.user.avatar ? (
                         <img
                           src={entry.user.avatar}
                           alt={`${entry.user.display_name || entry.user.username} avatar`}
-                          className="w-full h-full rounded-full object-cover border border-slate-300 dark:border-slate-600"
+                          className="w-full h-full rounded-full object-cover border-2 border-slate-200 dark:border-slate-600"
                           onError={(e) => (e.currentTarget.style.display = 'none')}
                         />
                       ) : (
-                        <div className="w-full h-full rounded-full border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <div className="w-full h-full rounded-full border-2 border-slate-200 dark:border-slate-600 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
                             {(entry.user.display_name || entry.user.username)
                               .slice(0, 2)
                               .toUpperCase()}
@@ -262,56 +260,55 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-800 dark:text-slate-100">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold text-[15px] text-slate-900 dark:text-white">
                           {entry.user.display_name || entry.user.username}
                         </p>
                         {Array.isArray(entry.user.badges) && entry.user.badges.slice(0,3).map((b, i) => (
-                          <span key={i} title={b.type === 'category_best' ? `Top in ${b.category}` : ''} className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
+                          <span key={i} title={b.type === 'category_best' ? `Top in ${b.category}` : ''} className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
                             {b.category?.split(' ')[0] || 'Best'}
                           </span>
                         ))}
                       </div>
-                      {/* Per-row accuracy removed by request (keep per-category only) */}
                     </div>
                   </div>
 
                   {/* Right side (totals, category bars, chevron) */}
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4 md:gap-6">
                     {/* Points */}
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-slate-800 dark:text-white">
+                      <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
                         {entry.user.total_points.toLocaleString()}
                       </p>
-                      <p className="text-sm text-slate-400 dark:text-slate-400">Total Points</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">pts</p>
                     </div>
 
                     {/* Small progress bars for each category */}
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="hidden md:flex items-center gap-3">
                       {Object.entries(entry.user.categories).map(([category, data]) => (
-                        <div key={category} className="text-center min-w-[90px]">
-                          <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                        <div key={category} className="text-center min-w-[80px]">
+                          <p className="mb-1 text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">
                             {category.replace('Regular Season ', 'Reg. ')}
                           </p>
                           <ProgressBar value={data.points} max={data.max_points} size="sm" color="bg-teal-500" bgColor="bg-slate-200 dark:bg-slate-700" />
-                          <p className="mt-1 text-[11px] text-slate-600 dark:text-slate-300">{data.points}/{data.max_points}</p>
+                          <p className="mt-1 text-[10px] text-slate-600 dark:text-slate-300 font-medium">{data.points}/{data.max_points}</p>
                         </div>
                       ))}
                     </div>
 
                     {/* Expand / collapse icon */}
                     {expandedUsers.has(entry.user.id) ? (
-                      <ChevronUp className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                      <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                      <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                     )}
                   </div>
                 </button>
 
                 {/* ─── Expanded details */}
                 {expandedUsers.has(entry.user.id) && (
-                  <div className="px-4 pb-6">
-                    <div className="grid gap-4 lg:grid-cols-3">
+                  <div className="px-3 pb-4 md:px-4 md:pb-5 bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-800/30 dark:to-slate-900/20">
+                    <div className="grid gap-3 lg:grid-cols-3">
                       <CategoryCard icon={BarChart3} title="Regular Season Standings" userId={entry.user.id} data={getCategory(entry, 'Regular Season Standings')} detailsHref={`/page-detail/${seasonSlug}/?section=standings&user=${entry.user.id}`} />
                       <CategoryCard icon={Award} title="Player Awards" userId={entry.user.id} data={getCategory(entry, 'Player Awards')} detailsHref={`/page-detail/${seasonSlug}/?section=awards&user=${entry.user.id}`} />
                       <CategoryCard icon={ListChecks} title="Props & Yes/No" userId={entry.user.id} data={getCategory(entry, 'Props & Yes/No')} detailsHref={`/page-detail/${seasonSlug}/?section=props&user=${entry.user.id}`} />
@@ -325,12 +322,12 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
 
         {/* ──────────────────────── Load More */}
         {visibleCount < leaderboardData.length && (
-          <div className="text-center mt-6 mb-8">
+          <div className="text-center mt-4 mb-6">
             <button
-              className="px-4 py-2 border rounded-lg bg-white text-slate-700 border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
-              onClick={() => setVisibleCount((prevCount) => prevCount + 20)} // Show 20 more players when clicked
+              className="px-5 py-2 border rounded-lg bg-white text-slate-700 border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-all text-sm font-medium shadow-sm hover:shadow"
+              onClick={() => setVisibleCount((prevCount) => prevCount + 20)}
             >
-              Load More Players ({visibleCount} of {leaderboardData.length})
+              Load More ({visibleCount} of {leaderboardData.length})
             </button>
           </div>
         )}

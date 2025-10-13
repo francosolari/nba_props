@@ -1,11 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import EditablePredictionBoard from '../components/EditablePredictionBoard';
-import { Trophy, Target, Award, ChevronRight, Lock, Unlock, User as UserIcon, Mail, Key, ExternalLink } from 'lucide-react';
+import { Trophy, Target, Award, ChevronRight, Lock, Unlock, User as UserIcon, Mail, Key, ExternalLink, TrendingUp, BarChart3, CheckCircle2, XCircle, Hourglass } from 'lucide-react';
 import useLeaderboard from '../hooks/useLeaderboard';
-import Leaderboard from '../components/Leaderboard';
 import UserExpandedView from '../components/UserExpandedView';
-import CategoryIcon from '../components/CategoryIcon';
 import QuestionForm from '../components/QuestionForm';
 import DisplayPredictionsBoard from '../components/DisplayPredictions';
 
@@ -23,15 +21,6 @@ function getRootProps() {
 function avatarUrl(name) {
   const n = (name || 'User').trim();
   return `https://avatar-placeholder.iran.liara.run/username/${encodeURIComponent(n)}?width=160&height=160&fontSize=64`;
-}
-
-function ProgressBar({ value = 0, className = '' }) {
-  const pct = Math.max(0, Math.min(100, Math.round(value)));
-  return (
-    <div className={`mt-3 h-2 w-full overflow-hidden rounded bg-gray-100 ${className}`}>
-      <div className="h-full bg-indigo-600" style={{ width: `${pct}%` }} />
-    </div>
-  );
 }
 
 export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) {
@@ -59,7 +48,7 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
   }, []);
 
   const { data, isLoading, error } = useLeaderboard(selectedSeason);
-  const [activeTab, setActiveTab] = useState('overview'); // overview | leaderboard | submissions | settings
+  const [activeTab, setActiveTab] = useState('overview');
   const [answers, setAnswers] = useState([]);
 
   const me = useMemo(() => {
@@ -91,7 +80,6 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
   const awards = cats['Player Awards'] || { points: 0, max_points: 0, predictions: [] };
   const props = cats['Props & Yes/No'] || { points: 0, max_points: 0, predictions: [] };
 
-  // Transform categories to UserExpandedView format
   const expandedCategories = useMemo(() => {
     const toItems = (preds, isStandings) => (preds || []).map((p, idx) => ({
       id: p.question_id || `${p.team}-${idx}`,
@@ -135,7 +123,6 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
   }, [standings, awards, props]);
 
   const pct = (num, den) => (den ? (100 * (num || 0)) / den : 0);
-  const accuracyPct = Math.max(0, Math.min(100, Math.round(me?.user?.accuracy || 0)));
 
   const confLists = useMemo(() => {
     const preds = (standings?.predictions || []).slice();
@@ -164,7 +151,6 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
     }
   }, [selectedSeasonObj]);
 
-  // Load answers for submissions tab
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -182,290 +168,433 @@ export default function ProfilePage({ seasonSlug: seasonFromProp = 'current' }) 
   }, [activeTab, selectedSeason, username, me?.user?.username]);
 
   return (
-    <div className="min-h-screen w-full">
-      {/* Hero */}
-      <section className="relative overflow-hidden rounded-xl bg-gradient-to-r from-indigo-600 via-sky-600 to-cyan-500 text-white shadow-md">
-        <div className="px-6 py-8 md:px-10 md:py-12">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex items-center gap-4 md:gap-6">
-              <div className="relative h-16 w-16 md:h-20 md:w-20">
-                <img
-                  alt="Avatar"
-                  className="h-full w-full rounded-full object-cover ring-2 ring-white/40 shadow-md"
-                  src={avatarUrl(me?.user?.display_name || me?.user?.username)}
-                />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4">
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500 via-sky-500 to-teal-500 text-white shadow-lg">
+          <div className="relative px-4 py-6 md:px-6 md:py-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="relative h-14 w-14 md:h-16 md:w-16 flex-shrink-0">
+                  <img
+                    alt="Avatar"
+                    className="h-full w-full rounded-full object-cover ring-2 ring-white/30 shadow-md"
+                    src={avatarUrl(me?.user?.display_name || me?.user?.username)}
+                  />
+                </div>
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold leading-tight">
+                    {me?.user?.display_name || me?.user?.username}
+                  </h1>
+                  <p className="text-white/90 mt-0.5 text-sm">Your Predictions Profile</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold leading-tight">
-                  {me?.user?.display_name || me?.user?.username}
-                </h1>
-                <p className="text-white/85 mt-1">Your NBA Predictions Showcase</p>
+              <div className="flex items-center gap-3">
+                <select
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(e.target.value)}
+                  className="rounded-lg bg-white/95 text-slate-900 text-xs font-medium px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/60 border-0"
+                >
+                  {seasons.map((s) => (
+                    <option key={s.slug} value={s.slug}>{s.slug}</option>
+                  ))}
+                </select>
               </div>
-            </div>
-            <div>
-              <label htmlFor="season-select" className="block text-xs font-medium text-white/80 mb-1">Season</label>
-              <select
-                id="season-select"
-                value={selectedSeason}
-                onChange={(e) => setSelectedSeason(e.target.value)}
-                className="rounded-md bg-white/90 text-gray-900 text-sm px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/60"
-              >
-                {seasons.map((s) => (
-                  <option key={s.slug} value={s.slug}>{s.slug}</option>
-                ))}
-              </select>
             </div>
           </div>
-        </div>
-        <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-white/10 blur-2xl" />
-      </section>
+          <div className="absolute right-0 top-0 h-32 w-32 translate-x-12 -translate-y-12 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute left-0 bottom-0 h-24 w-24 -translate-x-8 translate-y-8 rounded-full bg-white/10 blur-2xl" />
+        </section>
 
-      {/* Badges (if any) */}
-      {Array.isArray(me?.user?.badges) && me.user.badges.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {me.user.badges.map((b, i) => (
-            <span key={i} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 px-2 py-1 text-xs">
-              {b.icon && <span className="opacity-70">{b.icon}</span>}
-              {b.label || String(b)}
-            </span>
-          ))}
-        </div>
-      )}
+        {/* Stats Overview - Always visible */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+            <div className="flex items-center gap-2 mb-2">
+              <Trophy className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Rank</span>
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">#{me?.rank || '—'}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{data?.length || 0} players</div>
+          </div>
 
-      {/* Tabs */}
-      <div className="mt-6">
-        <div className="flex gap-2 border-b border-gray-200">
-          {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'leaderboard', label: 'Leaderboard' },
-            { id: 'submissions', label: 'Submissions' },
-            { id: 'settings', label: 'Manage' },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={`px-4 py-2 -mb-px border-b-2 transition-colors ${activeTab === t.id ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+          <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-teal-500" />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total Points</span>
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{me?.user?.total_points?.toLocaleString() || '0'}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">across all categories</div>
+          </div>
 
-      {/* Tab Panels */}
-      {activeTab === 'overview' && (
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Leaderboard */}
-          <section className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-800">Leaderboard</h3>
-              <a href={`/page/${encodeURIComponent(selectedSeason)}/`} className="text-sm text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1">
-                View Full <ExternalLink className="w-4 h-4" />
+          <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart3 className="w-4 h-4 text-sky-500" />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Standings</span>
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{standings.points || 0}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">of {standings.max_points || 0} pts</div>
+          </div>
+
+          <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="w-4 h-4 text-rose-500" />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Props & Awards</span>
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{(awards.points || 0) + (props.points || 0)}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">of {(awards.max_points || 0) + (props.max_points || 0)} pts</div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="relative">
+          <div className="flex gap-1 bg-white/60 dark:bg-slate-800/60 rounded-lg p-1 border border-slate-200/60 dark:border-slate-700/50 shadow-sm overflow-x-auto">
+            {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'performance', label: 'Performance' },
+              { id: 'submissions', label: 'Submissions' },
+              { id: 'settings', label: 'Settings' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`flex-1 min-w-[100px] px-3 py-2 rounded-md text-xs font-semibold transition-all ${
+                  activeTab === t.id
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Panels */}
+        {activeTab === 'overview' && (
+          <div className="space-y-4">
+            {/* Quick Predictions View */}
+            <section className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Regular Season Standings</h3>
+                <a
+                  href={compareHref}
+                  className="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 inline-flex items-center gap-1 font-medium"
+                >
+                  Full view <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <DisplayPredictionsBoard seasonSlug={selectedSeason} />
+            </section>
+
+            {/* Category Performance Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                { title: 'Standings', icon: BarChart3, data: standings, color: 'teal' },
+                { title: 'Awards', icon: Award, data: awards, color: 'amber' },
+                { title: 'Props', icon: Target, data: props, color: 'rose' },
+              ].map(({ title, icon: Icon, data, color }) => {
+                const percentage = data.max_points > 0 ? Math.round((data.points / data.max_points) * 100) : 0;
+                const colorClasses = {
+                  teal: 'from-teal-500 to-teal-600 dark:from-teal-400 dark:to-teal-500',
+                  amber: 'from-amber-500 to-amber-600 dark:from-amber-400 dark:to-amber-500',
+                  rose: 'from-rose-500 to-rose-600 dark:from-rose-400 dark:to-rose-500',
+                };
+                return (
+                  <div key={title} className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 border border-slate-200/60 dark:border-slate-600">
+                        <Icon className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">{title}</span>
+                    </div>
+                    <div className="mb-2">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-slate-900 dark:text-white">{data.points || 0}</span>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">/ {data.max_points || 0}</span>
+                      </div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">{percentage}% accuracy</div>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                      <div className={`h-full bg-gradient-to-r ${colorClasses[color]} transition-all duration-300`} style={{ width: `${percentage}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'performance' && (
+          <div className="space-y-4">
+            <UserExpandedView categories={expandedCategories} />
+
+            <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Conference Standings Snapshot</h3>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Top 5 each</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { title: 'Western Conference', list: confLists.west, color: 'rose' },
+                  { title: 'Eastern Conference', list: confLists.east, color: 'sky' },
+                ].map(({ title, list, color }) => (
+                  <div key={title}>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">{title}</h4>
+                    <ul className="space-y-2">
+                      {list.length === 0 ? (
+                        <li className="text-xs text-slate-500 dark:text-slate-400 italic py-2">No predictions yet</li>
+                      ) : (
+                        list.map((p, idx) => {
+                          const isCorrect = p.correct === true;
+                          const hasPoints = (p.points || 0) > 0;
+                          return (
+                            <li key={idx} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/50 px-3 py-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700/60">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {isCorrect ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                ) : hasPoints ? (
+                                  <span className="w-3.5 h-3.5 rounded-full bg-amber-400 flex-shrink-0" />
+                                ) : (
+                                  <XCircle className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 flex-shrink-0" />
+                                )}
+                                <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">{p.team}</span>
+                              </div>
+                              <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2 flex-shrink-0">
+                                <span>#{p.predicted_position}</span>
+                                <span className="text-slate-400 dark:text-slate-500">→</span>
+                                <span>#{p.actual_position ?? '?'}</span>
+                                <span className={`font-bold ml-1 ${hasPoints ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                                  +{p.points || 0}
+                                </span>
+                              </div>
+                            </li>
+                          );
+                        })
+                      )}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <a
+                href={compareHref}
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-teal-600 hover:to-teal-700 shadow-sm transition-all"
+              >
+                Open Detailed Comparison <ChevronRight className="w-4 h-4" />
               </a>
             </div>
-            <div className="mt-4">
-              <div className="space-y-4">
-                {data && data.length > 0 ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-10 h-10">
-                        <img
-                          src={avatarUrl(me?.user?.display_name || me?.user?.username)}
-                          alt="Avatar"
-                          className="w-full h-full rounded-full object-cover border border-slate-300 dark:border-slate-600"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-800 dark:text-slate-100">
-                          {me?.user?.display_name || me?.user?.username}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-slate-800 dark:text-white">
-                        {me?.user?.total_points.toLocaleString() || '0'}
-                      </p>
-                      <p className="text-sm text-slate-400 dark:text-slate-400">Total Points</p>
-                    </div>
-                  </div>
+          </div>
+        )}
+
+        {activeTab === 'submissions' && (
+          <div className="space-y-4">
+            {/* Standings Submission */}
+            <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Regular Season Predictions</h3>
+                {canEdit ? (
+                  <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <Unlock className="w-3.5 h-3.5" /> Open for editing
+                  </span>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">No leaderboard data available</div>
+                  <span className="inline-flex items-center gap-1 text-xs text-rose-600 dark:text-rose-400 font-semibold">
+                    <Lock className="w-3.5 h-3.5" /> Locked
+                  </span>
                 )}
               </div>
+              <EditablePredictionBoard seasonSlug={selectedSeason} canEdit={!!canEdit} username={username} />
             </div>
-          </section>
 
-
-          {/* Predictions */}
-          <section className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-            <h3 className="text-base font-semibold text-gray-800 mb-4">My Regular Season Predictions</h3>
-            <DisplayPredictionsBoard seasonSlug={selectedSeason} />
-          </section>
-        </div>
-      )}
-
-      {activeTab === 'leaderboard' && (
-      <section className="mt-6">
-        <UserExpandedView categories={expandedCategories} />
-        <div className="mt-4">
-          <a href={compareHref} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
-            Open Detailed Comparison View <ChevronRight className="w-4 h-4" />
-          </a>
-        </div>
-      </section>
-      )}
-
-      {activeTab === 'leaderboard' && (
-      <section className="mt-6 rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-gray-800">Regular Season Standings Snapshot</h3>
-          <span className="text-xs text-gray-500">Top 5 per conference</span>
-        </div>
-        <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <h4 className="text-sm font-medium text-gray-600">Western Conference</h4>
-            <ul className="mt-3 space-y-2">
-              {confLists.west.map((p, idx) => (
-                <li key={idx} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
-                  <div className="flex items-center text-sm text-gray-800">
-                    <span className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${p.correct===true?'bg-emerald-500':'bg-gray-300'}`} />
-                    <span className="font-medium">{p.team}</span>
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    Pred {p.predicted_position} • Act {p.actual_position ?? '—'} • <span className="font-semibold text-gray-800">{(p.points||0).toLocaleString()} pts</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-600">Eastern Conference</h4>
-            <ul className="mt-3 space-y-2">
-              {confLists.east.map((p, idx) => (
-                <li key={idx} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
-                  <div className="flex items-center text-sm text-gray-800">
-                    <span className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${p.correct===true?'bg-emerald-500':'bg-gray-300'}`} />
-                    <span className="font-medium">{p.team}</span>
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    Pred {p.predicted_position} • Act {p.actual_position ?? '—'} • <span className="font-semibold text-gray-800">{(p.points||0).toLocaleString()} pts</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-      )}
-
-      {activeTab === 'leaderboard' && (
-        <div className="mt-6">
-          <a href={compareHref} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">
-            Open Detailed Comparison View <ChevronRight className="w-4 h-4" />
-          </a>
-        </div>
-      )}
-
-      {activeTab === 'submissions' && (
-        <section className="mt-6 space-y-6">
-          {/* Standings editing */}
-          <div className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-gray-800">Regular Season Predictions</h3>
+            {/* Question Submissions */}
+            <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Question Submissions</h3>
+                {canEdit ? (
+                  <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <Unlock className="w-3.5 h-3.5" /> Open for submission
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs text-rose-600 dark:text-rose-400 font-semibold">
+                    <Lock className="w-3.5 h-3.5" /> Locked
+                  </span>
+                )}
+              </div>
               {canEdit ? (
-                <span className="inline-flex items-center gap-1 text-xs text-emerald-600"><Unlock className="w-4 h-4" /> Window open</span>
+                <QuestionForm seasonSlug={selectedSeason} />
               ) : (
-                <span className="inline-flex items-center gap-1 text-xs text-rose-600"><Lock className="w-4 h-4" /> Locked</span>
+                answers.length === 0 ? (
+                  <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">
+                    No answers submitted for {selectedSeason}.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {(() => {
+                      // Group answers by question type
+                      const grouped = {};
+                      answers.forEach((a) => {
+                        const type = (a.question_type || 'Other').toUpperCase();
+                        if (!grouped[type]) grouped[type] = [];
+                        grouped[type].push(a);
+                      });
+
+                      // Color scheme for question types
+                      const typeInfo = {
+                        'PROPQUESTION': {
+                          badge: 'bg-purple-100 border-purple-300 text-purple-700 dark:bg-purple-900/50 dark:border-purple-700 dark:text-purple-300',
+                          label: 'Props'
+                        },
+                        'SUPERLATIVEQUESTION': {
+                          badge: 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-300',
+                          label: 'Superlatives'
+                        },
+                        'NBAFINALSPREDICTIONQUESTION': {
+                          badge: 'bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/50 dark:border-amber-700 dark:text-amber-300',
+                          label: 'Finals'
+                        },
+                        'default': {
+                          badge: 'bg-slate-100 border-slate-300 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300',
+                          label: 'Other'
+                        }
+                      };
+
+                      const getTypeInfo = (type) => typeInfo[type] || typeInfo['default'];
+
+                      return Object.entries(grouped).map(([type, items]) => {
+                        const info = getTypeInfo(type);
+                        return (
+                          <div key={type} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className={`inline-flex items-center px-2.5 py-1 rounded-lg border ${info.badge}`}>
+                                <span className="text-xs font-bold uppercase tracking-wider">
+                                  {info.label}
+                                </span>
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                {items.length} {items.length === 1 ? 'question' : 'questions'}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                                                          {items.map((a, idx) => {
+                                                                                            const isCorrect = a.is_correct == true;
+                                                                                            const isIncorrect = a.is_correct == false;
+                                                                                            const isPending = a.is_correct === null || typeof a.is_correct === 'undefined';
+                                                            
+                                                                                            // Status-based styling
+                                                                                            const cardClasses = `rounded-lg border p-3 transition-all hover:shadow-md ${
+                                                                                              isCorrect
+                                                                                                ? 'bg-emerald-50 border-emerald-300 border-l-4 border-l-emerald-500 dark:bg-emerald-900/30 dark:border-emerald-800/80 dark:border-l-emerald-500'
+                                                                                                : isIncorrect
+                                                                                                ? 'bg-rose-50 border-rose-300 border-l-4 border-l-rose-500 dark:bg-rose-900/30 dark:border-rose-800/80 dark:border-l-rose-500'
+                                                                                                : 'bg-slate-50 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700/80'
+                                                                                            }`;
+                                                            
+                                                                                            return (
+                                                                                              <div key={idx} className={cardClasses}>
+                                                                                                <div className="text-sm font-semibold text-slate-900 dark:text-white mb-2 leading-tight" title={a.question_text}>
+                                                                                                  {a.question_text}
+                                                                                                </div>
+                                                                                                <div className="text-sm text-slate-800 dark:text-slate-200 mb-3">
+                                                                                                  <span className="text-slate-600 dark:text-slate-400">Your answer:</span>{' '}
+                                                                                                  <span className="font-bold">{String(a.answer)}</span>
+                                                                                                </div>
+                                                                                                <div className="flex items-center justify-between text-xs">
+                                                                                                  <div className="flex items-center gap-1.5">
+                                                                                                    {isCorrect && (
+                                                                                                      <>
+                                                                                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                                                                                        <span className="font-bold text-emerald-700">Correct</span>
+                                                                                                      </>
+                                                                                                    )}
+                                                                                                    {isIncorrect && (
+                                                                                                      <>
+                                                                                                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                                                                                        <span className="font-bold text-rose-700">Incorrect</span>
+                                                                                                      </>
+                                                                                                    )}
+                                                                                                                                            {isPending && (
+                                                                                                                                              <>
+                                                                                                                                                <Hourglass className="w-3.5 h-3.5 text-slate-500" />
+                                                                                                                                                <span className="font-semibold text-slate-500 dark:text-slate-400">Pending</span>
+                                                                                                                                              </>
+                                                                                                                                            )}                                      </div>
+                                      {typeof a.points_earned === 'number' && (
+                                        <span className={`font-bold ${a.points_earned > 0 ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                          +{a.points_earned} pts
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                )
               )}
             </div>
-            <EditablePredictionBoard seasonSlug={selectedSeason} canEdit={!!canEdit} username={username} />
           </div>
+        )}
 
-          {/* Answers list */}
-          <div className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-gray-800">Question Submissions</h3>
-              {canEdit ? (
-                <span className="inline-flex items-center gap-1 text-xs text-emerald-600"><Unlock className="w-4 h-4" /> Window open</span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-xs text-rose-600"><Lock className="w-4 h-4" /> Locked</span>
-              )}
+        {activeTab === 'settings' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Account Settings</h3>
+              <ul className="space-y-2">
+                {[
+                  { icon: Mail, label: 'Change Email', href: '/accounts/email/' },
+                  { icon: Key, label: 'Change Password', href: '/accounts/password/change/' },
+                  { icon: UserIcon, label: 'Third-Party Accounts', href: '/accounts/social/connections/' },
+                  { icon: UserIcon, label: 'Active Sessions', href: '/accounts/sessions/' },
+                ].map(({ icon: Icon, label, href }) => (
+                  <li key={href}>
+                    <a
+                      href={href}
+                      className="flex items-center gap-2 text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium transition-colors"
+                    >
+                      <Icon className="w-4 h-4" /> {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-            {canEdit ? (
-              <QuestionForm seasonSlug={selectedSeason} />
-            ) : (
-              answers.length === 0 ? (
-                <div className="text-sm text-gray-500">No answers submitted for {selectedSeason}.</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {answers.map((a, idx) => (
-                    <div key={idx} className="rounded-lg border border-gray-200 p-3">
-                      <div className="text-sm font-medium text-gray-800 truncate">{a.question_text}</div>
-                      <div className="mt-1 text-xs text-gray-500">{a.question_type}</div>
-                      <div className="mt-2 text-sm text-gray-800">Your answer: <span className="font-medium">{String(a.answer)}</span></div>
-                      <div className="mt-1 text-xs">
-                        {typeof a.is_correct === 'boolean' ? (
-                          a.is_correct ? <span className="text-emerald-600">Correct</span> : <span className="text-rose-600">Incorrect</span>
-                        ) : (
-                          <span className="text-gray-500">Pending</span>
-                        )}
-                        {typeof a.points_earned === 'number' && (
-                          <span className="ml-2 text-gray-600">{a.points_earned} pts</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+
+            <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-4 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Profile Avatar</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
+                Your avatar uses a privacy-friendly placeholder generated from your display name.
+              </p>
+              <div className="flex items-center gap-3">
+                <img
+                  className="h-14 w-14 rounded-full ring-2 ring-slate-200 dark:ring-slate-700 shadow-sm"
+                  alt="Avatar preview"
+                  src={avatarUrl(me?.user?.display_name || me?.user?.username)}
+                />
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Custom avatar uploads can be added in a future update.
                 </div>
-              )
-            )}
-          </div>
-        </section>
-      )}
-
-      {activeTab === 'settings' && (
-        <section className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-            <h3 className="text-base font-semibold text-gray-800 mb-3">Account</h3>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-500" /> <a className="text-indigo-600 hover:text-indigo-700" href="/accounts/email/">Change Email</a></li>
-              <li className="flex items-center gap-2"><Key className="w-4 h-4 text-gray-500" /> <a className="text-indigo-600 hover:text-indigo-700" href="/accounts/password/change/">Change Password</a></li>
-              <li className="flex items-center gap-2"><UserIcon className="w-4 h-4 text-gray-500" /> <a className="text-indigo-600 hover:text-indigo-700" href="/accounts/social/connections/">Third-Party Accounts</a></li>
-              <li className="flex items-center gap-2"><UserIcon className="w-4 h-4 text-gray-500" /> <a className="text-indigo-600 hover:text-indigo-700" href="/accounts/sessions/">Sessions</a></li>
-            </ul>
-          </div>
-          <div className="rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-            <h3 className="text-base font-semibold text-gray-800 mb-3">Avatar</h3>
-            <p className="text-sm text-gray-600">Your avatar uses a privacy-friendly placeholder generated from your name.</p>
-            <div className="mt-3 flex items-center gap-3">
-              <img className="h-16 w-16 rounded-full ring-1 ring-gray-200" alt="Avatar preview" src={avatarUrl(me?.user?.display_name || me?.user?.username)} />
-              <div className="text-xs text-gray-500">To support custom avatars, we can wire an upload in a follow-up.</div>
+              </div>
             </div>
           </div>
-        </section>
-      )}
+        )}
 
-      {/* Edit Predictions (when allowed) */}
-      <section className="mt-6 rounded-xl bg-white p-5 shadow ring-1 ring-black/5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-gray-800">Regular Season Predictions</h3>
-          {!canEdit && (
-            <span className="text-xs text-gray-500">Submission window closed</span>
-          )}
-        </div>
-        <EditablePredictionBoard seasonSlug={selectedSeason} canEdit={!!canEdit} />
-      </section>
-
-      {/* Loading / Error */}
-      {isLoading && (
-        <div className="mt-6 rounded-xl bg-white p-5 text-center text-sm text-gray-600 shadow ring-1 ring-black/5">
-          Loading your profile data…
-        </div>
-      )}
-      {error && (
-        <div className="mt-6 rounded-xl bg-rose-50 p-5 text-center text-sm text-rose-700 ring-1 ring-rose-200">
-          We couldn’t load your profile details. Please try again later.
-        </div>
-      )}
+        {/* Loading / Error States */}
+        {isLoading && (
+          <div className="rounded-lg bg-white/90 dark:bg-slate-800/80 p-8 text-center text-sm text-slate-600 dark:text-slate-400 shadow-md border border-slate-200/60 dark:border-slate-700/50">
+            <div className="animate-pulse">Loading your profile data…</div>
+          </div>
+        )}
+        {error && (
+          <div className="rounded-lg bg-rose-50 dark:bg-rose-900/20 p-6 text-center text-sm text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 shadow-md">
+            We couldn't load your profile details. Please try again later.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

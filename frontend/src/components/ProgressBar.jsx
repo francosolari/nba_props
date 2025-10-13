@@ -36,6 +36,7 @@ const ProgressBar = ({
   // Size variant styles
   const sizeClasses = {
     sm: 'h-2 text-xs',
+    md: 'h-3 text-sm',
     lg: 'h-4 text-sm',
   };
   
