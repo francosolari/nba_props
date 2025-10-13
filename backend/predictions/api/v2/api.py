@@ -34,9 +34,14 @@ from .endpoints.homepage import router as homepage_router
 from .endpoints.answers import router as answers_router
 from .endpoints.leaderboard import router as leaderboards_router
 from .endpoints.seasons import router as seasons_router
+from .endpoints.user_submissions import router as submissions_router
+from .endpoints.admin_questions import router as admin_questions_router
 
 # Import schemas for documentation
 from .schemas import ErrorSchema
+
+# Import utilities
+from .utils import get_user_context
 
 # Create main API instance with comprehensive metadata
 api = NinjaAPI(
@@ -201,6 +206,23 @@ def health_check(request):
     }
 
 
+@api.get(
+    "/user/context",
+    summary="Get User Context",
+    description="Get information about the current user including admin status",
+    tags=["System"]
+)
+def get_current_user_context(request):
+    """
+    Get information about the current authenticated user.
+    Includes admin status for conditional UI rendering.
+    
+    Returns:
+        dict: User context information
+    """
+    return get_user_context(request)
+
+
 # ====================
 # REGISTER ENDPOINT ROUTERS
 # ====================
@@ -213,6 +235,8 @@ api.add_router("/homepage/", homepage_router)
 api.add_router("/answers/", answers_router)
 api.add_router("/leaderboards/", leaderboards_router)
 api.add_router("/seasons/", seasons_router)
+api.add_router("/submissions", submissions_router)
+api.add_router("/admin", admin_questions_router)
 
 # ====================
 # TEMPORARY PLACEHOLDER ENDPOINTS
