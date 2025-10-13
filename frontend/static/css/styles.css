@@ -612,12 +612,7 @@ video {
   border: 1px solid var(--standings-card-border);
   border-radius: 1.25rem;
   box-shadow: var(--standings-card-shadow);
-  transition: box-shadow 200ms ease, transform 200ms ease;
-}
-
-.standings-shell:hover {
-  box-shadow: var(--standings-card-shadow-hover);
-  transform: translateY(-2px);
+  transition: box-shadow 200ms ease;
 }
 
 .standings-wrapper {
@@ -627,6 +622,7 @@ video {
   max-width: 720px;
   margin: 0 auto;
   padding: 1rem 0;
+  overflow-x: hidden;
 }
 
 .standings-grid {
@@ -635,8 +631,7 @@ video {
   justify-content: center;
   align-items: flex-start;
   flex-wrap: nowrap;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
+  overflow-x: hidden;
 }
 
 .standings-column {
@@ -716,10 +711,10 @@ video {
   color: var(--nba-slate-600);
   transition: transform 160ms ease, box-shadow 160ms ease;
   cursor: grab;
+  width: 100%;
 }
 
 .conference-team.dragging {
-  transform: translateY(-2px) scale(1.01);
   box-shadow: 0 12px 20px rgba(15, 23, 42, 0.12);
 }
 
