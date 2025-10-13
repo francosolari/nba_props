@@ -8,6 +8,7 @@ from django.forms import formset_factory
 from django.contrib import messages
 from predictions.models import Season, Prediction, StandingPrediction, Question, Answer, Team, RegularSeasonStandings
 from predictions.forms import QuestionForm, PositionPredictionForm, UserProfileForm
+from predictions.api.v2.utils import is_admin_user
 import json
 
 
@@ -259,4 +260,36 @@ def leaderboard_detail_page(request, season_slug):
         'season': season,
         'initial_section': initial_section,
         'initial_user_id': initial_user_id or '',
+    })
+
+
+@login_required
+def submit_predictions_view(request, season_slug):
+    """
+    Render the submissions page for users to answer questions.
+    """
+    season = get_object_or_404(Season, slug=season_slug)
+    
+    return render(request, 'predictions/submit_predictions.html', {
+        'season': season,
+        'season_slug': season_slug,
+    })
+
+
+@login_required
+def admin_panel_view(request):
+    """
+    Render the admin panel for question management.
+    Only accessible to admin users.
+    """
+    # Check if user is admin
+    if not is_admin_user(request.user):
+        messages.error(request, "You don't have permission to access the admin panel.")
+        return redirect('predictions_views:home')
+    
+    # Get all seasons for dropdown
+    seasons = Season.objects.all().order_by('-start_date')
+    
+    return render(request, 'predictions/admin_panel.html', {
+        'seasons': seasons,
     })

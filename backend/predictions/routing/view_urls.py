@@ -11,7 +11,7 @@ from predictions.views.user_views import (
     home, view_predictions, what_if_view,
     profile_view, view_ist_standings, user_leaderboard,
     submit_predictions, render_questions, submit_answers, leaderboard_page,
-    leaderboard_detail_page
+    leaderboard_detail_page, submit_predictions_view, admin_panel_view
 )
 
 app_name = 'predictions_views'
@@ -54,4 +54,10 @@ urlpatterns = [
 
     # User management
     path('user/', include(auth_patterns)),
+
+    # Submissions (new)
+    path('submit/<slug:season_slug>/', submit_predictions_view, name='submit_predictions_view'),
+
+    # Admin panel (new)
+    path('admin-panel/', admin_panel_view, name='admin_panel'),
 ]
