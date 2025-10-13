@@ -782,7 +782,7 @@ useEffect(() => {
                       const totalPts = e.user.total_points || 0;
                       const isPinned = pinnedUserIds.includes(String(e.user.id));
                       return (
-                        <th key={`h-${e.user.id}`} className={`px-2.5 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 align-top ${isPinned ? 'sticky bg-slate-50/90 dark:bg-slate-800/90' : ''}`} style={isPinned ? { left: teamColWidth + 72 + (index * 108), zIndex: 10 } : {}} title={`Stand: ${standPts} • Total: ${totalPts}`}>
+                        <th key={`h-${e.user.id}`} className={`px-2.5 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 align-top ${isPinned ? 'sticky bg-slate-50/90 dark:bg-slate-800/90' : ''}`} style={isPinned ? { left: teamColWidth + 72 + (index * 108), zIndex: 10 } : {}} title={`Stand: ${standPts} • Total: ${totalPts}`}>
                           <div className="flex items-center gap-1.5">
                             <span className="truncate">{e.user.display_name || e.user.username}</span>
                             <button onClick={()=> togglePin(e.user.id)} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
@@ -932,14 +932,15 @@ useEffect(() => {
                                   </div>
                                 </td>
                                 <td className="px-3 py-2 text-sm text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/90" style={{ position:'sticky', left: teamColWidth }}>{whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}</td>
-                                {displayedUsers.map((e) => {
+                                {displayedUsers.map((e, userIndex) => {
+                                  const isPinned = pinnedUserIds.includes(String(e.user.id));
                                   const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
                                   const p = preds.find(x => x.team === row.team);
                                   const pts = whatIfEnabled ? standingPoints(p?.predicted_position, simActualMap.get(row.team)) : (p?.points || 0);
                                   const predPos = p?.predicted_position ?? '—';
                                   const color = pts >= 3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30' : pts >= 1 ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600';
                                   return (
-                                    <td key={`c-${e.user.id}-${row.team}`} className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/50">
+                                    <td key={`c-${e.user.id}-${row.team}`} className={`px-3 py-2 border-b border-slate-100 dark:border-slate-700/50 ${isPinned ? 'sticky bg-white/90 dark:bg-slate-800/90' : ''}`} style={isPinned ? { left: teamColWidth + 72 + (userIndex * 108), zIndex: 10 } : {}}>
                                       <div className="flex justify-center">
                                         <div className="relative inline-block group">
                                           <span className={`inline-block min-w-[80px] text-center px-2 py-1 rounded-md border text-xs ${color}`} title={`Pred: ${predPos}`}>{predPos}</span>
@@ -1059,12 +1060,13 @@ useEffect(() => {
                 <thead className="bg-slate-50/80 dark:bg-slate-800/80">
                   <tr>
                     <th className="sticky left-0 z-10 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur px-3 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700" style={{minWidth:'12rem'}}>Question</th>
-                    {displayedUsers.map((e) => {
+                    {displayedUsers.map((e, index) => {
                       const catKey = fromSectionKey(section);
                       const catPts = e.user.categories?.[catKey]?.points || 0;
                       const totalPts = e.user.total_points || 0;
+                      const isPinned = pinnedUserIds.includes(String(e.user.id));
                       return (
-                        <th key={`h2-${e.user.id}`} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 align-top">
+                        <th key={`h2-${e.user.id}`} className={`px-3 py-2 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 align-top ${isPinned ? 'sticky bg-slate-50/80 dark:bg-slate-800/80' : ''}`} style={isPinned ? { left: Math.max(320, 12*16) + (index * 160), zIndex: 10 } : {}}>
                           <div className="flex items-center gap-2">
                             <span className="text-slate-700 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
                             <button onClick={()=> togglePin(e.user.id)} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
@@ -1105,7 +1107,8 @@ useEffect(() => {
                             <span className="inline-block px-2 py-1 rounded-md border border-slate-200 bg-white text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 max-w-[360px] truncate" title={q.text}>{q.text}</span>
                           </div>
                         </td>
-                        {displayedUsers.map(e => {
+                        {displayedUsers.map((e, userIndex) => {
+                          const isPinned = pinnedUserIds.includes(String(e.user.id));
                           const preds = e.user.categories?.[catKey]?.predictions || [];
                           const p = preds.find(x => String(x.question_id) === String(q.id));
                           const pts = p?.points || 0;
@@ -1120,7 +1123,7 @@ useEffect(() => {
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
                               : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600');
                           return (
-                        <td key={`q-${q.id}-${e.user.id}`} className="px-3 py-2">
+                        <td key={`q-${q.id}-${e.user.id}`} className={`px-3 py-2 ${isPinned ? 'sticky bg-white/90 dark:bg-slate-800/90' : ''}`} style={isPinned ? { left: Math.max(320, 12*16) + (userIndex * 160), zIndex: 10 } : {}}>
                           <div className="flex justify-center">
                             <div className="relative inline-block group">
                           <span className={`inline-flex items-center gap-1 max-w-[180px] truncate text-center px-2 py-1 rounded-md border text-xs ${color} transition-transform duration-200`} title={`${answer}`}>
