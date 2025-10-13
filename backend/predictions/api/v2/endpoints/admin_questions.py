@@ -13,11 +13,17 @@ from predictions.models import (
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion,
     HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion
 )
-from predictions.api.v2.schemas.questions import (
-    SuperlativeQuestionCreateSchema, PropQuestionCreateSchema,
-    PlayerStatPredictionQuestionCreateSchema, HeadToHeadQuestionCreateSchema,
-    InSeasonTournamentQuestionCreateSchema, NBAFinalsPredictionQuestionCreateSchema,
-    QuestionUpdateSchema, QuestionReorderSchema, QuestionDeleteResponseSchema
+from predictions.api.v2.schemas import (
+    SuperlativeQuestionCreateSchema,
+    PropQuestionCreateSchema,
+    PlayerStatPredictionQuestionCreateSchema,
+    HeadToHeadQuestionCreateSchema,
+    InSeasonTournamentQuestionCreateSchema,
+    NBAFinalsPredictionQuestionCreateSchema,
+    QuestionUpdateSchema,
+    QuestionReorderSchema,
+    QuestionDeleteResponseSchema,
+    QuestionSchema,
 )
 from predictions.api.v2.utils import admin_required
 from predictions.api.v2.endpoints.user_submissions import serialize_question
@@ -29,7 +35,7 @@ router = Router(tags=["Admin - Questions"])
 
 @router.get(
     "/questions/{season_slug}",
-    response=List[dict],
+    response=List[QuestionSchema],
     summary="[Admin] List All Questions",
     description="Get all questions for a season (admin view with full details)"
 )
@@ -40,12 +46,12 @@ def admin_list_questions(request, season_slug: str):
     """
     season = get_object_or_404(Season, slug=season_slug)
     
-    questions = Question.objects.filter(season=season).select_related(
-        'season', 'award'
-    ).prefetch_related('winners').order_by('id')
-    
-    # Get polymorphic instances
-    questions = questions.select_subclasses()
+    questions = (
+        Question.objects.filter(season=season)
+        .select_related('season')
+        .prefetch_related('superlativequestion__winners')
+        .order_by('id')
+    )
     
     return [serialize_question(q) for q in questions]
 
