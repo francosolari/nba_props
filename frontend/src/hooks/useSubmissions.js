@@ -20,6 +20,7 @@ export const useQuestions = (seasonSlug) => {
     },
     enabled: !!seasonSlug,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: false,
   });
 };
 
@@ -35,6 +36,7 @@ export const useUserAnswers = (seasonSlug) => {
     },
     enabled: !!seasonSlug,
     staleTime: 1000 * 60, // 1 minute
+    retry: false,
   });
 };
 
@@ -50,6 +52,25 @@ export const useSubmissionStatus = (seasonSlug) => {
     },
     enabled: !!seasonSlug,
     refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
+    retry: false,
+  });
+};
+
+/**
+ * Get entry fee status for the current user and season
+ */
+export const useEntryFeeStatus = (seasonSlug, options = {}) => {
+  const { enabled = true } = options;
+
+  return useQuery({
+    queryKey: ['entryFeeStatus', seasonSlug],
+    queryFn: async () => {
+      const { data } = await axios.get(`/api/v2/submissions/entry-fee/${seasonSlug}`);
+      return data;
+    },
+    enabled: !!seasonSlug && enabled,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: false,
   });
 };
 
@@ -79,6 +100,38 @@ export const useSubmitAnswers = () => {
     onSuccess: (_data, variables) => {
       if (variables?.seasonSlug) {
         queryClient.invalidateQueries(['userAnswers', variables.seasonSlug]);
+        queryClient.invalidateQueries(['entryFeeStatus', variables.seasonSlug]);
+      }
+    },
+  });
+};
+
+/**
+ * Update entry fee payment status
+ */
+export const useUpdateEntryFeeStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ seasonSlug, isPaid }) => {
+      if (!seasonSlug) {
+        throw new Error('seasonSlug is required to update entry fee status');
+      }
+      const { data } = await axios.post(
+        `/api/v2/submissions/entry-fee/${seasonSlug}`,
+        { is_paid: isPaid },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken(),
+          },
+        }
+      );
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      if (variables?.seasonSlug) {
+        queryClient.invalidateQueries(['entryFeeStatus', variables.seasonSlug]);
       }
     },
   });
@@ -95,6 +148,7 @@ export const useUserContext = () => {
       return data;
     },
     staleTime: 1000 * 60 * 10, // 10 minutes
+    retry: false,
   });
 };
 
@@ -109,5 +163,6 @@ export const useSeasons = () => {
       return data;
     },
     staleTime: 1000 * 60 * 30, // 30 minutes
+    retry: false,
   });
 };

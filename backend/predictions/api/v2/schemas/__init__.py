@@ -25,6 +25,8 @@ from predictions.api.v2.schemas_legacy import (
     RandomPredictionsResponseSchema,
     RandomPropsResponseSchema,
     HomepageDataResponseSchema,
+    EntryFeeStatusSchema,
+    EntryFeeUpdateSchema,
 )
 
 # Import new question-related schemas
@@ -93,6 +95,8 @@ __all__ = [
     'RandomPredictionsResponseSchema',
     'RandomPropsResponseSchema',
     'HomepageDataResponseSchema',
+    'EntryFeeStatusSchema',
+    'EntryFeeUpdateSchema',
     
     # Question schemas
     'QuestionBaseSchema',

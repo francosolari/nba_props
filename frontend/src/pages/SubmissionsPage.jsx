@@ -11,6 +11,8 @@ import {
   useUserAnswers,
   useSubmitAnswers,
   useSubmissionStatus,
+  useEntryFeeStatus,
+  useUpdateEntryFeeStatus,
   useUserContext,
 } from '../hooks/useSubmissions';
 import SelectComponent from '../components/SelectComponent';
@@ -34,7 +36,7 @@ const QUESTION_GROUP_META = {
     description: 'Choose the winner in marquee matchups.',
   },
   ist: {
-    title: 'In-Season Tournament',
+    title: 'in season tournament:nba cup',
     description: 'Make your picks for the NBA In-Season Tournament.',
   },
   nba_finals: {
@@ -59,6 +61,139 @@ const QUESTION_GROUP_ORDER = [
 
 const FALLBACK_LATEST_SEASON = '2025-26';
 
+const UNKNOWN_TEAM_LOGO = '/static/img/teams/unknown.svg';
+const TEAM_LOGO_SLUG_OVERRIDES = {
+  'los-angeles-clippers': 'la-clippers',
+};
+
+const toTeamSlug = (teamName) => {
+  if (!teamName) return null;
+  const baseSlug = teamName
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return TEAM_LOGO_SLUG_OVERRIDES[baseSlug] || baseSlug;
+};
+
+const getTeamLogoSrc = (teamName) => {
+  const slug = toTeamSlug(teamName);
+  if (!slug) return UNKNOWN_TEAM_LOGO;
+  // Provide a couple of fallbacks that match existing asset naming patterns.
+  const candidates = [
+    `/static/img/teams/${slug}.png`,
+    `/static/img/teams/${slug}.svg`,
+    `/static/img/teams/${slug}-logo.png`,
+    `/static/img/teams/${slug}-logo-alt.png`,
+  ];
+  return candidates[0] || UNKNOWN_TEAM_LOGO;
+};
+
+const extractGroupMeta = (istGroup) => {
+  if (!istGroup) {
+    return { conference: '', label: '', short: '' };
+  }
+  const match = istGroup.match(/(East|West)\s+Group\s+([A-Z])/i);
+  if (match) {
+    const conference = match[1];
+    const groupLetter = match[2];
+    return {
+      conference,
+      label: `${conference} Group ${groupLetter.toUpperCase()}`,
+      short: groupLetter.toUpperCase(),
+    };
+  }
+  const cleaned = istGroup.trim();
+  return { conference: cleaned.split(' ')[0] || '', label: cleaned, short: cleaned };
+};
+
+const resolveConferenceKey = (value) => {
+  if (!value) return null;
+  const lower = value.toLowerCase();
+  if (lower.includes('west')) return 'West';
+  if (lower.includes('east')) return 'East';
+  return null;
+};
+
+const buildRecordSummary = (team) => {
+  const parts = [];
+  if (typeof team.wins === 'number' && typeof team.losses === 'number') {
+    parts.push(`${team.wins}-${team.losses}`);
+  }
+  if (typeof team.pointDifferential === 'number') {
+    const diff = team.pointDifferential;
+    parts.push(`PD ${diff > 0 ? '+' : diff < 0 ? '' : ''}${diff}`);
+  }
+  return parts.join(' | ');
+};
+
+const CONFERENCE_THEME = {
+  east: {
+    selectedBg: 'bg-[var(--nba-blue-50)]',
+    selectedBorder: 'border-[var(--nba-blue-400)]',
+    selectedText: 'text-[var(--nba-blue-700)]',
+    ring: 'ring-[var(--nba-blue-200)]',
+    hoverBorder: 'hover:border-[var(--nba-blue-400)]',
+    hoverBg: 'hover:bg-[var(--nba-blue-50)]',
+    pillBg: 'bg-[var(--nba-blue-100)]',
+    pillText: 'text-[var(--nba-blue-700)]',
+  },
+  west: {
+    selectedBg: 'bg-[var(--nba-red-50)]',
+    selectedBorder: 'border-[var(--nba-red-400)]',
+    selectedText: 'text-[var(--nba-red-700)]',
+    ring: 'ring-[var(--nba-red-200)]',
+    hoverBorder: 'hover:border-[var(--nba-red-400)]',
+    hoverBg: 'hover:bg-[var(--nba-red-50)]',
+    pillBg: 'bg-[var(--nba-red-100)]',
+    pillText: 'text-[var(--nba-red-700)]',
+  },
+  default: {
+    selectedBg: 'bg-slate-100',
+    selectedBorder: 'border-slate-300',
+    selectedText: 'text-slate-800',
+    ring: 'ring-slate-200',
+    hoverBorder: 'hover:border-slate-300',
+    hoverBg: 'hover:bg-slate-100',
+    pillBg: 'bg-slate-100',
+    pillText: 'text-slate-600',
+  },
+};
+
+const getConferenceTheme = (conferenceLabel) => {
+  const key = conferenceLabel?.toLowerCase();
+  if (!key) return CONFERENCE_THEME.default;
+  if (key === 'east' || key.startsWith('east')) return CONFERENCE_THEME.east;
+  if (key === 'west' || key.startsWith('west')) return CONFERENCE_THEME.west;
+  return CONFERENCE_THEME.default;
+};
+
+const matchQuestionByKeywords = (questionsList, keywords) => {
+  if (!Array.isArray(questionsList) || questionsList.length === 0) return null;
+  return (
+    questionsList.find((question) => {
+      const text = (question.text || '').toLowerCase();
+      return keywords.every((keyword) => text.includes(keyword.toLowerCase()));
+    }) || null
+  );
+};
+
+const getAxiosErrorMessage = (error, fallbackMessage = 'Something went wrong. Please try again.') => {
+  if (axios && typeof axios.isAxiosError === 'function' && axios.isAxiosError(error)) {
+    if (error.code === 'ERR_NETWORK') {
+      return 'We could not reach the server. Check your connection and try again.';
+    }
+    return (
+      error?.response?.data?.message ||
+      error?.response?.data?.detail ||
+      error?.message ||
+      fallbackMessage
+    );
+  }
+  return error?.message || fallbackMessage;
+};
+
 const SubmissionsPage = ({ seasonSlug }) => {
   const [activeSeasonSlug, setActiveSeasonSlug] = useState(seasonSlug || null);
   const [seasonLoading, setSeasonLoading] = useState(!seasonSlug);
@@ -67,12 +202,19 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const [playerOptions, setPlayerOptions] = useState([]);
   const [teamOptions, setTeamOptions] = useState([]);
   const [loadingAuxData, setLoadingAuxData] = useState(false);
+  const [istStandings, setIstStandings] = useState(null);
+  const [loadingIstStandings, setLoadingIstStandings] = useState(false);
+  const [istStandingsError, setIstStandingsError] = useState(null);
   const standingsBoardRef = useRef(null);
+  const progressSentinelRef = useRef(null);
   const [latestSeasonSlug, setLatestSeasonSlug] = useState(FALLBACK_LATEST_SEASON);
+  const [feedback, setFeedback] = useState(null);
+  const [isProgressSticky, setIsProgressSticky] = useState(false);
 
   const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
   const { data: userContext, isLoading: userContextLoading } = useUserContext();
   const username = userContext?.username || null;
+  const entryFeeEnabled = !!effectiveSeasonSlug && !!userContext?.is_authenticated;
 
   // Discover the latest season when no slug provided
   useEffect(() => {
@@ -119,10 +261,25 @@ const SubmissionsPage = ({ seasonSlug }) => {
   }, [effectiveSeasonSlug]);
 
   // Fetch data
-  const { data: questionsData, isLoading: questionsLoading } = useQuestions(effectiveSeasonSlug);
+  const {
+    data: questionsData,
+    isLoading: questionsLoading,
+    isError: questionsError,
+    error: questionsErrorObj,
+    refetch: refetchQuestions,
+  } = useQuestions(effectiveSeasonSlug);
   const { data: userAnswersData } = useUserAnswers(effectiveSeasonSlug);
   const { data: statusData } = useSubmissionStatus(effectiveSeasonSlug);
   const submitMutation = useSubmitAnswers();
+  const {
+    data: entryFeeData,
+    isLoading: entryFeeLoadingRaw,
+    isError: entryFeeError,
+    error: entryFeeErrorObj,
+    refetch: refetchEntryFee,
+  } = useEntryFeeStatus(effectiveSeasonSlug, { enabled: entryFeeEnabled });
+  const updateEntryFeeMutation = useUpdateEntryFeeStatus();
+  const entryFeeLoading = entryFeeEnabled ? entryFeeLoadingRaw : false;
 
   // Reset answers when season changes
   useEffect(() => {
@@ -242,7 +399,80 @@ const SubmissionsPage = ({ seasonSlug }) => {
     };
   }, [questionsData, playerOptions.length, teamOptions.length]);
 
-  const handleSubmit = async () => {
+  // Fetch IST standings to power the NBA Cup picker
+  useEffect(() => {
+    if (!effectiveSeasonSlug) {
+      setIstStandings(null);
+      setIstStandingsError(null);
+      return;
+    }
+
+    const questions = questionsData?.questions || [];
+    const hasIstQuestions = questions.some((q) => q.question_type === 'ist');
+    if (!hasIstQuestions) {
+      setIstStandings(null);
+      setIstStandingsError(null);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchIstStandings = async () => {
+      setLoadingIstStandings(true);
+      setIstStandingsError(null);
+      try {
+        const { data } = await axios.get(`/api/v2/standings/ist/${effectiveSeasonSlug}`);
+        if (!cancelled) {
+          setIstStandings(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setIstStandings(null);
+          setIstStandingsError(
+            getAxiosErrorMessage(error, 'Unable to load NBA Cup group standings right now.'),
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingIstStandings(false);
+        }
+      }
+    };
+
+    fetchIstStandings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveSeasonSlug, questionsData]);
+
+  const entryFeeStatus = entryFeeEnabled && entryFeeData ? entryFeeData : null;
+  const entryFeePaidAtDisplay = useMemo(() => {
+    if (!entryFeeStatus?.paid_at) return null;
+    try {
+      return new Date(entryFeeStatus.paid_at).toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    } catch (_) {
+      return entryFeeStatus.paid_at;
+    }
+  }, [entryFeeStatus]);
+  const entryFeeErrorMessage = entryFeeError
+    ? getAxiosErrorMessage(
+        entryFeeErrorObj,
+        'We could not load your entry fee status. Payments will still be tracked once the connection returns.'
+      )
+    : null;
+  const questionsErrorMessage = questionsError
+    ? getAxiosErrorMessage(
+        questionsErrorObj,
+        'We could not load the latest prediction questions. Please try again in a moment.'
+      )
+    : null;
+
+  const handleSubmit = async (action = 'submit') => {
     let slugToUse = effectiveSeasonSlug;
     if (!slugToUse || slugToUse === 'current') {
       try {
@@ -264,7 +494,10 @@ const SubmissionsPage = ({ seasonSlug }) => {
     }
 
     if (!slugToUse) {
-      alert('Season is not ready yet. Please try again shortly.');
+      setFeedback({
+        type: 'error',
+        message: 'Season is not ready yet. Please try again shortly.',
+      });
       return;
     }
 
@@ -276,11 +509,11 @@ const SubmissionsPage = ({ seasonSlug }) => {
       });
 
       if (!standingsResult?.success) {
-        const errorMessage =
-          standingsResult?.error?.message ||
-          standingsResult?.error?.response?.data?.message ||
-          'We could not save your standings predictions. Please try again.';
-        alert(errorMessage);
+        const rawError = standingsResult?.error;
+        const errorMessage = rawError
+          ? getAxiosErrorMessage(rawError, 'We could not save your standings predictions. Please try again.')
+          : 'We could not save your standings predictions. Please try again.';
+        setFeedback({ type: 'error', message: errorMessage });
         return;
       }
 
@@ -304,11 +537,85 @@ const SubmissionsPage = ({ seasonSlug }) => {
       }
       setHasChanges(false);
       localStorage.removeItem(`submissions_${slugToUse}`);
-      alert('Answers submitted successfully!');
+
+      let latestEntryFee = entryFeeEnabled ? entryFeeStatus : null;
+      if (
+        entryFeeEnabled &&
+        (!latestEntryFee || latestEntryFee.season_slug !== slugToUse)
+      ) {
+        try {
+          const { data } = await axios.get(`/api/v2/submissions/entry-fee/${slugToUse}`);
+          latestEntryFee = data;
+        } catch (_) {
+          latestEntryFee = entryFeeStatus;
+        }
+      }
+
+      const needsVenmoRedirect =
+        entryFeeEnabled && action === 'submit' && latestEntryFee && latestEntryFee.is_paid === false;
+      const successMessage =
+        action === 'save'
+          ? 'Progress saved. You can return and finish any time before the deadline.'
+          : needsVenmoRedirect
+            ? `Predictions submitted! Next, finish by paying $${latestEntryFee?.amount_due || '25.00'} on Venmo.`
+            : 'Predictions submitted successfully!';
+
+      setFeedback({
+        type: 'success',
+        message: successMessage,
+      });
+
+      if (needsVenmoRedirect && latestEntryFee?.venmo_web_url) {
+        setTimeout(() => {
+          window.location.assign(latestEntryFee.venmo_web_url);
+        }, 500);
+      }
     } catch (error) {
-      alert(`Error: ${error.response?.data?.message || 'Failed to submit'}`);
+      setFeedback({
+        type: 'error',
+        message: getAxiosErrorMessage(error, 'Failed to submit your predictions. Please try again.'),
+      });
     }
   };
+
+  const handleOpenVenmo = useCallback(() => {
+    if (!entryFeeEnabled || !entryFeeStatus?.venmo_web_url) {
+      return;
+    }
+    window.location.assign(entryFeeStatus.venmo_web_url);
+  }, [entryFeeEnabled, entryFeeStatus]);
+
+  const handleMarkEntryFeePaid = useCallback(async () => {
+    if (!entryFeeEnabled || !effectiveSeasonSlug) return;
+    try {
+      await updateEntryFeeMutation.mutateAsync({ seasonSlug: effectiveSeasonSlug, isPaid: true });
+      setFeedback({
+        type: 'success',
+        message: 'Thanks! We marked your entry fee as paid.',
+      });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message: getAxiosErrorMessage(error, 'Unable to update entry fee status. Please try again.'),
+      });
+    }
+  }, [entryFeeEnabled, effectiveSeasonSlug, updateEntryFeeMutation]);
+
+  const handleMarkEntryFeeUnpaid = useCallback(async () => {
+    if (!entryFeeEnabled || !effectiveSeasonSlug) return;
+    try {
+      await updateEntryFeeMutation.mutateAsync({ seasonSlug: effectiveSeasonSlug, isPaid: false });
+      setFeedback({
+        type: 'success',
+        message: 'Entry fee status reset. We will keep reminding you until it is marked as paid.',
+      });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message: getAxiosErrorMessage(error, 'Unable to update entry fee status. Please try again.'),
+      });
+    }
+  }, [entryFeeEnabled, effectiveSeasonSlug, updateEntryFeeMutation]);
 
   const submissionStatus = useMemo(() => {
     return statusData || questionsData?.submission_status || null;
@@ -347,6 +654,28 @@ const SubmissionsPage = ({ seasonSlug }) => {
     });
   }, [questions]);
 
+  const completedCount = Object.values(answers).filter(
+    (value) => value !== undefined && value !== null && value !== '',
+  ).length;
+  const progress = questions.length > 0 ? Math.round((completedCount / questions.length) * 100) : 0;
+  const isReadOnly = !submissionStatus?.is_open;
+
+  useEffect(() => {
+    const sentinel = progressSentinelRef.current;
+    if (!sentinel || isReadOnly || questions.length === 0) {
+      setIsProgressSticky(false);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsProgressSticky(!entry.isIntersecting);
+      },
+      { threshold: 1.0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [questions.length, isReadOnly]);
+
   if (seasonLoading || !effectiveSeasonSlug) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
@@ -363,11 +692,25 @@ const SubmissionsPage = ({ seasonSlug }) => {
     );
   }
 
-  const completedCount = Object.values(answers).filter(
-    (value) => value !== undefined && value !== null && value !== '',
-  ).length;
-  const progress = questions.length > 0 ? Math.round((completedCount / questions.length) * 100) : 0;
-  const isReadOnly = !submissionStatus?.is_open;
+  if (questionsError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center rounded-2xl border border-slate-200 bg-white/90 p-8 shadow-sm">
+          <h1 className="text-2xl font-semibold text-slate-900 mb-3">
+            We can’t load submissions right now
+          </h1>
+          <p className="text-slate-600 text-sm leading-relaxed mb-6">{questionsErrorMessage}</p>
+          <button
+            type="button"
+            onClick={() => refetchQuestions()}
+            className="inline-flex items-center justify-center rounded-full bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 py-8 md:py-12">
@@ -406,6 +749,98 @@ const SubmissionsPage = ({ seasonSlug }) => {
             </a>
           </nav>
         </div>
+
+        {feedback && (
+          <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm">
+            <div
+              className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lg backdrop-blur ${
+                feedback.type === 'error'
+                  ? 'border-rose-200 bg-rose-50/95 text-rose-700'
+                  : 'border-emerald-200 bg-emerald-50/95 text-emerald-700'
+              }`}
+              role={feedback.type === 'error' ? 'alert' : 'status'}
+            >
+              <span>{feedback.message}</span>
+              <button
+                type="button"
+                onClick={() => setFeedback(null)}
+                className="text-xs font-semibold uppercase tracking-wide text-slate-400 hover:text-slate-600"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
+        {entryFeeEnabled && entryFeeError && (
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800 shadow-sm">
+            <div className="space-y-1">
+              <p className="font-semibold text-amber-900">Entry fee status unavailable</p>
+              <p>{entryFeeErrorMessage}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => refetchEntryFee()}
+              className="inline-flex items-center justify-center rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 transition hover:bg-amber-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {entryFeeEnabled && !entryFeeError && !entryFeeLoading && entryFeeStatus && (
+          entryFeeStatus.is_paid ? (
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              <div className="flex flex-col gap-0.5">
+                <span className="font-semibold">Entry fee recorded</span>
+                {entryFeePaidAtDisplay && (
+                  <span className="text-emerald-700/80">Marked on {entryFeePaidAtDisplay}</span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleMarkEntryFeeUnpaid}
+                disabled={updateEntryFeeMutation.isPending}
+                className="inline-flex items-center rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-600 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Mark unpaid
+              </button>
+            </div>
+          ) : (
+            <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="font-semibold text-amber-900">Entry fee reminder</p>
+                  <p>
+                    Send ${entryFeeStatus.amount_due} via Venmo to @{entryFeeStatus.venmo_username}. Add “
+                    {entryFeeStatus.payment_note}
+                    ” so we can match it quickly.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    onClick={handleOpenVenmo}
+                    className="inline-flex items-center justify-center rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 transition hover:bg-amber-100"
+                  >
+                    Pay with Venmo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMarkEntryFeePaid}
+                    disabled={updateEntryFeeMutation.isPending}
+                    className="inline-flex items-center justify-center rounded-full bg-amber-500 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    I've paid
+                  </button>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-amber-700">
+                We’ll keep this reminder visible until you mark the entry fee as paid.
+              </p>
+            </div>
+          )
+        )}
 
         {/* Deadline Banner */}
         {submissionStatus && (
@@ -465,20 +900,32 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
         {/* Progress Bar */}
         {!isReadOnly && questions.length > 0 && (
-          <div className="mb-6">
-            <div className="flex justify-between text-sm text-slate-500 mb-2">
-              <span>Progress</span>
-              <span>
-                {completedCount} / {questions.length}
-              </span>
+          <>
+            <div ref={progressSentinelRef} aria-hidden="true" className="h-1" />
+            <div
+              className={`mb-6 ${
+                isProgressSticky
+                  ? 'sticky top-4 z-30 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-md'
+                  : ''
+              }`}
+            >
+              <div className="flex items-center justify-between text-sm text-slate-500">
+                <span>Progress</span>
+                <span>
+                  {completedCount} / {questions.length}
+                </span>
+              </div>
+              <div className="mt-2 w-full rounded-full bg-slate-200 h-2">
+                <div
+                  className="bg-sky-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="mt-3 text-xs text-slate-400">
+                You can save progress and finish later—unanswered questions are totally fine.
+              </p>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-2">
-              <div
-                className="bg-sky-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
+          </>
         )}
 
         {/* Questions */}
@@ -489,20 +936,34 @@ const SubmissionsPage = ({ seasonSlug }) => {
                 <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">{group.title}</h2>
                 {group.description && <p className="text-sm text-slate-500 mt-1">{group.description}</p>}
               </header>
-              <div className="grid gap-6 md:grid-cols-2">
-                {group.questions.map((question) => (
-                  <QuestionCard
-                    key={question.id}
-                    question={question}
-                    answer={answers[question.id]}
-                    onChange={(value) => handleAnswerChange(question.id, value)}
-                    isReadOnly={isReadOnly}
-                    playerOptions={playerOptions}
-                    teamOptions={teamOptions}
-                    loadingAuxData={loadingAuxData}
-                  />
-                ))}
-              </div>
+              {group.type === 'ist' ? (
+                <InSeasonTournamentSection
+                  questions={group.questions}
+                  answers={answers}
+                  onAnswerChange={handleAnswerChange}
+                  isReadOnly={isReadOnly}
+                  teamOptions={teamOptions}
+                  loadingAuxData={loadingAuxData}
+                  istStandings={istStandings}
+                  loadingIstStandings={loadingIstStandings}
+                  istStandingsError={istStandingsError}
+                />
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2">
+                  {group.questions.map((question) => (
+                    <QuestionCard
+                      key={question.id}
+                      question={question}
+                      answer={answers[question.id]}
+                      onChange={(value) => handleAnswerChange(question.id, value)}
+                      isReadOnly={isReadOnly}
+                      playerOptions={playerOptions}
+                      teamOptions={teamOptions}
+                      loadingAuxData={loadingAuxData}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           ))}
         </div>
@@ -510,18 +971,29 @@ const SubmissionsPage = ({ seasonSlug }) => {
         {/* Submit Button */}
         {!isReadOnly && (
           <div id="submit" className="mt-10 flex flex-col items-center gap-3">
-            <button
-              onClick={handleSubmit}
-              disabled={
-                submitMutation.isPending || !effectiveSeasonSlug || Object.keys(answers).length === 0
-              }
-              className="w-full sm:w-auto inline-flex items-center justify-center bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-semibold py-3.5 px-8 sm:px-12 rounded-full shadow-md hover:shadow-lg transition-all duration-200 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-              {submitMutation.isPending ? 'Submitting...' : 'Submit Predictions'}
-            </button>
-            {hasChanges && <p className="text-amber-500 text-sm mt-2">You have unsaved changes</p>}
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                onClick={() => handleSubmit('save')}
+                disabled={submitMutation.isPending}
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitMutation.isPending ? 'Saving…' : 'Save Progress'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSubmit('submit')}
+                disabled={
+                  submitMutation.isPending || !effectiveSeasonSlug || Object.keys(answers).length === 0
+                }
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-sky-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+              >
+                {submitMutation.isPending ? 'Submitting...' : 'Submit Predictions'}
+              </button>
+            </div>
+            {hasChanges && <p className="text-amber-500 text-sm mt-1">You have unsaved changes</p>}
             <p className="text-xs text-slate-400 text-center">
-              Your regular season standings submit alongside these answers—no extra save needed.
+              You can leave answers blank and return anytime—saving uses the same secure submit flow.
             </p>
           </div>
         )}
@@ -531,6 +1003,795 @@ const SubmissionsPage = ({ seasonSlug }) => {
 };
 
 // Question Card Component
+const InSeasonTournamentSection = ({
+  questions,
+  answers,
+  onAnswerChange,
+  isReadOnly,
+  teamOptions,
+  loadingAuxData,
+  istStandings,
+  loadingIstStandings,
+  istStandingsError,
+}) => {
+  const groupWinnerQuestions = useMemo(
+    () => questions.filter((q) => q.prediction_type === 'group_winner'),
+    [questions],
+  );
+  const wildcardQuestions = useMemo(
+    () => questions.filter((q) => q.prediction_type === 'wildcard'),
+    [questions],
+  );
+  const conferenceWinnerQuestions = useMemo(
+    () => questions.filter((q) => q.prediction_type === 'conference_winner'),
+    [questions],
+  );
+  const tiebreakerQuestions = useMemo(
+    () => questions.filter((q) => q.prediction_type === 'tiebreaker'),
+    [questions],
+  );
+
+  const groupsByConference = useMemo(() => {
+    const base = { East: [], West: [] };
+    groupWinnerQuestions.forEach((question) => {
+      const key = (question.ist_group || '').toLowerCase().includes('west') ? 'West' : 'East';
+      base[key].push(question);
+    });
+    return {
+      East: base.East.slice().sort((a, b) => (a.ist_group || a.text).localeCompare(b.ist_group || b.text)),
+      West: base.West.slice().sort((a, b) => (a.ist_group || a.text).localeCompare(b.ist_group || b.text)),
+    };
+  }, [groupWinnerQuestions]);
+
+  const orderedGroupQuestions = useMemo(
+    () => [...groupsByConference.East, ...groupsByConference.West],
+    [groupsByConference],
+  );
+
+  const normalizeTeam = (team) => ({
+    id: team?.team_id ?? team?.value ?? team?.id,
+    name: team?.team_name ?? team?.label ?? team?.name ?? 'Unknown team',
+    wins: typeof team?.wins === 'number' ? team.wins : null,
+    losses: typeof team?.losses === 'number' ? team.losses : null,
+    pointDifferential:
+      typeof team?.point_differential === 'number'
+        ? team.point_differential
+        : typeof team?.pointDifferential === 'number'
+          ? team.pointDifferential
+          : null,
+  });
+
+  const conferenceTeamMap = useMemo(() => {
+    const result = { East: [], West: [] };
+
+    if (istStandings) {
+      Object.entries(istStandings).forEach(([conferenceLabel, groups]) => {
+        const key = resolveConferenceKey(conferenceLabel) || 'East';
+        const unique = new Map();
+        Object.values(groups || {}).forEach((teams) => {
+          (teams || []).forEach((team) => {
+            if (!unique.has(team.team_id)) {
+              unique.set(team.team_id, normalizeTeam(team));
+            }
+          });
+        });
+        result[key] = Array.from(unique.values());
+      });
+    }
+
+    if (!result.East.length || !result.West.length) {
+      teamOptions.forEach((team) => {
+        if (!team?.conference) return;
+        const key = resolveConferenceKey(team.conference) || 'East';
+        if (!result[key].some((entry) => String(entry.id) === String(team.value))) {
+          result[key].push(
+            normalizeTeam({
+              team_id: team.value,
+              team_name: team.label,
+            }),
+          );
+        }
+      });
+    }
+
+    result.East.sort((a, b) => a.name.localeCompare(b.name));
+    result.West.sort((a, b) => a.name.localeCompare(b.name));
+
+    return result;
+  }, [istStandings, teamOptions]);
+
+  const buildGroupTeams = (question) => {
+    const confKey = resolveConferenceKey(question?.ist_group || question?.text);
+    const standingsTeams = confKey ? istStandings?.[confKey]?.[question.ist_group] : null;
+    if (standingsTeams && standingsTeams.length) {
+      return standingsTeams.map(normalizeTeam);
+    }
+    if (confKey && conferenceTeamMap[confKey]?.length) {
+      return conferenceTeamMap[confKey].map((team) => ({ ...team }));
+    }
+    return teamOptions.map((team) => normalizeTeam(team));
+  };
+
+  const buildConferenceTeams = (question, overrideConferenceKey = null) => {
+    const resolvedKey =
+      resolveConferenceKey(overrideConferenceKey) ||
+      resolveConferenceKey(question?.ist_group || question?.text);
+    if (resolvedKey && conferenceTeamMap[resolvedKey]?.length) {
+      return conferenceTeamMap[resolvedKey].map((team) => ({ ...team }));
+    }
+    const fallback = teamOptions
+      .filter((team) => resolveConferenceKey(team.conference) === resolvedKey || !resolvedKey)
+      .map((team) => normalizeTeam(team));
+    return fallback.length ? fallback : teamOptions.map((team) => normalizeTeam(team));
+  };
+
+  const finalBracketData = useMemo(() => {
+    const east =
+      matchQuestionByKeywords(conferenceWinnerQuestions, ['east', 'winner']) ||
+      conferenceWinnerQuestions.find((q) =>
+        (q.ist_group || '').toLowerCase().includes('east'),
+      ) ||
+      null;
+    const west =
+      matchQuestionByKeywords(conferenceWinnerQuestions, ['west', 'winner']) ||
+      conferenceWinnerQuestions.find((q) =>
+        (q.ist_group || '').toLowerCase().includes('west'),
+      ) ||
+      null;
+    const champion =
+      matchQuestionByKeywords(conferenceWinnerQuestions, ['champion']) ||
+      conferenceWinnerQuestions.find((q) => {
+        const label = (q.ist_group || q.text || '').toLowerCase();
+        return !label.includes('east') && !label.includes('west');
+      }) ||
+      null;
+    return { east, west, champion };
+  }, [conferenceWinnerQuestions]);
+
+  const { eastScoreQuestion, westScoreQuestion, additionalTiebreakers } = useMemo(() => {
+    const eastScore =
+      matchQuestionByKeywords(tiebreakerQuestions, ['east', 'point']) ||
+      tiebreakerQuestions.find((question) => (question.text || '').toLowerCase().includes('east'));
+    const westScore =
+      matchQuestionByKeywords(tiebreakerQuestions, ['west', 'point']) ||
+      tiebreakerQuestions.find((question) => (question.text || '').toLowerCase().includes('west'));
+    const usedIds = new Set(
+      [eastScore?.id, westScore?.id].filter((value) => typeof value !== 'undefined' && value !== null),
+    );
+    const extras = tiebreakerQuestions.filter((question) => !usedIds.has(question.id));
+    return {
+      eastScoreQuestion: eastScore || null,
+      westScoreQuestion: westScore || null,
+      additionalTiebreakers: extras,
+    };
+  }, [tiebreakerQuestions]);
+
+  const eastTeams = useMemo(() => {
+    if (!finalBracketData.east) return [];
+    return buildConferenceTeams(finalBracketData.east, 'East').map((team) => ({
+      value: team.id,
+      label: team.name,
+    }));
+  }, [finalBracketData.east, conferenceTeamMap, teamOptions]);
+
+  const westTeams = useMemo(() => {
+    if (!finalBracketData.west) return [];
+    return buildConferenceTeams(finalBracketData.west, 'West').map((team) => ({
+      value: team.id,
+      label: team.name,
+    }));
+  }, [finalBracketData.west, conferenceTeamMap, teamOptions]);
+
+  const championOptions = useMemo(
+    () =>
+      teamOptions.map((team) => ({
+        value: team.value,
+        label: team.label,
+      })),
+    [teamOptions],
+  );
+
+  const getSelectedOption = (options, answer) =>
+    options.find((option) => String(option.value) === String(answer)) || null;
+
+  const eastSelected = finalBracketData.east
+    ? getSelectedOption(eastTeams, answers[finalBracketData.east.id])
+    : null;
+  const westSelected = finalBracketData.west
+    ? getSelectedOption(westTeams, answers[finalBracketData.west.id])
+    : null;
+  const championSelected = finalBracketData.champion
+    ? getSelectedOption(championOptions, answers[finalBracketData.champion.id])
+    : null;
+
+  const eastScoreValue =
+    typeof eastScoreQuestion?.id === 'number' || typeof eastScoreQuestion?.id === 'string'
+      ? answers[eastScoreQuestion.id] ?? ''
+      : '';
+  const westScoreValue =
+    typeof westScoreQuestion?.id === 'number' || typeof westScoreQuestion?.id === 'string'
+      ? answers[westScoreQuestion.id] ?? ''
+      : '';
+  const championValue =
+    typeof finalBracketData.champion?.id !== 'undefined'
+      ? answers[finalBracketData.champion?.id] ?? ''
+      : '';
+
+  useEffect(() => {
+    const championQuestionId = finalBracketData.champion?.id;
+    if (!championQuestionId) return;
+    if (!eastScoreQuestion || !westScoreQuestion) return;
+    if (!eastSelected?.value || !westSelected?.value) return;
+    if (isReadOnly) return;
+
+    const eastScoreNum = Number(eastScoreValue);
+    const westScoreNum = Number(westScoreValue);
+    if (!Number.isFinite(eastScoreNum) || !Number.isFinite(westScoreNum)) return;
+    if (eastScoreNum === westScoreNum) return;
+
+    const inferredWinner = eastScoreNum > westScoreNum ? eastSelected.value : westSelected.value;
+    if (!inferredWinner) return;
+    if (String(championValue) === String(inferredWinner)) return;
+
+    onAnswerChange(championQuestionId, inferredWinner);
+  }, [
+    championValue,
+    eastScoreValue,
+    westScoreValue,
+    eastSelected?.value,
+    westSelected?.value,
+    finalBracketData.champion,
+    eastScoreQuestion,
+    westScoreQuestion,
+    isReadOnly,
+    onAnswerChange,
+  ]);
+
+  const renderTeamBubbleButton = (question, team) => {
+    const teamId = team.id;
+    const isSelected = String(answers[question.id]) === String(teamId);
+    const recordSummary = buildRecordSummary(team);
+    const logoSrc = getTeamLogoSrc(team.name);
+    const groupMeta = extractGroupMeta(question.ist_group);
+    const theme = getConferenceTheme(groupMeta.conference);
+
+    return (
+      <button
+        key={teamId}
+        type="button"
+        onClick={() => !isReadOnly && onAnswerChange(question.id, teamId)}
+        disabled={isReadOnly}
+        className={`flex min-h-[140px] flex-col items-center justify-center gap-3 rounded-3xl border px-4 py-5 text-center text-sm font-semibold transition ${
+          isSelected
+            ? `${theme.selectedBorder} ${theme.selectedBg} ${theme.selectedText} shadow-sm ring-2 ${theme.ring}`
+            : `border-slate-200 bg-white/90 text-slate-700 ${theme.hoverBorder} ${theme.hoverBg}`
+        } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
+        aria-pressed={isSelected}
+      >
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-inner">
+          <img
+            src={logoSrc}
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = UNKNOWN_TEAM_LOGO;
+            }}
+            alt={`${team.name} logo`}
+            className="h-10 w-10 object-contain"
+          />
+        </div>
+        <span className="text-xs font-semibold text-inherit">{team.name}</span>
+        {recordSummary && <span className="text-[11px] font-medium text-slate-500">{recordSummary}</span>}
+      </button>
+    );
+  };
+
+  const renderGroupBubble = (question) => {
+    const teams = buildGroupTeams(question);
+    const groupMeta = extractGroupMeta(question.ist_group);
+    const conferenceLower = groupMeta.conference?.toLowerCase() || '';
+    const badgeBgClass =
+      conferenceLower === 'east'
+        ? 'bg-[var(--nba-blue-500)]'
+        : conferenceLower === 'west'
+          ? 'bg-[var(--nba-red-500)]'
+          : 'bg-slate-400';
+
+    return (
+      <div
+        key={question.id}
+        className="flex h-full flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white via-slate-50/60 to-white/90 p-5 shadow-sm"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${badgeBgClass} text-base font-bold text-white shadow-sm`}
+            >
+              {groupMeta.short || '?'}
+            </div>
+            <div className="flex flex-col">
+              <span
+                className={`text-xs font-semibold uppercase tracking-wide ${
+                  conferenceLower === 'east'
+                    ? 'text-[var(--nba-blue-600)]'
+                    : conferenceLower === 'west'
+                      ? 'text-[var(--nba-red-600)]'
+                      : 'text-slate-500'
+                }`}
+              >
+                {groupMeta.conference || 'Group'}
+              </span>
+              <h4 className="text-sm font-semibold text-slate-900">{question.text}</h4>
+            </div>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+            {question.point_value} pts
+          </span>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {teams.map((team) => renderTeamBubbleButton(question, team))}
+          {teams.length === 0 && (
+            <p className="col-span-full text-sm text-slate-500">
+              Team list unavailable right now. Try again shortly.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderWildcardRow = (question, team) => {
+    const teamId = team.id;
+    const isSelected = String(answers[question.id]) === String(teamId);
+    const recordSummary = buildRecordSummary(team);
+    const logoSrc = getTeamLogoSrc(team.name);
+    const conferenceMeta = extractGroupMeta(question.ist_group);
+    const theme = getConferenceTheme(conferenceMeta.conference);
+
+    return (
+      <button
+        key={teamId}
+        type="button"
+        onClick={() => !isReadOnly && onAnswerChange(question.id, teamId)}
+        disabled={isReadOnly}
+        className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-left text-sm transition ${
+          isSelected
+            ? `${theme.selectedBorder} ${theme.selectedBg} ${theme.selectedText} shadow-sm`
+            : `border-slate-200 bg-white/95 text-slate-700 ${theme.hoverBorder} ${theme.hoverBg}`
+        } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
+        aria-pressed={isSelected}
+      >
+        <div className="flex flex-1 items-center gap-3">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-inner">
+            <img
+              src={logoSrc}
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = UNKNOWN_TEAM_LOGO;
+              }}
+              alt={`${team.name} logo`}
+              className="h-8 w-8 object-contain"
+            />
+          </div>
+          <div className="flex flex-col overflow-hidden">
+            <span className="truncate font-semibold text-inherit">{team.name}</span>
+            {recordSummary && <span className="text-xs text-slate-500">{recordSummary}</span>}
+          </div>
+        </div>
+        <span
+          className={`ml-3 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+            isSelected ? `bg-white ${theme.selectedText}` : 'bg-white/0 text-transparent'
+          }`}
+        >
+          ✓
+        </span>
+      </button>
+    );
+  };
+
+  const renderWildcardCompactCard = (question) => {
+    const teams = buildConferenceTeams(question);
+    const conferenceLabel = extractGroupMeta(question.ist_group).conference || question.ist_group || '';
+    const theme = getConferenceTheme(conferenceLabel);
+
+    return (
+      <div
+        key={question.id}
+        className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col">
+            {conferenceLabel && (
+              <span
+                className={`text-xs font-semibold uppercase tracking-wide ${
+                  conferenceLabel ? theme.selectedText : 'text-slate-500'
+                }`}
+              >
+                {conferenceLabel} Wildcard
+              </span>
+            )}
+            <h4 className="text-sm font-semibold text-slate-900">{question.text}</h4>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+            {question.point_value} pts
+          </span>
+        </div>
+        <div className="mt-4 space-y-2">
+          {teams.map((team) => renderWildcardRow(question, team))}
+          {teams.length === 0 && (
+            <p className="text-sm text-slate-500">Team data unavailable for this conference.</p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Legacy card layout retained for future progress views
+  const renderTeamOptionButton = (question, team, variant = 'sky') => {
+    const teamId = team.id;
+    const isSelected = String(answers[question.id]) === String(teamId);
+    const variantStyles =
+      variant === 'emerald'
+        ? {
+            selected: 'border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-200 text-emerald-900',
+            idle:
+              'border-slate-200 bg-white/85 hover:border-emerald-400 hover:bg-emerald-50/70 text-slate-700',
+            badge: 'text-emerald-600',
+          }
+        : {
+            selected: 'border-sky-500 bg-sky-50/90 ring-2 ring-sky-200 text-sky-900',
+            idle: 'border-slate-200 bg-white/85 hover:border-sky-400 hover:bg-sky-50/70 text-slate-700',
+            badge: 'text-sky-600',
+          };
+
+    const recordSummary = buildRecordSummary(team);
+    const logoSrc = getTeamLogoSrc(team.name);
+
+    return (
+      <button
+        key={teamId}
+        type="button"
+        onClick={() => !isReadOnly && onAnswerChange(question.id, teamId)}
+        disabled={isReadOnly}
+        className={`flex min-h-[104px] items-center justify-between rounded-2xl border px-4 py-4 text-left shadow-sm transition ${
+          isSelected ? variantStyles.selected : variantStyles.idle
+        } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
+        aria-pressed={isSelected}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-inner">
+            <img
+              src={logoSrc}
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = UNKNOWN_TEAM_LOGO;
+              }}
+              alt={`${team.name} logo`}
+              className="h-10 w-10 object-contain"
+            />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-slate-900">{team.name}</span>
+            {recordSummary && <span className="text-xs text-slate-500">{recordSummary}</span>}
+          </div>
+        </div>
+        {isSelected && (
+          <span
+            className={`ml-3 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-sm font-bold ${variantStyles.badge}`}
+          >
+            ✓
+          </span>
+        )}
+      </button>
+    );
+  };
+
+  const renderGroupCard = (question) => {
+    const teams = buildGroupTeams(question);
+    const groupMeta = extractGroupMeta(question.ist_group);
+
+    return (
+      <div
+        key={question.id}
+        className="flex h-full flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white via-slate-50/70 to-white/90 p-6 shadow-sm"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              {groupMeta.label || question.ist_group || 'Group'}
+            </span>
+            <h4 className="text-base font-semibold text-slate-900">{question.text}</h4>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            {question.point_value} pts
+          </span>
+        </div>
+        <div className="mt-5 grid gap-3">
+          {teams.map((team) => renderTeamOptionButton(question, team, 'sky'))}
+          {teams.length === 0 && (
+            <p className="text-sm text-slate-500">Team list unavailable right now. Try again shortly.</p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderWildcardCard = (question) => {
+    const teams = buildConferenceTeams(question);
+    const conferenceLabel = extractGroupMeta(question.ist_group).conference || question.ist_group || '';
+
+    return (
+      <div
+        key={question.id}
+        className="flex h-full flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white via-emerald-50/40 to-white p-6 shadow-sm"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            {conferenceLabel && (
+              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600">
+                {conferenceLabel} Wildcard
+              </span>
+            )}
+            <h4 className="text-base font-semibold text-slate-900">{question.text}</h4>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            {question.point_value} pts
+          </span>
+        </div>
+        <div className="mt-5 grid gap-3">
+          {teams.map((team) => renderTeamOptionButton(question, team, 'emerald'))}
+          {teams.length === 0 && (
+            <p className="text-sm text-slate-500">Team data unavailable for this conference.</p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const legacyIstLayouts = useMemo(
+    () => ({
+      renderGroupCard,
+      renderWildcardCard,
+      renderTeamOptionButton,
+    }),
+    [answers, isReadOnly],
+  );
+  void legacyIstLayouts;
+
+const renderFinalistColumn = (
+  label,
+  question,
+  selectedOption,
+  options,
+  scoreQuestion,
+  scoreValue,
+  sideKey,
+) => {
+  if (!question) {
+    return (
+      <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+        <p className="text-sm text-slate-500">No {label.toLowerCase()} question configured.</p>
+      </div>
+      );
+    }
+
+  const selectedTeamName = selectedOption?.label || `Select the ${label}`;
+  const logoSrc = selectedOption ? getTeamLogoSrc(selectedOption.label) : UNKNOWN_TEAM_LOGO;
+
+  return (
+    <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span>
+        <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-700">
+          {question.point_value} pts
+        </span>
+        </div>
+        <div className="mt-3">
+          <SelectComponent
+            options={options}
+            value={selectedOption}
+            onChange={(option) => onAnswerChange(question.id, option ? option.value : '')}
+            placeholder={loadingAuxData ? 'Loading teams…' : `Select ${label.toLowerCase()}`}
+            isDisabled={isReadOnly || loadingAuxData || options.length === 0}
+            mode="light"
+          />
+        </div>
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-inner">
+              <img
+                src={logoSrc}
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = UNKNOWN_TEAM_LOGO;
+                }}
+                alt={`${selectedTeamName} logo`}
+                className="h-10 w-10 object-contain"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-slate-900">{selectedTeamName}</span>
+            </div>
+          </div>
+          {scoreQuestion && (
+            <div className="mt-4">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {`${sideKey} Points Scored`}
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={scoreValue ?? ''}
+                onChange={(event) => onAnswerChange(scoreQuestion.id, event.target.value)}
+                disabled={isReadOnly}
+                placeholder="Enter points"
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderChampionColumn = () => {
+    if (!finalBracketData.champion) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white/90 px-6 py-8 text-center shadow-sm">
+          <p className="text-sm text-slate-500">No NBA Cup champion question configured.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex h-full flex-col items-center justify-between rounded-3xl border border-slate-200 bg-gradient-to-b from-white via-sky-50/60 to-white px-6 py-8 text-center shadow-sm">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">NBA Cup Champion</p>
+          <span className="mt-1 inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+            {finalBracketData.champion.point_value} pts
+          </span>
+        </div>
+        <div className="w-full">
+          <SelectComponent
+            options={championOptions}
+            value={championSelected}
+            onChange={(option) =>
+              onAnswerChange(finalBracketData.champion.id, option ? option.value : '')
+            }
+            placeholder={loadingAuxData ? 'Loading teams…' : 'Select the champion'}
+            isDisabled={isReadOnly || loadingAuxData || championOptions.length === 0}
+            mode="light"
+          />
+        </div>
+        <p className="mt-4 text-xs text-slate-500">
+          Winner auto-updates when one finalist has a higher score. Ties leave your selection unchanged.
+        </p>
+      </div>
+    );
+  };
+
+  const renderFinalsBracket = () => {
+    if (
+      !finalBracketData.east &&
+      !finalBracketData.west &&
+      !finalBracketData.champion &&
+      !tiebreakerQuestions.length
+    ) {
+      return null;
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)]">
+          {renderFinalistColumn(
+            'East Finalist',
+            finalBracketData.east,
+            eastSelected,
+            eastTeams,
+            eastScoreQuestion,
+            eastScoreValue,
+            'East',
+          )}
+          {renderChampionColumn()}
+          {renderFinalistColumn(
+            'West Finalist',
+            finalBracketData.west,
+            westSelected,
+            westTeams,
+            westScoreQuestion,
+            westScoreValue,
+            'West',
+          )}
+        </div>
+
+        {additionalTiebreakers.length > 0 && (
+          <div className="grid gap-5 md:grid-cols-2">
+            {additionalTiebreakers.map((question) => (
+              <div
+                key={question.id}
+                className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h4 className="text-base font-semibold text-slate-900">{question.text}</h4>
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                    {question.point_value} pts
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  value={answers[question.id] ?? ''}
+                  onChange={(event) => onAnswerChange(question.id, event.target.value)}
+                  disabled={isReadOnly}
+                  placeholder="Enter your tiebreaker"
+                  className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-10">
+      <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-4 text-sm text-amber-800 shadow-sm">
+        <p className="font-semibold uppercase tracking-wide text-amber-700">
+          The following DOES NOT count towards your final point total
+        </p>
+        <p className="mt-1">
+          The winner of the NBA Cup prediction receives a supplementary pool of $50 following the Championship Game.
+        </p>
+      </div>
+
+      {loadingIstStandings && (
+        <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-500 shadow-sm">
+          Loading NBA Cup groups…
+        </div>
+      )}
+
+      {istStandingsError && !loadingIstStandings && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
+          {istStandingsError}
+        </div>
+      )}
+
+      {groupWinnerQuestions.length > 0 && (
+        <div className="space-y-6">
+          <div className="flex flex-col gap-1">
+            <h3 className="text-2xl font-semibold text-slate-900 sm:text-[28px]">
+              In Season Tournament: <span className="font-bold text-slate-500">NBA Cup</span>
+            </h3>
+            <p className="text-sm text-slate-500">
+              Tap a team bubble to lock in your group winners—colors match conference identity for quick scanning.
+            </p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {orderedGroupQuestions.map((question) => renderGroupBubble(question))}
+          </div>
+        </div>
+      )}
+
+      {wildcardQuestions.length > 0 && (
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-slate-900">Wildcards</h3>
+          <div className="grid gap-5 md:grid-cols-2">
+            {wildcardQuestions.map((question) => renderWildcardCompactCard(question))}
+          </div>
+        </div>
+      )}
+
+      {(conferenceWinnerQuestions.length > 0 || tiebreakerQuestions.length > 0) && (
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-slate-900">NBA Cup Finals</h3>
+          {renderFinalsBracket()}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
 const QuestionCard = ({
   question,
   answer,
@@ -579,14 +1840,17 @@ const QuestionInput = ({
         playerOptions.find((option) => String(option.value) === String(answer)) || null;
 
       return (
-        <SelectComponent
-          options={playerOptions}
-          value={selectedPlayer}
-          onChange={(option) => onChange(option ? option.value : '')}
-          placeholder={loadingAuxData ? 'Loading players...' : 'Select a player'}
-          isDisabled={isReadOnly || loadingAuxData || playerOptions.length === 0}
-          mode="light"
-        />
+        <div className="space-y-2">
+          <SelectComponent
+            options={playerOptions}
+            value={selectedPlayer}
+            onChange={(option) => onChange(option ? option.value : '')}
+            placeholder={loadingAuxData ? 'Loading players...' : 'Select a player'}
+            isDisabled={isReadOnly || loadingAuxData || playerOptions.length === 0}
+            mode="light"
+          />
+          <p className="text-xs text-slate-500">Runner-up selections earn half points.</p>
+        </div>
       );
     }
 

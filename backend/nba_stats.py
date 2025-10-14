@@ -203,13 +203,13 @@ def fetch_active_players():
     update_active_players(nba_players)
 
 
-# ist_standings = fetch_ist_standings("2023-24")
+ist_standings = fetch_ist_standings("2025-26")
 # exit(0)
 # fetch_finals_record(season="2021-22")
 # exit(0)
 # print(f"nba teams:{fetch_nba_teams()}")
 
-standings = fetch_nba_standings("2024-25")
+standings = fetch_nba_standings("2025-26")
 print(f"standings: {standings}")
 standings = standings[[
     'TeamCity',
@@ -231,8 +231,8 @@ standings = standings[[
 ]]
 standings_east = standings.query("Conference in 'East'").reset_index(drop=True)
 standings_west = standings.query("Conference in 'West'").reset_index(drop=True)
-standings_east.to_csv('standings_east.csv')
-standings_west.to_csv('standings_west.csv')
+# standings_east.to_csv('standings_east.csv')
+# standings_west.to_csv('standings_west.csv')
 
 
 def get_player_with_most_fouls(season):
@@ -297,7 +297,7 @@ def get_player_averages(player_name, season):
 
 
 # Example usage:
-season = '2024-25'
+season = '2025-26'
 player_name, fouls = get_player_with_most_fouls(season=season)
 print(f"{player_name} has the most personal fouls with {fouls} for the {season} season.")
 
@@ -305,13 +305,13 @@ player_name, ppg = get_player_with_highest_ppg(season=season)
 print(f"{player_name} has the highest points per game with {ppg} for the {season} season.")
 
 player_name = "Victor Wembanyama"  # replace with the desired player's name
-season = '2024-25'
+season = '2025-26'
 averages = get_player_averages(player_name, season=season)
 print(f"{player_name} {season} averages:\n{pd.Series(averages)}")
 print("Updating active player list")
 # fetch_ist_standings(season="2024-25")
 # fetch_nba_standings(season="2024-25")
-fetch_active_players()
+# fetch_active_players()
 
 # Bronny james
 # data = {'id': 1999503, 'full_name': 'Lebron James Jr',

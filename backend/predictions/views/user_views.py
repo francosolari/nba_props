@@ -1,11 +1,12 @@
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Sum
 from django.views.decorators.http import require_http_methods
 from django.forms import formset_factory
 from django.contrib import messages
+from django.urls import reverse
+from django.utils import timezone
 from predictions.models import Season, Prediction, StandingPrediction, Question, Answer, Team, RegularSeasonStandings
 from predictions.forms import QuestionForm, PositionPredictionForm, UserProfileForm
 from predictions.api.v2.utils import is_admin_user
@@ -13,15 +14,56 @@ import json
 
 
 def home(request):
-    """Homepage with a welcome message and user account creation form."""
-    # If the user is authenticated, show the welcome message
+    """Render the redesigned homepage with context for the React shell."""
+    season = Season.objects.order_by('-start_date').first()
+    season_slug = season.slug if season else 'current'
+    now = timezone.now()
+    submission_start = season.submission_start_date if season else None
+    submission_end = season.submission_end_date if season else None
+    submission_open = False
+    if submission_start and submission_end:
+        submission_open = submission_start <= now <= submission_end
+
+    has_standing_submission = False
+    has_answer_submission = False
+    display_name = ''
+    user_id = ''
+    username = ''
     if request.user.is_authenticated:
-        return render(request, 'home.html', {'user': request.user})
+        user_id = request.user.id
+        username = request.user.username
+        profile = getattr(request.user, 'userprofile', None)
+        display_name = getattr(profile, 'display_name', '') or request.user.get_full_name() or username
+        if season:
+            has_standing_submission = StandingPrediction.objects.filter(
+                user=request.user,
+                season=season,
+            ).exists()
+            has_answer_submission = Answer.objects.filter(
+                user=request.user,
+                question__season=season,
+            ).exists()
 
-    # Show account creation form for new users
-    form = UserCreationForm()
+    context = {
+        'season_slug': season_slug,
+        'is_authenticated': request.user.is_authenticated,
+        'user_id': user_id,
+        'username': username,
+        'display_name': display_name,
+        'has_standing_submission': has_standing_submission,
+        'has_answer_submission': has_answer_submission,
+        'has_submission': has_standing_submission or has_answer_submission,
+        'submission_start_iso': submission_start.isoformat() if submission_start else '',
+        'submission_end_iso': submission_end.isoformat() if submission_end else '',
+        'submission_open': submission_open,
+        'signup_url': reverse('account_signup'),
+        'login_url': reverse('account_login'),
+        'leaderboard_url': reverse('predictions_views:leaderboard_page', kwargs={'season_slug': season_slug}) if season else '',
+        'profile_url': reverse('predictions_views:profile') if request.user.is_authenticated else '',
+        'submit_url': reverse('predictions_views:submit_predictions_view', kwargs={'season_slug': season_slug}) if season else '',
+    }
 
-    return render(request, 'home.html', {'form': form})
+    return render(request, 'home.html', context)
 
 @login_required
 def profile_view(request):

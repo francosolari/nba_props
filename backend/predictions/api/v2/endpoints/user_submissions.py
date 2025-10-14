@@ -15,7 +15,7 @@ from predictions.models import (
     Season, Question, Answer, 
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion,
     HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion,
-    StandingPrediction, Team
+    StandingPrediction, Team, UserStats
 )
 from predictions.api.v2.schemas import (
     QuestionsListResponse,
@@ -28,8 +28,11 @@ from predictions.api.v2.schemas import (
     StandingPredictionsResponseSchema,
     StandingPredictionsSubmitSchema,
     StandingPredictionsSubmitResponseSchema,
+    EntryFeeStatusSchema,
+    EntryFeeUpdateSchema,
 )
 from predictions.utils.deadlines import validate_submission_window, is_submission_open, get_submission_status
+from predictions.utils.payments import get_entry_fee_payload
 from ninja.errors import HttpError
 
 
@@ -81,6 +84,23 @@ def _resolve_prediction_user(username: Optional[str], request) -> Optional[UserM
     if request.user.is_authenticated:
         return request.user
     return None
+
+
+def _build_entry_fee_status_payload(season: Season, user_stats: UserStats) -> dict:
+    """
+    Build the serialized entry fee status response for the frontend.
+    """
+    payment_meta = get_entry_fee_payload()
+    return {
+        "season_slug": season.slug,
+        "is_paid": user_stats.entry_fee_paid,
+        "paid_at": user_stats.entry_fee_paid_at,
+        "amount_due": payment_meta["amount_display"],
+        "venmo_username": payment_meta["venmo_username"],
+        "venmo_web_url": payment_meta["venmo_web_url"],
+        "venmo_deep_link": payment_meta["venmo_deep_link"],
+        "payment_note": payment_meta["payment_note"],
+    }
 
 
 def get_question_type_slug(question: Question) -> str:
@@ -183,6 +203,49 @@ def serialize_question(question: Question) -> dict:
             **base_data,
             "question_type": "unknown",
         }
+
+
+@router.get(
+    "/entry-fee/{season_slug}",
+    response=EntryFeeStatusSchema,
+    summary="Get entry fee status",
+    description="Retrieve the user's entry fee payment status and Venmo metadata for a season."
+)
+def get_entry_fee_status(request, season_slug: str):
+    """
+    Get entry fee payment status for the authenticated user and season.
+    """
+    if not request.user.is_authenticated:
+        raise HttpError(401, "Authentication required")
+
+    season = _resolve_season(season_slug)
+    user_stats, _ = UserStats.objects.get_or_create(user=request.user, season=season)
+    return _build_entry_fee_status_payload(season, user_stats)
+
+
+@router.post(
+    "/entry-fee/{season_slug}",
+    response=EntryFeeStatusSchema,
+    summary="Update entry fee status",
+    description="Mark the entry fee as paid or unpaid for the authenticated user."
+)
+def update_entry_fee_status(request, season_slug: str, payload: EntryFeeUpdateSchema):
+    """
+    Update entry fee payment status for the authenticated user.
+    """
+    if not request.user.is_authenticated:
+        raise HttpError(401, "Authentication required")
+
+    season = _resolve_season(season_slug)
+    user_stats, _ = UserStats.objects.get_or_create(user=request.user, season=season)
+    desired_status = bool(payload.is_paid)
+
+    if desired_status != user_stats.entry_fee_paid:
+        user_stats.entry_fee_paid = desired_status
+        user_stats.entry_fee_paid_at = timezone.now() if desired_status else None
+        user_stats.save(update_fields=["entry_fee_paid", "entry_fee_paid_at"])
+
+    return _build_entry_fee_status_payload(season, user_stats)
 
 
 @router.get(

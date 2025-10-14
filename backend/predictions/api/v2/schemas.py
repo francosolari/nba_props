@@ -335,6 +335,23 @@ class SeasonResponseSchema(Schema):
     """Response schema for latest season endpoint"""
     slug: Optional[str] = Field(None, description="Latest season slug", example="2023-24")
 
+
+class EntryFeeStatusSchema(Schema):
+    """Entry fee payment status and Venmo metadata"""
+    season_slug: str = Field(..., description="Season slug the entry fee applies to", example="2025-26")
+    is_paid: bool = Field(..., description="Whether the user has marked the entry fee as paid")
+    paid_at: Optional[datetime] = Field(None, description="Timestamp when the fee was marked as paid")
+    amount_due: str = Field(..., description="Entry fee amount formatted as currency", example="25.00")
+    venmo_username: str = Field(..., description="Venmo username to send payment to", example="francosolari")
+    venmo_web_url: str = Field(..., description="Web URL that opens the Venmo payment prompt")
+    venmo_deep_link: str = Field(..., description="Deep link that attempts to open the Venmo app")
+    payment_note: str = Field(..., description="Recommended payment note for the transaction")
+
+
+class EntryFeeUpdateSchema(Schema):
+    """Payload for updating entry fee payment status"""
+    is_paid: bool = Field(..., description="Mark entry fee as paid (true) or unpaid (false)")
+
 # ====================
 # HOMEPAGE RESPONSE WRAPPER SCHEMAS
 # ====================
