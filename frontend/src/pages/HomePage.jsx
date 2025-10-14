@@ -100,9 +100,9 @@ const PREVIEW_STANDINGS = {
 };
 
 const PREVIEW_SECTIONS = [
-  { label: 'Awards & Superlatives', metric: '4 picks', status: 'Autosaved' },
-  { label: 'Props & Totals', metric: '7 questions', status: 'In progress' },
-  { label: 'Finals & Tiebreakers', metric: '2 answers', status: 'Pending' },
+  { label: 'Awards & Superlatives', total: 4, baseComplete: 2 },
+  { label: 'Props & Totals', total: 7, baseComplete: 3 },
+  { label: 'Finals & Tiebreakers', total: 2, baseComplete: 0 },
 ];
 
 function StatCard({ icon: Icon, title, value, subtitle, highlightUrl, highlightTitle }) {
@@ -221,65 +221,67 @@ function SubmissionPreview({ submitUrl, hasSubmission, submissionOpen }) {
   if (hasSubmission) wrapperClassNames.push('home-submission-card--complete');
   const StatusIcon = hasSubmission ? CheckCircle2 : Clock;
   const statusText = hasSubmission ? 'Submission saved' : submissionOpen ? 'Submission open' : 'Submission closed';
-  const foldText = hasSubmission ? 'Review your picks' : submissionOpen ? 'Continue your picks' : 'View your picks';
+  const foldText = hasSubmission ? 'Review your picks' : submissionOpen ? 'Start your picks' : 'View submissions page';
 
   return (
-    <section className="home-section home-section--tight">
-      <div className="home-section__header">
-        <div>
-          <h2>Submissions snapshot</h2>
-          <p>Preview the layout you will see when you open the full submissions board.</p>
+    <Wrapper className={wrapperClassNames.join(' ')} {...(submitUrl ? { href: submitUrl } : {})}>
+      <div className="home-submission-card__header">
+        <div className="home-submission-card__title">
+          <ClipboardList className="w-4 h-4" />
+          <span>Props Prediction board</span>
+        </div>
+        <div className="home-submission-card__status">
+          <StatusIcon className="w-4 h-4" />
+          <span>{statusText}</span>
         </div>
       </div>
-      <Wrapper className={wrapperClassNames.join(' ')} {...(submitUrl ? { href: submitUrl } : {})}>
-        <div className="home-submission-card__header">
-          <div className="home-submission-card__title">
-            <ClipboardList className="w-4 h-4" />
-            <span>Props Prediction board</span>
-          </div>
-          <div className="home-submission-card__status">
-            <StatusIcon className="w-4 h-4" />
-            <span>{statusText}</span>
-          </div>
+      <div className="home-submission-card__board">
+        <div className="home-submission-card__standings">
+          {Object.entries(PREVIEW_STANDINGS).map(([conference, teams]) => (
+            <div key={conference} className={`home-submission-card__column home-submission-card__column--${conference}`}>
+              <header>{conference.toUpperCase()}</header>
+              <ul>
+                {teams.map((team, index) => (
+                  <li key={`${conference}-${team}`}>
+                    <span className="home-submission-card__seed">{index + 1}</span>
+                    <span className="home-submission-card__team">{team}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-        <div className="home-submission-card__board">
-          <div className="home-submission-card__standings">
-            {Object.entries(PREVIEW_STANDINGS).map(([conference, teams]) => (
-              <div key={conference} className={`home-submission-card__column home-submission-card__column--${conference}`}>
-                <header>{conference.toUpperCase()}</header>
-                <ul>
-                  {teams.map((team, index) => (
-                    <li key={`${conference}-${team}`}>
-                      <span className="home-submission-card__seed">{index + 1}</span>
-                      <span className="home-submission-card__team">{team}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="home-submission-card__sections">
-            {PREVIEW_SECTIONS.map((section, index) => {
-              const Icon = hasSubmission || index === 0 ? CheckCircle2 : Clock;
-              const state = hasSubmission ? 'Submitted' : index === 0 ? 'Draft saved' : 'Pending';
-              return (
-                <div key={section.label} className="home-submission-card__section">
-                  <Icon className="w-3 h-3" />
-                  <div>
-                    <span className="home-submission-card__section-label">{section.label}</span>
-                    <span className="home-submission-card__section-meta">{section.metric} · {state}</span>
-                  </div>
+        <div className="home-submission-card__sections">
+          {PREVIEW_SECTIONS.map((section, index) => {
+            const Icon = hasSubmission || index === 0 ? CheckCircle2 : Clock;
+            const completed = hasSubmission
+              ? section.total
+              : Math.max(0, Math.min(section.total, section.baseComplete));
+            const state =
+              hasSubmission || completed === section.total
+                ? 'Submitted'
+                : index === 0 && completed > 0
+                  ? 'Draft saved'
+                  : 'Pending';
+            return (
+              <div key={section.label} className="home-submission-card__section">
+                <Icon className="w-3 h-3" />
+                <div>
+                  <span className="home-submission-card__section-label">{section.label}</span>
+                  <span className="home-submission-card__section-meta">
+                    {completed}/{section.total} • {state}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="home-submission-card__fold">
-          <span>{foldText}</span>
-          <ArrowRight className="w-4 h-4" />
-        </div>
-      </Wrapper>
-    </section>
+      </div>
+      <div className="home-submission-card__fold">
+        <span>{foldText}</span>
+        <ArrowRight className="w-4 h-4" />
+      </div>
+    </Wrapper>
   );
 }
 
@@ -321,19 +323,48 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
   const leaderboardTopTen = Array.isArray(leaderboardData) ? leaderboardData.slice(0, 10) : [];
   const heroMeta = rootProps.isAuthenticated
     ? `Welcome back${rootProps.displayName ? `, ${rootProps.displayName}` : ''}`
-    : 'NBA Predictions Game';
+    : 'Props Prediction';
   const heroHeadlineMap = {
-    guest: 'Season-long NBA predictions built for precision.',
-    incomplete: 'Finish locking your picks before submissions close.',
-    submitted: 'Your board is saved. Track every point here.',
+    guest: 'Track every NBA prediction in one hub.',
+    incomplete: 'Pick up your season board right where you left off.',
+    submitted: 'Your board is locked. Monitor every point here.',
   };
   const heroSubcopyMap = {
-    guest: 'Props Prediction keeps standings, awards, props, and finals picks together so you can compete without spreadsheets.',
-    incomplete: 'Drag standings, answer props, and save entries in one place. Jump back in where you left off.',
-    submitted: 'Monitor rank, compare categories, and revisit the submissions board any time.',
+    guest: 'Build standings, awards, and props once—follow them all season without spreadsheets.',
+    incomplete: 'Standings, awards, and props stay synced so you can finish before submissions lock.',
+    submitted: 'Review standings, awards, and props at a glance while the leaderboard updates.',
   };
   const heroHeadline = heroHeadlineMap[heroVariant];
   const heroSubcopy = heroSubcopyMap[heroVariant];
+
+  let primaryCta = null;
+  let secondaryCta = null;
+  if (rootProps.isAuthenticated) {
+    if (rootProps.submitUrl) {
+      const label = !rootProps.hasSubmission && rootProps.submissionOpen
+        ? 'Create submission'
+        : rootProps.hasSubmission && rootProps.submissionOpen
+          ? 'Edit submission'
+          : 'View submission';
+      primaryCta = { label, href: rootProps.submitUrl, icon: ClipboardList };
+    }
+    if (rootProps.leaderboardUrl) {
+      secondaryCta = { label: 'View leaderboard', href: rootProps.leaderboardUrl, icon: ArrowRight };
+    }
+  } else {
+    primaryCta = { label: 'Log in to start', href: rootProps.loginUrl || '#login', icon: ArrowRight };
+    secondaryCta = { label: 'Create account', href: rootProps.signupUrl || '#signup', icon: UserPlus };
+  }
+
+  let deadlineDescription = null;
+  if (rootProps.submissionEnd) {
+    const base = deadlineCopy || '';
+    if (rootProps.submissionOpen) {
+      deadlineDescription = `${base}. Edits close at lock—save before time runs out.`;
+    } else {
+      deadlineDescription = `${base || 'Submissions are locked.'} You can still review your answers.`;
+    }
+  }
 
   return (
     <div className="home-shell">
@@ -349,51 +380,32 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
             <h1>{heroHeadline}</h1>
             <p className="home-hero__subcopy">{heroSubcopy}</p>
             <div className="home-hero__actions">
-              {heroVariant === 'guest' && (
-                <>
-                  <a className="home-cta primary" href={rootProps.signupUrl || '#signup'}>
-                    <UserPlus className="w-4 h-4" />
-                    Create account
-                  </a>
-                  <a className="home-cta secondary" href={rootProps.loginUrl || '#login'}>
-                    Log in
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-                </>
-              )}
-              {heroVariant === 'incomplete' && (
-                <>
-                  <a className="home-cta primary" href={rootProps.submitUrl || '#submit'}>
-                    <ClipboardList className="w-4 h-4" />
-                    Resume submission
-                  </a>
-                  <a className="home-cta secondary" href="#submission-preview">
-                    Preview the flow
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-                </>
-              )}
-              {heroVariant === 'submitted' && (
-                <>
-                  <a className="home-cta primary" href={rootProps.profileUrl || '#profile'}>
-                    View my profile
-                  </a>
-                  <a className="home-cta secondary" href={rootProps.leaderboardUrl || '#leaderboard'}>
-                    Leaderboard
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-                </>
-              )}
+              {primaryCta ? (
+                <a className="home-cta primary" href={primaryCta.href}>
+                  {primaryCta.icon ? <primaryCta.icon className="w-4 h-4" /> : null}
+                  {primaryCta.label}
+                </a>
+              ) : null}
+              {secondaryCta ? (
+                <a className="home-cta secondary" href={secondaryCta.href}>
+                  {secondaryCta.icon ? <secondaryCta.icon className="w-4 h-4" /> : null}
+                  {secondaryCta.label}
+                </a>
+              ) : null}
             </div>
-            {deadlineCopy ? (
+            {deadlineDescription ? (
               <div className="home-hero__deadline">
                 <Calendar className="w-4 h-4" />
-                <span>{deadlineCopy}</span>
-                {!rootProps.hasSubmission && rootProps.submissionOpen ? (
-                  <span className="home-hero__chip">Submissions open</span>
-                ) : null}
+                <span>{deadlineDescription}</span>
               </div>
             ) : null}
+          </div>
+          <div className="home-hero__preview">
+            <SubmissionPreview
+              submitUrl={rootProps.submitUrl}
+              hasSubmission={rootProps.hasSubmission}
+              submissionOpen={rootProps.submissionOpen}
+            />
           </div>
         </div>
       </section>
@@ -436,12 +448,6 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
               />
             </div>
           </section>
-
-          <SubmissionPreview
-            submitUrl={rootProps.submitUrl}
-            hasSubmission={rootProps.hasSubmission}
-            submissionOpen={rootProps.submissionOpen}
-          />
 
           <StandingsPreview standings={homepageData?.mini_standings} />
         </div>
