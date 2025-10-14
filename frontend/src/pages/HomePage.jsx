@@ -16,6 +16,7 @@ import {
   LineChart,
 } from 'lucide-react';
 import useLeaderboard from '../hooks/useLeaderboard';
+import useUserSubmissions from '../hooks/useUserSubmissions';
 import '../styles/palette.css';
 
 const DEFAULT_SEASON = 'current';
@@ -95,14 +96,14 @@ function formatDateRange(startIso, endIso) {
 }
 
 const PREVIEW_STANDINGS = {
-  east: ['Celtics', 'Knicks', 'Bucks', '76ers'],
-  west: ['Nuggets', 'Thunder', 'Timberwolves', 'Mavericks'],
+  east: [{team_name: 'Celtics'}, {team_name: 'Knicks'}, {team_name: 'Bucks'}, {team_name: '76ers'}],
+  west: [{team_name: 'Nuggets'}, {team_name: 'Thunder'}, {team_name: 'Timberwolves'}, {team_name: 'Mavericks'}],
 };
 
 const PREVIEW_SECTIONS = [
-  { label: 'Awards & Superlatives', total: 4, baseComplete: 2 },
-  { label: 'Props & Totals', total: 7, baseComplete: 3 },
-  { label: 'Finals & Tiebreakers', total: 2, baseComplete: 0 },
+  { label: 'Props & Totals', total: 7, completed: 3 },
+  { label: 'Superlatives', total: 4, completed: 2 },
+  { label: 'In-Season Tournament', total: 2, completed: 0 },
 ];
 
 function StatCard({ icon: Icon, title, value, subtitle, highlightUrl, highlightTitle }) {
@@ -173,7 +174,7 @@ function LeaderboardPreview({ entries, leaderboardUrl }) {
   );
 }
 
-function StandingsPreview({ standings }) {
+function StandingsPreview({ standings, isAuthenticated, loginUrl, signupUrl }) {
   if (!standings || (!standings.eastern?.length && !standings.western?.length)) {
     return null;
   }
@@ -198,6 +199,13 @@ function StandingsPreview({ standings }) {
     </div>
   );
 
+  const content = (
+    <div className="home-standings-grid">
+      {renderConference('Eastern Conference', standings.eastern || [], 'east')}
+      {renderConference('Western Conference', standings.western || [], 'west')}
+    </div>
+  );
+
   return (
     <section className="home-section">
       <div className="home-section__header">
@@ -206,25 +214,48 @@ function StandingsPreview({ standings }) {
           <p>A quick glance at how the conferences are shaping up right now.</p>
         </div>
       </div>
-      <div className="home-standings-grid">
-        {renderConference('Eastern Conference', standings.eastern || [], 'east')}
-        {renderConference('Western Conference', standings.western || [], 'west')}
+      <div className="home-auth-wrapper">
+        {!isAuthenticated && (
+          <div className="home-auth-overlay">
+            <div className="home-auth-modal">
+              <p>Log-in or sign up to make your predictions</p>
+              <div className="home-auth-actions">
+                <a href={loginUrl || '#login'} className="home-cta primary">Log In</a>
+                <a href={signupUrl || '#signup'} className="home-cta secondary">Sign Up</a>
+              </div>
+            </div>
+          </div>
+        )}
+        <div style={{ filter: !isAuthenticated ? 'blur(2px)' : 'none' }}>
+          {content}
+        </div>
       </div>
     </section>
   );
 }
 
-function SubmissionPreview({ submitUrl, hasSubmission, submissionOpen }) {
-  const Wrapper = submitUrl ? 'a' : 'div';
+function SubmissionPreview({ submitUrl, hasSubmission, submissionOpen, isAuthenticated, loginUrl, signupUrl, submissionData, isLoadingSubmissionData }) {
+  const Wrapper = submitUrl && isAuthenticated ? 'a' : 'div';
   const wrapperClassNames = ['home-submission-card'];
-  if (submitUrl) wrapperClassNames.push('home-submission-card--link');
+  if (submitUrl && isAuthenticated) wrapperClassNames.push('home-submission-card--link');
   if (hasSubmission) wrapperClassNames.push('home-submission-card--complete');
   const StatusIcon = hasSubmission ? CheckCircle2 : Clock;
   const statusText = hasSubmission ? 'Submission saved' : submissionOpen ? 'Submission open' : 'Submission closed';
   const foldText = hasSubmission ? 'Review your picks' : submissionOpen ? 'Start your picks' : 'View submissions page';
 
-  return (
-    <Wrapper className={wrapperClassNames.join(' ')} {...(submitUrl ? { href: submitUrl } : {})}>
+  // Use real user data when authenticated and available, otherwise show preview
+  const hasRealStandings = isAuthenticated && submissionData?.standings &&
+    (submissionData.standings.east?.length > 0 || submissionData.standings.west?.length > 0);
+  const hasRealSections = isAuthenticated && submissionData?.sections && submissionData.sections.length > 0;
+
+  const standings = (hasRealStandings && !isLoadingSubmissionData) ? submissionData.standings : PREVIEW_STANDINGS;
+  const sections = (hasRealSections && !isLoadingSubmissionData) ? submissionData.sections : PREVIEW_SECTIONS;
+
+  const content = (
+    <Wrapper
+      className={wrapperClassNames.join(' ')}
+      {...(submitUrl && isAuthenticated ? { href: submitUrl } : {})}
+    >
       <div className="home-submission-card__header">
         <div className="home-submission-card__title">
           <ClipboardList className="w-4 h-4" />
@@ -237,39 +268,58 @@ function SubmissionPreview({ submitUrl, hasSubmission, submissionOpen }) {
       </div>
       <div className="home-submission-card__board">
         <div className="home-submission-card__standings">
-          {Object.entries(PREVIEW_STANDINGS).map(([conference, teams]) => (
+          {Object.entries(standings).map(([conference, teams]) => (
             <div key={conference} className={`home-submission-card__column home-submission-card__column--${conference}`}>
               <header>{conference.toUpperCase()}</header>
               <ul>
-                {teams.map((team, index) => (
-                  <li key={`${conference}-${team}`}>
-                    <span className="home-submission-card__seed">{index + 1}</span>
-                    <span className="home-submission-card__team">{team}</span>
-                  </li>
-                ))}
+                {teams.slice(0, 4).map((team, index) => {
+                  // For real user data, show the predicted_position; for preview, show sequential
+                  const displayPosition = hasRealStandings && !isLoadingSubmissionData
+                    ? (team.predicted_position || team.position || index + 1)
+                    : (index + 1);
+                  return (
+                    <li key={`${conference}-${team.team_name || team.name || index}`}>
+                      <span className="home-submission-card__seed">{displayPosition}</span>
+                      <span className="home-submission-card__team">{team.team_name || team.name}</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
         </div>
         <div className="home-submission-card__sections">
-          {PREVIEW_SECTIONS.map((section, index) => {
-            const Icon = hasSubmission || index === 0 ? CheckCircle2 : Clock;
-            const completed = hasSubmission
-              ? section.total
-              : Math.max(0, Math.min(section.total, section.baseComplete));
-            const state =
-              hasSubmission || completed === section.total
+          {sections.map((section, index) => {
+            // When showing real data for authenticated users, use actual completion status
+            const hasRealData = isAuthenticated && hasRealSections && !isLoadingSubmissionData;
+            const Icon = section.completed > 0 ? CheckCircle2 : Clock;
+
+            // Determine state based on whether we're showing real or preview data
+            let state;
+            if (!isAuthenticated) {
+              state = 'Not started';
+            } else if (hasRealData) {
+              state = section.completed === section.total
                 ? 'Submitted'
-                : index === 0 && completed > 0
+                : section.completed > 0
                   ? 'Draft saved'
                   : 'Pending';
+            } else {
+              // Preview data when authenticated but data hasn't loaded yet
+              state = section.completed === section.total
+                ? 'Submitted'
+                : section.completed > 0
+                  ? 'Draft saved'
+                  : 'Pending';
+            }
+
             return (
               <div key={section.label} className="home-submission-card__section">
                 <Icon className="w-3 h-3" />
                 <div>
                   <span className="home-submission-card__section-label">{section.label}</span>
                   <span className="home-submission-card__section-meta">
-                    {completed}/{section.total} • {state}
+                    {section.completed}/{section.total} • {state}
                   </span>
                 </div>
               </div>
@@ -283,13 +333,34 @@ function SubmissionPreview({ submitUrl, hasSubmission, submissionOpen }) {
       </div>
     </Wrapper>
   );
+
+  return (
+    <div className="home-auth-wrapper">
+      {!isAuthenticated && (
+        <div className="home-auth-overlay">
+           <div className="home-auth-modal">
+              <p>Log-in or sign up to make your predictions</p>
+              <div className="home-auth-actions">
+                <a href={loginUrl || '#login'} className="home-cta primary">Log In</a>
+                <a href={signupUrl || '#signup'} className="home-cta secondary">Sign Up</a>
+              </div>
+            </div>
+        </div>
+      )}
+      <div style={{ filter: !isAuthenticated ? 'blur(2px)' : 'none', height: '100%' }}>
+        {content}
+      </div>
+    </div>
+  );
 }
+
 
 export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }) {
   const rootProps = useMemo(() => getRootProps(), []);
   const seasonSlug = seasonSlugProp || rootProps.seasonSlug || DEFAULT_SEASON;
 
   const { data: leaderboardData, isLoading: leaderboardLoading } = useLeaderboard(seasonSlug);
+  const { submissionData, isLoading: submissionLoading } = useUserSubmissions(seasonSlug, rootProps.isAuthenticated);
 
   const { data: homepageData } = useQuery({
     queryKey: ['homepage-data', seasonSlug],
@@ -405,53 +476,60 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
               submitUrl={rootProps.submitUrl}
               hasSubmission={rootProps.hasSubmission}
               submissionOpen={rootProps.submissionOpen}
+              isAuthenticated={rootProps.isAuthenticated}
+              loginUrl={rootProps.loginUrl}
+              signupUrl={rootProps.signupUrl}
+              submissionData={submissionData}
+              isLoadingSubmissionData={submissionLoading}
             />
           </div>
         </div>
       </section>
 
       <div className="home-main">
-        <div className="home-main__col home-main__col--primary">
-          <section className="home-section home-section--tight">
-            <div className="home-section__header">
-              <div>
-                <h2>Season snapshot</h2>
-                <p>Monitor rank, totals, and category scoring without leaving the homepage.</p>
+        {rootProps.isAuthenticated && (
+          <div className="home-main__col home-main__col--primary">
+            <section className="home-section home-section--tight">
+              <div className="home-section__header">
+                <div>
+                  <h2>Season snapshot</h2>
+                  <p>Monitor rank, totals, and category scoring without leaving the homepage.</p>
+                </div>
               </div>
-            </div>
-            <div className="home-stats-grid">
-              <StatCard
-                icon={Trophy}
-                title="Rank"
-                value={me?.rank ? `#${me.rank}` : rootProps.hasSubmission ? 'Pending' : '--'}
-                subtitle={leaderboardData?.length ? `${leaderboardData.length} total entries` : 'Leaderboard updates nightly'}
-                highlightUrl={rootProps.leaderboardUrl}
-                highlightTitle="Go to leaderboard"
-              />
-              <StatCard
-                icon={TrendingUp}
-                title="Total points"
-                value={me?.user?.total_points?.toLocaleString() || (rootProps.hasSubmission ? '0' : '--')}
-                subtitle={rootProps.hasSubmission ? 'Across all categories' : 'Submit to start scoring'}
-              />
-              <StatCard
-                icon={BarChart3}
-                title="Standings"
-                value={standings.points || 0}
-                subtitle={standings.max_points ? `of ${standings.max_points} pts` : 'Predictions lock on opening night'}
-              />
-              <StatCard
-                icon={Target}
-                title="Props & awards"
-                value={(awards.points || 0) + (props.points || 0)}
-                subtitle={(awards.max_points || 0) + (props.max_points || 0) ? `of ${(awards.max_points || 0) + (props.max_points || 0)} pts` : 'Awaiting graded results'}
-              />
-            </div>
-          </section>
+              <div className="home-stats-grid">
+                <StatCard
+                  icon={Trophy}
+                  title="Rank"
+                  value={me?.rank ? `#${me.rank}` : rootProps.hasSubmission ? 'Pending' : '--'}
+                  subtitle={leaderboardData?.length ? `${leaderboardData.length} total entries` : 'Leaderboard updates nightly'}
+                  highlightUrl={rootProps.leaderboardUrl}
+                  highlightTitle="Go to leaderboard"
+                />
+                <StatCard
+                  icon={TrendingUp}
+                  title="Total points"
+                  value={me?.user?.total_points?.toLocaleString() || (rootProps.hasSubmission ? '0' : '--')}
+                  subtitle={rootProps.hasSubmission ? 'Across all categories' : 'Submit to start scoring'}
+                />
+                <StatCard
+                  icon={BarChart3}
+                  title="Standings"
+                  value={standings.points || 0}
+                  subtitle={standings.max_points ? `of ${standings.max_points} pts` : 'Predictions lock on opening night'}
+                />
+                <StatCard
+                  icon={Target}
+                  title="Props & awards"
+                  value={(awards.points || 0) + (props.points || 0)}
+                  subtitle={(awards.max_points || 0) + (props.max_points || 0) ? `of ${(awards.max_points || 0) + (props.max_points || 0)} pts` : 'Awaiting graded results'}
+                />
+              </div>
+            </section>
 
-          <StandingsPreview standings={homepageData?.mini_standings} />
-        </div>
-        <div className="home-main__col home-main__col--secondary">
+            <StandingsPreview standings={homepageData?.mini_standings} isAuthenticated={rootProps.isAuthenticated} loginUrl={rootProps.loginUrl} signupUrl={rootProps.signupUrl} />
+          </div>
+        )}
+        <div className="home-main__col home-main__col--secondary" style={{ width: !rootProps.isAuthenticated ? '100%' : undefined, maxWidth: !rootProps.isAuthenticated ? '100%' : undefined }}>
           <LeaderboardPreview entries={leaderboardTopTen} leaderboardUrl={rootProps.leaderboardUrl} />
         </div>
       </div>

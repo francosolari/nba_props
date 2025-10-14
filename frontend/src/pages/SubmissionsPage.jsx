@@ -194,6 +194,50 @@ const getAxiosErrorMessage = (error, fallbackMessage = 'Something went wrong. Pl
   return error?.message || fallbackMessage;
 };
 
+const PaymentPromptModal = ({ details, onMarkPaid, onClose }) => {
+  if (!details) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+          aria-label="Close payment prompt"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <h2 className="text-2xl font-bold text-slate-900">Complete Your Submission</h2>
+        <p className="mt-2 text-slate-600">
+          Your predictions are in! The final step is to pay the ${details.amount_due || '25.00'} entry fee.
+        </p>
+        <div className="mt-6 flex flex-col gap-3">
+          <a
+            href={details.venmo_web_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
+            className="w-full inline-flex items-center justify-center rounded-full bg-sky-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700"
+          >
+            Pay with Venmo (@{details.venmo_username})
+          </a>
+          <button
+            onClick={onMarkPaid}
+            className="w-full inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-100"
+          >
+            I've Already Paid
+          </button>
+        </div>
+        <p className="mt-4 text-xs text-slate-400">
+          You can also close this and pay later. We'll remind you.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const SubmissionsPage = ({ seasonSlug }) => {
   const [activeSeasonSlug, setActiveSeasonSlug] = useState(seasonSlug || null);
   const [seasonLoading, setSeasonLoading] = useState(!seasonSlug);
@@ -210,6 +254,8 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const [latestSeasonSlug, setLatestSeasonSlug] = useState(FALLBACK_LATEST_SEASON);
   const [feedback, setFeedback] = useState(null);
   const [isProgressSticky, setIsProgressSticky] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentDetailsForModal, setPaymentDetailsForModal] = useState(null);
 
   const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
   const { data: userContext, isLoading: userContextLoading } = useUserContext();
@@ -566,9 +612,8 @@ const SubmissionsPage = ({ seasonSlug }) => {
       });
 
       if (needsVenmoRedirect && latestEntryFee?.venmo_web_url) {
-        setTimeout(() => {
-          window.location.assign(latestEntryFee.venmo_web_url);
-        }, 500);
+        setPaymentDetailsForModal(latestEntryFee);
+        setShowPaymentModal(true);
       }
     } catch (error) {
       setFeedback({
@@ -996,6 +1041,17 @@ const SubmissionsPage = ({ seasonSlug }) => {
               You can leave answers blank and return anytime—saving uses the same secure submit flow.
             </p>
           </div>
+        )}
+
+        {showPaymentModal && (
+          <PaymentPromptModal
+            details={paymentDetailsForModal}
+            onClose={() => setShowPaymentModal(false)}
+            onMarkPaid={async () => {
+              await handleMarkEntryFeePaid();
+              setShowPaymentModal(false);
+            }}
+          />
         )}
       </div>
     </div>
