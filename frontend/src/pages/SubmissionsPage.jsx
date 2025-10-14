@@ -57,6 +57,8 @@ const QUESTION_GROUP_ORDER = [
   'other',
 ];
 
+const FALLBACK_LATEST_SEASON = '2025-26';
+
 const SubmissionsPage = ({ seasonSlug }) => {
   const [activeSeasonSlug, setActiveSeasonSlug] = useState(seasonSlug || null);
   const [seasonLoading, setSeasonLoading] = useState(!seasonSlug);
@@ -66,6 +68,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const [teamOptions, setTeamOptions] = useState([]);
   const [loadingAuxData, setLoadingAuxData] = useState(false);
   const standingsBoardRef = useRef(null);
+  const [latestSeasonSlug, setLatestSeasonSlug] = useState(FALLBACK_LATEST_SEASON);
 
   const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
   const { data: userContext, isLoading: userContextLoading } = useUserContext();
@@ -84,11 +87,19 @@ const SubmissionsPage = ({ seasonSlug }) => {
       setSeasonLoading(true);
       try {
         const { data } = await axios.get('/api/v2/latest-season');
-        if (!cancelled && data?.slug) {
-          setActiveSeasonSlug(data.slug);
+        const resolvedSlug = data?.slug || FALLBACK_LATEST_SEASON;
+        if (!cancelled) {
+          setLatestSeasonSlug(resolvedSlug);
+          if (!seasonSlug) {
+            setActiveSeasonSlug(resolvedSlug);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch latest season slug', error);
+        if (!cancelled) {
+          setLatestSeasonSlug(FALLBACK_LATEST_SEASON);
+          setActiveSeasonSlug(FALLBACK_LATEST_SEASON);
+        }
       } finally {
         if (!cancelled) {
           setSeasonLoading(false);
@@ -233,17 +244,23 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
   const handleSubmit = async () => {
     let slugToUse = effectiveSeasonSlug;
-    if (!slugToUse) {
+    if (!slugToUse || slugToUse === 'current') {
       try {
         const { data } = await axios.get('/api/v2/latest-season');
-        if (data?.slug) {
-          slugToUse = data.slug;
-          setActiveSeasonSlug((prev) => prev || data.slug);
-        }
+        const resolvedSlug = data?.slug || FALLBACK_LATEST_SEASON;
+        slugToUse = resolvedSlug;
+        setLatestSeasonSlug(resolvedSlug);
+        setActiveSeasonSlug((prev) => (prev && prev !== 'current' ? prev : resolvedSlug));
       } catch (error) {
-        alert('Season is not ready yet. Please try again shortly.');
-        return;
+        slugToUse = FALLBACK_LATEST_SEASON;
+        setLatestSeasonSlug(FALLBACK_LATEST_SEASON);
+        setActiveSeasonSlug((prev) => prev || FALLBACK_LATEST_SEASON);
       }
+    }
+
+    if (!slugToUse) {
+      slugToUse = FALLBACK_LATEST_SEASON;
+      setActiveSeasonSlug((prev) => prev || FALLBACK_LATEST_SEASON);
     }
 
     if (!slugToUse) {
@@ -297,6 +314,13 @@ const SubmissionsPage = ({ seasonSlug }) => {
     return statusData || questionsData?.submission_status || null;
   }, [statusData, questionsData]);
 
+  const displaySeasonSlug = useMemo(() => {
+    if (effectiveSeasonSlug && effectiveSeasonSlug !== 'current') {
+      return effectiveSeasonSlug;
+    }
+    return latestSeasonSlug;
+  }, [effectiveSeasonSlug, latestSeasonSlug]);
+
   const questions = questionsData?.questions || [];
   const groupedQuestions = useMemo(() => {
     if (!questions.length) {
@@ -349,9 +373,38 @@ const SubmissionsPage = ({ seasonSlug }) => {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 py-8 md:py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Submit Your Predictions</h1>
-          <p className="text-slate-500">{effectiveSeasonSlug} Season</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+          <div className="flex flex-col gap-2 text-center md:text-left">
+            <span className="inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.2em] uppercase text-sky-600">
+              {displaySeasonSlug} Season
+            </span>
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">
+              Submit Your Predictions
+            </h1>
+            <p className="text-slate-500 text-sm sm:text-base">
+              Lock in your regular season standings and answer every question before the window closes.
+            </p>
+          </div>
+          <nav className="flex flex-wrap items-center justify-center md:justify-end gap-2 text-sm">
+            <a
+              href="#standings"
+              className="px-3 py-2 rounded-full border border-sky-200/80 bg-white/60 text-sky-600 font-semibold shadow-sm hover:bg-sky-50 transition-colors"
+            >
+              Standings
+            </a>
+            <a
+              href="#questions"
+              className="px-3 py-2 rounded-full border border-slate-200 bg-white/60 text-slate-600 font-semibold shadow-sm hover:bg-slate-50 transition-colors"
+            >
+              Questions
+            </a>
+            <a
+              href="#submit"
+              className="px-3 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 font-semibold shadow-sm hover:bg-emerald-100 transition-colors"
+            >
+              Submit
+            </a>
+          </nav>
         </div>
 
         {/* Deadline Banner */}
@@ -385,7 +438,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
         )}
 
         {/* Regular Season Standings */}
-        <section className="mb-10">
+        <section id="standings" className="mb-10">
           <header className="mb-4">
             <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Regular Season Standings</h2>
             <p className="text-sm text-slate-500 mt-1">
@@ -429,7 +482,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
         )}
 
         {/* Questions */}
-        <div className="space-y-10">
+        <div id="questions" className="space-y-10">
           {groupedQuestions.map((group) => (
             <section key={group.type}>
               <header className="mb-4">
@@ -456,7 +509,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
         {/* Submit Button */}
         {!isReadOnly && (
-          <div className="mt-10 flex flex-col items-center gap-3">
+          <div id="submit" className="mt-10 flex flex-col items-center gap-3">
             <button
               onClick={handleSubmit}
               disabled={
@@ -544,32 +597,21 @@ const QuestionInput = ({
         const formattedLine = hasNumericLine
           ? (Math.abs(numericLine) % 1 === 0 ? numericLine.toFixed(0) : numericLine.toFixed(1))
           : question.line ?? '—';
-        const overDescriptor = hasNumericLine ? `≥ ${formattedLine}` : 'Higher outcome';
-        const underDescriptor = hasNumericLine ? `≤ ${formattedLine}` : 'Lower outcome';
+        const scaleStateClass =
+          answer === 'over'
+            ? ' overunder-scale--over'
+            : answer === 'under'
+            ? ' overunder-scale--under'
+            : '';
+        const disabledClass = isReadOnly ? ' overunder-scale--disabled' : '';
 
         return (
           <div
-            className={`overunder-scale${isReadOnly ? ' overunder-scale--disabled' : ''}`}
+            className={`overunder-scale${scaleStateClass}${disabledClass}`}
             role="group"
             aria-label={`Choose over or under for line ${formattedLine}`}
           >
-            <button
-              type="button"
-              className={`overunder-choice overunder-choice--over ${
-                answer === 'over' ? 'is-selected' : ''
-              } ${isReadOnly ? 'is-disabled' : ''}`}
-              onClick={() => onChange('over')}
-              disabled={isReadOnly}
-              aria-pressed={answer === 'over'}
-              aria-label={`Over ${formattedLine}`}
-            >
-              <span className="overunder-choice-label">Over</span>
-              <span className="overunder-choice-sub">{overDescriptor}</span>
-            </button>
-            <div className="overunder-divider">
-              <span className="overunder-divider-label">Line</span>
-              <span className="overunder-divider-value">{formattedLine}</span>
-            </div>
+            <span className="overunder-indicator" aria-hidden="true" />
             <button
               type="button"
               className={`overunder-choice overunder-choice--under ${
@@ -581,7 +623,22 @@ const QuestionInput = ({
               aria-label={`Under ${formattedLine}`}
             >
               <span className="overunder-choice-label">Under</span>
-              <span className="overunder-choice-sub">{underDescriptor}</span>
+            </button>
+            <div className="overunder-divider">
+              <span className="overunder-divider-label">Line</span>
+              <span className="overunder-divider-value">{formattedLine}</span>
+            </div>
+            <button
+              type="button"
+              className={`overunder-choice overunder-choice--over ${
+                answer === 'over' ? 'is-selected' : ''
+              } ${isReadOnly ? 'is-disabled' : ''}`}
+              onClick={() => onChange('over')}
+              disabled={isReadOnly}
+              aria-pressed={answer === 'over'}
+              aria-label={`Over ${formattedLine}`}
+            >
+              <span className="overunder-choice-label">Over</span>
             </button>
           </div>
         );

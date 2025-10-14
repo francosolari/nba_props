@@ -50,30 +50,30 @@ const THEME_CONFIG = {
   },
   light: {
     mode: 'light',
-    background: 'bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900',
-    glassCard: 'backdrop-blur-xl bg-white/80 border border-slate-200/80 shadow-xl shadow-blue-200/50 rounded-3xl',
-    panelCard: 'bg-white/80 border border-slate-200/80',
+    background: 'bg-gradient-to-br from-slate-100 via-white to-slate-100 text-slate-900',
+    glassCard: 'bg-white border border-slate-200 rounded-2xl shadow-sm',
+    panelCard: 'bg-white border border-slate-200',
     heading: 'text-slate-900',
     textSecondary: 'text-slate-700',
-    subheading: 'text-slate-600',
-    muted: 'text-slate-500',
+    subheading: 'text-slate-500',
+    muted: 'text-slate-400',
     subtle: 'text-slate-500',
-    chip: 'bg-slate-200 text-slate-700',
-    inputBg: 'bg-white/90',
+    chip: 'bg-slate-100 text-slate-600',
+    inputBg: 'bg-white',
     inputText: 'text-slate-900',
-    focusRing: 'focus:ring-blue-500/50',
+    focusRing: 'focus:ring-sky-500/40',
     divider: 'divide-slate-200',
-    overlay: 'bg-slate-900/20',
+    overlay: 'bg-slate-900/10',
     sheet: 'bg-white',
-    sheetCard: 'bg-white border border-slate-200 shadow-lg shadow-slate-300/40',
-    summaryCard: 'bg-white border border-slate-200 shadow-lg shadow-slate-300/30',
-    softSurface: 'bg-slate-100/70',
-    secondaryButton: 'bg-slate-200 text-slate-700 hover:bg-slate-300/80',
-    dangerButton: 'bg-rose-500/10 text-rose-600 hover:bg-rose-500/20',
-    primaryButton: 'bg-blue-500 text-white shadow-lg shadow-blue-300/40 hover:bg-blue-600',
-    accentButton: 'bg-cyan-500/15 text-cyan-700 hover:bg-cyan-500/25',
-    note: 'text-slate-600',
-    cardShadow: '0 30px 120px -60px rgba(59, 130, 246, 0.25)',
+    sheetCard: 'bg-white border border-slate-200 shadow-sm',
+    summaryCard: 'bg-white border border-slate-200 shadow-sm',
+    softSurface: 'bg-slate-100',
+    secondaryButton: 'bg-slate-100 text-slate-600 hover:bg-slate-200 transition',
+    dangerButton: 'bg-rose-500 text-white hover:bg-rose-600',
+    primaryButton: 'bg-sky-600 text-white shadow-sm hover:bg-sky-700',
+    accentButton: 'bg-white text-sky-600 border border-sky-200 hover:bg-sky-50',
+    note: 'text-slate-500',
+    cardShadow: '0 16px 30px rgba(15, 23, 42, 0.08)',
   },
 };
 
@@ -156,11 +156,11 @@ const AdminPanel = ({ seasonSlug }) => {
     theme === 'dark'
       ? 'h-4 w-4 rounded border-slate-600 bg-slate-900 text-blue-500 focus:ring-blue-500/60'
       : 'h-4 w-4 rounded border-slate-300 bg-white text-blue-500 focus:ring-blue-500/40';
-  const primaryButtonClass = `rounded-xl px-5 py-2 text-sm font-semibold transition ${themeStyles.primaryButton} disabled:cursor-not-allowed disabled:opacity-60`;
-  const secondaryButtonClass = `rounded-xl px-4 py-2 text-sm transition ${themeStyles.secondaryButton} disabled:cursor-not-allowed disabled:opacity-60`;
-  const accentButtonClass = `rounded-xl px-4 py-2 text-sm font-medium transition ${themeStyles.accentButton}`;
-  const dangerButtonClass = `rounded-xl px-3 py-2 text-sm font-medium transition ${themeStyles.dangerButton} disabled:cursor-not-allowed disabled:opacity-60`;
-  const themeCardClass = `${themeStyles.glassCard} w-full max-w-xs p-5`;
+  const primaryButtonClass = `rounded-full px-5 py-2.5 text-sm font-semibold transition ${themeStyles.primaryButton} disabled:cursor-not-allowed disabled:opacity-60`;
+  const secondaryButtonClass = `rounded-full px-4 py-2 text-sm transition ${themeStyles.secondaryButton} disabled:cursor-not-allowed disabled:opacity-60`;
+  const accentButtonClass = `rounded-full px-4 py-2 text-sm font-medium transition ${themeStyles.accentButton}`;
+  const dangerButtonClass = `rounded-full px-3 py-2 text-sm font-medium transition ${themeStyles.dangerButton} disabled:cursor-not-allowed disabled:opacity-60`;
+  const themeCardClass = `${themeStyles.glassCard} w-full p-6`;
   const batchCardClass = `${themeStyles.glassCard} p-6 flex flex-col gap-6 md:flex-row md:items-center md:justify-between`;
   const headingClass = `text-lg font-semibold tracking-wide ${themeStyles.heading}`;
   const subheadingClass = `text-sm ${themeStyles.subheading}`;
@@ -215,6 +215,14 @@ const AdminPanel = ({ seasonSlug }) => {
   const playerOptions = useMemo(() => players.map((player) => ({ value: player.id, label: player.name })), [players]);
   const seasonOptions = useMemo(() => seasons.map((s) => ({ value: s.slug, label: s.year })), [seasons]);
   const seasonMeta = useMemo(() => seasons.find((s) => s.slug === activeSeason), [seasons, activeSeason]);
+  const navLinks = useMemo(
+    () => [
+      { href: '#season', label: 'Season Hub' },
+      { href: '#builders', label: 'Question Builders' },
+      { href: '#questions', label: 'Question List' },
+    ],
+    []
+  );
 
   const setSuccess = useCallback((message) => setFeedback({ type: 'success', message, id: Date.now() }), []);
   const setError = useCallback((message) => setFeedback({ type: 'error', message, id: Date.now() }), []);
@@ -304,143 +312,165 @@ const AdminPanel = ({ seasonSlug }) => {
   return (
     <>
       <div className={`min-h-screen transition-colors duration-300 ${themeStyles.background}`}>
-        <div className="mx-auto max-w-6xl px-4 pb-20 pt-16">
-          <div className="mb-6 flex justify-end">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className={`${secondaryButtonClass} items-center gap-2`}
-            >
-              {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-            </button>
-          </div>
-
-          <header className="mb-12">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className={`text-xs uppercase tracking-[0.45em] ${themeStyles.subtle}`}>Control Center</p>
-                <h1 className={`mt-3 text-4xl font-bold md:text-5xl ${themeStyles.heading}`}>Predictions Admin Panel</h1>
-                <p className={`mt-4 max-w-2xl ${themeStyles.subtle}`}>
-                  Craft, organise, and launch the season&apos;s prediction slate with a flexible interface tuned for batch workflows.
-                </p>
-              </div>
-              <div className={themeCardClass}>
-                <p className={`text-xs uppercase tracking-[0.3em] ${themeStyles.subtle}`}>Current season</p>
-                <div className="mt-3">
-                  <SelectComponent
-                    options={seasonOptions}
-                    value={seasonOptions.find((option) => option.value === activeSeason) || null}
-                    onChange={(option) => setActiveSeason(option ? option.value : '')}
-                    placeholder="Select season"
-                    mode={themeStyles.mode}
-                  />
-                </div>
-                {seasonMeta && (
-                  <div className={`mt-4 space-y-1 text-sm ${themeStyles.textSecondary}`}>
-                    <p>{seasonMeta.year}</p>
-                    <p className={`text-sm ${themeStyles.muted}`}>{formatDate(seasonMeta.start_date)} → {formatDate(seasonMeta.end_date)}</p>
-                    <p className={`text-sm ${themeStyles.muted}`}>Submissions {formatDateTime(seasonMeta.submission_start_date)} → {formatDateTime(seasonMeta.submission_end_date)}</p>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setShowSeasonForm((open) => !open)}
-                  className={`${secondaryButtonClass} mt-6 w-full justify-center font-medium`}
-                >
-                  {showSeasonForm ? 'Close season creator' : 'Create new season'}
-                </button>
-              </div>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 md:py-14 space-y-12">
+          <header className="space-y-6">
+            <div className="space-y-3 text-center md:text-left">
+              <span className={`inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.3em] uppercase ${themeStyles.subtle}`}>
+                Control Center
+              </span>
+              <h1 className={`text-3xl sm:text-4xl md:text-5xl font-bold ${themeStyles.heading}`}>
+                Predictions Admin Panel
+              </h1>
+              <p className={`text-sm sm:text-base max-w-3xl ${themeStyles.subtle}`}>
+                Craft, organise, and launch the season&apos;s prediction slate with a flexible interface tuned for batch workflows.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center md:justify-between gap-3 text-sm">
+              <nav className="flex flex-wrap items-center justify-center gap-2">
+                {navLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className={
+                      link.href === '#season'
+                        ? 'px-3 py-2 rounded-full border border-sky-200/80 bg-white/90 text-sky-600 font-semibold shadow-sm hover:bg-sky-50 transition-colors'
+                        : link.href === '#builders'
+                        ? 'px-3 py-2 rounded-full border border-slate-200 bg-white/90 text-slate-600 font-semibold shadow-sm hover:bg-slate-50 transition-colors'
+                        : 'px-3 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 font-semibold shadow-sm hover:bg-emerald-100 transition-colors'
+                    }
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className={`${secondaryButtonClass} items-center gap-2`}
+              >
+                {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              </button>
             </div>
           </header>
 
           {feedback && (
             <div
-              className={`mb-10 rounded-2xl border px-6 py-4 text-sm backdrop-blur-xl transition ${feedback.type === 'success' ? successBannerClass : errorBannerClass}`}
+              className={`rounded-2xl border px-6 py-4 text-sm shadow-sm transition ${feedback.type === 'success' ? successBannerClass : errorBannerClass}`}
             >
               {feedback.message}
             </div>
           )}
 
-          {showSeasonForm && (
-            <section className={`${themeStyles.glassCard} mb-12 p-6`}>
-              <h2 className={`text-lg font-semibold tracking-wide ${themeStyles.heading}`}>Create a new season</h2>
-              <p className={`mt-1 text-sm ${themeStyles.subtle}`}>Define the dates and submission window. The slug is generated automatically.</p>
-              <form onSubmit={handleSeasonCreate} className="mt-6 grid gap-6 lg:grid-cols-2">
-                <TextInput
-                  label="Display year"
-                  value={seasonForm.year}
-                  onChange={(value) => handleSeasonField('year', value)}
-                  placeholder="2024-25"
-                  required
-                  labelClass={labelClass}
-                  inputClass={inputClass}
+          <section id="season" className="space-y-6">
+            <div className={`${themeCardClass} shadow-sm`}>
+              <p className={`text-xs uppercase tracking-[0.3em] ${themeStyles.subtle}`}>Current season</p>
+              <div className="mt-3">
+                <SelectComponent
+                  options={seasonOptions}
+                  value={seasonOptions.find((option) => option.value === activeSeason) || null}
+                  onChange={(option) => setActiveSeason(option ? option.value : '')}
+                  placeholder="Select season"
+                  mode={themeStyles.mode}
                 />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <DateInput label="Season starts" value={seasonForm.start_date} onChange={(e) => handleSeasonField('start_date', e.target.value)} required labelClass={labelClass} inputClass={inputClass} />
-                  <DateInput label="Season ends" value={seasonForm.end_date} onChange={(e) => handleSeasonField('end_date', e.target.value)} required labelClass={labelClass} inputClass={inputClass} />
+              </div>
+              {seasonMeta && (
+                <div className={`mt-4 space-y-1 text-sm ${themeStyles.textSecondary}`}>
+                  <p>{seasonMeta.year}</p>
+                  <p className={`text-sm ${themeStyles.muted}`}>{formatDate(seasonMeta.start_date)} → {formatDate(seasonMeta.end_date)}</p>
+                  <p className={`text-sm ${themeStyles.muted}`}>Submissions {formatDateTime(seasonMeta.submission_start_date)} → {formatDateTime(seasonMeta.submission_end_date)}</p>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <DateInput
-                    label="Submissions open"
-                    value={seasonForm.submission_start_date}
-                    onChange={(e) => handleSeasonField('submission_start_date', e.target.value)}
-                    required
-                    type="datetime-local"
-                    step="60"
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                  />
-                  <DateInput
-                    label="Submissions close"
-                    value={seasonForm.submission_end_date}
-                    onChange={(e) => handleSeasonField('submission_end_date', e.target.value)}
-                    required
-                    type="datetime-local"
-                    step="60"
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                  />
-                </div>
-                <div className="flex items-center justify-end gap-3 lg:col-span-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSeasonForm(defaultSeasonForm);
-                      setShowSeasonForm(false);
-                    }}
-                    className={secondaryButtonClass}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={createSeason.isPending}
-                    className={primaryButtonClass}
-                  >
-                    {createSeason.isPending ? 'Creating…' : 'Save season'}
-                  </button>
-                </div>
-              </form>
-            </section>
-          )}
-
-          <section className={batchCardClass}>
-            <div>
-              <h2 className={headingClass}>Launch batch creator</h2>
-              <p className={subheadingClass}>
-                Draft multiple questions with a guided flow. Perfect when seeding a new season.
-              </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowSeasonForm((open) => !open)}
+                className={`${secondaryButtonClass} mt-6 w-full justify-center font-medium`}
+              >
+                {showSeasonForm ? 'Close season creator' : 'Create new season'}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleLaunchBatchWizard}
-              className={`${primaryButtonClass} md:w-auto`}
-            >
-              Batch create questions
-            </button>
+
+            {showSeasonForm && (
+              <div className={`${themeStyles.glassCard} p-6`}> 
+                <h2 className={`text-lg font-semibold tracking-wide ${themeStyles.heading}`}>Create a new season</h2>
+                <p className={`mt-1 text-sm ${themeStyles.subtle}`}>Define the dates and submission window. The slug is generated automatically.</p>
+                <form onSubmit={handleSeasonCreate} className="mt-6 grid gap-6 lg:grid-cols-2">
+                  <TextInput
+                    label="Display year"
+                    value={seasonForm.year}
+                    onChange={(value) => handleSeasonField('year', value)}
+                    placeholder="2025-26"
+                    required
+                    labelClass={labelClass}
+                    inputClass={inputClass}
+                  />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <DateInput label="Season starts" value={seasonForm.start_date} onChange={(e) => handleSeasonField('start_date', e.target.value)} required labelClass={labelClass} inputClass={inputClass} />
+                    <DateInput label="Season ends" value={seasonForm.end_date} onChange={(e) => handleSeasonField('end_date', e.target.value)} required labelClass={labelClass} inputClass={inputClass} />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <DateInput
+                      label="Submissions open"
+                      value={seasonForm.submission_start_date}
+                      onChange={(e) => handleSeasonField('submission_start_date', e.target.value)}
+                      required
+                      type="datetime-local"
+                      step="60"
+                      labelClass={labelClass}
+                      inputClass={inputClass}
+                    />
+                    <DateInput
+                      label="Submissions close"
+                      value={seasonForm.submission_end_date}
+                      onChange={(e) => handleSeasonField('submission_end_date', e.target.value)}
+                      required
+                      type="datetime-local"
+                      step="60"
+                      labelClass={labelClass}
+                      inputClass={inputClass}
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-3 lg:col-span-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSeasonForm(defaultSeasonForm);
+                        setShowSeasonForm(false);
+                      }}
+                      className={secondaryButtonClass}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={createSeason.isPending}
+                      className={primaryButtonClass}
+                    >
+                      {createSeason.isPending ? 'Creating…' : 'Save season'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </section>
 
-          <section className="mt-10 grid gap-8 lg:grid-cols-2">
+          <section id="builders" className="space-y-8">
+            <div className={batchCardClass}>
+              <div>
+                <h2 className={headingClass}>Launch batch creator</h2>
+                <p className={subheadingClass}>
+                  Draft multiple questions with a guided flow. Perfect when seeding a new season.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleLaunchBatchWizard}
+                className={`${primaryButtonClass} md:w-auto`}
+              >
+                Batch create questions
+              </button>
+            </div>
+
+            <div className="grid gap-8 lg:grid-cols-2">
           <GlassFormCard
             title="Superlative"
             subtitle="Award-style predictions"
@@ -672,9 +702,11 @@ const AdminPanel = ({ seasonSlug }) => {
               <TextInput label="Grouping (optional)" value={nbaFinalsForm.groupName} onChange={(value) => setNbaFinalsForm((prev) => ({ ...prev, groupName: value }))} placeholder="Finals" labelClass={labelClass} inputClass={inputClass} />
             </div>
           </GlassFormCard>
+
+            </div>
         </section>
 
-        <section className={`${themeStyles.glassCard} mt-12 overflow-hidden`}>
+        <section id="questions" className={`${themeStyles.glassCard} overflow-hidden`}>
           <div className={`flex flex-col gap-4 border-b px-8 py-6 md:flex-row md:items-center md:justify-between ${theme === 'dark' ? 'border-slate-600/40' : 'border-slate-200'}`}>
             <div>
               <h2 className={headingClass}>Existing questions</h2>
