@@ -1,0 +1,30 @@
+# Development Docker Compose - Using Production Database
+# This file is used when you want to test locally with the production database
+# Usage: docker-compose -f docker-compose.dev-prod-db.yml --env-file .env.dev.prod-db up
+
+services:
+  # Development web server connecting to production database
+  # NO local db service - connects directly to production
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev.prod-db
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-nba_predictions.settings}
+      - DJANGO_DEVELOPMENT=${DJANGO_DEVELOPMENT:-True}
+      - DATABASE_HOST=${DATABASE_HOST:-134.209.213.185}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_NAME=${DATABASE_NAME:-mydb}
+      - DATABASE_USER=${DATABASE_USER:-myuser}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-mypassword}
+      - SECRET_KEY=${SECRET_KEY}
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
+      - GOOGLE_OAUTH_SECRET=${GOOGLE_OAUTH_SECRET}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - USE_SENDGRID_IN_DEV=${USE_SENDGRID_IN_DEV:-True}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
+      - CF_TURNSTILE_SITE_KEY=${CF_TURNSTILE_SITE_KEY}
+      - CF_TURNSTILE_SECRET_KEY=${CF_TURNSTILE_SECRET_KEY}

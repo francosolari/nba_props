@@ -3,3 +3,12 @@
 /venv/
 /frontend/node_modules/
 /frontend/staticfiles/
+
+# Docker environment files (contain secrets)
+.env.dev.local
+.env.dev.prod-db
+backend/.env.docker.local
+backend/.env.docker.prod-db
+
+# Docker volumes
+postgres_data/

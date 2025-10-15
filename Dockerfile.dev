@@ -1,4 +1,4 @@
-# Multi-stage Production Dockerfile with Frontend Build
+# Multi-stage Development Dockerfile with Frontend Build
 FROM node:16 AS frontend-builder
 
 WORKDIR /build
@@ -26,6 +26,9 @@ RUN pip install --upgrade pip && \
 # Copy backend code
 COPY backend/ /app/
 
+# Copy the dev .env file as the default .env
+COPY backend/.env.docker.local /app/.env
+
 # Copy frontend build from frontend-builder stage
 COPY --from=frontend-builder /build/frontend/static /app/../frontend/static
 
@@ -36,5 +39,5 @@ ENV DJANGO_SETTINGS_MODULE=nba_predictions.settings
 
 EXPOSE 8000
 
-# Run the Django app using Gunicorn for production
-CMD ["gunicorn", "nba_predictions.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Development server
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

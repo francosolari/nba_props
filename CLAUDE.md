@@ -65,16 +65,27 @@ npm run fetch:team-slugs
 ```
 
 ### Docker Operations
+
+**See `DOCKER.md` for comprehensive Docker documentation.**
+
 ```bash
-# Start services (PostgreSQL + blue/green deployment)
+# Production (original setup - unchanged)
 docker-compose up
 
-# Build and start specific service
-docker-compose up -d web-blue
-docker-compose up -d web-green
+# Development with local PostgreSQL database (recommended for testing)
+docker-compose -f docker-compose.dev.yml --env-file .env.dev.local up
+
+# Development with production database (use sparingly)
+docker-compose -f docker-compose.dev-prod-db.yml --env-file .env.dev.prod-db up
+
+# Rebuild after code changes
+docker-compose -f docker-compose.dev.yml build --no-cache web
 
 # View logs
-docker-compose logs -f web-blue
+docker-compose -f docker-compose.dev.yml logs -f web
+
+# Stop services
+docker-compose -f docker-compose.dev.yml down
 ```
 
 ## Architecture
@@ -243,10 +254,14 @@ The app heavily uses django-polymorphic for Question and Standings models:
 
 ## Key Files to Reference
 
+- `DOCKER.md` - **Comprehensive Docker setup guide** (development & production)
 - `IMPROVEMENT_PLAN.cursorrules` - Detailed roadmap of planned improvements
 - `CONTRIBUTING.md` - Contribution guidelines
 - `DESIGN_REVIEW.md` - Design decisions and architecture notes
 - `backend/nba_predictions/settings.py` - Django configuration
 - `frontend/webpack.config.js` - Build configuration
-- `docker-compose.yml` - Service definitions
+- `docker-compose.yml` - Production service definitions
+- `docker-compose.dev.yml` - Development with local database
+- `docker-compose.dev-prod-db.yml` - Development with production database
 - `predictions/api/v2/api.py` - API v2 main configuration
+- `.github/workflows/ci-cd-corrected.yml` - Fixed CI/CD workflow

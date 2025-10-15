@@ -104,7 +104,10 @@ ROOT_URLCONF = 'nba_predictions.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'backend/predictions/templates/predictions'],
+        'DIRS': [
+            BASE_DIR / 'backend/predictions/templates/predictions',  # Local development
+            Path(__file__).resolve().parent.parent / 'predictions/templates/predictions',  # Docker
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
