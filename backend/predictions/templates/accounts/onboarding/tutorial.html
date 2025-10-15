@@ -1,0 +1,145 @@
+{% extends "allauth/layouts/base.html" %}
+{% load static %}
+
+{% block head_title %}How It Works{% endblock head_title %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl w-full">
+        {# Progress Bar #}
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">Step {{ current_step }} of {{ total_steps }}</span>
+                <span class="text-sm font-medium text-gray-700">{{ onboarding.progress_percentage }}% Complete</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: {{ onboarding.progress_percentage }}%"></div>
+            </div>
+        </div>
+
+        {# Tutorial Card #}
+        <div class="bg-white rounded-xl shadow-lg p-8 md:p-12">
+            <div class="text-center mb-10">
+                <h1 class="text-3xl font-bold text-gray-900 mb-3">
+                    How It Works
+                </h1>
+                <p class="text-lg text-gray-600">
+                    Learn the basics of making predictions and earning points
+                </p>
+            </div>
+
+            {# Tutorial Steps #}
+            <div class="space-y-8 mb-10">
+                {# Step 1 #}
+                <div class="flex gap-6">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-600 text-white font-bold text-lg">
+                            1
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Make Your Predictions</h3>
+                        <p class="text-gray-600 mb-3">
+                            Answer questions about the NBA season before it starts. Predict things like:
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-1 ml-4">
+                            <li>MVP and major award winners</li>
+                            <li>Player statistics (points, rebounds, assists)</li>
+                            <li>Team standings and playoff results</li>
+                            <li>Season matchups and championships</li>
+                        </ul>
+                        <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p class="text-sm text-blue-800">
+                                <strong>Tip:</strong> Visit the Submissions page to view and make your predictions.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Step 2 #}
+                <div class="flex gap-6">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-green-600 text-white font-bold text-lg">
+                            2
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Earn Points Throughout the Season</h3>
+                        <p class="text-gray-600 mb-3">
+                            As the NBA season progresses, your predictions are graded automatically:
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-1 ml-4">
+                            <li>Correct predictions earn you points</li>
+                            <li>Closer guesses on stats earn partial credit</li>
+                            <li>Points accumulate over the entire season</li>
+                        </ul>
+                        <div class="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                            <p class="text-sm text-green-800">
+                                <strong>Tip:</strong> Each question has a point value - higher stakes for tougher predictions!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Step 3 #}
+                <div class="flex gap-6">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-yellow-600 text-white font-bold text-lg">
+                            3
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Compete on the Leaderboard</h3>
+                        <p class="text-gray-600 mb-3">
+                            Track your progress and compete with other players:
+                        </p>
+                        <ul class="list-disc list-inside text-gray-600 space-y-1 ml-4">
+                            <li>See your rank and total points</li>
+                            <li>Compare your predictions with others</li>
+                            <li>Climb to the top to prove you're the best NBA predictor</li>
+                        </ul>
+                        <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <p class="text-sm text-yellow-800">
+                                <strong>Tip:</strong> Check the Leaderboard to see how you stack up!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Important Notes #}
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-8">
+                <h3 class="font-semibold text-orange-900 mb-3 flex items-center">
+                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    Important Things to Know
+                </h3>
+                <ul class="list-disc list-inside text-orange-800 space-y-2 ml-7">
+                    <li>Predictions must be made before the season starts or before each game</li>
+                    <li>Once submitted, you cannot change your predictions</li>
+                    <li>Points are awarded automatically as season results are finalized</li>
+                    <li>Check your submissions page to see which predictions are still open</li>
+                </ul>
+            </div>
+
+            {# Call to Action #}
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                    Start Making Predictions
+                </button>
+
+                <button type="button" onclick="document.getElementById('skip-form').submit()" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200">
+                    Skip for now
+                </button>
+            </form>
+
+            {# Hidden skip form #}
+            <form id="skip-form" method="post" action="{% url 'skip_onboarding' %}" style="display: none;">
+                {% csrf_token %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

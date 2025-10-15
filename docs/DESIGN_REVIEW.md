@@ -19,19 +19,19 @@ The application is built with a modern web stack:
 
 The backend is a Django application that provides a RESTful API for the frontend. The API is built with Django Ninja, a modern, fast, and type-safe API framework for Django.
 
-For more information, see the [Backend Documentation](./docs/backend/README.md).
+For more information, see the [Backend Documentation](backend/README.md).
 
 ### 2.2. Frontend
 
 The frontend is a React application that consumes the backend API. The frontend is built with modern React features, such as hooks and context, and is styled with Tailwind CSS.
 
-For more information, see the [Frontend Documentation](./docs/frontend/README.md).
+For more information, see the [Frontend Documentation](frontend/README.md).
 
 ### 2.3. Database
 
 The application uses a PostgreSQL database to store data. The database is managed with Django's built-in ORM.
 
-For more information, see the [Models Documentation](./docs/backend/models.md).
+For more information, see the [Models Documentation](backend/models.md).
 
 ### 2.4. Deployment
 
@@ -43,7 +43,7 @@ For more information, see the [Deployment Documentation](./docs/deployment.md).
 
 This project is documented in the `docs` directory. The documentation is written in Markdown and is organized into the following sections:
 
--   [Project Overview](./docs/project_overview.md)
--   [Backend Documentation](./docs/backend/README.md)
--   [Frontend Documentation](./docs/frontend/README.md)
+-   [Project Overview](project_overview.md)
+-   [Backend Documentation](backend/README.md)
+-   [Frontend Documentation](frontend/README.md)
 -   [Deployment Documentation](./docs/deployment.md)

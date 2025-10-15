@@ -58,4 +58,4 @@ For more detailed information about the project, please see the [documentation](
 
 ## Contributing
 
-We welcome contributions from the open-source community. For more information, please see the [contributing guide](./CONTRIBUTING.md).
+We welcome contributions from the open-source community. For more information, please see the [contributing guide](docs/CONTRIBUTING.md).

@@ -7,15 +7,46 @@
 {% if attrs.type %}type="{{ attrs.type }}"{% endif %}
 {% if attrs.value %}value="{{ attrs.value }}"{% endif %}
 class="{% block class %}
-    btn
-    {% if "link" in attrs.tags %}btn-link
+    inline-block font-medium rounded transition-colors duration-200
+    {% if "link" in attrs.tags %}
+        text-blue-600 hover:text-blue-800 underline
     {% else %}
-      {% if "prominent" in attrs.tags %}btn-lg{% elif "minor" in attrs.tags %}btn-sm{% endif %}
-      btn-{% if 'outline' in attrs.tags %}outline-{% endif %}{% if "danger" in attrs.tags %}danger{% elif "secondary" in attrs.tags %}secondary{% elif "warning" in attrs.tags %}warning{% else %}primary{% endif %}
+        {% if "prominent" in attrs.tags %}
+            px-6 py-3 text-lg
+        {% elif "minor" in attrs.tags %}
+            px-3 py-1 text-sm
+        {% else %}
+            px-4 py-2
+        {% endif %}
+        {% if "danger" in attrs.tags %}
+            {% if 'outline' in attrs.tags %}
+                border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white
+            {% else %}
+                bg-red-600 text-white hover:bg-red-700
+            {% endif %}
+        {% elif "secondary" in attrs.tags %}
+            {% if 'outline' in attrs.tags %}
+                border-2 border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white
+            {% else %}
+                bg-gray-600 text-white hover:bg-gray-700
+            {% endif %}
+        {% elif "warning" in attrs.tags %}
+            {% if 'outline' in attrs.tags %}
+                border-2 border-yellow-600 text-yellow-600 hover:bg-yellow-600 hover:text-white
+            {% else %}
+                bg-yellow-600 text-white hover:bg-yellow-700
+            {% endif %}
+        {% else %}
+            {% if 'outline' in attrs.tags %}
+                border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white
+            {% else %}
+                bg-blue-600 text-white hover:bg-blue-700
+            {% endif %}
+        {% endif %}
     {% endif %}{% endblock %}">
     {% if "tool" in attrs.tags %}
     {% if "delete" in attrs.tags %}
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="inline-block" viewBox="0 0 16 16">
   <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
   <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
     </svg>

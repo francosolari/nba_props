@@ -23,7 +23,8 @@ urlpatterns = [
     # path('', include('apps.predictions.urls')),  # Root includes all your app-level routes
     path('admin/', admin.site.urls),
     # path('accounts/', include('django.contrib.auth.urls')),
-    path('accounts/', include('allauth.urls')),
+    path('accounts/', include('accounts.urls')),  # Onboarding views
+    path('accounts/', include('allauth.urls')),  # Authentication
     path('api/v1/', include('predictions.api.v1.urls')),  # Legacy REST API
     path('api/v2/', api_v2.urls),  # Modern Ninja API
     path('api/', include('predictions.api.v1.urls')),

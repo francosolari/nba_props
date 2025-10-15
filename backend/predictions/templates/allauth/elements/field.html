@@ -1,33 +1,33 @@
 {% load allauth %}
 {% if attrs.type == "checkbox" or attrs.type == "radio" %}
-    <div class="form-check mb-3">
+    <div class="flex items-center mb-4">
         <input {% if attrs.required %}required{% endif %}
                name="{{ attrs.name }}"
-               class="form-check-input"
+               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                id="{{ attrs.id }}"
                {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
                {% if attrs.disabled %}disabled{% endif %}
                type="{{ attrs.type }}">
-        <label class="form-check-label" for="{{ attrs.id }}">
+        <label class="ml-2 text-sm font-medium text-gray-900" for="{{ attrs.id }}">
             {% slot label %}
             {% endslot %}
         </label>
         {% if slots.help_text %}
-            <div class="form-text">
+            <div class="mt-1 text-sm text-gray-500">
                 {% slot help_text %}
                 {% endslot %}
             </div>
         {% endif %}
     </div>
 {% elif attrs.type == "textarea" %}
-    <div class="mb-3">
-        <label class="" for="{{ attrs.id }}">
+    <div class="mb-4">
+        <label class="block mb-2 text-sm font-medium text-gray-900" for="{{ attrs.id }}">
             {% slot label %}
             {% endslot %}
         </label>
         <textarea {% if attrs.required %}required{% endif %}
                   {% if attrs.rows %}rows="{{ attrs.rows }}"{% endif %}
-                  class="form-control"
+                  class="block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
                   name="{{ attrs.name }}"
                   {% if attrs.readonly %}readonly{% endif %}
                   id="{{ attrs.id }}"
@@ -40,9 +40,9 @@
            {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
            type="hidden">
 {% else %}
-    <div class="{% if attrs.unlabeled %}form-floating{% endif %} mb-3">
+    <div class="mb-4">
         {% if not attrs.unlabeled %}
-            <label class="" for="{{ attrs.id }}">
+            <label class="block mb-2 text-sm font-medium text-gray-900" for="{{ attrs.id }}">
                 {% slot label %}
                 {% endslot %}
             </label>
@@ -50,7 +50,7 @@
         <input {% if attrs.required %}required{% endif %}
                name="{{ attrs.name }}"
                {% if attrs.placeholder %}placeholder="{{ attrs.placeholder }}" {% elif attrs.unlabeled %}placeholder="{% slot label %}{% endslot %}"{% endif %}
-               class="{% if attrs.errors %}is-invalid{% endif %} form-control rounded-3"
+               class="block w-full px-3 py-2 text-gray-900 border {% if attrs.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
                id="{{ attrs.id }}"
                {% if attrs.readonly %}readonly{% endif %}
                {% if attrs.disabled %}disabled{% endif %}
@@ -59,20 +59,14 @@
                {% if attrs.autocomplete %}autocomplete="{{ attrs.autocomplete }}"{% endif %}
                {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
                type="{{ attrs.type }}">
-        {% if attrs.unlabeled %}
-            <label class="" for="{{ attrs.id }}">
-                {% slot label %}
-                {% endslot %}
-            </label>
-        {% endif %}
         {% if slots.help_text %}
-            <div class="form-text">
+            <div class="mt-1 text-sm text-gray-500">
                 {% slot help_text %}
                 {% endslot %}
             </div>
         {% endif %}
         {% if attrs.errors %}
-            {% for error in attrs.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            {% for error in attrs.errors %}<div class="mt-1 text-sm text-red-600">{{ error }}</div>{% endfor %}
         {% endif %}
     </div>
 {% endif %}

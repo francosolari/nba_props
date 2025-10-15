@@ -26,9 +26,9 @@ To contribute, please follow these steps:
 
 We have a comprehensive set of documentation to help you get started. You can find it in the `docs/` directory.
 
--   [Project Overview](./docs/project_overview.md)
--   [Backend Documentation](./docs/backend/README.md)
--   [Frontend Documentation](./docs/frontend/README.md)
+-   [Project Overview](project_overview.md)
+-   [Backend Documentation](backend/README.md)
+-   [Frontend Documentation](frontend/README.md)
 -   [Deployment Documentation](./docs/deployment.md)
 
 If you make any changes to the codebase, please update the documentation accordingly.

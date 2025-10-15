@@ -77,8 +77,8 @@ The frontend is styled with Tailwind CSS.
 This project is documented in a series of markdown files. The following is a list of all the markdown files in the project and a brief description of each file:
 
 -   [README.md](./README.md): A brief overview of the project and instructions on how to get started.
--   [DESIGN_REVIEW.md](./DESIGN_REVIEW.md): A high-level overview of the project's architecture and design.
--   [CONTRIBUTING.md](./CONTRIBUTING.md): A guide for contributing to the project.
+-   [DESIGN_REVIEW.md](docs/DESIGN_REVIEW.md): A high-level overview of the project's architecture and design.
+-   [CONTRIBUTING.md](docs/CONTRIBUTING.md): A guide for contributing to the project.
 -   [agents.md](./agents.md): A guide for open-source contributors, both human and AI, on how to contribute to the project.
 -   [docs/project_overview.md](./docs/project_overview.md): A detailed overview of the project's goals, features, and architecture.
 -   [docs/backend/README.md](./docs/backend/README.md): An overview of the backend, including the project structure, apps, and key components.

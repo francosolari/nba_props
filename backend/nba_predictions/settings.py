@@ -65,12 +65,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'django_extensions',
     'predictions',
     'accounts',
     'allauth',
     'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
+
+SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -90,6 +95,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
+    'accounts.middleware.OnboardingMiddleware',  # Redirect new users to onboarding
 ]
 
 ROOT_URLCONF = 'nba_predictions.urls'
@@ -165,8 +171,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_AUTHENTICATION_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'  # Allow login with both username and email
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # Require email verification before login
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True  # Auto-login after email confirmation
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True  # Allow email confirmation via GET request
 ACCOUNT_SIGNUP_FORM_CLASS = 'accounts.custom_forms.CustomSignupForm'
 
 LOGIN_REDIRECT_URL = '/'
@@ -177,9 +185,58 @@ ACCOUNT_SIGNUP_REDIRECT_URL = '/'
 # Redirect after logout
 LOGOUT_REDIRECT_URL = '/'
 
-EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+# Email Configuration
+if IS_DEVELOPMENT:
+    # Development: Option to use either console or SendGrid
+    USE_SENDGRID_IN_DEV = os.getenv('USE_SENDGRID_IN_DEV', 'False').lower() == 'true'
+
+    if USE_SENDGRID_IN_DEV:
+        # Use SendGrid in development for testing
+        EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+        EMAIL_HOST = 'smtp.sendgrid.net'
+        EMAIL_PORT = 587
+        EMAIL_USE_TLS = True
+        EMAIL_HOST_USER = 'apikey'  # This is literally the string 'apikey'
+        EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY', '')
+        DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@propspredictions.com')
+    else:
+        # Print emails to console (default for development)
+        EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+        DEFAULT_FROM_EMAIL = 'noreply@nba-predictions.local'
+else:
+    # Production: Use SendGrid
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.sendgrid.net'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = 'apikey'  # This is literally the string 'apikey'
+    EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY', '')
+    DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@propspredictions.com')
+
+# Email sender name (optional)
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 CSRF_TRUSTED_ORIGINS = [
     'https://propspredictions.com',
     'https://www.propspredictions.com',  # Include both with and without 'www' if necessary
 ]
+
+# Google OAuth Configuration
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+    }
+}
+
+# Social account settings
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Google already verifies emails
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Allow one-click social login
