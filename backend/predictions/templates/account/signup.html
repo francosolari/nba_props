@@ -4,13 +4,15 @@
 
 {% block head_title %}{% trans "Sign Up" %} - NBA Predictions{% endblock head_title %}
 
+{% block extra_head %}
+    {{ form.media }}
+{% endblock %}
+
 {% block entrance_content %}
     <div class="text-center mb-8">
         {% element h1 %}
-            {% trans "Join NBA Predictions" %}
+            {% trans "Sign Up" %}
         {% endelement %}
-        <p class="text-gray-600 mt-2">Create an account and start competing in the 2024-25 season</p>
-        <p class="text-sm text-gray-500 mt-1">Join 20+ NBA fans making their predictions</p>
     </div>
 
     {% if SOCIALACCOUNT_ENABLED %}
@@ -35,13 +37,6 @@
                 {% csrf_token %}
                 {% element fields form=form %}
                 {% endelement %}
-
-                <div class="mt-4 mb-6">
-                    <p class="text-xs text-gray-500">
-                        By creating an account, you agree to receive email notifications about your predictions and season updates.
-                    </p>
-                </div>
-
                 {{ redirect_field }}
             {% endslot %}
             {% slot actions %}

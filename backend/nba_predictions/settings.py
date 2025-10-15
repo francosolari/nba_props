@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'django_cf_turnstile',
 ]
 
 SITE_ID = 1
@@ -240,3 +241,9 @@ SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Google already verifies emails
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_LOGIN_ON_GET = True  # Allow one-click social login
+
+# Cloudflare Turnstile Configuration
+# Get keys from: https://dash.cloudflare.com/
+# If not provided, test keys will be used (always pass validation)
+CF_TURNSTILE_SITE_KEY = os.getenv('CF_TURNSTILE_SITE_KEY', '')
+CF_TURNSTILE_SECRET_KEY = os.getenv('CF_TURNSTILE_SECRET_KEY', '')
