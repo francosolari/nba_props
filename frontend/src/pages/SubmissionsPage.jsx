@@ -18,6 +18,7 @@ import {
 import SelectComponent from '../components/SelectComponent';
 import EditablePredictionBoard from '../components/EditablePredictionBoard';
 import SideNav from '../components/SideNav';
+import '../styles/SubmissionsPage.css';
 
 const QUESTION_GROUP_META = {
   superlative: {
@@ -1876,10 +1877,36 @@ const QuestionCard = ({
   teamOptions,
   loadingAuxData,
 }) => {
+  const questionTextRef = useRef(null);
+
+  useEffect(() => {
+    const resizeText = () => {
+      const element = questionTextRef.current;
+      if (!element) return;
+
+      let fontSize = 18; // Starting font size in px
+      element.style.fontSize = `${fontSize}px`;
+
+      const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
+      const maxHeight = lineHeight * 2;
+
+      while (element.scrollHeight > maxHeight && fontSize > 10) {
+        fontSize -= 1;
+        element.style.fontSize = `${fontSize}px`;
+      }
+    };
+
+    resizeText();
+    window.addEventListener('resize', resizeText);
+    return () => window.removeEventListener('resize', resizeText);
+  }, [question.text]);
+
   return (
     <div className="bg-white/95 border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-md hover:shadow-lg transition-all">
       <div className="mb-4">
-        <h3 className="text-slate-900 font-semibold text-lg mb-2">{question.text}</h3>
+        <h3 ref={questionTextRef} className="text-slate-900 font-semibold text-lg mb-2">
+          {question.text}
+        </h3>
         <div className="flex items-center gap-4 text-sm text-slate-500">
           <span className="bg-sky-100 text-sky-700 px-3 py-1 rounded-full">{question.point_value} pts</span>
           <span className="capitalize">{question.question_type.replace('_', ' ')}</span>
@@ -1981,36 +2008,43 @@ const QuestionInput = ({
             </button>
           </div>
         );
-      }
+      } else { // 'yes_no'
+        const scaleStateClass =
+          answer === 'yes'
+            ? ' yesno-scale--yes'
+            : answer === 'no'
+            ? ' yesno-scale--no'
+            : '';
+        const disabledClass = isReadOnly ? ' yesno-scale--disabled' : '';
 
-      return (
-        <div className="flex gap-4">
-          <button
-            type="button"
-            onClick={() => onChange('yes')}
-            disabled={isReadOnly}
-            className={`flex-1 py-3 rounded-lg font-semibold transition-colors border ${
-              answer === 'yes'
-                ? 'bg-emerald-500 text-white border-emerald-500'
-                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-            } ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+        return (
+          <div
+            className={`yesno-scale${scaleStateClass}${disabledClass}`}
+            role="group"
+            aria-label="Choose yes or no"
           >
-            Yes
-          </button>
-          <button
-            type="button"
-            onClick={() => onChange('no')}
-            disabled={isReadOnly}
-            className={`flex-1 py-3 rounded-lg font-semibold transition-colors border ${
-              answer === 'no'
-                ? 'bg-rose-500 text-white border-rose-500'
-                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-            } ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
-          >
-            No
-          </button>
-        </div>
-      );
+            <span className="yesno-indicator" aria-hidden="true" />
+            <button
+              type="button"
+              className={`yesno-choice yesno-choice--yes ${answer === 'yes' ? 'is-selected' : ''}`}
+              onClick={() => onChange('yes')}
+              disabled={isReadOnly}
+              aria-pressed={answer === 'yes'}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className={`yesno-choice yesno-choice--no ${answer === 'no' ? 'is-selected' : ''}`}
+              onClick={() => onChange('no')}
+              disabled={isReadOnly}
+              aria-pressed={answer === 'no'}
+            >
+              No
+            </button>
+          </div>
+        );
+      }
     }
 
     case 'head_to_head':
