@@ -1023,7 +1023,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
                 type="button"
                 onClick={() => handleSubmit('save')}
                 disabled={submitMutation.isPending}
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-6 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitMutation.isPending ? 'Saving…' : 'Save Progress'}
               </button>
@@ -1033,13 +1033,13 @@ const SubmissionsPage = ({ seasonSlug }) => {
                 disabled={
                   submitMutation.isPending || !effectiveSeasonSlug || Object.keys(answers).length === 0
                 }
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-sky-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-sky-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 dark:disabled:text-slate-500 disabled:shadow-none"
               >
                 {submitMutation.isPending ? 'Submitting...' : 'Submit Predictions'}
               </button>
             </div>
-            {hasChanges && <p className="text-amber-500 text-sm mt-1">You have unsaved changes</p>}
-            <p className="text-xs text-slate-400 text-center">
+            {hasChanges && <p className="text-amber-500 dark:text-amber-400 text-sm mt-1">You have unsaved changes</p>}
+            <p className="text-xs text-slate-400 dark:text-slate-500 text-center">
               You can leave answers blank and return anytime—saving uses the same secure submit flow.
             </p>
           </div>
@@ -1358,7 +1358,7 @@ const InSeasonTournamentSection = ({
     return (
       <div
         key={question.id}
-        className="flex h-full flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white via-slate-50/60 to-white/90 p-5 shadow-sm"
+        className="flex h-full flex-col rounded-3xl border border-slate-200 dark:border-slate-700 bg-gradient-to-b from-white via-slate-50/60 to-white/90 dark:from-slate-800 dark:via-slate-800/60 dark:to-slate-800/90 p-5 shadow-sm"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -1371,25 +1371,25 @@ const InSeasonTournamentSection = ({
               <span
                 className={`text-xs font-semibold uppercase tracking-wide ${
                   conferenceLower === 'east'
-                    ? 'text-[var(--nba-blue-600)]'
+                    ? 'text-[var(--nba-blue-600)] dark:text-[var(--nba-blue-400)]'
                     : conferenceLower === 'west'
-                      ? 'text-[var(--nba-red-600)]'
-                      : 'text-slate-500'
+                      ? 'text-[var(--nba-red-600)] dark:text-[var(--nba-red-400)]'
+                      : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 {groupMeta.conference || 'Group'}
               </span>
-              <h4 className="text-sm font-semibold text-slate-900">{question.text}</h4>
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">{question.text}</h4>
             </div>
           </div>
-          <span className="inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+          <span className="inline-flex items-center rounded-full bg-sky-100 dark:bg-sky-900/50 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">
             {question.point_value} pts
           </span>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {teams.map((team) => renderTeamBubbleButton(question, team))}
           {teams.length === 0 && (
-            <p className="col-span-full text-sm text-slate-500">
+            <p className="col-span-full text-sm text-slate-500 dark:text-slate-400">
               Team list unavailable right now. Try again shortly.
             </p>
           )}
@@ -1455,29 +1455,29 @@ const InSeasonTournamentSection = ({
     return (
       <div
         key={question.id}
-        className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm"
+        className="flex h-full flex-col rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col">
             {conferenceLabel && (
               <span
                 className={`text-xs font-semibold uppercase tracking-wide ${
-                  conferenceLabel ? theme.selectedText : 'text-slate-500'
+                  conferenceLabel ? theme.selectedText : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 {conferenceLabel} Wildcard
               </span>
             )}
-            <h4 className="text-sm font-semibold text-slate-900">{question.text}</h4>
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">{question.text}</h4>
           </div>
-          <span className="inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+          <span className="inline-flex items-center rounded-full bg-sky-100 dark:bg-sky-900/50 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">
             {question.point_value} pts
           </span>
         </div>
         <div className="mt-4 space-y-2">
           {teams.map((team) => renderWildcardRow(question, team))}
           {teams.length === 0 && (
-            <p className="text-sm text-slate-500">Team data unavailable for this conference.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Team data unavailable for this conference.</p>
           )}
         </div>
       </div>
@@ -1627,8 +1627,8 @@ const renderFinalistColumn = (
 ) => {
   if (!question) {
     return (
-      <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-        <p className="text-sm text-slate-500">No {label.toLowerCase()} question configured.</p>
+      <div className="flex h-full flex-col rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+        <p className="text-sm text-slate-500 dark:text-slate-400">No {label.toLowerCase()} question configured.</p>
       </div>
       );
     }
@@ -1637,10 +1637,10 @@ const renderFinalistColumn = (
   const logoSrc = selectedOption ? getTeamLogoSrc(selectedOption.label) : UNKNOWN_TEAM_LOGO;
 
   return (
-    <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+    <div className="flex h-full flex-col rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span>
-        <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-700">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</span>
+        <span className="inline-flex items-center rounded-full bg-sky-100 dark:bg-sky-900/50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">
           {question.point_value} pts
         </span>
         </div>
@@ -1654,9 +1654,9 @@ const renderFinalistColumn = (
             mode="light"
           />
         </div>
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+        <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-700/70 p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-inner">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-600 shadow-inner">
               <img
                 src={logoSrc}
                 onError={(event) => {
@@ -1668,12 +1668,12 @@ const renderFinalistColumn = (
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-slate-900">{selectedTeamName}</span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-white">{selectedTeamName}</span>
             </div>
           </div>
           {scoreQuestion && (
             <div className="mt-4">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {`${sideKey} Points Scored`}
               </label>
               <input
@@ -1683,7 +1683,7 @@ const renderFinalistColumn = (
                 onChange={(event) => onAnswerChange(scoreQuestion.id, event.target.value)}
                 disabled={isReadOnly}
                 placeholder="Enter points"
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
               />
             </div>
           )}
@@ -1794,8 +1794,8 @@ const renderFinalistColumn = (
 
   return (
     <div className="space-y-10">
-      <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-4 text-sm text-amber-800 shadow-sm">
-        <p className="font-semibold uppercase tracking-wide text-amber-700">
+      <div className="rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-900/30 px-4 py-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm">
+        <p className="font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
           The following DOES NOT count towards your final point total
         </p>
         <p className="mt-1">
@@ -1804,13 +1804,13 @@ const renderFinalistColumn = (
       </div>
 
       {loadingIstStandings && (
-        <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-500 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 px-4 py-3 text-sm text-slate-500 dark:text-slate-400 shadow-sm">
           Loading NBA Cup groups…
         </div>
       )}
 
       {istStandingsError && !loadingIstStandings && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
+        <div className="rounded-2xl border border-rose-200 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/30 px-4 py-3 text-sm text-rose-700 dark:text-rose-300 shadow-sm">
           {istStandingsError}
         </div>
       )}
@@ -1825,7 +1825,7 @@ const renderFinalistColumn = (
 
       {wildcardQuestions.length > 0 && (
         <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-slate-900">Wildcards</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Wildcards</h3>
           <div className="grid gap-5 md:grid-cols-2">
             {wildcardQuestions.map((question) => renderWildcardCompactCard(question))}
           </div>
@@ -1834,7 +1834,7 @@ const renderFinalistColumn = (
 
       {(conferenceWinnerQuestions.length > 0 || tiebreakerQuestions.length > 0) && (
         <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-slate-900">NBA Cup Finals</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">NBA Cup Finals</h3>
           {renderFinalsBracket()}
         </div>
       )}
@@ -1877,13 +1877,13 @@ const QuestionCard = ({
   }, [question.text]);
 
   return (
-    <div className="bg-white/95 border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-md hover:shadow-lg transition-all">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 sm:p-6 shadow-md hover:shadow-lg transition-all">
       <div className="mb-4">
-        <h3 ref={questionTextRef} className="text-slate-900 font-semibold text-lg mb-2">
+        <h3 ref={questionTextRef} className="text-slate-900 dark:text-white font-semibold text-lg mb-2">
           {question.text}
         </h3>
-        <div className="flex items-center gap-4 text-sm text-slate-500">
-          <span className="bg-sky-100 text-sky-700 px-3 py-1 rounded-full">{question.point_value} pts</span>
+        <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+          <span className="bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 px-3 py-1 rounded-full">{question.point_value} pts</span>
           <span className="capitalize">
           {question.question_type === 'head_to_head' ? 'Head to Head' : question.question_type.replace(/_/g, ' ')}
         </span>
@@ -1928,7 +1928,7 @@ const QuestionInput = ({
             isDisabled={isReadOnly || loadingAuxData || playerOptions.length === 0}
             mode="light"
           />
-          <p className="text-xs text-slate-500">Runner-up selections earn half points.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Runner-up selections earn half points.</p>
         </div>
       );
     }
@@ -2084,19 +2084,19 @@ const QuestionInput = ({
       return (
         <div className="space-y-3">
           {(question.current_leaders || question.top_performers) && (
-            <div className="text-sm text-slate-600 bg-slate-100 rounded-md p-3 space-y-2">
+            <div className="text-sm text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 rounded-md p-3 space-y-2">
               {question.current_leaders && (
                 <div>
-                  <p className="font-semibold text-slate-700">Current Leaders</p>
-                  <pre className="whitespace-pre-wrap text-xs text-slate-600">
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">Current Leaders</p>
+                  <pre className="whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-400">
                     {JSON.stringify(question.current_leaders, null, 2)}
                   </pre>
                 </div>
               )}
               {question.top_performers && (
                 <div>
-                  <p className="font-semibold text-slate-700">Top Performers</p>
-                  <pre className="whitespace-pre-wrap text-xs text-slate-600">
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">Top Performers</p>
+                  <pre className="whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-400">
                     {JSON.stringify(question.top_performers, null, 2)}
                   </pre>
                 </div>
@@ -2110,7 +2110,7 @@ const QuestionInput = ({
             disabled={isReadOnly}
             placeholder="Enter your prediction"
             step="0.1"
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500 disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </div>
       );
@@ -2125,7 +2125,7 @@ const QuestionInput = ({
             disabled={isReadOnly}
             placeholder="Enter tiebreaker points"
             min="0"
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500 disabled:opacity-60 disabled:cursor-not-allowed"
           />
         );
       }
@@ -2181,7 +2181,7 @@ const QuestionInput = ({
           onChange={(e) => onChange(e.target.value)}
           disabled={isReadOnly}
           placeholder="Enter your answer..."
-          className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500 disabled:opacity-60 disabled:cursor-not-allowed"
         />
       );
   }
