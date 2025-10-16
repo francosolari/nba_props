@@ -198,7 +198,7 @@ if IS_DEVELOPMENT:
         # Use SendGrid in development for testing
         EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
         EMAIL_HOST = 'smtp.sendgrid.net'
-        EMAIL_PORT = 587
+        EMAIL_PORT = 2525  # Changed from 587 to avoid DigitalOcean SMTP blocks
         EMAIL_USE_TLS = True
         EMAIL_HOST_USER = 'apikey'  # This is literally the string 'apikey'
         EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY', '')
@@ -211,7 +211,7 @@ else:
     # Production: Use SendGrid
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp.sendgrid.net'
-    EMAIL_PORT = 587
+    EMAIL_PORT = 2525  # Use port 2525 for DigitalOcean (port 587 is blocked)
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = 'apikey'  # This is literally the string 'apikey'
     EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY', '')
