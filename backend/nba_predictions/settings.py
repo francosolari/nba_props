@@ -195,26 +195,18 @@ if IS_DEVELOPMENT:
     USE_SENDGRID_IN_DEV = os.getenv('USE_SENDGRID_IN_DEV', 'False').lower() == 'true'
 
     if USE_SENDGRID_IN_DEV:
-        # Use SendGrid in development for testing
-        EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-        EMAIL_HOST = 'smtp.sendgrid.net'
-        EMAIL_PORT = 2525  # Changed from 587 to avoid DigitalOcean SMTP blocks
-        EMAIL_USE_TLS = True
-        EMAIL_HOST_USER = 'apikey'  # This is literally the string 'apikey'
-        EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY', '')
+        # Use SendGrid Web API (more reliable than SMTP on cloud providers)
+        EMAIL_BACKEND = 'nba_predictions.sendgrid_backend.SendGridBackend'
+        SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
         DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@propspredictions.com')
     else:
         # Print emails to console (default for development)
         EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
         DEFAULT_FROM_EMAIL = 'noreply@nba-predictions.local'
 else:
-    # Production: Use SendGrid
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.sendgrid.net'
-    EMAIL_PORT = 2525  # Use port 2525 for DigitalOcean (port 587 is blocked)
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = 'apikey'  # This is literally the string 'apikey'
-    EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY', '')
+    # Production: Use SendGrid Web API (more reliable than SMTP, uses HTTPS port 443)
+    EMAIL_BACKEND = 'nba_predictions.sendgrid_backend.SendGridBackend'
+    SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@propspredictions.com')
 
 # Email sender name (optional)
