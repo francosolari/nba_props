@@ -102,7 +102,7 @@
                 {# Current Info Display #}
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     <p class="text-sm font-medium text-gray-700 mb-1">Preview</p>
-                    <p class="text-gray-600">Display name: <span class="font-semibold">{{ user.userprofile.display_name }}</span></p>
+                    <p class="text-gray-600">Display name: <span id="display-name-preview" class="font-semibold">{{ user.userprofile.display_name|default:user.username }}</span></p>
                     <p class="text-gray-600">Email: <span class="font-semibold">{{ user.email }}</span></p>
                 </div>
 
@@ -125,4 +125,38 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Update display name preview in real-time
+    function updateDisplayNamePreview() {
+        const username = document.getElementById('username').value;
+        const firstName = document.getElementById('first_name').value;
+        const lastName = document.getElementById('last_name').value;
+        const preview = document.getElementById('display-name-preview');
+
+        let displayName;
+        if (firstName && lastName) {
+            // If both first and last name provided: "FirstName L."
+            displayName = `${firstName} ${lastName.charAt(0)}.`;
+        } else if (firstName) {
+            // If only first name: use first name
+            displayName = firstName;
+        } else if (username) {
+            // If no name provided: use username
+            displayName = username;
+        } else {
+            displayName = '(not set)';
+        }
+
+        preview.textContent = displayName;
+    }
+
+    // Add event listeners to update preview on input
+    document.getElementById('username').addEventListener('input', updateDisplayNamePreview);
+    document.getElementById('first_name').addEventListener('input', updateDisplayNamePreview);
+    document.getElementById('last_name').addEventListener('input', updateDisplayNamePreview);
+
+    // Initialize preview on page load
+    updateDisplayNamePreview();
+</script>
 {% endblock content %}
