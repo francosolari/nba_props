@@ -65,21 +65,11 @@ git commit -m "Bump version to $NEW_VERSION" || echo "No changes to commit"
 git push origin "$CURRENT_BRANCH"
 echo -e "${GREEN}✓ Version file pushed to remote${NC}"
 
-echo -e "\n${YELLOW}Step 1: SSH to server and pull latest code...${NC}"
-ssh root@134.209.213.185 << 'ENDSSH'
-cd /var/www/nba_props
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
-echo "Pulling latest code from branch: $CURRENT_BRANCH"
-git pull origin "$CURRENT_BRANCH"
-echo "✓ Code updated on server"
-ENDSSH
-echo -e "${GREEN}✓ Server code updated${NC}"
-
-echo -e "\n${YELLOW}Step 2: Building frontend with npm...${NC}"
+echo -e "\n${YELLOW}Step 1: Building frontend with npm...${NC}"
 npm run build
 echo -e "${GREEN}✓ Frontend built successfully${NC}"
 
-echo -e "\n${YELLOW}Step 3: Building Docker image for linux/amd64...${NC}"
+echo -e "\n${YELLOW}Step 2: Building Docker image for linux/amd64...${NC}"
 
 # Check if buildx is available
 if docker buildx version &> /dev/null; then
@@ -110,7 +100,7 @@ else
     docker build --platform linux/amd64 -t $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION .
     docker tag $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION $DOCKER_USERNAME/$IMAGE_NAME:latest
 
-    echo -e "\n${YELLOW}Step 3: Pushing to Docker Hub...${NC}"
+    echo -e "\n${YELLOW}Step 2: Pushing to Docker Hub...${NC}"
     docker push $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION
     docker push $DOCKER_USERNAME/$IMAGE_NAME:latest
 
