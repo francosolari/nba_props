@@ -36,6 +36,7 @@ services:
       - mynetwork
 
   web-green:
+    image: ${DOCKER_IMAGE:-nba_props_web-green}
     build:
       context: .
       dockerfile: Dockerfile
@@ -43,16 +44,21 @@ services:
       gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000"
     ports:
       - "8002:8000" # Expose web-green on port 8002 locally
-    volumes:
-      - ./backend:/app
     environment:
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DJANGO_DEVELOPMENT=True
+      - DJANGO_DEVELOPMENT=False
+      - SECRET_KEY=${SECRET_KEY}
       - DATABASE_HOST=${DATABASE_HOST}
       - DATABASE_PORT=${DATABASE_PORT}
       - DATABASE_NAME=${DATABASE_NAME}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
+      - CF_TURNSTILE_SITE_KEY=${CF_TURNSTILE_SITE_KEY}
+      - CF_TURNSTILE_SECRET_KEY=${CF_TURNSTILE_SECRET_KEY}
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
+      - GOOGLE_OAUTH_SECRET=${GOOGLE_OAUTH_SECRET}
     depends_on:
       - db
     networks:
