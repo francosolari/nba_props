@@ -1,16 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import useLeaderboard from '../hooks/useLeaderboard';
-import { ChevronLeft, Grid, Expand, Minimize2, X, Search, AlertTriangle, Pin, PinOff, Trophy, Award, Target, CheckCircle2, XCircle } from 'lucide-react';
+import { ChevronLeft, Grid, Expand, Minimize2, X, Search, AlertTriangle, Pin, PinOff, Trophy, Award, Target, CheckCircle2, XCircle, Lock, Calendar } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
- 
 
-function LeaderboardDetailPage({ seasonSlug = 'current' }) {
+
+function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const paramsRoot = document.getElementById('leaderboard-detail-root');
   const initialSection = paramsRoot?.getAttribute('data-initial-section') || 'standings';
   const initialUserId = paramsRoot?.getAttribute('data-initial-user-id') || '';
   const loggedInUsername = paramsRoot?.getAttribute('data-logged-in-username') || null;
 
-  const { data: leaderboardData, isLoading, error } = useLeaderboard(seasonSlug);
+  // State for selected season
+  const [selectedSeason, setSelectedSeason] = useState(initialSeasonSlug);
+
+  // Fetch seasons where the user has participated (has submissions)
+  const { data: seasonsData } = useQuery({
+    queryKey: ['seasons', 'user-participated'],
+    queryFn: async () => {
+      const res = await axios.get('/api/v2/seasons/user-participated');
+      return res.data;
+    },
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+  });
+
+  const { data: leaderboardData, season: seasonInfo, isLoading, error } = useLeaderboard(selectedSeason);
 
   const [section, setSection] = useState(initialSection); // 'standings' | 'awards' | 'props'
   const [mode, setMode] = useState('compare'); // 'showcase' | 'compare'
@@ -500,6 +515,89 @@ useEffect(() => {
     return <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-center text-rose-600 dark:text-rose-400">{String(error)}</div>;
   }
 
+  // Check if submissions are still open
+  const submissionsOpen = seasonInfo?.submissions_open ?? false;
+  const submissionEndDate = seasonInfo?.submission_end_date;
+
+  // Format submission end date
+  const formatDate = (isoString) => {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
+    } catch {
+      return isoString;
+    }
+  };
+
+  // If submissions are still open, show locked message
+  if (submissionsOpen && submissionEndDate) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6">
+        <div className="max-w-4xl mx-auto space-y-4">
+          {/* Back button and Season Selector */}
+          <div className="flex items-center justify-between">
+            <a href={`/leaderboard/${selectedSeason}/`} className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors">
+              <ChevronLeft className="w-4 h-4" /> Back
+            </a>
+            {seasonsData && seasonsData.length > 1 && (
+              <select
+                value={selectedSeason}
+                onChange={(e) => setSelectedSeason(e.target.value)}
+                className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium shadow-sm hover:border-slate-400 dark:hover:border-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                {seasonsData.map((season) => (
+                  <option key={season.slug} value={season.slug}>
+                    {season.year}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Locked Message */}
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-700/50 bg-gradient-to-br from-white via-white to-slate-50/30 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-900/50 shadow-lg backdrop-blur-sm">
+            <div className="relative px-6 py-12 md:px-12 md:py-16 text-center">
+              <div className="flex flex-col items-center gap-6">
+                <div className="p-4 rounded-full bg-gradient-to-br from-amber-50 to-amber-100/50 text-amber-600 border border-amber-200/60 dark:from-amber-400/10 dark:to-amber-500/5 dark:text-amber-300 dark:border-amber-500/30">
+                  <Lock className="w-12 h-12" />
+                </div>
+
+                <div className="space-y-3">
+                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    Leaderboard Locked
+                  </h1>
+                  <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl">
+                    The detailed leaderboard will open when submissions close to ensure fair play and prevent any competitive advantages.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900/40 backdrop-blur border border-slate-200/60 dark:border-slate-700/40 shadow-sm">
+                  <Calendar className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                  <div className="text-left">
+                    <div className="text-xs uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400">Opens on</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white">{formatDate(submissionEndDate)}</div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-4">
+                  Check back after the submission deadline to see the rankings!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const sectionTitle = fromSectionKey(section);
   const teamSlug = (name='') => name.toLowerCase().replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-');
   // Keep a fixed width to avoid column misalignment when toggling user count
@@ -509,10 +607,25 @@ useEffect(() => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-4">
       <div className="max-w-7xl mx-auto space-y-3">
         <div className="flex items-center justify-between">
-          <a href={`/leaderboard/${seasonSlug}/`} className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors">
+          <a href={`/leaderboard/${selectedSeason}/`} className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors">
             <ChevronLeft className="w-4 h-4" /> Back
           </a>
-          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Season {seasonSlug.replace('-', '–')}</div>
+          <div className="flex items-center gap-3">
+            {seasonsData && seasonsData.length > 1 && (
+              <select
+                value={selectedSeason}
+                onChange={(e) => setSelectedSeason(e.target.value)}
+                className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-medium shadow-sm hover:border-slate-400 dark:hover:border-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                {seasonsData.map((season) => (
+                  <option key={season.slug} value={season.slug}>
+                    {season.year}
+                  </option>
+                ))}
+              </select>
+            )}
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Season {seasonInfo?.year || selectedSeason.replace('-', '–')}</div>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

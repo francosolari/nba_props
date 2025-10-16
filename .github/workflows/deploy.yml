@@ -30,13 +30,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
       - name: Read and increment version
         id: version
         run: |
           if [ -f .docker-version ]; then
             CURRENT_VERSION=$(cat .docker-version)
           else
-            CURRENT_VERSION="v1.2.6"
+            CURRENT_VERSION="v1.2.7"
           fi
 
           # Parse version

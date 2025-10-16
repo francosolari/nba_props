@@ -8,55 +8,84 @@ import { useMemo } from 'react';
  * @returns {Object} - Returns data, error, isLoading states and calculated totals
  */
 function normalizeLeaderboardData(raw) {
-  // New optimized endpoint returns a list
+  // New optimized endpoint with season metadata: { leaderboard: [...], season: {...} }
+  if (raw && Array.isArray(raw.leaderboard) && raw.season) {
+    return {
+      leaderboard: raw.leaderboard.map((u) => ({
+        rank: u.rank,
+        user: {
+          id: u.id,
+          username: u.username,
+          display_name: u.display_name,
+          avatar: u.avatar ?? null,
+          total_points: u.total_points ?? u.points ?? 0,
+          accuracy: u.accuracy,
+          categories: u.categories || {},
+          badges: u.badges || [],
+        },
+      })),
+      season: raw.season,
+    };
+  }
+
+  // New optimized endpoint returns a list (legacy format without season metadata)
   if (Array.isArray(raw)) {
-    return raw.map((u) => ({
-      rank: u.rank,
-      user: {
-        id: u.id,
-        username: u.username,
-        display_name: u.display_name,
-        avatar: u.avatar ?? null,
-        total_points: u.total_points ?? u.points ?? 0,
-        accuracy: u.accuracy,
-        categories: u.categories || {},
-        badges: u.badges || [],
-      },
-    }));
+    return {
+      leaderboard: raw.map((u) => ({
+        rank: u.rank,
+        user: {
+          id: u.id,
+          username: u.username,
+          display_name: u.display_name,
+          avatar: u.avatar ?? null,
+          total_points: u.total_points ?? u.points ?? 0,
+          accuracy: u.accuracy,
+          categories: u.categories || {},
+          badges: u.badges || [],
+        },
+      })),
+      season: null,
+    };
   }
 
   // Answers endpoint shape: { items: [ { user, answers: [] } ], count }
   if (raw && Array.isArray(raw.items)) {
-    return raw.items.map((it) => ({
-      user: {
-        id: it.user?.id,
-        username: it.user?.username,
-        display_name: it.user?.display_name || it.user?.username,
-        avatar: null,
-        total_points: it.user?.points ?? 0,
-        accuracy: undefined,
-        categories: {},
-      },
-    }));
+    return {
+      leaderboard: raw.items.map((it) => ({
+        user: {
+          id: it.user?.id,
+          username: it.user?.username,
+          display_name: it.user?.display_name || it.user?.username,
+          avatar: null,
+          total_points: it.user?.points ?? 0,
+          accuracy: undefined,
+          categories: {},
+        },
+      })),
+      season: null,
+    };
   }
 
   // Temp leaderboard shape: { top_users: [ { user: {...}, points } ] }
   if (raw && Array.isArray(raw.top_users)) {
-    return raw.top_users.map((t) => ({
-      user: {
-        id: t.user?.id,
-        username: t.user?.username,
-        display_name: t.user?.display_name || t.user?.first_name || t.user?.username,
-        avatar: null,
-        total_points: t.points ?? 0,
-        accuracy: undefined,
-        categories: {},
-        badges: [],
-      },
-    }));
+    return {
+      leaderboard: raw.top_users.map((t) => ({
+        user: {
+          id: t.user?.id,
+          username: t.user?.username,
+          display_name: t.user?.display_name || t.user?.first_name || t.user?.username,
+          avatar: null,
+          total_points: t.points ?? 0,
+          accuracy: undefined,
+          categories: {},
+          badges: [],
+        },
+      })),
+      season: null,
+    };
   }
 
-  return [];
+  return { leaderboard: [], season: null };
 }
 
 function useLeaderboard(seasonSlug = 'current') {
@@ -83,8 +112,9 @@ function useLeaderboard(seasonSlug = 'current') {
     refetchOnWindowFocus: false,
   });
 
-  // Calculate memoized totals from the leaderboard data
-  const leaderboardData = Array.isArray(data) ? data : [];
+  // Extract leaderboard data and season metadata
+  const leaderboardData = data?.leaderboard || [];
+  const seasonData = data?.season || null;
 
   const totals = useMemo(() => {
     if (!Array.isArray(leaderboardData) || leaderboardData.length === 0) {
@@ -118,8 +148,8 @@ function useLeaderboard(seasonSlug = 'current') {
 
     return { totalPlayers, totalPredictions, avgAccuracy };
   }, [leaderboardData]);
-  
-  return { data: leaderboardData, error, isLoading, totals };
+
+  return { data: leaderboardData, season: seasonData, error, isLoading, totals };
 }
 
 export default useLeaderboard;

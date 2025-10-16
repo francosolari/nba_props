@@ -52,6 +52,20 @@ echo -e "${GREEN}=== NBA Predictions Blue-Green Deployment ===${NC}"
 echo "Docker image: $DOCKER_IMAGE"
 echo ""
 
+# Step 0: Pull latest code from current branch
+echo -e "${YELLOW}Step 0: Pulling latest code from git...${NC}"
+cd "$PROJECT_ROOT"
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+echo "Current branch: $CURRENT_BRANCH"
+git pull origin "$CURRENT_BRANCH" || {
+    echo -e "${RED}Warning: git pull failed${NC}"
+    read -p "Continue anyway? (y/N): " CONTINUE
+    if [ "$CONTINUE" != "y" ]; then
+        exit 1
+    fi
+}
+echo -e "${GREEN}✓ Code updated${NC}\n"
+
 # Step 1: Detect current live color
 echo -e "${YELLOW}Step 1: Detecting current live color...${NC}"
 CURRENT_PORT=$(grep "proxy_pass.*127.0.0.1:" "$NGINX_CONFIG" | grep -oP ':\K[0-9]+' | head -1)

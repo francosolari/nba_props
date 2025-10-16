@@ -1,10 +1,12 @@
 from datetime import datetime, time
 from ninja import Router
 from ninja.errors import HttpError
-from predictions.models import Season
+from predictions.models import Season, Answer
+from predictions.models.prediction import StandingPrediction
 from ..schemas import SeasonCreateSchema
 from ..utils import admin_required
 from django.utils import timezone
+from django.db.models import Q
 
 
 def _serialize_datetime(value):
@@ -46,6 +48,49 @@ def list_seasons(request):
 def latest_season(request):
     season = Season.objects.order_by('-start_date').only('slug').first()
     return {'slug': season.slug if season else None}
+
+
+@router.get("/user-participated", response=list[dict], summary="Get seasons user participated in")
+def user_participated_seasons(request):
+    """
+    Get list of seasons where the current user has submitted answers or predictions.
+    Returns seasons in descending order by start date.
+    """
+    if not request.user.is_authenticated:
+        return []
+
+    # Get seasons where user has answers
+    answer_season_ids = Answer.objects.filter(user=request.user).values_list('question__season_id', flat=True).distinct()
+
+    # Get seasons where user has standing predictions
+    standing_season_ids = StandingPrediction.objects.filter(user=request.user).values_list('season_id', flat=True).distinct()
+
+    # Combine both querysets
+    season_ids = set(list(answer_season_ids) + list(standing_season_ids))
+
+    if not season_ids:
+        return []
+
+    seasons = Season.objects.filter(id__in=season_ids).order_by('-start_date').values(
+        'slug',
+        'year',
+        'start_date',
+        'end_date',
+        'submission_start_date',
+        'submission_end_date',
+    )
+
+    return [
+        {
+            'slug': s['slug'],
+            'year': s['year'],
+            'start_date': s['start_date'],
+            'end_date': s['end_date'],
+            'submission_start_date': _serialize_datetime(s['submission_start_date']),
+            'submission_end_date': _serialize_datetime(s['submission_end_date']),
+        }
+        for s in seasons
+    ]
 
 
 @router.post("/", response=dict, summary="Create new season")

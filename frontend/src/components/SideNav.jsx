@@ -139,7 +139,7 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
         {/* Mobile Menu Button */}
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="fixed top-14 left-4 z-40 p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          className="fixed top-14 left-4 z-50 p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
         >
           <Menu className="w-5 h-5 text-slate-700 dark:text-slate-300" />
         </button>
@@ -148,10 +148,10 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
         {isMobileOpen && (
           <>
             <div
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
               onClick={() => setIsMobileOpen(false)}
             />
-            <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
+            <div className="fixed inset-y-0 left-0 z-[60] w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
               <NavContent />
             </div>
           </>

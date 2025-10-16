@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Union
 
 from ninja import Router
-from predictions.models import Answer, RegularSeasonStandings
+from django.utils import timezone
+from predictions.models import Answer, RegularSeasonStandings, Season
 from predictions.models.prediction import StandingPrediction
 from predictions.models.question import (
     Question,
@@ -207,8 +208,43 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
 
 @router.get(
     "/{season_slug}",
-    response=list[dict],
+    response=dict,
     summary="Season leaderboard (optimized)",
 )
 def leaderboard_view(request, season_slug: str):
-    return _build_leaderboard(season_slug)
+    """
+    Returns leaderboard data with season metadata including submission_end_date.
+    Frontend can use this to determine if submissions are still open.
+    """
+    # Resolve season
+    if season_slug == "current":
+        season = Season.objects.order_by('-end_date').first()
+        if not season:
+            return {"error": "No seasons found", "leaderboard": [], "season": None}
+    else:
+        try:
+            season = Season.objects.get(slug=season_slug)
+        except Season.DoesNotExist:
+            return {"error": f"Season '{season_slug}' not found", "leaderboard": [], "season": None}
+
+    # Build leaderboard data
+    leaderboard = _build_leaderboard(season.slug)
+
+    # Serialize season metadata
+    submission_end = None
+    if season.submission_end_date:
+        if timezone.is_naive(season.submission_end_date):
+            submission_end = timezone.make_aware(season.submission_end_date)
+        else:
+            submission_end = season.submission_end_date
+        submission_end = submission_end.isoformat()
+
+    return {
+        "leaderboard": leaderboard,
+        "season": {
+            "slug": season.slug,
+            "year": season.year,
+            "submission_end_date": submission_end,
+            "submissions_open": timezone.now() < season.submission_end_date if season.submission_end_date else False,
+        }
+    }

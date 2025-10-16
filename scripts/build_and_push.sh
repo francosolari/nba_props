@@ -18,6 +18,10 @@ VERSION_FILE=".docker-version"
 
 echo -e "${BLUE}=== Docker Build and Push Script ===${NC}\n"
 
+# Get current branch
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo -e "${YELLOW}Current branch: $CURRENT_BRANCH${NC}\n"
+
 # Get current version or start at v1.0.0
 if [ -f "$VERSION_FILE" ]; then
     CURRENT_VERSION=$(cat "$VERSION_FILE")
@@ -41,18 +45,41 @@ NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
 
 echo -e "${GREEN}New version: $NEW_VERSION${NC}\n"
 
+# Save new version to file
+echo "$NEW_VERSION" > "$VERSION_FILE"
+echo -e "${GREEN}✓ Version saved to $VERSION_FILE${NC}\n"
+
 # Confirm
-read -p "Build and push $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION? (y/N): " CONFIRM
+read -p "Commit version file, push, and build $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION? (y/N): " CONFIRM
 if [ "$CONFIRM" != "y" ]; then
     echo "Cancelled"
+    # Revert version file
+    echo "$CURRENT_VERSION" > "$VERSION_FILE"
     exit 0
 fi
 
-echo -e "\n${YELLOW}Step 1: Building frontend with npm...${NC}"
+# Commit and push the version file
+echo -e "\n${YELLOW}Step 0: Committing and pushing version file...${NC}"
+git add "$VERSION_FILE"
+git commit -m "Bump version to $NEW_VERSION" || echo "No changes to commit"
+git push origin "$CURRENT_BRANCH"
+echo -e "${GREEN}✓ Version file pushed to remote${NC}"
+
+echo -e "\n${YELLOW}Step 1: SSH to server and pull latest code...${NC}"
+ssh root@134.209.213.185 << 'ENDSSH'
+cd /var/www/nba_props
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+echo "Pulling latest code from branch: $CURRENT_BRANCH"
+git pull origin "$CURRENT_BRANCH"
+echo "✓ Code updated on server"
+ENDSSH
+echo -e "${GREEN}✓ Server code updated${NC}"
+
+echo -e "\n${YELLOW}Step 2: Building frontend with npm...${NC}"
 npm run build
 echo -e "${GREEN}✓ Frontend built successfully${NC}"
 
-echo -e "\n${YELLOW}Step 2: Building Docker image for linux/amd64...${NC}"
+echo -e "\n${YELLOW}Step 3: Building Docker image for linux/amd64...${NC}"
 
 # Check if buildx is available
 if docker buildx version &> /dev/null; then
@@ -89,10 +116,6 @@ else
 
     echo -e "${GREEN}✓ Built and pushed successfully${NC}"
 fi
-
-# Save new version
-echo "$NEW_VERSION" > "$VERSION_FILE"
-echo -e "\n${GREEN}✓ Version saved to $VERSION_FILE${NC}"
 
 echo -e "\n${BLUE}=== Build Complete ===${NC}"
 echo -e "Image: ${GREEN}$DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION${NC}"
