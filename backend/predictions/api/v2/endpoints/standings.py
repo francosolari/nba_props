@@ -28,6 +28,7 @@ from ..schemas import (
     ISTStandingSchema,
     ErrorSchema
 )
+from .user_submissions import _resolve_season
 
 # Create router for standings endpoints
 router = Router(tags=["Standings"])
@@ -122,18 +123,7 @@ def get_regular_season_standings(request, season_slug: str):
         2. RegularSeasonStandings filtered by season, ordered by conference and position
     """
     try:
-        # Handle special "current" season keyword
-        if season_slug == "current":
-            # Find the most recent season by start date
-            season = Season.objects.order_by('-start_date').first()
-            if not season:
-                return JsonResponse(
-                    {"error": "Could not find the latest season"},
-                    status=400
-                )
-        else:
-            # Look up specific season by slug
-            season = get_object_or_404(Season, slug=season_slug)
+        season = _resolve_season(season_slug)
 
         # Query standings for the season, ordered by conference and position
         standings_queryset = RegularSeasonStandings.objects.filter(
@@ -270,7 +260,8 @@ def get_ist_standings(request, season_slug: str):
     """
     try:
         # Look up season by slug
-        season = get_object_or_404(Season, slug=season_slug)
+        # Use _resolve_season to handle 'current' slug
+        season = _resolve_season(season_slug)
 
         # Query IST standings, ordered by conference and group rank
         ist_standings = InSeasonTournamentStandings.objects.filter(

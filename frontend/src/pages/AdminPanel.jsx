@@ -19,7 +19,6 @@ import {
 import { useSeasons, useUserContext } from "../hooks/useSubmissions";
 import SelectComponent from "../components/SelectComponent";
 import QuestionBatchWizard from "../components/admin/QuestionBatchWizard";
-import SideNav from "../components/SideNav";
 
 const THEME_CONFIG = {
   dark: {
@@ -139,20 +138,6 @@ const AdminPanel = ({ seasonSlug }) => {
   const [showSeasonForm, setShowSeasonForm] = useState(false);
   const [seasonForm, setSeasonForm] = useState(defaultSeasonForm);
   const [showBatchWizard, setShowBatchWizard] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(max-width: 768px)");
-    const onChange = () => setIsMobile(!!mq.matches);
-    onChange();
-    if (mq.addEventListener) mq.addEventListener("change", onChange);
-    else if (mq.addListener) mq.addListener(onChange);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener("change", onChange);
-      else if (mq.removeListener) mq.removeListener(onChange);
-    };
-  }, []);
 
   useEffect(() => {
     if (!activeSeason && seasons.length) {
@@ -426,11 +411,8 @@ const AdminPanel = ({ seasonSlug }) => {
   }
 
   return (
-    <>
-      <SideNav currentPage="home" seasonSlug={activeSeason || "current"} />
       <div
         className={`min-h-screen transition-colors duration-300 ${themeStyles.background}`}
-        style={{ marginLeft: isMobile ? "0" : "64px" }}
       >
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 md:py-14 space-y-12">
           <header className="space-y-6">
@@ -1297,7 +1279,6 @@ const AdminPanel = ({ seasonSlug }) => {
             )}
           </section>
         </div>
-      </div>
       <QuestionBatchWizard
         isOpen={showBatchWizard}
         onClose={() => setShowBatchWizard(false)}
@@ -1310,7 +1291,7 @@ const AdminPanel = ({ seasonSlug }) => {
         onCompleted={handleBatchCompleted}
         theme={themeStyles.mode}
       />
-    </>
+      </div>
   );
 };
 
@@ -1482,6 +1463,7 @@ const QuestionRow = ({
   awardOptions,
   playerOptions,
   teamOptions,
+  activeSeason,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -1516,42 +1498,71 @@ const QuestionRow = ({
 
   const handleSave = async () => {
     setBusy(true);
-    const {
-      id,
-      last_updated,
-      question_type,
-      award,
-      related_player,
-      team1,
-      team2,
-      player_stat,
-      award_id,
-      related_player_id,
-      team1_id,
-      team2_id,
-      player_stat_id,
-      ...rest
-    } = draft;
 
-    const payload = { ...rest };
-    payload.point_value = Number(payload.point_value);
-    if (payload.line !== undefined) payload.line = Number(payload.line);
-    if (payload.fixed_value !== undefined)
-      payload.fixed_value = Number(payload.fixed_value);
+    const basePayload = {
+      text: draft.text.trim(),
+      point_value: Number(draft.point_value),
+    };
 
-    if (question.question_type === "superlative") {
-      payload.award_id = award;
+    let specificPayload = {};
+
+    switch (question.question_type) {
+      case "superlative":
+        specificPayload = {
+          award_id: draft.award ? Number(draft.award) : Number(draft.award_id),
+        };
+        break;
+      case "prop":
+        specificPayload = {
+          outcome_type: draft.outcome_type,
+          related_player_id: draft.related_player
+            ? Number(draft.related_player)
+            : draft.related_player_id
+              ? Number(draft.related_player_id)
+              : null,
+          line:
+            draft.outcome_type === "over_under" && draft.line !== "" && draft.line != null
+              ? Number(draft.line)
+              : null,
+        };
+        break;
+      case "player_stat":
+        specificPayload = {
+          player_stat_id: draft.player_stat
+            ? Number(draft.player_stat)
+            : Number(draft.player_stat_id),
+          stat_type: (draft.stat_type || "").trim(),
+          fixed_value:
+            draft.fixed_value !== "" && draft.fixed_value != null
+              ? Number(draft.fixed_value)
+              : null,
+        };
+        break;
+      case "head_to_head":
+        specificPayload = {
+          team1_id: draft.team1 ? Number(draft.team1) : Number(draft.team1_id),
+          team2_id: draft.team2 ? Number(draft.team2) : Number(draft.team2_id),
+        };
+        break;
+      case "ist":
+        specificPayload = {
+          prediction_type: draft.prediction_type,
+          ist_group: draft.ist_group || null,
+          is_tiebreaker: Boolean(
+            draft.prediction_type === "tiebreaker" || draft.is_tiebreaker,
+          ),
+        };
+        break;
+      case "nba_finals":
+        specificPayload = {
+          group_name: draft.group_name || null,
+        };
+        break;
+      default:
+        break;
     }
-    if (question.question_type === "prop") {
-      payload.related_player_id = related_player;
-    }
-    if (question.question_type === "head_to_head") {
-      payload.team1_id = team1;
-      payload.team2_id = team2;
-    }
-    if (question.question_type === "player_stat") {
-      payload.player_stat_id = player_stat;
-    }
+
+    const payload = { ...basePayload, ...specificPayload };
 
     await onUpdate(payload);
     setBusy(false);

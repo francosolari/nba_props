@@ -259,7 +259,31 @@ class QuestionUpdateSchema(Schema):
     """Schema for updating any question"""
     text: Optional[str] = None
     point_value: Optional[float] = None
-    # Additional fields can be added per question type
+
+    # Superlative question fields
+    award_id: Optional[int] = None
+
+    # Prop question fields
+    outcome_type: Optional[Literal["over_under", "yes_no"]] = None
+    related_player_id: Optional[int] = None
+    line: Optional[float] = None
+
+    # Player stat question fields
+    player_stat_id: Optional[int] = None
+    stat_type: Optional[str] = None
+    fixed_value: Optional[float] = None
+
+    # Head-to-head question fields
+    team1_id: Optional[int] = None
+    team2_id: Optional[int] = None
+
+    # IST question fields
+    prediction_type: Optional[Literal["group_winner", "wildcard", "conference_winner", "tiebreaker"]] = None
+    ist_group: Optional[str] = None
+    is_tiebreaker: Optional[bool] = None
+
+    # NBA Finals question fields
+    group_name: Optional[str] = None
 
 
 class QuestionReorderSchema(Schema):

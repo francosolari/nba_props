@@ -28,7 +28,6 @@ import useLeaderboard from "../hooks/useLeaderboard";
 import UserExpandedView from "../components/UserExpandedView";
 import QuestionForm from "../components/QuestionForm";
 import DisplayPredictionsBoard from "../components/DisplayPredictions";
-import SideNav from "../components/SideNav";
 
 function getRootProps() {
   const el = document.getElementById("profile-root");
@@ -87,12 +86,12 @@ function LogoutModal({ isOpen, onClose, onConfirm }) {
 }
 
 const pageShellClasses =
-  "min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 py-6";
+  "min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 py-6 pb-20";
 const containerClasses = "container mx-auto px-4 space-y-5";
 const panelClasses =
-  "rounded-md border border-slate-200/60 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/80 shadow-sm backdrop-blur-sm";
+  "rounded-md border border-slate-200/60 dark:border-slate-700/50 bg-white dark:bg-slate-800 shadow-sm";
 const mutedPanelClasses =
-  "rounded-md border border-slate-200/70 dark:border-slate-700/50 bg-slate-50/80 dark:bg-slate-800/60";
+  "rounded-md border border-slate-200/70 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/60";
 
 export default function ProfilePage({
   seasonSlug: seasonFromProp = "current",
@@ -110,20 +109,6 @@ export default function ProfilePage({
       : [{ slug: initialSeason }],
   );
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(max-width: 768px)");
-    const onChange = () => setIsMobile(!!mq.matches);
-    onChange();
-    if (mq.addEventListener) mq.addEventListener("change", onChange);
-    else if (mq.addListener) mq.addListener(onChange);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener("change", onChange);
-      else if (mq.removeListener) mq.removeListener(onChange);
-    };
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -307,12 +292,7 @@ export default function ProfilePage({
   }, []);
 
   return (
-    <>
-      <SideNav currentPage="profile" seasonSlug={selectedSeason} />
-      <div
-        className={pageShellClasses}
-        style={{ marginLeft: isMobile ? "0" : "64px" }}
-      >
+      <div className={pageShellClasses}>
         <LogoutModal
           isOpen={showLogoutModal}
           onClose={() => setShowLogoutModal(false)}
@@ -323,7 +303,7 @@ export default function ProfilePage({
           <section className={`${panelClasses} p-4 md:p-6`}>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-3 md:gap-4">
-                <div className="h-14 w-14 md:h-16 md:w-16 rounded-full overflow-hidden border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 flex-shrink-0">
+                <div className="h-14 w-14 md:h-16 md:w-16 rounded-full overflow-hidden border-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 flex-shrink-0">
                   <img
                     alt="Avatar"
                     className="h-full w-full object-cover"
@@ -349,7 +329,7 @@ export default function ProfilePage({
                   <select
                     value={selectedSeason}
                     onChange={(e) => setSelectedSeason(e.target.value)}
-                    className="appearance-none border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm font-medium px-3 py-2 pr-9 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-500"
+                    className="appearance-none border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm font-medium px-3 py-2 pr-9 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-500"
                   >
                     {seasons.map((s) => (
                       <option key={s.slug} value={s.slug}>
@@ -565,7 +545,7 @@ export default function ProfilePage({
                             return (
                               <li
                                 key={idx}
-                                className="flex items-center justify-between rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                                className="flex items-center justify-between rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700/50"
                               >
                                 <div className="flex items-center gap-2 min-w-0">
                                   {isCorrect ? (
@@ -604,7 +584,7 @@ export default function ProfilePage({
               <div className="flex justify-center">
                 <a
                   href={compareHref}
-                  className="inline-flex items-center gap-2 rounded-md border border-teal-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-slate-700"
+                  className="inline-flex items-center gap-2 rounded-md border border-teal-600 dark:border-teal-500 bg-slate-50 dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-slate-700"
                 >
                   Open Detailed Comparison <ChevronRight className="w-4 h-4" />
                 </a>
@@ -1188,6 +1168,5 @@ export default function ProfilePage({
           )}
         </div>
       </div>
-    </>
   );
 }

@@ -1,4 +1,4 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
@@ -98,7 +98,12 @@ def profile_view(request):
 
 @login_required
 def submit_predictions(request, season_slug):
-    season = get_object_or_404(Season, slug=season_slug)
+    if season_slug == 'current':
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            raise Http404("No seasons available.")
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
 
     if request.method == 'POST':
         try:
@@ -259,7 +264,13 @@ def leaderboard_page(request, season_slug):
     """
     View to render the leaderboard page with user rankings and points.
     """
-    season = get_object_or_404(Season, slug=season_slug)
+    if season_slug == 'current':
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            # If no seasons exist at all, it's a 404
+            raise Http404("No seasons available.")
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
 
     # Calculate user points and rankings
     leaderboard_data = (
@@ -294,7 +305,12 @@ def leaderboard_detail_page(request, season_slug):
     """Render advanced leaderboard detail grid view.
     Reads optional query params: section, user (id) to pre-expand UI.
     """
-    season = get_object_or_404(Season, slug=season_slug)
+    if season_slug == 'current':
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            raise Http404("No seasons available.")
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
     initial_section = request.GET.get('section', 'standings')
     initial_user_id = request.GET.get('user')  # may be None
 
@@ -310,7 +326,12 @@ def submit_predictions_view(request, season_slug):
     """
     Render the submissions page for users to answer questions.
     """
-    season = get_object_or_404(Season, slug=season_slug)
+    if season_slug == 'current':
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            raise Http404("No seasons available.")
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
     
     return render(request, 'predictions/submit_predictions.html', {
         'season': season,

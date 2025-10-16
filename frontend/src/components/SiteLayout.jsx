@@ -6,9 +6,26 @@ import SideNav from './SideNav';
  * This component reads the current page and season from data attributes on the root element
  */
 function SiteLayout() {
+  const [currentPage, setCurrentPage] = useState('home');
   const rootElement = document.getElementById('site-layout-root');
-  const currentPage = rootElement?.getAttribute('data-current-page') || 'home';
   const seasonSlug = rootElement?.getAttribute('data-season-slug') || 'current';
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/leaderboard')) {
+      if (path.includes('/detailed')) {
+        setCurrentPage('breakdown');
+      } else {
+        setCurrentPage('leaderboard');
+      }
+    } else if (path.startsWith('/submit')) {
+      setCurrentPage('submissions');
+    } else if (path.startsWith('/user/profile')) {
+      setCurrentPage('profile');
+    } else {
+      setCurrentPage('home');
+    }
+  }, []);
 
   return <SideNav currentPage={currentPage} seasonSlug={seasonSlug} />;
 }

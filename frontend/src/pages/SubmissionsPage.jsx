@@ -17,7 +17,6 @@ import {
 } from '../hooks/useSubmissions';
 import SelectComponent from '../components/SelectComponent';
 import EditablePredictionBoard from '../components/EditablePredictionBoard';
-import SideNav from '../components/SideNav';
 import '../styles/SubmissionsPage.css';
 
 const QUESTION_GROUP_META = {
@@ -38,7 +37,7 @@ const QUESTION_GROUP_META = {
     description: 'Choose the winner in marquee matchups.',
   },
   ist: {
-    title: 'in season tournament:nba cup',
+    title: 'In Season Tournament: NBA Cup',
     description: 'Make your picks for the NBA In-Season Tournament.',
   },
   nba_finals: {
@@ -201,18 +200,18 @@ const PaymentPromptModal = ({ details, onMarkPaid, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center">
+      <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-md w-full p-8 text-center border border-slate-200 dark:border-slate-700">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+          className="absolute top-4 right-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
           aria-label="Close payment prompt"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <h2 className="text-2xl font-bold text-slate-900">Complete Your Submission</h2>
-        <p className="mt-2 text-slate-600">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Complete Your Submission</h2>
+        <p className="mt-2 text-slate-600 dark:text-slate-400">
           Your predictions are in! The final step is to pay the ${details.amount_due || '25.00'} entry fee.
         </p>
         <div className="mt-6 flex flex-col gap-3">
@@ -221,18 +220,18 @@ const PaymentPromptModal = ({ details, onMarkPaid, onClose }) => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={onClose}
-            className="w-full inline-flex items-center justify-center rounded-full bg-sky-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700"
+            className="w-full inline-flex items-center justify-center rounded-full bg-sky-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-700"
           >
             Pay with Venmo (@{details.venmo_username})
           </a>
           <button
             onClick={onMarkPaid}
-            className="w-full inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-100"
+            className="w-full inline-flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-6 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
           >
             I've Already Paid
           </button>
         </div>
-        <p className="mt-4 text-xs text-slate-400">
+        <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
           You can also close this and pay later. We'll remind you.
         </p>
       </div>
@@ -258,26 +257,11 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const [isProgressSticky, setIsProgressSticky] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentDetailsForModal, setPaymentDetailsForModal] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
 
   const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
   const { data: userContext, isLoading: userContextLoading } = useUserContext();
   const username = userContext?.username || null;
   const entryFeeEnabled = !!effectiveSeasonSlug && !!userContext?.is_authenticated;
-
-  // Mobile detection
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(max-width: 768px)');
-    const onChange = () => setIsMobile(!!mq.matches);
-    onChange();
-    if (mq.addEventListener) mq.addEventListener('change', onChange);
-    else if (mq.addListener) mq.addListener(onChange);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
-      else if (mq.removeListener) mq.removeListener(onChange);
-    };
-  }, []);
 
   // Discover the latest season when no slug provided
   useEffect(() => {
@@ -740,7 +724,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
   if (seasonLoading || !effectiveSeasonSlug) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 flex items-center justify-center">
         <div className="text-slate-600 dark:text-slate-400 text-2xl">Loading season...</div>
       </div>
     );
@@ -748,7 +732,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
   if (questionsLoading) {
     return (
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 flex items-center justify-center">
         <div className="text-slate-600 dark:text-slate-400 text-2xl">Loading questions...</div>
       </div>
     );
@@ -757,7 +741,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
   if (questionsError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 p-8 shadow-sm">
+        <div className="max-w-md w-full text-center rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-white mb-3">
             We can't load submissions right now
           </h1>
@@ -765,7 +749,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
           <button
             type="button"
             onClick={() => refetchQuestions()}
-            className="inline-flex items-center justify-center rounded-full bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+            className="inline-flex items-center justify-center rounded-full bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-700"
           >
             Try again
           </button>
@@ -776,38 +760,37 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
   return (
     <>
-      <SideNav currentPage="submissions" seasonSlug={effectiveSeasonSlug || 'current'} />
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 py-8 md:py-12" style={{ marginLeft: isMobile ? '0' : '64px' }}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 py-8 md:py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
           <div className="flex flex-col gap-2 text-center md:text-left">
-            <span className="inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.2em] uppercase text-sky-600">
+            <span className="inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.2em] uppercase text-sky-600 dark:text-sky-400">
               {displaySeasonSlug} Season
             </span>
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-tight">
               Submit Your Predictions
             </h1>
-            <p className="text-slate-500 text-sm sm:text-base">
+            <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">
               Lock in your regular season standings and answer every question before the window closes.
             </p>
           </div>
           <nav className="flex flex-wrap items-center justify-center md:justify-end gap-2 text-sm">
             <a
               href="#standings"
-              className="px-3 py-2 rounded-full border border-sky-200/80 bg-white/60 text-sky-600 font-semibold shadow-sm hover:bg-sky-50 transition-colors"
+              className="px-3 py-2 rounded-full border border-sky-200/80 dark:border-sky-700 bg-white/60 dark:bg-slate-800/60 text-sky-600 dark:text-sky-400 font-semibold shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors"
             >
               Standings
             </a>
             <a
               href="#questions"
-              className="px-3 py-2 rounded-full border border-slate-200 bg-white/60 text-slate-600 font-semibold shadow-sm hover:bg-slate-50 transition-colors"
+              className="px-3 py-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               Questions
             </a>
             <a
               href="#submit"
-              className="px-3 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 font-semibold shadow-sm hover:bg-emerald-100 transition-colors"
+              className="px-3 py-2 rounded-full border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-semibold shadow-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
             >
               Submit
             </a>
@@ -819,8 +802,8 @@ const SubmissionsPage = ({ seasonSlug }) => {
             <div
               className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lg backdrop-blur ${
                 feedback.type === 'error'
-                  ? 'border-rose-200 bg-rose-50/95 text-rose-700'
-                  : 'border-emerald-200 bg-emerald-50/95 text-emerald-700'
+                  ? 'border-rose-200 dark:border-rose-700 bg-rose-50/95 dark:bg-rose-900/95 text-rose-700 dark:text-rose-300'
+                  : 'border-emerald-200 dark:border-emerald-700 bg-emerald-50/95 dark:bg-emerald-900/95 text-emerald-700 dark:text-emerald-300'
               }`}
               role={feedback.type === 'error' ? 'alert' : 'status'}
             >
@@ -828,7 +811,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
               <button
                 type="button"
                 onClick={() => setFeedback(null)}
-                className="text-xs font-semibold uppercase tracking-wide text-slate-400 hover:text-slate-600"
+                className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
               >
                 Dismiss
               </button>
@@ -837,15 +820,15 @@ const SubmissionsPage = ({ seasonSlug }) => {
         )}
 
         {entryFeeEnabled && entryFeeError && (
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800 shadow-sm">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-4 py-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm">
             <div className="space-y-1">
-              <p className="font-semibold text-amber-900">Entry fee status unavailable</p>
+              <p className="font-semibold text-amber-900 dark:text-amber-200">Entry fee status unavailable</p>
               <p>{entryFeeErrorMessage}</p>
             </div>
             <button
               type="button"
               onClick={() => refetchEntryFee()}
-              className="inline-flex items-center justify-center rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 transition hover:bg-amber-100"
+              className="inline-flex items-center justify-center rounded-full border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 transition hover:bg-amber-100 dark:hover:bg-slate-600"
             >
               Retry
             </button>
@@ -854,38 +837,38 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
         {entryFeeEnabled && !entryFeeError && !entryFeeLoading && entryFeeStatus && (
           entryFeeStatus.is_paid ? (
-            <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
               <div className="flex flex-col gap-0.5">
                 <span className="font-semibold">Entry fee recorded</span>
                 {entryFeePaidAtDisplay && (
-                  <span className="text-emerald-700/80">Marked on {entryFeePaidAtDisplay}</span>
+                  <span className="text-emerald-700/80 dark:text-emerald-400/80">Marked on {entryFeePaidAtDisplay}</span>
                 )}
               </div>
               <button
                 type="button"
                 onClick={handleMarkEntryFeeUnpaid}
                 disabled={updateEntryFeeMutation.isPending}
-                className="inline-flex items-center rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-600 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-full border border-emerald-300 dark:border-emerald-600 bg-white dark:bg-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-300 transition hover:bg-emerald-100 dark:hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Mark unpaid
               </button>
             </div>
           ) : (
-            <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800 shadow-sm">
+            <div className="mb-8 rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-4 py-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
-                  <p className="font-semibold text-amber-900">Entry fee reminder</p>
+                  <p className="font-semibold text-amber-900 dark:text-amber-200">Entry fee reminder</p>
                   <p>
-                    Send ${entryFeeStatus.amount_due} via Venmo to @{entryFeeStatus.venmo_username}. Add “
+                    Send ${entryFeeStatus.amount_due} via Venmo to @{entryFeeStatus.venmo_username}. Add "
                     {entryFeeStatus.payment_note}
-                    ” so we can match it quickly.
+                    " so we can match it quickly.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <button
                     type="button"
                     onClick={handleOpenVenmo}
-                    className="inline-flex items-center justify-center rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 transition hover:bg-amber-100"
+                    className="inline-flex items-center justify-center rounded-full border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 transition hover:bg-amber-100 dark:hover:bg-slate-600"
                   >
                     Pay with Venmo
                   </button>
@@ -893,14 +876,14 @@ const SubmissionsPage = ({ seasonSlug }) => {
                     type="button"
                     onClick={handleMarkEntryFeePaid}
                     disabled={updateEntryFeeMutation.isPending}
-                    className="inline-flex items-center justify-center rounded-full bg-amber-500 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center justify-center rounded-full bg-amber-500 dark:bg-amber-600 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600 dark:hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     I've paid
                   </button>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-amber-700">
-                We’ll keep this reminder visible until you mark the entry fee as paid.
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                We'll keep this reminder visible until you mark the entry fee as paid.
               </p>
             </div>
           )
@@ -910,17 +893,17 @@ const SubmissionsPage = ({ seasonSlug }) => {
         {submissionStatus && (
           <div
             className={`p-4 rounded-lg border mb-6 ${
-              submissionStatus.is_open ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+              submissionStatus.is_open ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700' : 'bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-700'
             }`}
           >
-            <p className={`font-semibold ${submissionStatus.is_open ? 'text-emerald-800' : 'text-rose-800'}`}>
+            <p className={`font-semibold ${submissionStatus.is_open ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'}`}>
               {submissionStatus.message}
             </p>
             {submissionStatus.days_until_close !== null &&
               submissionStatus.days_until_close !== undefined && (
                 <p
                   className={`text-sm mt-1 ${
-                    submissionStatus.is_open ? 'text-emerald-700' : 'text-rose-700'
+                    submissionStatus.is_open ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
                   }`}
                 >
                   {submissionStatus.days_until_close} day(s) remaining
@@ -929,7 +912,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
             {submissionStatus.days_until_open !== null &&
               submissionStatus.days_until_open !== undefined &&
               !submissionStatus.is_open && (
-                <p className="text-sm mt-1 text-rose-700">
+                <p className="text-sm mt-1 text-rose-700 dark:text-rose-400">
                   Opens in {submissionStatus.days_until_open} day(s)
                 </p>
               )}
@@ -939,14 +922,14 @@ const SubmissionsPage = ({ seasonSlug }) => {
         {/* Regular Season Standings */}
         <section id="standings" className="mb-10">
           <header className="mb-4">
-            <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Regular Season Standings</h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">Regular Season Standings</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Drag and drop teams in each conference to set your projected final standings.
             </p>
           </header>
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
             {userContextLoading ? (
-              <div className="p-6 text-center text-sm text-slate-500">Loading standings...</div>
+              <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">Loading standings...</div>
             ) : userContext ? (
               <EditablePredictionBoard
                 ref={standingsBoardRef}
@@ -955,7 +938,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
                 username={username}
               />
             ) : (
-              <div className="p-6 text-center text-sm text-slate-500">
+              <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
                 Sign in to manage your regular season standings predictions.
               </div>
             )}
@@ -969,23 +952,23 @@ const SubmissionsPage = ({ seasonSlug }) => {
             <div
               className={`mb-6 ${
                 isProgressSticky
-                  ? 'sticky top-4 z-30 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-md'
+                  ? 'sticky top-4 z-30 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 px-4 py-3 shadow-md'
                   : ''
               }`}
             >
-              <div className="flex items-center justify-between text-sm text-slate-500">
+              <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span>Progress</span>
                 <span>
                   {completedCount} / {questions.length}
                 </span>
               </div>
-              <div className="mt-2 w-full rounded-full bg-slate-200 h-2">
+              <div className="mt-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 h-2">
                 <div
-                  className="bg-sky-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-sky-500 dark:bg-sky-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="mt-3 text-xs text-slate-400">
+              <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
                 You can save progress and finish later—unanswered questions are totally fine.
               </p>
             </div>
@@ -997,8 +980,8 @@ const SubmissionsPage = ({ seasonSlug }) => {
           {groupedQuestions.map((group) => (
             <section key={group.type}>
               <header className="mb-4">
-                <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">{group.title}</h2>
-                {group.description && <p className="text-sm text-slate-500 mt-1">{group.description}</p>}
+                <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">{group.title}</h2>
+                {group.description && <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{group.description}</p>}
               </header>
               {group.type === 'ist' ? (
                 <InSeasonTournamentSection
@@ -1834,14 +1817,6 @@ const renderFinalistColumn = (
 
       {groupWinnerQuestions.length > 0 && (
         <div className="space-y-6">
-          <div className="flex flex-col gap-1">
-            <h3 className="text-2xl font-semibold text-slate-900 sm:text-[28px]">
-              In Season Tournament: <span className="font-bold text-slate-500">NBA Cup</span>
-            </h3>
-            <p className="text-sm text-slate-500">
-              Tap a team bubble to lock in your group winners—colors match conference identity for quick scanning.
-            </p>
-          </div>
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {orderedGroupQuestions.map((question) => renderGroupBubble(question))}
           </div>
@@ -1909,7 +1884,9 @@ const QuestionCard = ({
         </h3>
         <div className="flex items-center gap-4 text-sm text-slate-500">
           <span className="bg-sky-100 text-sky-700 px-3 py-1 rounded-full">{question.point_value} pts</span>
-          <span className="capitalize">{question.question_type.replace('_', ' ')}</span>
+          <span className="capitalize">
+          {question.question_type === 'head_to_head' ? 'Head to Head' : question.question_type.replace(/_/g, ' ')}
+        </span>
         </div>
       </div>
 
@@ -1955,6 +1932,7 @@ const QuestionInput = ({
         </div>
       );
     }
+
 
     case 'prop': {
       if (question.outcome_type === 'over_under') {
@@ -2047,35 +2025,60 @@ const QuestionInput = ({
       }
     }
 
-    case 'head_to_head':
+    case 'head_to_head': {
+      const team1Selected = String(answer) === String(question.team1_id);
+      const team2Selected = String(answer) === String(question.team2_id);
+      const scaleStateClass = team1Selected
+        ? ' head-to-head-scale--team1'
+        : team2Selected
+        ? ' head-to-head-scale--team2'
+        : '';
+      const disabledClass = isReadOnly ? ' head-to-head-scale--disabled' : '';
+
       return (
-        <div className="flex gap-4">
+        <div
+          className={`head-to-head-scale${scaleStateClass}${disabledClass}`}
+          role="group"
+          aria-label="Choose team"
+        >
+          <span className="head-to-head-indicator" aria-hidden="true" />
           <button
             type="button"
+            className={`head-to-head-choice head-to-head-choice--team1 ${team1Selected ? 'is-selected' : ''} ${isReadOnly ? 'is-disabled' : ''}`}
             onClick={() => onChange(String(question.team1_id))}
             disabled={isReadOnly}
-            className={`flex-1 py-3 rounded-lg font-semibold transition-colors border ${
-              String(answer) === String(question.team1_id)
-                ? 'bg-sky-600 text-white border-sky-600'
-                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-            } ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+            aria-pressed={team1Selected}
+            aria-label={question.team1_name}
           >
-            {question.team1_name}
+            {question.team1_logo && (
+              <img
+                src={question.team1_logo}
+                alt={`${question.team1_name} logo`}
+                className="head-to-head-logo"
+              />
+            )}
+            <span className="head-to-head-name">{question.team1_name}</span>
           </button>
           <button
             type="button"
+            className={`head-to-head-choice head-to-head-choice--team2 ${team2Selected ? 'is-selected' : ''} ${isReadOnly ? 'is-disabled' : ''}`}
             onClick={() => onChange(String(question.team2_id))}
             disabled={isReadOnly}
-            className={`flex-1 py-3 rounded-lg font-semibold transition-colors border ${
-              String(answer) === String(question.team2_id)
-                ? 'bg-sky-600 text-white border-sky-600'
-                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-            } ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+            aria-pressed={team2Selected}
+            aria-label={question.team2_name}
           >
-            {question.team2_name}
+            {question.team2_logo && (
+              <img
+                src={question.team2_logo}
+                alt={`${question.team2_name} logo`}
+                className="head-to-head-logo"
+              />
+            )}
+            <span className="head-to-head-name">{question.team2_name}</span>
           </button>
         </div>
       );
+    }
 
     case 'player_stat':
       return (

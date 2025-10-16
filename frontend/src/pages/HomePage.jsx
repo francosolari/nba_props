@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import useLeaderboard from '../hooks/useLeaderboard';
 import useUserSubmissions from '../hooks/useUserSubmissions';
-import SideNav from '../components/SideNav';
 import '../styles/palette.css';
 
 const DEFAULT_SEASON = 'current';
@@ -439,9 +438,7 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
   }
 
   return (
-    <>
-      <SideNav currentPage="home" seasonSlug={seasonSlug} />
-      <div className="home-shell" style={{ marginLeft: '64px' }}>
+      <div className="home-shell">
         <section className={`home-hero home-hero--${heroVariant}`}>
         <div className="home-hero__background" />
         <div className="home-hero__content">
@@ -537,6 +534,5 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
         </div>
       </div>
     </div>
-    </>
   );
 }

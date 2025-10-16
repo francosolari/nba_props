@@ -253,27 +253,87 @@ def create_nba_finals_question(request, payload: NBAFinalsPredictionQuestionCrea
     "/questions/{question_id}",
     response=dict,
     summary="[Admin] Update Question",
-    description="Update an existing question's basic properties"
+    description="Update an existing question's properties including type-specific fields"
 )
 @admin_required
 def update_question(request, question_id: int, payload: QuestionUpdateSchema):
     """
-    Update an existing question.
+    Update an existing question, including type-specific fields.
     """
     try:
         question = get_object_or_404(Question, id=question_id)
-        
+        real_question = question.get_real_instance()
+
+        # Update common fields
         if payload.text is not None:
-            question.text = payload.text
+            real_question.text = payload.text
         if payload.point_value is not None:
-            question.point_value = payload.point_value
-        
-        question.save()
-        
-        # Get the polymorphic instance for proper serialization
+            real_question.point_value = payload.point_value
+
+        # Update type-specific fields
+        question_type = real_question.__class__.__name__
+
+        if question_type == "SuperlativeQuestion":
+            if payload.award_id is not None:
+                award = get_object_or_404(Award, id=payload.award_id)
+                real_question.award = award
+
+        elif question_type == "PropQuestion":
+            if payload.outcome_type is not None:
+                real_question.outcome_type = payload.outcome_type
+            if payload.related_player_id is not None:
+                player = get_object_or_404(Player, id=payload.related_player_id)
+                real_question.related_player = player
+            elif hasattr(payload, 'related_player_id') and payload.related_player_id is None:
+                # Explicitly set to None if provided as null
+                real_question.related_player = None
+            if payload.line is not None:
+                real_question.line = payload.line
+            elif hasattr(payload, 'line') and payload.line is None:
+                # Explicitly set to None if provided as null
+                real_question.line = None
+
+        elif question_type == "PlayerStatPredictionQuestion":
+            if payload.player_stat_id is not None:
+                player_stat = get_object_or_404(PlayerStat, id=payload.player_stat_id)
+                real_question.player_stat = player_stat
+            if payload.stat_type is not None:
+                real_question.stat_type = payload.stat_type
+            if payload.fixed_value is not None:
+                real_question.fixed_value = payload.fixed_value
+            elif hasattr(payload, 'fixed_value') and payload.fixed_value is None:
+                real_question.fixed_value = None
+
+        elif question_type == "HeadToHeadQuestion":
+            if payload.team1_id is not None:
+                team1 = get_object_or_404(Team, id=payload.team1_id)
+                real_question.team1 = team1
+            if payload.team2_id is not None:
+                team2 = get_object_or_404(Team, id=payload.team2_id)
+                real_question.team2 = team2
+
+        elif question_type == "InSeasonTournamentQuestion":
+            if payload.prediction_type is not None:
+                real_question.prediction_type = payload.prediction_type
+            if payload.ist_group is not None:
+                real_question.ist_group = payload.ist_group
+            elif hasattr(payload, 'ist_group') and payload.ist_group is None:
+                real_question.ist_group = None
+            if payload.is_tiebreaker is not None:
+                real_question.is_tiebreaker = payload.is_tiebreaker
+
+        elif question_type == "NBAFinalsPredictionQuestion":
+            if payload.group_name is not None:
+                real_question.group_name = payload.group_name
+            elif hasattr(payload, 'group_name') and payload.group_name is None:
+                real_question.group_name = None
+
+        real_question.save()
+
+        # Refresh from database to get latest state
         question = Question.objects.get(id=question_id)
         question = question.get_real_instance()
-        
+
         return {
             "status": "success",
             "message": "Question updated successfully",

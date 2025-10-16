@@ -2,7 +2,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import useLeaderboard from '../hooks/useLeaderboard';
 import ProgressBar from '../components/ProgressBar';
-import SideNav from '../components/SideNav';
 import {
   ChevronDown,
   ChevronUp,
@@ -35,21 +34,6 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
 
   /* ‣ Control how many players are visible (for client-side pagination) */
   const [visibleCount, setVisibleCount] = useState(20); // Default to showing 20 players initially
-
-  /* ‣ Mobile detection */
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(max-width: 768px)');
-    const onChange = () => setIsMobile(!!mq.matches);
-    onChange();
-    if (mq.addEventListener) mq.addEventListener('change', onChange);
-    else if (mq.addListener) mq.addListener(onChange);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
-      else if (mq.removeListener) mq.removeListener(onChange);
-    };
-  }, []);
 
   const toggleUserExpansion = (userId) => {
     const next = new Set(expandedUsers);
@@ -205,9 +189,7 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
   };
 
   return (
-    <>
-      <SideNav currentPage="leaderboard" seasonSlug={seasonSlug} />
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6" style={{ marginLeft: isMobile ? '0' : '64px' }}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6">
         <div className="max-w-7xl mx-auto space-y-4">
         {/* ──────────────────────── Header Section with Title and Metrics Grid */}
         <section>
@@ -359,7 +341,6 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
         )}
         </div>
       </div>
-    </>
   );
 }
 

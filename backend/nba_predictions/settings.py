@@ -40,8 +40,8 @@ if IS_DEVELOPMENT:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'predictnetwork', '134.209.213.185']
 else:
     # Production settings (default)
-    DEBUG = True
-    SECRET_KEY = 'django-insecure-vz_05dx#kxb^&(95ltkswn%b56hbq4c6y&+opawn%qt7dda$4h'
+    DEBUG = False
+    SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-vz_05dx#kxb^&(95ltkswn%b56hbq4c6y&+opawn%qt7dda$4h')
 
     DATABASES = {
         'default': {

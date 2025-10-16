@@ -19,19 +19,22 @@
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
     <link rel="icon" href="{% static 'img/favicon.ico' %}">
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 dark:bg-slate-900">
+    <!-- Global Site Layout (SideNav) -->
+    <div id="site-layout-root"
+         data-current-page="{% block current_page %}home{% endblock %}"
+         data-season-slug="{% block season_slug %}current{% endblock %}">
+    </div>
+
     <!-- Header Section -->
-    <header id="main-header" class="bg-blue-600 text-white text-sm py-0 fixed w-full top-0 left-0 z-50 transition-all duration-300 ease-in-out">
+    <header id="main-header" class="bg-blue-600 text-white text-sm py-0 fixed w-full top-0 left-0 z-50 transition-all duration-300 ease-in-out md:ml-16 md:w-[calc(100%-64px)]">
         <!-- Navigation Bar -->
         <nav class="bg-gray-800 p-1 h-12 fixed top-0 w-full z-50">
             <div class="container mx-auto flex justify-between items-center h-full">
                 <!-- Left: Navigation Links -->
                 <div class="space-x-4">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'predictions_views:submit_predictions_view' season_slug='2025-26' %}"
-                           class="text-gray-300 hover:text-white transition-colors duration-200">
-                            Submit Predictions
-                        </a>
+
                         {% if user.is_staff or user.username == 'francosolari' %}
                             <a href="{% url 'predictions_views:admin_panel' %}"
                                class="text-blue-400 hover:text-blue-300 transition-colors duration-200">
@@ -48,7 +51,7 @@
                 </div>
 
                 <!-- Right: User Info (Login/Logout) -->
-                <div class="flex items-center space-x-4 text-gray-300">
+                <div class="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4 text-gray-300">
                     {% if user.is_authenticated %}
                         <span>Logged in as <span class="font-semibold text-gray-400">{{ user.username }}</span></span>
                         <a href="{% url 'account_logout' %}" class="hover:text-white">(Log out)</a>
@@ -62,7 +65,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto mt-20 px-6 py-8">
+    <main class="container mx-auto mt-16 md:ml-16">
         {% block content %}
         {% endblock content %}
     </main>

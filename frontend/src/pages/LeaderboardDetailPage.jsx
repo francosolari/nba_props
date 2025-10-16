@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import useLeaderboard from '../hooks/useLeaderboard';
 import { ChevronLeft, Grid, Expand, Minimize2, X, Search, AlertTriangle, Pin, PinOff, Trophy, Award, Target, CheckCircle2, XCircle } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import SideNav from '../components/SideNav';
  
 
 function LeaderboardDetailPage({ seasonSlug = 'current' }) {
@@ -168,20 +167,6 @@ useEffect(() => {
     }).sort((a,b)=> (b.user.total_points||0) - (a.user.total_points||0));
   }, [leaderboardData, whatIfEnabled, simActualMap]);
 
-  // ────────────────────────── Mobile detection ──────────────────────────
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(max-width: 768px)');
-    const onChange = () => setIsMobile(!!mq.matches);
-    onChange();
-    if (mq.addEventListener) mq.addEventListener('change', onChange);
-    else if (mq.addListener) mq.addListener(onChange);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
-      else if (mq.removeListener) mq.removeListener(onChange);
-    };
-  }, []);
 
   const displayedUsers = useMemo(() => {
     const base = showAll ? withSimTotals : selectedUserIds.map(id => withSimTotals.find(e => String(e.user.id) === String(id))).filter(Boolean);
@@ -265,7 +250,10 @@ useEffect(() => {
   // ────────────────────────── Mobile UI ──────────────────────────
   const fromSectionKey = (s) => s === 'standings' ? 'Regular Season Standings' : s === 'awards' ? 'Player Awards' : 'Props & Yes/No';
 
-  if (!isLoading && !error && isMobile) {
+  // Mobile UI is handled by CSS responsive design instead of JavaScript
+  const shouldShowMobileUI = false; // Disabled - using responsive CSS instead
+
+  if (!isLoading && !error && shouldShowMobileUI) {
     const mobileDisplayedUsers = (() => {
       const base = showAll ? withSimTotals : selectedUserIds.map(id => withSimTotals.find(e => String(e.user.id) === String(id))).filter(Boolean);
       let arr = Array.isArray(base) ? base.slice() : [];
@@ -518,9 +506,7 @@ useEffect(() => {
   const teamColWidth = 160; // px
 
   return (
-    <>
-      <SideNav currentPage="breakdown" seasonSlug={seasonSlug} />
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-4" style={{ marginLeft: isMobile ? '0' : '64px' }}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-4">
       <div className="max-w-7xl mx-auto space-y-3">
         <div className="flex items-center justify-between">
           <a href={`/leaderboard/${seasonSlug}/`} className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors">
@@ -1248,7 +1234,6 @@ useEffect(() => {
         </div>
       </div>
     </div>
-    </>
   );
 }
 

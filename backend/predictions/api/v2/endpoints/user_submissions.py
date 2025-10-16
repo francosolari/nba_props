@@ -403,7 +403,7 @@ def get_questions(request, season_slug: str):
     Get all questions for a specific season.
     Includes submission window status information.
     """
-    season = get_object_or_404(Season, slug=season_slug)
+    season = _resolve_season(season_slug)
     
     # Get all questions for the season
     questions = (
@@ -441,7 +441,7 @@ def get_user_answers(request, season_slug: str):
     if not request.user.is_authenticated:
         raise HttpError(401, "Authentication required")
     
-    season = get_object_or_404(Season, slug=season_slug)
+    season = _resolve_season(season_slug)
     
     # Get user's answers
     answers = Answer.objects.filter(
@@ -543,7 +543,7 @@ def get_submission_window_status(request, season_slug: str):
     """
     Get detailed submission window status for a season.
     """
-    season = get_object_or_404(Season, slug=season_slug)
+    season = _resolve_season(season_slug)
     return get_submission_status(season)
 
 

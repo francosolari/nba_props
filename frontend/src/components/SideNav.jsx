@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Home,
   Trophy,
@@ -10,10 +11,32 @@ import {
   Menu
 } from 'lucide-react';
 
-function SideNav({ currentPage = 'home', seasonSlug = 'latest' }) {
+function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [currentSeasonSlug, setCurrentSeasonSlug] = useState(propSeasonSlug);
+
+  useEffect(() => {
+    const fetchLatestSeason = async () => {
+      try {
+        const response = await axios.get('/api/v2/latest-season/');
+        if (response.data && response.data.season_slug) {
+          setCurrentSeasonSlug(response.data.season_slug);
+        }
+      } catch (error) {
+        console.error('Error fetching latest season slug:', error);
+        // Fallback to propSeasonSlug if API call fails
+        setCurrentSeasonSlug(propSeasonSlug);
+      }
+    };
+
+    if (propSeasonSlug === 'latest') {
+      fetchLatestSeason();
+    } else {
+      setCurrentSeasonSlug(propSeasonSlug);
+    }
+  }, [propSeasonSlug]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -30,9 +53,9 @@ function SideNav({ currentPage = 'home', seasonSlug = 'latest' }) {
 
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, href: '/' },
-    { id: 'submissions', label: 'My Submissions', icon: FileText, href: `/submit/${seasonSlug}/` },
-    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, href: `/leaderboard/${seasonSlug}/` },
-    { id: 'breakdown', label: 'Points Breakdown', icon: BarChart3, href: `/leaderboard/${seasonSlug}/detailed/` },
+    { id: 'submissions', label: 'My Submissions', icon: FileText, href: `/submit/${currentSeasonSlug}/` },
+    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, href: `/leaderboard/${currentSeasonSlug}/` },
+    { id: 'breakdown', label: 'Points Breakdown', icon: BarChart3, href: `/leaderboard/${currentSeasonSlug}/detailed/` },
     { id: 'profile', label: 'Profile', icon: User, href: `/user/profile/` },
   ];
 
@@ -51,7 +74,7 @@ function SideNav({ currentPage = 'home', seasonSlug = 'latest' }) {
         {(isExpanded || isMobileOpen) && (
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-bold text-slate-900 dark:text-white truncate">NBA Props</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{seasonSlug.replace('-', '–')}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{currentSeasonSlug.replace('-', '–')}</span>
           </div>
         )}
       </a>
@@ -116,7 +139,7 @@ function SideNav({ currentPage = 'home', seasonSlug = 'latest' }) {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="fixed top-4 left-4 z-50 p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          className="fixed top-14 left-4 z-40 p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
         >
           <Menu className="w-5 h-5 text-slate-700 dark:text-slate-300" />
         </button>
