@@ -29,9 +29,8 @@ leaderboard_patterns = [
     path('user-leaderboard/<slug:season_slug>/', user_leaderboard, name='user_leaderboard'),
     path('ist-standings/<slug:season_slug>/', view_ist_standings, name='view_ist_standings'),
     path('what-if/<slug:season_slug>/', what_if_view, name='what_if_view'),
-    path('page/<slug:season_slug>/', leaderboard_page, name='leaderboard_page'),
-    path('page-detail/<slug:season_slug>/', leaderboard_detail_page, name='leaderboard_detail_page'),
-
+    path('leaderboard/<slug:season_slug>/', leaderboard_page, name='leaderboard_page'),
+    path('leaderboard/<slug:season_slug>/detailed/', leaderboard_detail_page, name='leaderboard_detail_page'),
 ]
 
 # User authentication patterns

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import useLeaderboard from '../hooks/useLeaderboard';
 import { ChevronLeft, Grid, Expand, Minimize2, X, Search, AlertTriangle, Pin, PinOff, Trophy, Award, Target, CheckCircle2, XCircle } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import SideNav from '../components/SideNav';
  
 
 function LeaderboardDetailPage({ seasonSlug = 'current' }) {
@@ -444,35 +445,35 @@ useEffect(() => {
       </div>
       {/* Manage Players modal (mobile) */}
       {showManagePlayers && (
-        <div className="fixed inset-0 z-50 bg-black/40">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm">
           <div className="absolute inset-x-0 bottom-0 top-[10%] bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl flex flex-col">
-            <div className="px-4 pt-3 pb-2 border-b border-slate-200 dark:border-slate-800">
-              <div className="mx-auto h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700" />
-              <div className="mt-2 flex items-center justify-between">
-                <div className="font-semibold text-slate-800 dark:text-slate-200">Manage Players</div>
-                <button onClick={()=> setShowManagePlayers(false)} className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">Done</button>
+            <div className="px-4 pt-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
+              <div className="mx-auto h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700 mb-3" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-base font-bold text-slate-800 dark:text-slate-200">Manage Players</div>
+                <button onClick={()=> setShowManagePlayers(false)} className="px-3 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 text-xs font-medium transition-colors">Done</button>
               </div>
-              <div className="mt-2 flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-2">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input value={manageQuery} onChange={(e)=> setManageQuery(e.target.value)} placeholder="Search players" className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300" />
+                  <input value={manageQuery} onChange={(e)=> setManageQuery(e.target.value)} placeholder="Search players" className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200/60 bg-white text-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-teal-500/20 transition-all" />
                 </div>
                 <button onClick={()=> {
                   const ids = (withSimTotals||[])
                     .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
                     .map(e => String(e.user.id));
                   setSelectedUserIds(prev => Array.from(new Set([...prev.map(String), ...ids])));
-                }} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">Select All</button>
+                }} className="text-xs font-medium px-3 py-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 transition-colors shrink-0">All</button>
                 <button onClick={()=> {
                   const ids = new Set((withSimTotals||[])
                     .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
                     .map(e => String(e.user.id)));
                   setSelectedUserIds(prev => prev.filter(id => !ids.has(String(id))));
-                }} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">Clear All</button>
+                }} className="text-xs font-medium px-3 py-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 transition-colors shrink-0">Clear</button>
               </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Selected {selectedUserIds.length}{pinnedUserIds.length? ` • Pinned ${pinnedUserIds.length}`:''}</div>
             </div>
-            <div className="px-2 py-2 text-xs text-slate-500 dark:text-slate-400">Selected {selectedUserIds.length}{pinnedUserIds.length? ` • Pinned ${pinnedUserIds.length}`:''}</div>
-            <div className="flex-1 overflow-y-auto no-scrollbar px-2 pb-4 grid grid-cols-1 gap-2">
+            <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-3 grid grid-cols-1 gap-2">
               {(withSimTotals||[])
                 .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
                 .map(e => {
@@ -480,17 +481,17 @@ useEffect(() => {
                   const isSel = selectedUserIds.map(String).includes(id);
                   const isPin = pinnedUserIds.map(String).includes(id);
                   return (
-                    <div key={`mrow-${id}`} className={`flex items-center justify-between rounded-xl border ${isSel? 'border-emerald-300 bg-emerald-50/60 dark:border-emerald-700/60 dark:bg-emerald-900/30':'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'} px-3 py-2`}>
-                      <label className="flex items-center gap-3 min-w-0">
-                        <input type="checkbox" className="accent-emerald-600" checked={isSel} onChange={(ev)=> {
+                    <div key={`mrow-${id}`} className={`flex items-center justify-between rounded-xl border transition-all duration-200 ${isSel? 'border-emerald-300/80 bg-emerald-50/70 dark:border-emerald-700/60 dark:bg-emerald-900/30':'border-slate-200/60 bg-white dark:border-slate-800 dark:bg-slate-900'} px-3 py-2.5 hover:shadow-sm`}>
+                      <label className="flex items-center gap-3 min-w-0 cursor-pointer">
+                        <input type="checkbox" className="accent-emerald-600 w-4 h-4" checked={isSel} onChange={(ev)=> {
                           if (ev.target.checked) addUser(id); else setSelectedUserIds(prev => prev.filter(x => String(x)!==id));
                         }} />
-                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-semibold">
+                        <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold shrink-0">
                           {(e.user.display_name || e.user.username).slice(0,2).toUpperCase()}
                         </div>
-                        <span className="truncate text-sm text-slate-800 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
+                        <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
                       </label>
-                      <button type="button" onClick={()=> togglePin(id)} title={isPin? 'Unpin':'Pin'} className={`px-2 py-1 rounded-lg border ${isPin? 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300':'border-slate-300 bg-white text-slate-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'} ${pinPulseId===id? 'pin-pulse':''}`}>
+                      <button type="button" onClick={()=> togglePin(id)} title={isPin? 'Unpin':'Pin'} className={`px-2 py-1.5 rounded-lg border transition-all ${isPin? 'border-emerald-400/80 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300':'border-slate-300/60 bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700'} ${pinPulseId===id? 'pin-pulse':''}`}>
                         {isPin ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
                       </button>
                     </div>
@@ -517,10 +518,12 @@ useEffect(() => {
   const teamColWidth = 160; // px
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-4">
+    <>
+      <SideNav currentPage="breakdown" seasonSlug={seasonSlug} />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-4" style={{ marginLeft: isMobile ? '0' : '64px' }}>
       <div className="max-w-7xl mx-auto space-y-3">
         <div className="flex items-center justify-between">
-          <a href={`/page/${seasonSlug}/`} className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors">
+          <a href={`/leaderboard/${seasonSlug}/`} className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors">
             <ChevronLeft className="w-4 h-4" /> Back
           </a>
           <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Season {seasonSlug.replace('-', '–')}</div>
@@ -767,36 +770,39 @@ useEffect(() => {
             <div className="overflow-auto">
                <table className="min-w-full border-t border-slate-200 dark:border-slate-700" style={{ tableLayout: 'fixed' }}>
                  <colgroup>
-                   <col style={{ width: teamColWidth }} />
-                   <col style={{ width: 72 }} />
+                   <col style={{ width: `${teamColWidth}px` }} />
+                   <col style={{ width: '72px' }} />
                    {displayedUsers.map((_, idx) => (
-                     <col key={`u-${idx}`} style={{ width: 108 }} />
+                     <col key={`u-${idx}`} style={{ width: '108px' }} />
                    ))}
                  </colgroup>
-                 <thead className="bg-slate-50/90 dark:bg-slate-800/90 sticky top-0 z-20">
+                 <thead className="bg-slate-50/95 dark:bg-slate-800/95 sticky top-0 z-20">
                    <tr>
-                     <th className="sticky left-0 z-10 bg-slate-50/90 dark:bg-slate-800/90 backdrop-blur px-2.5 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60" style={{ minWidth: teamColWidth, width: teamColWidth }}>Team</th>
-                     <th className="text-left text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 bg-slate-50/90 dark:bg-slate-800/90 px-2" style={{ position:'sticky', left: teamColWidth }}>Pos</th>
+                     <th className="sticky left-0 z-30 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-3 py-2.5 text-left text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60" style={{ minWidth: `${teamColWidth}px`, width: `${teamColWidth}px` }}>Team</th>
+                     <th className="sticky left-0 z-30 text-left text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2.5 py-2.5" style={{ left: `${teamColWidth}px`, minWidth: '72px', width: '72px' }}>Pos</th>
                     {displayedUsers.map((e, index) => {
                       const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
                       const totalPts = e.user.total_points || 0;
                       const isPinned = pinnedUserIds.includes(String(e.user.id));
+                      const leftPos = teamColWidth + 72 + (index * 108);
                       return (
-                        <th key={`h-${e.user.id}`} className={`px-2.5 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 align-top ${isPinned ? 'sticky bg-slate-50/90 dark:bg-slate-800/90' : ''}`} style={isPinned ? { left: teamColWidth + 72 + (index * 108), zIndex: 10 } : {}} title={`Stand: ${standPts} • Total: ${totalPts}`}>
-                          <div className="flex items-center gap-1.5">
-                            <span className="truncate">{e.user.display_name || e.user.username}</span>
-                            <button onClick={()=> togglePin(e.user.id)} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
-                              {pinnedUserIds.includes(String(e.user.id)) ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
-                            </button>
-                            {!showAll && (
-                              <button onClick={()=>setSelectedUserIds(prev => prev.filter(id => String(id)!==String(e.user.id)))} title="Remove from comparison" className="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors">
-                                <X className="w-3 h-3" />
+                        <th key={`h-${e.user.id}`} className={`px-2.5 py-2.5 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 align-top transition-all duration-200 ${isPinned ? 'sticky z-30 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-sm' : ''}`} style={isPinned ? { left: `${leftPos}px`, minWidth: '108px', width: '108px' } : { minWidth: '108px', width: '108px' }} title={`Stand: ${standPts} • Total: ${totalPts}`}>
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            <span className="truncate max-w-[60px]">{e.user.display_name || e.user.username}</span>
+                            <div className="flex items-center gap-1">
+                              <button onClick={()=> togglePin(e.user.id)} title={isPinned ? 'Unpin column':'Pin column'} className={`transition-all duration-200 ${isPinned ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
+                                {isPinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
                               </button>
-                            )}
+                              {!showAll && (
+                                <button onClick={()=>setSelectedUserIds(prev => prev.filter(id => String(id)!==String(e.user.id)))} title="Remove from comparison" className="text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 transition-colors">
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <div className="mt-1 flex flex-col gap-0.5 text-[10px] text-slate-600 dark:text-slate-400 font-medium">
-                            <span className="inline-flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-emerald-500"></span> {standPts}</span>
-                            <span className="inline-flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-sky-500"></span> {totalPts}</span>
+                          <div className="mt-1.5 flex flex-col gap-0.5 text-[10px] text-slate-600 dark:text-slate-400 font-medium">
+                            <span className="inline-flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {standPts}</span>
+                            <span className="inline-flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span> {totalPts}</span>
                           </div>
                         </th>
                       );
@@ -806,9 +812,9 @@ useEffect(() => {
                  <tbody>
                 {/* West header */}
                 <tr>
-                  <td className="sticky left-0 z-10 bg-rose-50/60 dark:bg-rose-400/10 backdrop-blur px-3 py-2 text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700" colSpan={2+displayedUsers.length}>
-                    <button onClick={()=>setCollapsedWest(v=>!v)} className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
-                      <span className={`inline-block transition-transform ${collapsedWest? '-rotate-90' : 'rotate-0'}`}>▾</span>
+                  <td className="sticky left-0 z-20 bg-rose-50/80 dark:bg-rose-400/15 backdrop-blur-sm px-3 py-2.5 text-[11px] uppercase tracking-wide text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-semibold" colSpan={2+displayedUsers.length}>
+                    <button onClick={()=>setCollapsedWest(v=>!v)} className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 transition-colors">
+                      <span className={`inline-block transition-transform duration-200 ${collapsedWest? '-rotate-90' : 'rotate-0'}`}>▾</span>
                       West
                     </button>
                   </td>
@@ -828,16 +834,16 @@ useEffect(() => {
                             {(prov)=> {
                               const isChanged = whatIfEnabled && ((simActualMap.get(row.team) ?? row.actual_position) !== (row.actual_position ?? null));
                               return (
-                              <tr ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps} className={`${isChanged ? 'bg-amber-50 dark:bg-amber-400/10' : (index % 2 === 0 ? 'bg-white/70 dark:bg-slate-800/60' : 'bg-white/40 dark:bg-slate-800/40)')} transition-colors duration-200`}>
-                                <td className="sticky left-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-700/50" style={{ minWidth: teamColWidth, width: teamColWidth }}>
-                                  <div className="flex items-center gap-2">
-                                    <span className="inline-flex w-1.5 h-1.5 rounded-full" style={{backgroundColor:'#ef4444'}}/>
-                                    {isChanged && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" title="What‑If moved" />}
+                              <tr ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps} className={`${isChanged ? 'bg-amber-50/80 dark:bg-amber-400/10' : (index % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40')} transition-colors duration-200`}>
+                                <td className="sticky left-0 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-3 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-700/50" style={{ minWidth: `${teamColWidth}px`, width: `${teamColWidth}px` }}>
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="inline-flex w-1.5 h-1.5 rounded-full shrink-0" style={{backgroundColor:'#ef4444'}}/>
+                                    {isChanged && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="What‑If moved" />}
                                     <img
                                       src={`/static/img/teams/${teamSlug(row.team)}.png`}
                                       alt=""
                                       title={`slug: ${teamSlug(row.team)}`}
-                                      className="w-5 h-5 object-contain"
+                                      className="w-5 h-5 object-contain shrink-0"
                                       onError={(e)=>{
                                         const img = e.currentTarget;
                                         const slug = img.title.replace('slug: ','');
@@ -849,23 +855,25 @@ useEffect(() => {
                                         img.onerror = null; img.src = '/static/img/teams/unknown.svg';
                                       }}
                                     />
-                                    <span className="transition-colors duration-200">{row.team}</span>
+                                    <span className="transition-colors duration-200 truncate">{row.team}</span>
                                  </div>
                                </td>
-                                <td className="px-3 py-2 text-sm text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/90" style={{ position:'sticky', left: teamColWidth }}>{whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}</td>
-                                {displayedUsers.map((e) => {
+                                <td className="sticky z-20 px-3 py-2.5 text-sm text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm font-medium" style={{ left: `${teamColWidth}px`, minWidth: '72px', width: '72px' }}>{whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}</td>
+                                {displayedUsers.map((e, userIndex) => {
+                                  const isPinned = pinnedUserIds.includes(String(e.user.id));
                                   const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
                                   const p = preds.find(x => x.team === row.team);
                                   const pts = whatIfEnabled ? standingPoints(p?.predicted_position, simActualMap.get(row.team)) : (p?.points || 0);
                                   const predPos = p?.predicted_position ?? '—';
                                   const color = pts >= 3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30' : pts >= 1 ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600';
+                                  const leftPos = teamColWidth + 72 + (userIndex * 108);
                                   return (
-                                    <td key={`c-${e.user.id}-${row.team}`} className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/50">
+                                    <td key={`c-${e.user.id}-${row.team}`} className={`px-3 py-2.5 border-b border-slate-100 dark:border-slate-700/50 ${isPinned ? 'sticky z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-sm' : ''}`} style={isPinned ? { left: `${leftPos}px`, minWidth: '108px', width: '108px' } : { minWidth: '108px', width: '108px' }}>
                                       <div className="flex justify-center">
                                         <div className="relative inline-block group">
-                                          <span className={`inline-block min-w-[80px] text-center px-2 py-1 rounded-md border text-xs ${color} transition-transform duration-200` } title={`Pred: ${predPos}`}>{predPos}</span>
+                                          <span className={`inline-block min-w-[80px] text-center px-2.5 py-1.5 rounded-md border text-xs font-medium ${color}` } title={`Pred: ${predPos}`}>{predPos}</span>
                                           {pts > 0 && (
-                                            <span className={`pointer-events-none absolute -top-1 -right-1 text-[10px] px-1 py-[1px] rounded border shadow-sm opacity-0 group-hover:opacity-100 ${pts>=3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-800 dark:text-emerald-200 dark:border-emerald-700' : 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-800 dark:text-amber-200 dark:border-amber-700'}`} title={`+${pts} points`}>+{pts}</span>
+                                            <span className={`absolute -top-1 -right-1 text-[10px] px-1.5 py-0.5 rounded-md border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none ${pts>=3 ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-800 dark:text-emerald-200 dark:border-emerald-700' : 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-800 dark:text-amber-200 dark:border-amber-700'}`}>+{pts}</span>
                                           )}
                                         </div>
                                       </div>
@@ -885,9 +893,9 @@ useEffect(() => {
                 {/* East header */}
                 <tbody>
                 <tr>
-                  <td className="sticky left-0 z-10 bg-sky-50/60 dark:bg-sky-400/10 backdrop-blur px-3 py-2 text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700" colSpan={2+displayedUsers.length}>
-                    <button onClick={()=>setCollapsedEast(v=>!v)} className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">
-                      <span className={`inline-block transition-transform ${collapsedEast? '-rotate-90' : 'rotate-0'}`}>▾</span>
+                  <td className="sticky left-0 z-20 bg-sky-50/80 dark:bg-sky-400/15 backdrop-blur-sm px-3 py-2.5 text-[11px] uppercase tracking-wide text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-semibold" colSpan={2+displayedUsers.length}>
+                    <button onClick={()=>setCollapsedEast(v=>!v)} className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100 transition-colors">
+                      <span className={`inline-block transition-transform duration-200 ${collapsedEast? '-rotate-90' : 'rotate-0'}`}>▾</span>
                       East
                     </button>
                   </td>
@@ -907,16 +915,16 @@ useEffect(() => {
                             {(prov)=> {
                               const isChanged = whatIfEnabled && ((simActualMap.get(row.team) ?? row.actual_position) !== (row.actual_position ?? null));
                               return (
-                              <tr ref={prov.innerRef} {...prov.dragHandleProps} {...prov.draggableProps} className={`${isChanged ? 'bg-amber-50 dark:bg-amber-400/10' : (index % 2 === 0 ? 'bg-white/70 dark:bg-slate-800/60' : 'bg-white/40 dark:bg-slate-800/40)')} transition-colors duration-200`}>
-                                <td className="sticky left-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-700/50" style={{ minWidth: teamColWidth, width: teamColWidth }}>
-                                  <div className="flex items-center gap-2">
-                                    <span className="inline-flex w-1.5 h-1.5 rounded-full" style={{backgroundColor:'#0ea5e9'}}/>
-                                    {isChanged && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" title="What‑If moved" />}
+                              <tr ref={prov.innerRef} {...prov.dragHandleProps} {...prov.draggableProps} className={`${isChanged ? 'bg-amber-50/80 dark:bg-amber-400/10' : (index % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40')} transition-colors duration-200`}>
+                                <td className="sticky left-0 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-3 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-700/50" style={{ minWidth: `${teamColWidth}px`, width: `${teamColWidth}px` }}>
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="inline-flex w-1.5 h-1.5 rounded-full shrink-0" style={{backgroundColor:'#0ea5e9'}}/>
+                                    {isChanged && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="What‑If moved" />}
                                     <img
                                       src={`/static/img/teams/${teamSlug(row.team)}.png`}
                                       alt=""
                                       title={`slug: ${teamSlug(row.team)}`}
-                                      className="w-5 h-5 object-contain"
+                                      className="w-5 h-5 object-contain shrink-0"
                                       onError={(e)=>{
                                         const img = e.currentTarget;
                                         const slug = img.title.replace('slug: ','');
@@ -928,10 +936,10 @@ useEffect(() => {
                                         img.onerror = null; img.src = '/static/img/teams/unknown.svg';
                                       }}
                                     />
-                                    <span>{row.team}</span>
+                                    <span className="transition-colors duration-200 truncate">{row.team}</span>
                                   </div>
                                 </td>
-                                <td className="px-3 py-2 text-sm text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/90" style={{ position:'sticky', left: teamColWidth }}>{whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}</td>
+                                <td className="sticky z-20 px-3 py-2.5 text-sm text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700/50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm font-medium" style={{ left: `${teamColWidth}px`, minWidth: '72px', width: '72px' }}>{whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}</td>
                                 {displayedUsers.map((e, userIndex) => {
                                   const isPinned = pinnedUserIds.includes(String(e.user.id));
                                   const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
@@ -939,13 +947,14 @@ useEffect(() => {
                                   const pts = whatIfEnabled ? standingPoints(p?.predicted_position, simActualMap.get(row.team)) : (p?.points || 0);
                                   const predPos = p?.predicted_position ?? '—';
                                   const color = pts >= 3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30' : pts >= 1 ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600';
+                                  const leftPos = teamColWidth + 72 + (userIndex * 108);
                                   return (
-                                    <td key={`c-${e.user.id}-${row.team}`} className={`px-3 py-2 border-b border-slate-100 dark:border-slate-700/50 ${isPinned ? 'sticky bg-white/90 dark:bg-slate-800/90' : ''}`} style={isPinned ? { left: teamColWidth + 72 + (userIndex * 108), zIndex: 10 } : {}}>
+                                    <td key={`c-${e.user.id}-${row.team}`} className={`px-3 py-2.5 border-b border-slate-100 dark:border-slate-700/50 ${isPinned ? 'sticky z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-sm' : ''}`} style={isPinned ? { left: `${leftPos}px`, minWidth: '108px', width: '108px' } : { minWidth: '108px', width: '108px' }}>
                                       <div className="flex justify-center">
                                         <div className="relative inline-block group">
-                                          <span className={`inline-block min-w-[80px] text-center px-2 py-1 rounded-md border text-xs ${color}`} title={`Pred: ${predPos}`}>{predPos}</span>
+                                          <span className={`inline-block min-w-[80px] text-center px-2.5 py-1.5 rounded-md border text-xs font-medium ${color}`} title={`Pred: ${predPos}`}>{predPos}</span>
                                           {pts > 0 && (
-                                            <span className={`pointer-events-none absolute -top-1 -right-1 text-[10px] px-1 py-[1px] rounded border shadow-sm opacity-0 group-hover:opacity-100 ${pts>=3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-800 dark:text-emerald-200 dark:border-emerald-700' : 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-800 dark:text-amber-200 dark:border-amber-700'}`} title={`+${pts} points`}>+{pts}</span>
+                                            <span className={`absolute -top-1 -right-1 text-[10px] px-1.5 py-0.5 rounded-md border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none ${pts>=3 ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-800 dark:text-emerald-200 dark:border-emerald-700' : 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-800 dark:text-amber-200 dark:border-amber-700'}`}>+{pts}</span>
                                           )}
                                         </div>
                                       </div>
@@ -1013,15 +1022,15 @@ useEffect(() => {
         )}
 
         {mode === 'compare' && section !== 'standings' && (
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 shadow-xl">
-            <div className="p-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+          <div className="rounded-xl border border-slate-200/60 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/80 shadow-lg transition-shadow hover:shadow-xl">
+            <div className="px-3 py-3 md:px-4 md:py-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white">
                 <Grid className="w-4 h-4" />
-                <div className="font-semibold">{fromSectionKey(section)} — Detailed Grid</div>
+                <div className="text-sm font-bold">{fromSectionKey(section)}</div>
               </div>
               <div className="flex items-center gap-2">
-                <select className="text-sm border border-slate-300 rounded-md px-2 py-1 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>addUser(e.target.value)} value="">
-                  <option value="">Add player…</option>
+                <select className="text-xs font-medium border border-slate-200/60 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>addUser(e.target.value)} value="">
+                  <option value="">Add…</option>
                   {(withSimTotals||[])
                     .filter(e => !selectedUserIds.map(String).includes(String(e.user.id)))
                     .map(e => (
@@ -1035,16 +1044,16 @@ useEffect(() => {
                         if (!selectedUserIds.map(String).includes(loggedInUserId)) addUser(loggedInUserId);
                         togglePin(loggedInUserId);
                       }}
-                      className={`text-sm inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border ${pinnedUserIds.includes(loggedInUserId)?'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300':'border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300'}`}
+                      className={`text-xs font-semibold inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-all ${pinnedUserIds.includes(loggedInUserId)?'border-emerald-400/60 bg-emerald-50 text-emerald-700 dark:border-emerald-600/50 dark:bg-emerald-900/50 dark:text-emerald-300':'border-slate-200/60 bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300'}`}
                       title={pinnedUserIds.includes(loggedInUserId) ? 'Unpin my column' : (selectedUserIds.map(String).includes(loggedInUserId) ? 'Pin my column' : 'Add and pin my column')}
                     >
                       {pinnedUserIds.includes(loggedInUserId) ? 'Unpin Me' : 'Pin Me'}
                     </button>
                   </span>
                 )}
-                <button onClick={()=> setShowManagePlayers(true)} className="text-sm px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">Manage</button>
-                <button onClick={()=>setShowAll(v=>!v)} className="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-slate-300">
-                  {showAll ? (<><Minimize2 className="w-4 h-4" /> Collapse All Players</>) : (<><Expand className="w-4 h-4" /> Compare All Players</>)}
+                <button onClick={()=> setShowManagePlayers(true)} className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">Manage</button>
+                <button onClick={()=>setShowAll(v=>!v)} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
+                  {showAll ? (<><Minimize2 className="w-3.5 h-3.5" /> Collapse</>) : (<><Expand className="w-3.5 h-3.5" /> All</>)}
                 </button>
               </div>
             </div>
@@ -1052,35 +1061,38 @@ useEffect(() => {
             <div className="overflow-auto">
               <table className="min-w-full border-t border-slate-200 dark:border-slate-700" style={{ tableLayout: 'fixed' }}>
                 <colgroup>
-                  <col style={{ width: Math.max(320, 12*16) }} />
+                  <col style={{ width: '320px' }} />
                   {displayedUsers.map((_, idx) => (
-                    <col key={`qa-${idx}`} style={{ width: 160 }} />
+                    <col key={`qa-${idx}`} style={{ width: '160px' }} />
                   ))}
                 </colgroup>
-                <thead className="bg-slate-50/80 dark:bg-slate-800/80">
+                <thead className="bg-slate-50/95 dark:bg-slate-800/95 sticky top-0 z-20">
                   <tr>
-                    <th className="sticky left-0 z-10 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur px-3 py-2 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700" style={{minWidth:'12rem'}}>Question</th>
+                    <th className="sticky left-0 z-30 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-3 py-2.5 text-left text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60" style={{minWidth:'320px', width: '320px'}}>Question</th>
                     {displayedUsers.map((e, index) => {
                       const catKey = fromSectionKey(section);
                       const catPts = e.user.categories?.[catKey]?.points || 0;
                       const totalPts = e.user.total_points || 0;
                       const isPinned = pinnedUserIds.includes(String(e.user.id));
+                      const leftPos = 320 + (index * 160);
                       return (
-                        <th key={`h2-${e.user.id}`} className={`px-3 py-2 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 align-top ${isPinned ? 'sticky bg-slate-50/80 dark:bg-slate-800/80' : ''}`} style={isPinned ? { left: Math.max(320, 12*16) + (index * 160), zIndex: 10 } : {}}>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-700 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
-                            <button onClick={()=> togglePin(e.user.id)} title={pinnedUserIds.includes(String(e.user.id))? 'Unpin column':'Pin column'} className={`text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 ${pinnedUserIds.includes(String(e.user.id))?'text-emerald-600 dark:text-emerald-400':''} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
-                              {pinnedUserIds.includes(String(e.user.id)) ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
-                            </button>
-                            {!showAll && (
-                              <button onClick={()=>setSelectedUserIds(prev => prev.filter(id => String(id)!==String(e.user.id)))} title="Remove from comparison" className="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300">
-                                <X className="w-3.5 h-3.5" />
+                        <th key={`h2-${e.user.id}`} className={`px-2.5 py-2.5 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 align-top transition-all duration-200 ${isPinned ? 'sticky z-30 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-sm' : ''}`} style={isPinned ? { left: `${leftPos}px`, minWidth: '160px', width: '160px' } : { minWidth: '160px', width: '160px' }}>
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            <span className="truncate max-w-[80px]">{e.user.display_name || e.user.username}</span>
+                            <div className="flex items-center gap-1">
+                              <button onClick={()=> togglePin(e.user.id)} title={isPinned? 'Unpin column':'Pin column'} className={`transition-all duration-200 ${isPinned ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'} ${pinPulseId===String(e.user.id)?'pin-pulse':''}`}>
+                                {isPinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
                               </button>
-                            )}
+                              {!showAll && (
+                                <button onClick={()=>setSelectedUserIds(prev => prev.filter(id => String(id)!==String(e.user.id)))} title="Remove from comparison" className="text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 transition-colors">
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <div className="mt-1 flex flex-col gap-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                            <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Cat: <span className="font-semibold text-slate-700 dark:text-slate-200">{catPts}</span></span>
-                            <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span> Total: <span className="font-semibold text-slate-700 dark:text-slate-200">{totalPts}</span></span>
+                          <div className="mt-1.5 flex flex-col gap-0.5 text-[10px] text-slate-600 dark:text-slate-400 font-medium">
+                            <span className="inline-flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {catPts}</span>
+                            <span className="inline-flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span> {totalPts}</span>
                           </div>
                         </th>
                       );
@@ -1100,11 +1112,11 @@ useEffect(() => {
                     });
                     const qArr = Array.from(qMap.values()).sort((a,b)=> a.text.localeCompare(b.text));
                     return qArr.map((q, idx) => (
-                      <tr key={`q-${q.id}`} className="odd:bg-white/70 even:bg-white/40 dark:odd:bg-slate-800/50 dark:even:bg-slate-800/20">
-                        <td className="sticky left-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-200">
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-semibold rounded-full bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">{idx+1}</span>
-                            <span className="inline-block px-2 py-1 rounded-md border border-slate-200 bg-white text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 max-w-[360px] truncate" title={q.text}>{q.text}</span>
+                      <tr key={`q-${q.id}`} className="odd:bg-white/80 even:bg-white/50 dark:odd:bg-slate-800/60 dark:even:bg-slate-800/40">
+                        <td className="sticky left-0 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-3 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-200" style={{ minWidth: '320px', width: '320px' }}>
+                          <div className="flex items-center gap-2.5">
+                            <span className="inline-flex items-center justify-center w-6 h-6 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600 shrink-0">{idx+1}</span>
+                            <span className="inline-block px-2.5 py-1.5 rounded-md border border-slate-200/60 bg-white text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 truncate" title={q.text}>{q.text}</span>
                           </div>
                         </td>
                         {displayedUsers.map((e, userIndex) => {
@@ -1122,19 +1134,19 @@ useEffect(() => {
                             : (pts > 0
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
                               : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600');
+                          const leftPos = 320 + (userIndex * 160);
                           return (
-                        <td key={`q-${q.id}-${e.user.id}`} className={`px-3 py-2 ${isPinned ? 'sticky bg-white/90 dark:bg-slate-800/90' : ''}`} style={isPinned ? { left: Math.max(320, 12*16) + (userIndex * 160), zIndex: 10 } : {}}>
+                        <td key={`q-${q.id}-${e.user.id}`} className={`px-3 py-2.5 ${isPinned ? 'sticky z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-sm' : ''}`} style={isPinned ? { left: `${leftPos}px`, minWidth: '160px', width: '160px' } : { minWidth: '160px', width: '160px' }}>
                           <div className="flex justify-center">
                             <div className="relative inline-block group">
-                          <span className={`inline-flex items-center gap-1 max-w-[180px] truncate text-center px-2 py-1 rounded-md border text-xs ${color} transition-transform duration-200`} title={`${answer}`}>
-                                {isYes && <CheckCircle2 className="w-3.5 h-3.5" />}
-                                {isNo && <XCircle className="w-3.5 h-3.5" />}
+                          <span className={`inline-flex items-center gap-1.5 max-w-[140px] truncate text-center px-2.5 py-1.5 rounded-md border text-xs font-medium ${color}`} title={`${answer}`}>
+                                {isYes && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                                {isNo && <XCircle className="w-3.5 h-3.5 shrink-0" />}
                                 <span className="truncate">{answer}</span>
                               </span>
                               {pts > 0 && (
                                 <span
-                                  className="pointer-events-none absolute -top-1 -right-1 text-[9px] px-1 py-[1px] rounded bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-800 dark:text-emerald-200 dark:border-emerald-700 shadow-sm opacity-0 group-hover:opacity-100"
-                                  title={`+${pts} points`}
+                                  className="absolute -top-1 -right-1 text-[10px] px-1.5 py-0.5 rounded-md border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-800 dark:text-emerald-200 dark:border-emerald-700"
                                 >
                                   +{pts}
                                 </span>
@@ -1155,32 +1167,32 @@ useEffect(() => {
       </div>
       {/* Floating Top 3 card (simple) with delta */}
       {showManagePlayers && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg p-0 max-h-[80vh] flex flex-col overflow-hidden">
-            <div className="px-4 pt-4 pb-2 border-b border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-between">
-                <div className="font-semibold text-slate-800 dark:text-slate-200">Manage Players</div>
-                <button onClick={()=> setShowManagePlayers(false)} className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">Close</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200/60 dark:border-slate-700 w-full max-w-lg p-0 max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="px-5 pt-5 pb-3 border-b border-slate-200/80 dark:border-slate-700">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-lg font-bold text-slate-800 dark:text-slate-200">Manage Players</div>
+                <button onClick={()=> setShowManagePlayers(false)} className="px-3 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 text-xs font-medium transition-colors">Close</button>
               </div>
-              <div className="mt-3 flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-2">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input value={manageQuery} onChange={(e)=> setManageQuery(e.target.value)} placeholder="Search players" className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" />
+                  <input value={manageQuery} onChange={(e)=> setManageQuery(e.target.value)} placeholder="Search players" className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200/60 bg-white text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-teal-500/20 transition-all" />
                 </div>
                 <button onClick={()=> {
                   const ids = (withSimTotals||[])
                     .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
                     .map(e => String(e.user.id));
                   setSelectedUserIds(prev => Array.from(new Set([...prev.map(String), ...ids])));
-                }} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">Select All</button>
+                }} className="text-xs font-medium px-3 py-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 transition-colors shrink-0">All</button>
                 <button onClick={()=> {
                   const ids = new Set((withSimTotals||[])
                     .filter(e => !manageQuery.trim() || (e.user.display_name||e.user.username).toLowerCase().includes(manageQuery.toLowerCase()))
                     .map(e => String(e.user.id)));
                   setSelectedUserIds(prev => prev.filter(id => !ids.has(String(id))));
-                }} className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300">Clear All</button>
+                }} className="text-xs font-medium px-3 py-2 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 transition-colors shrink-0">Clear</button>
               </div>
-              <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">Selected {selectedUserIds.length}{pinnedUserIds.length? ` • Pinned ${pinnedUserIds.length}`:''}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Selected {selectedUserIds.length}{pinnedUserIds.length? ` • Pinned ${pinnedUserIds.length}`:''}</div>
             </div>
             <div className="flex-1 overflow-y-auto no-scrollbar p-3 grid grid-cols-1 gap-2">
               {(withSimTotals||[])
@@ -1190,17 +1202,17 @@ useEffect(() => {
                   const isSel = selectedUserIds.map(String).includes(id);
                   const isPin = pinnedUserIds.map(String).includes(id);
                   return (
-                    <div key={`drow-${id}`} className={`flex items-center justify-between rounded-xl border ${isSel? 'border-emerald-300 bg-emerald-50/60 dark:border-emerald-700/60 dark:bg-emerald-900/30':'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'} px-3 py-2`}>
-                      <label className="flex items-center gap-3 min-w-0">
-                        <input type="checkbox" className="accent-emerald-600" checked={isSel} onChange={(ev)=> {
+                    <div key={`drow-${id}`} className={`flex items-center justify-between rounded-xl border transition-all duration-200 ${isSel? 'border-emerald-300/80 bg-emerald-50/70 dark:border-emerald-700/60 dark:bg-emerald-900/30':'border-slate-200/60 bg-white dark:border-slate-800 dark:bg-slate-900'} px-3 py-2.5 hover:shadow-sm`}>
+                      <label className="flex items-center gap-3 min-w-0 cursor-pointer">
+                        <input type="checkbox" className="accent-emerald-600 w-4 h-4" checked={isSel} onChange={(ev)=> {
                           if (ev.target.checked) addUser(id); else setSelectedUserIds(prev => prev.filter(x => String(x)!==id));
                         }} />
-                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-semibold">
+                        <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold shrink-0">
                           {(e.user.display_name || e.user.username).slice(0,2).toUpperCase()}
                         </div>
-                        <span className="truncate text-sm text-slate-800 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
+                        <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">{e.user.display_name || e.user.username}</span>
                       </label>
-                      <button type="button" onClick={()=> togglePin(id)} title={isPin? 'Unpin':'Pin'} className={`px-2 py-1 rounded-lg border ${isPin? 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300':'border-slate-300 bg-white text-slate-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'} ${pinPulseId===id? 'pin-pulse':''}`}>
+                      <button type="button" onClick={()=> togglePin(id)} title={isPin? 'Unpin':'Pin'} className={`px-2 py-1.5 rounded-lg border transition-all ${isPin? 'border-emerald-400/80 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300':'border-slate-300/60 bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700'} ${pinPulseId===id? 'pin-pulse':''}`}>
                         {isPin ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
                       </button>
                     </div>
@@ -1236,6 +1248,7 @@ useEffect(() => {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

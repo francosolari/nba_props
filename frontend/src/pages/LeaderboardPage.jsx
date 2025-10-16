@@ -1,7 +1,8 @@
 /* LeaderboardPage.jsx */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import useLeaderboard from '../hooks/useLeaderboard';
 import ProgressBar from '../components/ProgressBar';
+import SideNav from '../components/SideNav';
 import {
   ChevronDown,
   ChevronUp,
@@ -15,6 +16,7 @@ import {
   ListChecks,
   CircleCheck,
   CircleX,
+  ArrowRight,
 } from 'lucide-react';
 
 /* Map category names ➜ an icon component. */
@@ -33,6 +35,21 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
 
   /* ‣ Control how many players are visible (for client-side pagination) */
   const [visibleCount, setVisibleCount] = useState(20); // Default to showing 20 players initially
+
+  /* ‣ Mobile detection */
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const onChange = () => setIsMobile(!!mq.matches);
+    onChange();
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else if (mq.removeListener) mq.removeListener(onChange);
+    };
+  }, []);
 
   const toggleUserExpansion = (userId) => {
     const next = new Set(expandedUsers);
@@ -188,8 +205,10 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <>
+      <SideNav currentPage="leaderboard" seasonSlug={seasonSlug} />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6" style={{ marginLeft: isMobile ? '0' : '64px' }}>
+        <div className="max-w-7xl mx-auto space-y-4">
         {/* ──────────────────────── Header Section with Title and Metrics Grid */}
         <section>
           <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-700/50 bg-gradient-to-br from-white via-white to-slate-50/30 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-900/50 shadow-lg backdrop-blur-sm mb-4">
@@ -198,6 +217,13 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">NBA Predictions Leaderboard</h1>
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Season {seasonSlug.replace('-', '–')} • Live rankings</p>
+                  <a
+                    href={`/leaderboard/${seasonSlug}/detailed/`}
+                    className="mt-2 inline-flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors"
+                  >
+                    See points breakdown
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
                 </div>
                 <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900/40 backdrop-blur px-3 py-2.5 border border-slate-200/60 dark:border-slate-700/40 shadow-sm">
                   <div className="px-2.5 text-center">
@@ -309,9 +335,9 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
                 {expandedUsers.has(entry.user.id) && (
                   <div className="px-3 pb-4 md:px-4 md:pb-5 bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-800/30 dark:to-slate-900/20">
                     <div className="grid gap-3 lg:grid-cols-3">
-                      <CategoryCard icon={BarChart3} title="Regular Season Standings" userId={entry.user.id} data={getCategory(entry, 'Regular Season Standings')} detailsHref={`/page-detail/${seasonSlug}/?section=standings&user=${entry.user.id}`} />
-                      <CategoryCard icon={Award} title="Player Awards" userId={entry.user.id} data={getCategory(entry, 'Player Awards')} detailsHref={`/page-detail/${seasonSlug}/?section=awards&user=${entry.user.id}`} />
-                      <CategoryCard icon={ListChecks} title="Props & Yes/No" userId={entry.user.id} data={getCategory(entry, 'Props & Yes/No')} detailsHref={`/page-detail/${seasonSlug}/?section=props&user=${entry.user.id}`} />
+                      <CategoryCard icon={BarChart3} title="Regular Season Standings" userId={entry.user.id} data={getCategory(entry, 'Regular Season Standings')} detailsHref={`/leaderboard/${seasonSlug}/detailed/?section=standings&user=${entry.user.id}`} />
+                      <CategoryCard icon={Award} title="Player Awards" userId={entry.user.id} data={getCategory(entry, 'Player Awards')} detailsHref={`/leaderboard/${seasonSlug}/detailed/?section=awards&user=${entry.user.id}`} />
+                      <CategoryCard icon={ListChecks} title="Props & Yes/No" userId={entry.user.id} data={getCategory(entry, 'Props & Yes/No')} detailsHref={`/leaderboard/${seasonSlug}/detailed/?section=props&user=${entry.user.id}`} />
                     </div>
                   </div>
                 )}
@@ -331,8 +357,9 @@ function LeaderboardPage({ seasonSlug = 'current' }) {
             </button>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

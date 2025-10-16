@@ -19,8 +19,14 @@
     <link rel="icon" href="{% static 'img/favicon.ico' %}">
 </head>
 <body>
+    <!-- Global Site Layout (SideNav) -->
+    <div id="site-layout-root"
+         data-current-page="{% block current_page %}home{% endblock %}"
+         data-season-slug="{% block season_slug %}current{% endblock %}">
+    </div>
+
     <!-- Header Section -->
-    <header id="main-header" class="bg-blue-600 text-white text-sm py-0 fixed w-full top-0 left-0 z-50 transition-all duration-300 ease-in-out">
+    <header id="main-header" class="bg-blue-600 text-white text-sm py-0 fixed w-full top-0 left-0 z-50 transition-all duration-300 ease-in-out" style="margin-left: 64px; width: calc(100% - 64px);">
         <!-- Navigation Bar -->
         <nav class="bg-gray-800 p-1 h-12 fixed top-0 w-full z-50">
             <div class="container mx-auto flex justify-between items-center h-full">
@@ -66,7 +72,7 @@
     </header>
     
     <!-- Main Content -->
-    <main class="container mx-auto mt-16">
+    <main class="container mx-auto mt-16" style="margin-left: 64px;">
         {% block content %}
         {% endblock %}
     </main>

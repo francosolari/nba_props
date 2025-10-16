@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import useLeaderboard from '../hooks/useLeaderboard';
 import useUserSubmissions from '../hooks/useUserSubmissions';
+import SideNav from '../components/SideNav';
 import '../styles/palette.css';
 
 const DEFAULT_SEASON = 'current';
@@ -396,14 +397,14 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
     ? `Welcome back${rootProps.displayName ? `, ${rootProps.displayName}` : ''}`
     : 'Props Prediction';
   const heroHeadlineMap = {
-    guest: 'Track every NBA prediction in one hub.',
-    incomplete: 'Pick up your season board right where you left off.',
-    submitted: 'Your board is locked. Monitor every point here.',
+    guest: 'Make your NBA predictions.',
+    incomplete: 'Pick up your predictions right where you left off.',
+    submitted: 'Monitor your points here.',
   };
   const heroSubcopyMap = {
     guest: 'Build standings, awards, and props once—follow them all season without spreadsheets.',
     incomplete: 'Standings, awards, and props stay synced so you can finish before submissions lock.',
-    submitted: 'Review standings, awards, and props at a glance while the leaderboard updates.',
+    submitted: 'Review standings, awards, and props at a glance.',
   };
   const heroHeadline = heroHeadlineMap[heroVariant];
   const heroSubcopy = heroSubcopyMap[heroVariant];
@@ -431,15 +432,17 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
   if (rootProps.submissionEnd) {
     const base = deadlineCopy || '';
     if (rootProps.submissionOpen) {
-      deadlineDescription = `${base}. Edits close at lock—save before time runs out.`;
+      deadlineDescription = `Submission Period: ${base}`;
     } else {
       deadlineDescription = `${base || 'Submissions are locked.'} You can still review your answers.`;
     }
   }
 
   return (
-    <div className="home-shell">
-      <section className={`home-hero home-hero--${heroVariant}`}>
+    <>
+      <SideNav currentPage="home" seasonSlug={seasonSlug} />
+      <div className="home-shell" style={{ marginLeft: '64px' }}>
+        <section className={`home-hero home-hero--${heroVariant}`}>
         <div className="home-hero__background" />
         <div className="home-hero__content">
           <div className="home-hero__body">
@@ -534,5 +537,6 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
         </div>
       </div>
     </div>
+    </>
   );
 }

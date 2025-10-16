@@ -17,6 +17,7 @@ import {
 } from '../hooks/useSubmissions';
 import SelectComponent from '../components/SelectComponent';
 import EditablePredictionBoard from '../components/EditablePredictionBoard';
+import SideNav from '../components/SideNav';
 
 const QUESTION_GROUP_META = {
   superlative: {
@@ -256,11 +257,26 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const [isProgressSticky, setIsProgressSticky] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentDetailsForModal, setPaymentDetailsForModal] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
   const { data: userContext, isLoading: userContextLoading } = useUserContext();
   const username = userContext?.username || null;
   const entryFeeEnabled = !!effectiveSeasonSlug && !!userContext?.is_authenticated;
+
+  // Mobile detection
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const onChange = () => setIsMobile(!!mq.matches);
+    onChange();
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else if (mq.removeListener) mq.removeListener(onChange);
+    };
+  }, []);
 
   // Discover the latest season when no slug provided
   useEffect(() => {
@@ -723,28 +739,28 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
   if (seasonLoading || !effectiveSeasonSlug) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="text-slate-600 text-2xl">Loading season...</div>
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-slate-600 dark:text-slate-400 text-2xl">Loading season...</div>
       </div>
     );
   }
 
   if (questionsLoading) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="text-slate-600 text-2xl">Loading questions...</div>
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-slate-600 dark:text-slate-400 text-2xl">Loading questions...</div>
       </div>
     );
   }
 
   if (questionsError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center rounded-2xl border border-slate-200 bg-white/90 p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-900 mb-3">
-            We can’t load submissions right now
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 p-8 shadow-sm">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white mb-3">
+            We can't load submissions right now
           </h1>
-          <p className="text-slate-600 text-sm leading-relaxed mb-6">{questionsErrorMessage}</p>
+          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">{questionsErrorMessage}</p>
           <button
             type="button"
             onClick={() => refetchQuestions()}
@@ -758,8 +774,10 @@ const SubmissionsPage = ({ seasonSlug }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 py-8 md:py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+    <>
+      <SideNav currentPage="submissions" seasonSlug={effectiveSeasonSlug || 'current'} />
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 py-8 md:py-12" style={{ marginLeft: isMobile ? '0' : '64px' }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
           <div className="flex flex-col gap-2 text-center md:text-left">
@@ -1053,8 +1071,9 @@ const SubmissionsPage = ({ seasonSlug }) => {
             }}
           />
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

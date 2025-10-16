@@ -1,0 +1,177 @@
+{% extends "account/base_manage_email.html" %}
+{% load allauth %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-100 py-8">
+  <div class="container mx-auto px-4 max-w-2xl">
+    <!-- Header -->
+    <div class="mb-6">
+      <a href="{% url 'predictions_views:profile' %}" class="inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-2">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Profile
+      </a>
+      <h1 class="text-3xl font-bold text-slate-900">Email Settings</h1>
+      <p class="text-slate-600 mt-1">Manage your email addresses and preferences</p>
+    </div>
+
+    {% if messages %}
+      <div class="mb-6">
+        {% for message in messages %}
+          <div class="rounded-md border px-4 py-3 mb-2
+            {% if message.tags == 'success' %}bg-emerald-50 border-emerald-300 text-emerald-700
+            {% elif message.tags == 'error' %}bg-rose-50 border-rose-300 text-rose-700
+            {% elif message.tags == 'warning' %}bg-amber-50 border-amber-300 text-amber-700
+            {% else %}bg-slate-50 border-slate-300 text-slate-700{% endif %}">
+            <div class="flex items-start gap-2">
+              <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                {% if message.tags == 'success' %}
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                {% elif message.tags == 'error' %}
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                {% else %}
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                {% endif %}
+              </svg>
+              <span class="text-sm font-medium">{{ message }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Current Email Addresses -->
+    <div class="bg-white rounded-md border border-slate-200 shadow-sm p-6 mb-6">
+      <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        Your Email Addresses
+      </h2>
+
+      {% if emailaddresses %}
+        <div class="space-y-3">
+          {% for emailaddress in emailaddresses %}
+            <div class="flex items-center justify-between p-4 border border-slate-200 rounded-md {% if emailaddress.primary %}bg-teal-50 border-teal-300{% else %}bg-slate-50{% endif %}">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full {% if emailaddress.primary %}bg-teal-100{% else %}bg-slate-200{% endif %} flex items-center justify-center">
+                  <svg class="w-5 h-5 {% if emailaddress.primary %}text-teal-600{% else %}text-slate-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="font-semibold text-slate-900">{{ emailaddress.email }}</div>
+                  <div class="flex gap-2 mt-1">
+                    {% if emailaddress.verified %}
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        Verified
+                      </span>
+                    {% else %}
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        Unverified
+                      </span>
+                    {% endif %}
+                    {% if emailaddress.primary %}
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        Primary
+                      </span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                {% if not emailaddress.primary %}
+                  <form method="post" action="{% url 'account_email' %}" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_primary" value="{{ emailaddress.email }}">
+                    <button type="submit" class="text-xs text-teal-700 hover:text-teal-800 font-medium px-3 py-1.5 border border-teal-300 rounded hover:bg-teal-50">
+                      Make Primary
+                    </button>
+                  </form>
+                  <form method="post" action="{% url 'account_email' %}" class="inline" onsubmit="return confirm('Are you sure you want to remove this email address?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_remove" value="{{ emailaddress.email }}">
+                    <button type="submit" class="text-xs text-rose-700 hover:text-rose-800 font-medium px-3 py-1.5 border border-rose-300 rounded hover:bg-rose-50">
+                      Remove
+                    </button>
+                  </form>
+                {% endif %}
+                {% if not emailaddress.verified %}
+                  <form method="post" action="{% url 'account_email' %}" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_send" value="{{ emailaddress.email }}">
+                    <button type="submit" class="text-xs text-slate-700 hover:text-slate-800 font-medium px-3 py-1.5 border border-slate-300 rounded hover:bg-slate-50">
+                      Resend Verification
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-8 text-slate-500">
+          <svg class="w-12 h-12 mx-auto mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+          </svg>
+          <p>No email addresses configured.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Add Email Address Form -->
+    <div class="bg-white rounded-md border border-slate-200 shadow-sm p-6">
+      <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+        Add Email Address
+      </h2>
+      <form method="post" action="{% url 'account_email' %}" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label for="id_email" class="block text-sm font-medium text-slate-700 mb-1">
+            New Email Address
+          </label>
+          <input
+            type="email"
+            name="email"
+            id="id_email"
+            required
+            class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            placeholder="your.email@example.com"
+          >
+          {% if form.email.errors %}
+            <p class="mt-1 text-sm text-rose-600">{{ form.email.errors }}</p>
+          {% endif %}
+        </div>
+        <div class="flex gap-3">
+          <button
+            type="submit"
+            name="action_add"
+            class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 font-semibold text-sm transition-colors"
+          >
+            Add Email
+          </button>
+          <a
+            href="{% url 'predictions_views:profile' %}"
+            class="px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50 font-semibold text-sm transition-colors"
+          >
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

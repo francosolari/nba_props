@@ -21,6 +21,7 @@ import ProfilePage from './pages/ProfilePage.jsx';
 import SubmissionsPage from './pages/SubmissionsPage.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
 import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
+import SiteLayout from './components/SiteLayout.jsx';
 
 console.log("React bundle loaded and running!");
 
@@ -76,3 +77,6 @@ mountComponent(ProfilePage, 'profile-root', 'ProfilePage');
 mountComponent(SubmissionsPage, 'submissions-root', 'SubmissionsPage');
 
 mountComponent(AdminPanel, 'admin-panel-root', 'AdminPanel');
+
+// Mount SiteLayout globally - provides SideNav across all pages
+mountComponent(SiteLayout, 'site-layout-root', 'SiteLayout');
