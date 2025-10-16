@@ -1,6 +1,11 @@
+# Docker Compose for NBA Predictions
+# NOTE: Web containers (blue/green) are managed by blue_green_deploy.sh script
+# This file only manages the database for sustainable deployment
+
 services:
   db:
     image: postgres:latest
+    container_name: nba_props_db_1
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -9,73 +14,17 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432" # Expose Postgresql to port 5432
+      - "5432:5432"
     networks:
-      - mynetwork
-
-  web-blue:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    command: sh -c "python manage.py migrate &&
-      gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000 --timeout 120"
-    ports:
-      - "8000:8000" # Expose web-blue on port 8001 locally
-    volumes:
-      - ./backend:/app
-    environment:
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DJANGO_DEVELOPMENT=False
-      - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_HOST=${DATABASE_HOST}
-      - DATABASE_PORT=${DATABASE_PORT}
-      - DATABASE_NAME=${DATABASE_NAME}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
-      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
-      - CF_TURNSTILE_SITE_KEY=${CF_TURNSTILE_SITE_KEY}
-      - CF_TURNSTILE_SECRET_KEY=${CF_TURNSTILE_SECRET_KEY}
-      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
-      - GOOGLE_OAUTH_SECRET=${GOOGLE_OAUTH_SECRET}
-    depends_on:
-      - db
-    networks:
-      - mynetwork
-
-  web-green:
-    image: ${DOCKER_IMAGE:-nba_props_web-green}
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    command: sh -c "python manage.py migrate &&
-      gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000 --timeout 120"
-    ports:
-      - "8002:8000" # Expose web-green on port 8002 locally
-    environment:
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DJANGO_DEVELOPMENT=False
-      - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_HOST=${DATABASE_HOST}
-      - DATABASE_PORT=${DATABASE_PORT}
-      - DATABASE_NAME=${DATABASE_NAME}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
-      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
-      - CF_TURNSTILE_SITE_KEY=${CF_TURNSTILE_SITE_KEY}
-      - CF_TURNSTILE_SECRET_KEY=${CF_TURNSTILE_SECRET_KEY}
-      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
-      - GOOGLE_OAUTH_SECRET=${GOOGLE_OAUTH_SECRET}
-    depends_on:
-      - db
-    networks:
-      - mynetwork
+      mynetwork:
+        aliases:
+          - db  # Makes it accessible as 'db' for DATABASE_HOST=db
 
 networks:
   mynetwork:
+    name: nba_props_mynetwork
+    driver: bridge
 
 volumes:
   postgres_data:
+    name: nba_props_postgres_data
