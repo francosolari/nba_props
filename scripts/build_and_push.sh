@@ -48,7 +48,11 @@ if [ "$CONFIRM" != "y" ]; then
     exit 0
 fi
 
-echo -e "\n${YELLOW}Step 1: Building Docker image for linux/amd64...${NC}"
+echo -e "\n${YELLOW}Step 1: Building frontend with npm...${NC}"
+npm run build
+echo -e "${GREEN}✓ Frontend built successfully${NC}"
+
+echo -e "\n${YELLOW}Step 2: Building Docker image for linux/amd64...${NC}"
 
 # Check if buildx is available
 if docker buildx version &> /dev/null; then
@@ -79,7 +83,7 @@ else
     docker build --platform linux/amd64 -t $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION .
     docker tag $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION $DOCKER_USERNAME/$IMAGE_NAME:latest
 
-    echo -e "\n${YELLOW}Step 2: Pushing to Docker Hub...${NC}"
+    echo -e "\n${YELLOW}Step 3: Pushing to Docker Hub...${NC}"
     docker push $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION
     docker push $DOCKER_USERNAME/$IMAGE_NAME:latest
 
@@ -97,12 +101,11 @@ echo -e "Also tagged as: ${GREEN}$DOCKER_USERNAME/$IMAGE_NAME:latest${NC}\n"
 echo -e "${YELLOW}To deploy to your server, run:${NC}"
 echo -e "${BLUE}ssh root@134.209.213.185${NC}"
 echo -e "${BLUE}cd /var/www/nba_props${NC}"
-echo -e "${BLUE}set -a && source backend/.env && set +a${NC}"
 echo -e "${BLUE}bash scripts/blue_green_deploy.sh $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION${NC}\n"
 
 # Option to automatically deploy
 read -p "Deploy to server now? (y/N): " DEPLOY
 if [ "$DEPLOY" = "y" ]; then
     echo -e "\n${YELLOW}Deploying to server...${NC}"
-    ssh root@134.209.213.185 "cd /var/www/nba_props && set -a && source backend/.env && set +a && bash scripts/blue_green_deploy.sh $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION"
+    ssh root@134.209.213.185 "cd /var/www/nba_props && bash scripts/blue_green_deploy.sh $DOCKER_USERNAME/$IMAGE_NAME:$NEW_VERSION"
 fi

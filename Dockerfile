@@ -1,35 +1,24 @@
-# Multi-stage Production Dockerfile with Frontend Build
-FROM node:20 AS frontend-builder
-
-WORKDIR /build
-
-# Copy package files
-COPY package.json package-lock.json* ./
-COPY frontend/ ./frontend/
-
-# Install dependencies and build frontend
-RUN npm install
-RUN npm run build
-
-# Python stage
+# Lightweight Python-only Dockerfile (frontend built locally via npm run build)
 FROM python:3.11-slim-bullseye
 
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Copy requirements and install
+# Copy requirements first (for better layer caching)
 COPY backend/requirements.txt /app/
+
+# Install dependencies with --no-cache-dir to save space (~50MB savings)
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
 COPY backend/ /app/
 
-# Copy frontend build from frontend-builder stage
-COPY --from=frontend-builder /build/frontend/static /app/../frontend/static
+# Copy pre-built frontend static files (already built via npm run build)
+COPY frontend/static /app/../frontend/static
 
-# Collect static files
+# Collect static files (Django + WhiteNoise will serve these)
 RUN python manage.py collectstatic --noinput
 
 ENV DJANGO_SETTINGS_MODULE=nba_predictions.settings

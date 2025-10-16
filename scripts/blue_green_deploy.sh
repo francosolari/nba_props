@@ -11,6 +11,23 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Load environment variables from .env
+ENV_FILE="$PROJECT_ROOT/backend/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo -e "${YELLOW}Loading environment variables from $ENV_FILE...${NC}"
+    set -a
+    source "$ENV_FILE"
+    set +a
+    echo -e "${GREEN}✓ Environment variables loaded${NC}\n"
+else
+    echo -e "${RED}Warning: .env file not found at $ENV_FILE${NC}"
+    echo -e "${YELLOW}Continuing with existing environment variables...${NC}\n"
+fi
+
 # Configuration
 NGINX_CONFIG="/etc/nginx/sites-enabled/propspredictions.conf"
 DB_BACKUP_DIR="/var/www/backups"
