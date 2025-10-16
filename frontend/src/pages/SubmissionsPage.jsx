@@ -1695,17 +1695,17 @@ const renderFinalistColumn = (
   const renderChampionColumn = () => {
     if (!finalBracketData.champion) {
       return (
-        <div className="flex h-full flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white/90 px-6 py-8 text-center shadow-sm">
-          <p className="text-sm text-slate-500">No NBA Cup champion question configured.</p>
+        <div className="flex h-full flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-8 text-center shadow-sm">
+          <p className="text-sm text-slate-500 dark:text-slate-400">No NBA Cup champion question configured.</p>
         </div>
       );
     }
 
     return (
-      <div className="flex h-full flex-col items-center justify-between rounded-3xl border border-slate-200 bg-gradient-to-b from-white via-sky-50/60 to-white px-6 py-8 text-center shadow-sm">
+      <div className="flex h-full flex-col items-center justify-between rounded-3xl border border-slate-200 dark:border-slate-700 bg-gradient-to-b from-white via-sky-50/60 to-white dark:from-slate-800 dark:via-sky-900/20 dark:to-slate-800 px-6 py-8 text-center shadow-sm">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">NBA Cup Champion</p>
-          <span className="mt-1 inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">NBA Cup Champion</p>
+          <span className="mt-1 inline-flex items-center rounded-full bg-sky-100 dark:bg-sky-900/50 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">
             {finalBracketData.champion.point_value} pts
           </span>
         </div>
@@ -1721,7 +1721,7 @@ const renderFinalistColumn = (
             mode="light"
           />
         </div>
-        <p className="mt-4 text-xs text-slate-500">
+        <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
           Winner auto-updates when one finalist has a higher score. Ties leave your selection unchanged.
         </p>
       </div>
@@ -1767,11 +1767,11 @@ const renderFinalistColumn = (
             {additionalTiebreakers.map((question) => (
               <div
                 key={question.id}
-                className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                className="flex h-full flex-col rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <h4 className="text-base font-semibold text-slate-900">{question.text}</h4>
-                  <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                  <h4 className="text-base font-semibold text-slate-900 dark:text-white">{question.text}</h4>
+                  <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
                     {question.point_value} pts
                   </span>
                 </div>
@@ -1782,7 +1782,7 @@ const renderFinalistColumn = (
                   onChange={(event) => onAnswerChange(question.id, event.target.value)}
                   disabled={isReadOnly}
                   placeholder="Enter your tiebreaker"
-                  className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-4 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
             ))}
