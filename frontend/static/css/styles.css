@@ -2003,3 +2003,103 @@ video {
   color: #ffffff;
 }
 
+/* Dark Mode Overrides */
+.dark .home-section__header h2 {
+  color: var(--nba-slate-200);
+}
+
+.dark .home-section__header p {
+  color: var(--nba-slate-400);
+}
+
+.dark .home-stat-card {
+  background: rgba(15, 23, 42, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.25);
+}
+
+.dark .home-stat-card--link:hover {
+  box-shadow: 0 24px 40px rgba(31, 107, 255, 0.25);
+}
+
+.dark .home-stat-card__icon {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--nba-blue-400);
+}
+
+.dark .home-stat-card__label {
+  color: var(--nba-slate-400);
+}
+
+.dark .home-stat-card__value {
+  color: var(--nba-slate-100);
+}
+
+.dark .home-stat-card__subtle {
+  color: var(--nba-slate-400);
+}
+
+.dark .home-leaderboard {
+  background: rgba(15, 23, 42, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 36px rgba(0, 0, 0, 0.25);
+}
+
+.dark .home-leaderboard__head {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--nba-slate-400);
+}
+
+.dark .home-leaderboard__row {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .home-leaderboard__row:hover {
+  background: rgba(31, 107, 255, 0.1);
+}
+
+.dark .home-leaderboard__rank {
+  color: var(--nba-slate-400);
+}
+
+.dark .home-leaderboard__name {
+  color: var(--nba-slate-200);
+}
+
+.dark .home-leaderboard__points {
+  color: var(--nba-blue-400);
+}
+
+.dark .home-link {
+  color: var(--nba-blue-400);
+}
+
+.dark .home-link:hover {
+  color: var(--nba-red-400);
+}
+
+.dark .home-standings-card {
+  background: rgba(15, 23, 42, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 28px rgba(0, 0, 0, 0.25);
+}
+
+.dark .home-standings-card header {
+  color: var(--nba-slate-300);
+}
+
+.dark .home-standings-card__position {
+  color: var(--nba-slate-400);
+}
+
+.dark .home-standings-card__team {
+  color: var(--nba-slate-200);
+}
+
+.dark .home-standings-card__record {
+  color: var(--nba-slate-400);
+}
+
+.dark .home-standings-card::after {
+    background: linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.95));
+}

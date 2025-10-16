@@ -10,7 +10,7 @@ import {
   Menu
 } from 'lucide-react';
 
-function SideNav({ currentPage = 'home', seasonSlug = 'current' }) {
+function SideNav({ currentPage = 'home', seasonSlug = 'latest' }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
