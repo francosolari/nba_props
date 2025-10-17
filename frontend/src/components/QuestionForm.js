@@ -484,11 +484,15 @@ const handleSubmit = useCallback(async (e) => {
             label: standing.team_name,
           }));
         } else if (question.prediction_type === 'wildcard' || question.prediction_type === 'conference_winner') {
-          const filteredTeams = teams.filter((team) => team.conference === question.ist_group);
+          // ist_group contains "East" or "West", but teams have "Eastern" or "Western"
+          const conferencePrefix = question.ist_group?.toLowerCase() || '';
+          const filteredTeams = teams.filter((team) =>
+            team.conference?.toLowerCase().startsWith(conferencePrefix)
+          );
           teamOptions = filteredTeams.map((team) => ({
             value: String(team.id),
             label: team.name,
-          }));
+          })).sort((a, b) => a.label.localeCompare(b.label));
         }
 
         if (question.prediction_type === 'tiebreaker') {

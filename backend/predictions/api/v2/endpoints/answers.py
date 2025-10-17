@@ -6,7 +6,8 @@ from ninja.errors import HttpError
 from typing import List, Optional, Dict
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
-from predictions.models import (Answer, Season, Question, UserStats)
+from predictions.models import (Answer, Season, Question, UserStats, RegularSeasonStandings)
+from predictions.models.prediction import StandingPrediction
 from predictions.api.common.question_processor import process_questions_for_season
 from predictions.api.common.services.answer_lookup_service import AnswerLookupService
 from predictions.api.common.utils import resolve_answers_optimized
@@ -26,13 +27,27 @@ class AnswerSchema(Schema):
     question_type: str
     season: str
     answer: str
+    correct_answer: Optional[str] = None
+    max_points: Optional[float] = None
     points_earned: Optional[float] = None
     is_correct: Optional[bool] = False
+
+
+class CategoryStatsSchema(Schema):
+    points: float
+    max_points: float
+
+
+class CategoriesSchema(Schema):
+    regular_season_standings: CategoryStatsSchema
+    player_awards: CategoryStatsSchema
+    props_and_yes_no: CategoryStatsSchema
 
 
 class UserAnswersResponse(Schema):
     user: UserSchema
     answers: List[AnswerSchema]
+    categories: Optional[CategoriesSchema] = None
 
 
 # Create router instance
@@ -79,6 +94,30 @@ def get_user_answers(
         if resolve_names:
             resolved_answer_values_map = resolve_answers_optimized(answers_list)
 
+        # Calculate category totals
+        categories = {
+            'regular_season_standings': {'points': 0.0, 'max_points': 0.0},
+            'player_awards': {'points': 0.0, 'max_points': 0.0},
+            'props_and_yes_no': {'points': 0.0, 'max_points': 0.0},
+        }
+
+        # Get standing predictions for this user and season
+        if season_slug:
+            standing_preds = StandingPrediction.objects.filter(
+                user=user,
+                season__slug=season_slug
+            ).select_related('team')
+
+            for sp in standing_preds:
+                categories['regular_season_standings']['points'] += sp.points or 0.0
+
+            # Calculate max points for standings (3 points per team)
+            season_standings_count = RegularSeasonStandings.objects.filter(
+                season__slug=season_slug,
+                season_type='regular'
+            ).count()
+            categories['regular_season_standings']['max_points'] = float(season_standings_count * 3)
+
         answer_data = []
         for answer_obj in answers_list:
             # Use base question info (already loaded via select_related)
@@ -107,17 +146,32 @@ def get_user_answers(
                 'question_type': question_type_name,
                 'season': current_season_slug,
                 'answer': answer_value,
+                'correct_answer': answer_obj.question.correct_answer if answer_obj.question else None,
+                'max_points': answer_obj.question.point_value if answer_obj.question else None,
                 'points_earned': answer_obj.points_earned,
                 'is_correct': answer_obj.is_correct,
             }
             answer_data.append(answer_dict)
+
+            # Categorize for totals
+            if question_type_name == 'superlativequestion':
+                categories['player_awards']['points'] += answer_obj.points_earned or 0.0
+                categories['player_awards']['max_points'] += answer_obj.question.point_value if answer_obj.question else 0.0
+            elif question_type_name not in ('inseasontournamentquestion',):
+                categories['props_and_yes_no']['points'] += answer_obj.points_earned or 0.0
+                categories['props_and_yes_no']['max_points'] += answer_obj.question.point_value if answer_obj.question else 0.0
 
         response_data = {
             'user': {
                 'id': user.id,
                 'username': user.username
             },
-            'answers': answer_data
+            'answers': answer_data,
+            'categories': {
+                'regular_season_standings': categories['regular_season_standings'],
+                'player_awards': categories['player_awards'],
+                'props_and_yes_no': categories['props_and_yes_no'],
+            }
         }
         return response_data
 
