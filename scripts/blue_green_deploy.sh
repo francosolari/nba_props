@@ -143,6 +143,9 @@ docker run -d \
   -e CF_TURNSTILE_SECRET_KEY="${CF_TURNSTILE_SECRET_KEY}" \
   -e GOOGLE_OAUTH_CLIENT_ID="${GOOGLE_OAUTH_CLIENT_ID}" \
   -e GOOGLE_OAUTH_SECRET="${GOOGLE_OAUTH_SECRET}" \
+  -e STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY}" \
+  -e STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY}" \
+  -e STRIPE_WEBHOOK_SECRET="${STRIPE_WEBHOOK_SECRET}" \
   "$DOCKER_IMAGE" \
   sh -c "python manage.py migrate && gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile -"
 

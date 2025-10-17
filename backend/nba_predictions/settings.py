@@ -252,6 +252,6 @@ CF_TURNSTILE_SECRET_KEY = os.getenv('CF_TURNSTILE_SECRET_KEY', '')
 # Stripe Payment Configuration
 # Get keys from: https://dashboard.stripe.com/test/apikeys
 # Webhook secret from: https://dashboard.stripe.com/test/webhooks
-STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
-STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
-STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
