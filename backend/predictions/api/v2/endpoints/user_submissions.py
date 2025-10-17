@@ -12,10 +12,10 @@ from typing import List, Optional
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from predictions.models import (
-    Season, Question, Answer, 
+    Season, Question, Answer,
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion,
     HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion,
-    StandingPrediction, Team, UserStats
+    StandingPrediction, Team, UserStats, Payment
 )
 from predictions.api.v2.schemas import (
     QuestionsListResponse,
@@ -478,21 +478,26 @@ def get_user_answers(request, season_slug: str):
     "/answers/{season_slug}",
     response=AnswerSubmitResponseSchema,
     summary="Submit Answers",
-    description="Submit or update answers for questions in a season (deadline enforced)"
+    description="Submit or update answers for questions in a season (deadline and payment enforced)"
 )
 def submit_answers(request, season_slug: str, payload: BulkAnswerSubmitSchema):
     """
     Submit or update answers for a season's questions.
-    Enforces submission deadline - returns 403 if deadline has passed.
+    Enforces:
+    1. Submission deadline - returns 403 if deadline has passed
+    2. Payment requirement - allows saving but warns if not paid
     """
     if not request.user.is_authenticated:
         raise HttpError(401, "Authentication required")
-    
+
     season = get_object_or_404(Season, slug=season_slug)
-    
+
     # Validate submission window
     validate_submission_window(season)
-    
+
+    # Check payment status
+    has_paid = Payment.has_valid_payment(request.user, season)
+
     saved_count = 0
     errors = {}
     
@@ -524,7 +529,16 @@ def submit_answers(request, season_slug: str, payload: BulkAnswerSubmitSchema):
             "saved_count": saved_count,
             "errors": errors,
         }
-    
+
+    # Determine final status and message based on payment
+    if not has_paid:
+        return {
+            "status": "success",
+            "message": f"Successfully saved {saved_count} answer(s). ⚠️ Payment required - your submission is not yet valid. Complete payment to finalize.",
+            "saved_count": saved_count,
+            "errors": None,
+        }
+
     return {
         "status": "success",
         "message": f"Successfully saved {saved_count} answer(s)",

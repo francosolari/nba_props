@@ -29,6 +29,14 @@ from predictions.api.v2.schemas_legacy import (
     EntryFeeUpdateSchema,
 )
 
+# Import payment schemas
+from .payments import (
+    CreateCheckoutSessionSchema,
+    CheckoutSessionResponseSchema,
+    PaymentStatusSchema,
+    SubmissionStatusWithPaymentSchema,
+)
+
 # Import new question-related schemas
 from .questions import (
     # Base schemas
@@ -97,7 +105,13 @@ __all__ = [
     'HomepageDataResponseSchema',
     'EntryFeeStatusSchema',
     'EntryFeeUpdateSchema',
-    
+
+    # Payment schemas
+    'CreateCheckoutSessionSchema',
+    'CheckoutSessionResponseSchema',
+    'PaymentStatusSchema',
+    'SubmissionStatusWithPaymentSchema',
+
     # Question schemas
     'QuestionBaseSchema',
     'SuperlativeQuestionSchema',
@@ -106,7 +120,7 @@ __all__ = [
     'HeadToHeadQuestionSchema',
     'InSeasonTournamentQuestionSchema',
     'NBAFinalsPredictionQuestionSchema',
-    
+
     # Answer schemas
     'AnswerSchema',
     'AnswerSubmitSchema',
@@ -117,11 +131,11 @@ __all__ = [
     'StandingPredictionResponseSchema',
     'StandingPredictionsResponseSchema',
     'StandingPredictionsSubmitResponseSchema',
-    
+
     # Response schemas
     'QuestionsListResponse',
     'UserAnswersResponse',
-    
+
     # Admin schemas
     'SuperlativeQuestionCreateSchema',
     'PropQuestionCreateSchema',

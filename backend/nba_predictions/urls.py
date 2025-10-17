@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from predictions.api.v2.api import api as api_v2
+from predictions.views.stripe_webhook import stripe_webhook
 
 urlpatterns = [
     # Include predictions-related URLs
@@ -28,6 +29,7 @@ urlpatterns = [
     path('api/v1/', include('predictions.api.v1.urls')),  # Legacy REST API
     path('api/v2/', api_v2.urls),  # Modern Ninja API
     path('api/', include('predictions.api.v1.urls')),
+    path('webhooks/stripe/', stripe_webhook, name='stripe_webhook'),  # Stripe webhook handler
     path('', include('predictions.routing.view_urls')),  # React frontend and Django views
 
 ]

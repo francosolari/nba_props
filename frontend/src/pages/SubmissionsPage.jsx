@@ -15,8 +15,13 @@ import {
   useUpdateEntryFeeStatus,
   useUserContext,
 } from '../hooks/useSubmissions';
+import {
+  usePaymentStatus,
+  usePaymentRedirectHandler,
+} from '../hooks/usePaymentStatus';
 import SelectComponent from '../components/SelectComponent';
 import EditablePredictionBoard from '../components/EditablePredictionBoard';
+import StripePaymentModal from '../components/StripePaymentModal';
 import '../styles/SubmissionsPage.css';
 
 const QUESTION_GROUP_META = {
@@ -195,50 +200,6 @@ const getAxiosErrorMessage = (error, fallbackMessage = 'Something went wrong. Pl
   return error?.message || fallbackMessage;
 };
 
-const PaymentPromptModal = ({ details, onMarkPaid, onClose }) => {
-  if (!details) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-md w-full p-8 text-center border border-slate-200 dark:border-slate-700">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
-          aria-label="Close payment prompt"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Complete Your Submission</h2>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
-          Your predictions are in! The final step is to pay the ${details.amount_due || '25.00'} entry fee.
-        </p>
-        <div className="mt-6 flex flex-col gap-3">
-          <a
-            href={details.venmo_web_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={onClose}
-            className="w-full inline-flex items-center justify-center rounded-full bg-sky-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-700"
-          >
-            Pay with Venmo (@{details.venmo_username})
-          </a>
-          <button
-            onClick={onMarkPaid}
-            className="w-full inline-flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-6 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-600"
-          >
-            I've Already Paid
-          </button>
-        </div>
-        <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
-          You can also close this and pay later. We'll remind you.
-        </p>
-      </div>
-    </div>
-  );
-};
-
 const SubmissionsPage = ({ seasonSlug }) => {
   const [activeSeasonSlug, setActiveSeasonSlug] = useState(seasonSlug || null);
   const [seasonLoading, setSeasonLoading] = useState(!seasonSlug);
@@ -256,12 +217,41 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const [feedback, setFeedback] = useState(null);
   const [isProgressSticky, setIsProgressSticky] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentDetailsForModal, setPaymentDetailsForModal] = useState(null);
 
   const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
   const { data: userContext, isLoading: userContextLoading } = useUserContext();
   const username = userContext?.username || null;
   const entryFeeEnabled = !!effectiveSeasonSlug && !!userContext?.is_authenticated;
+
+  // Stripe payment status
+  const {
+    data: paymentStatus,
+    isLoading: paymentStatusLoading,
+    refetch: refetchPaymentStatus,
+  } = usePaymentStatus(effectiveSeasonSlug, { enabled: entryFeeEnabled });
+
+  // Handle post-payment redirect
+  const {
+    hasRedirectParams,
+    isVerifying,
+    verificationSuccess,
+    paymentData,
+    clearUrlParams,
+  } = usePaymentRedirectHandler(effectiveSeasonSlug);
+
+  // Handle successful payment verification
+  useEffect(() => {
+    if (verificationSuccess && paymentData?.is_paid) {
+      setFeedback({
+        type: 'success',
+        message: '✅ Payment confirmed! Your submission is now valid. You can still edit until the deadline.',
+      });
+      // Clean up URL parameters
+      clearUrlParams();
+      // Refetch data
+      refetchPaymentStatus();
+    }
+  }, [verificationSuccess, paymentData, clearUrlParams, refetchPaymentStatus]);
 
   // Discover the latest season when no slug provided
   useEffect(() => {
@@ -585,35 +575,33 @@ const SubmissionsPage = ({ seasonSlug }) => {
       setHasChanges(false);
       localStorage.removeItem(`submissions_${slugToUse}`);
 
-      let latestEntryFee = entryFeeEnabled ? entryFeeStatus : null;
-      if (
-        entryFeeEnabled &&
-        (!latestEntryFee || latestEntryFee.season_slug !== slugToUse)
-      ) {
+      // Check payment status after submission
+      let needsPayment = false;
+      if (entryFeeEnabled && action === 'submit') {
         try {
-          const { data } = await axios.get(`/api/v2/submissions/entry-fee/${slugToUse}`);
-          latestEntryFee = data;
+          // Refresh payment status
+          await refetchPaymentStatus();
+          needsPayment = !paymentStatus?.is_paid;
         } catch (_) {
-          latestEntryFee = entryFeeStatus;
+          // If we can't check payment status, assume payment is needed
+          needsPayment = true;
         }
       }
 
-      const needsVenmoRedirect =
-        entryFeeEnabled && action === 'submit' && latestEntryFee && latestEntryFee.is_paid === false;
       const successMessage =
         action === 'save'
           ? 'Progress saved. You can return and finish any time before the deadline.'
-          : needsVenmoRedirect
-            ? `Predictions submitted! Next, finish by paying $${latestEntryFee?.amount_due || '25.00'} on Venmo.`
+          : needsPayment
+            ? 'Predictions saved as draft. Payment required to finalize your submission.'
             : 'Predictions submitted successfully!';
 
       setFeedback({
-        type: 'success',
+        type: needsPayment ? 'warning' : 'success',
         message: successMessage,
       });
 
-      if (needsVenmoRedirect && latestEntryFee?.venmo_web_url) {
-        setPaymentDetailsForModal(latestEntryFee);
+      // Show payment modal if payment is required
+      if (needsPayment) {
         setShowPaymentModal(true);
       }
     } catch (error) {
@@ -623,45 +611,6 @@ const SubmissionsPage = ({ seasonSlug }) => {
       });
     }
   };
-
-  const handleOpenVenmo = useCallback(() => {
-    if (!entryFeeEnabled || !entryFeeStatus?.venmo_web_url) {
-      return;
-    }
-    window.location.assign(entryFeeStatus.venmo_web_url);
-  }, [entryFeeEnabled, entryFeeStatus]);
-
-  const handleMarkEntryFeePaid = useCallback(async () => {
-    if (!entryFeeEnabled || !effectiveSeasonSlug) return;
-    try {
-      await updateEntryFeeMutation.mutateAsync({ seasonSlug: effectiveSeasonSlug, isPaid: true });
-      setFeedback({
-        type: 'success',
-        message: 'Thanks! We marked your entry fee as paid.',
-      });
-    } catch (error) {
-      setFeedback({
-        type: 'error',
-        message: getAxiosErrorMessage(error, 'Unable to update entry fee status. Please try again.'),
-      });
-    }
-  }, [entryFeeEnabled, effectiveSeasonSlug, updateEntryFeeMutation]);
-
-  const handleMarkEntryFeeUnpaid = useCallback(async () => {
-    if (!entryFeeEnabled || !effectiveSeasonSlug) return;
-    try {
-      await updateEntryFeeMutation.mutateAsync({ seasonSlug: effectiveSeasonSlug, isPaid: false });
-      setFeedback({
-        type: 'success',
-        message: 'Entry fee status reset. We will keep reminding you until it is marked as paid.',
-      });
-    } catch (error) {
-      setFeedback({
-        type: 'error',
-        message: getAxiosErrorMessage(error, 'Unable to update entry fee status. Please try again.'),
-      });
-    }
-  }, [entryFeeEnabled, effectiveSeasonSlug, updateEntryFeeMutation]);
 
   const submissionStatus = useMemo(() => {
     return statusData || questionsData?.submission_status || null;
@@ -835,58 +784,68 @@ const SubmissionsPage = ({ seasonSlug }) => {
           </div>
         )}
 
-        {entryFeeEnabled && !entryFeeError && !entryFeeLoading && entryFeeStatus && (
-          entryFeeStatus.is_paid ? (
+        {/* Payment Status Banner */}
+        {entryFeeEnabled && !paymentStatusLoading && paymentStatus && (
+          paymentStatus.is_paid ? (
             <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
-              <div className="flex flex-col gap-0.5">
-                <span className="font-semibold">Entry fee recorded</span>
-                {entryFeePaidAtDisplay && (
-                  <span className="text-emerald-700/80 dark:text-emerald-400/80">Marked on {entryFeePaidAtDisplay}</span>
-                )}
+              <div className="flex items-center gap-3">
+                <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-semibold">Payment Confirmed ✓</span>
+                  {paymentStatus.paid_at && (
+                    <span className="text-emerald-700/80 dark:text-emerald-400/80 text-xs">
+                      Paid on {new Date(paymentStatus.paid_at).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={handleMarkEntryFeeUnpaid}
-                disabled={updateEntryFeeMutation.isPending}
-                className="inline-flex items-center rounded-full border border-emerald-300 dark:border-emerald-600 bg-white dark:bg-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-300 transition hover:bg-emerald-100 dark:hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Mark unpaid
-              </button>
+              <span className="text-xs font-medium px-3 py-1 bg-emerald-100 dark:bg-emerald-800 rounded-full">
+                Submission Valid
+              </span>
             </div>
           ) : (
             <div className="mb-8 rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-4 py-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  <p className="font-semibold text-amber-900 dark:text-amber-200">Entry fee reminder</p>
-                  <p>
-                    Send ${entryFeeStatus.amount_due} via Venmo to @{entryFeeStatus.venmo_username}. Add "
-                    {entryFeeStatus.payment_note}
-                    " so we can match it quickly.
-                  </p>
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="space-y-1">
+                    <p className="font-semibold text-amber-900 dark:text-amber-200">Payment Required</p>
+                    <p>
+                      Your predictions are saved as a draft. Complete the <span className="font-semibold">$25.00 entry fee</span> to finalize your submission.
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
+                      After payment, you can still edit your predictions until the deadline.
+                    </p>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <button
-                    type="button"
-                    onClick={handleOpenVenmo}
-                    className="inline-flex items-center justify-center rounded-full border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 transition hover:bg-amber-100 dark:hover:bg-slate-600"
-                  >
-                    Pay with Venmo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleMarkEntryFeePaid}
-                    disabled={updateEntryFeeMutation.isPending}
-                    className="inline-flex items-center justify-center rounded-full bg-amber-500 dark:bg-amber-600 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition hover:bg-amber-600 dark:hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    I've paid
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(true)}
+                  className="inline-flex items-center justify-center rounded-full bg-amber-500 dark:bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 dark:hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 whitespace-nowrap"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  Pay Now
+                </button>
               </div>
-              <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
-                We'll keep this reminder visible until you mark the entry fee as paid.
-              </p>
             </div>
           )
+        )}
+
+        {/* Payment verification in progress */}
+        {isVerifying && (
+          <div className="mb-8 flex items-center gap-3 rounded-2xl border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/30 px-4 py-3 text-sm text-sky-700 dark:text-sky-300">
+            <svg className="animate-spin h-5 w-5 text-sky-600 dark:text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Verifying your payment...</span>
+          </div>
         )}
 
         {/* Deadline Banner */}
@@ -1054,13 +1013,16 @@ const SubmissionsPage = ({ seasonSlug }) => {
           </div>
         )}
 
-        {showPaymentModal && (
-          <PaymentPromptModal
-            details={paymentDetailsForModal}
+        {showPaymentModal && effectiveSeasonSlug && (
+          <StripePaymentModal
+            seasonSlug={effectiveSeasonSlug}
             onClose={() => setShowPaymentModal(false)}
-            onMarkPaid={async () => {
-              await handleMarkEntryFeePaid();
+            onPaymentInitiated={() => {
               setShowPaymentModal(false);
+              setFeedback({
+                type: 'info',
+                message: 'Redirecting to secure payment...',
+              });
             }}
           />
         )}

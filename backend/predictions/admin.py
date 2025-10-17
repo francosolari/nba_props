@@ -5,7 +5,8 @@ from .models import Season, Team, PlayoffPrediction, StandingPrediction, \
     RegularSeasonStandings, PostSeasonStandings, Player, \
     InSeasonTournamentStandings, Question, Answer, \
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion, \
-    Award, HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion
+    Award, HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion, \
+    Payment, PaymentStatus
 from predictions.api.common.services.answer_lookup_service import AnswerLookupService
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 
@@ -326,6 +327,39 @@ admin.site.register(PostSeasonStandings, PostSeasonStandingsAdmin)
 admin.site.register(InSeasonTournamentStandings, InSeasonTournamentStandingsAdmin)
 admin.site.register(InSeasonTournamentQuestion, InSeasonTournamentQuestionAdmin)
 # admin.site.register(NBAFinalsPredictionQuestion, NBAFinalsPredictionQuestionAdmin)
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    """Admin interface for Payment records."""
+    list_display = ('id', 'user', 'season', 'amount', 'payment_status', 'created_at', 'paid_at')
+    list_filter = ('payment_status', 'season', 'created_at')
+    search_fields = ('user__username', 'user__email', 'checkout_session_id', 'payment_intent_id', 'email')
+    readonly_fields = ('checkout_session_id', 'payment_intent_id', 'created_at', 'updated_at', 'stripe_payload')
+    ordering = ('-created_at',)
+
+    fieldsets = (
+        ('User & Season', {
+            'fields': ('user', 'season')
+        }),
+        ('Payment Details', {
+            'fields': ('amount', 'currency', 'email', 'payment_status')
+        }),
+        ('Stripe Information', {
+            'fields': ('checkout_session_id', 'payment_intent_id')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at', 'paid_at', 'expires_at')
+        }),
+        ('Additional Information', {
+            'fields': ('notes', 'stripe_payload'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.select_related('user', 'season')
 
 
 # Add filter by user or season want to clean up this view
