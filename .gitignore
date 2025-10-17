@@ -13,3 +13,4 @@ backend/.env.docker.prod-db
 # Docker volumes
 postgres_data/
 /MANUAL_DEPLOYMENT.md
+/DEPLOYMENT_GUIDE.md

@@ -131,7 +131,7 @@ export default function ProfilePage({
   }, []);
 
   const { data, isLoading, error } = useLeaderboard(selectedSeason);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [answers, setAnswers] = useState([]);
 
   const me = useMemo(() => {
@@ -265,7 +265,7 @@ export default function ProfilePage({
     let mounted = true;
     (async () => {
       try {
-        if (activeTab !== "submissions") return;
+        if (activeTab !== "questions" && activeTab !== "dashboard") return;
         const res = await axios.get(
           `/api/v2/answers/user/${encodeURIComponent(username || me?.user?.username || "")}`,
           {
@@ -409,622 +409,656 @@ export default function ProfilePage({
           {/* Tabs */}
           <div className={`${panelClasses} flex gap-1 p-1 overflow-x-auto`}>
             {[
-              { id: "overview", label: "Overview" },
-              { id: "performance", label: "Performance" },
-              { id: "submissions", label: "Submissions" },
-              { id: "settings", label: "Settings" },
+              { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+              { id: "standings", label: "Standings", icon: Trophy },
+              { id: "questions", label: "Questions", icon: Target },
+              ...(canEdit ? [{ id: "submissions", label: "Submissions", icon: Edit2 }] : []),
+              { id: "settings", label: "Settings", icon: UserIcon },
             ].map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`flex-1 min-w-[120px] px-3 py-2 rounded-md text-xs font-semibold transition-colors ${
+                className={`flex-1 min-w-[120px] px-3 py-2 rounded-md text-xs font-semibold transition-all duration-200 inline-flex items-center justify-center gap-1.5 ${
                   activeTab === t.id
-                    ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    ? "bg-gradient-to-br from-teal-500 to-teal-600 dark:from-teal-600 dark:to-teal-700 text-white shadow-md shadow-teal-500/30"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/50"
                 }`}
               >
+                <t.icon className="w-3.5 h-3.5" />
                 {t.label}
               </button>
             ))}
           </div>
 
           {/* Tab Panels */}
-          {activeTab === "overview" && (
+          {activeTab === "dashboard" && (
             <div className="space-y-4">
-              {/* Quick Predictions View */}
-              <section className={`${panelClasses} p-4`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Regular Season Standings
-                  </h3>
-                  <a
-                    href={compareHref}
-                    className="text-xs text-teal-700 dark:text-teal-500 hover:text-teal-800 dark:hover:text-teal-400 inline-flex items-center gap-1 font-medium"
-                  >
-                    Full view <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-                <DisplayPredictionsBoard seasonSlug={selectedSeason} />
-              </section>
+              {/* Performance Summary */}
+              <div className={`${panelClasses} p-5`}>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-500" />
+                  Performance Summary
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    {
+                      title: "Regular Season Standings",
+                      icon: BarChart3,
+                      data: standings,
+                      color: "teal",
+                      href: `/page-detail/${encodeURIComponent(selectedSeason)}/?user=${encodeURIComponent(me?.user?.id || "")}&section=standings`,
+                    },
+                    {
+                      title: "Player Awards",
+                      icon: Award,
+                      data: awards,
+                      color: "amber",
+                      href: null,
+                    },
+                    {
+                      title: "Props & Predictions",
+                      icon: Target,
+                      data: props,
+                      color: "rose",
+                      href: null,
+                    },
+                  ].map(({ title, icon: Icon, data, color, href }) => {
+                    const percentage =
+                      data.max_points > 0
+                        ? Math.round((data.points / data.max_points) * 100)
+                        : 0;
+                    const colorClasses = {
+                      teal: {
+                        bg: "bg-teal-500/80 dark:bg-teal-500/90",
+                        icon: "text-teal-600 dark:text-teal-500",
+                        border: "border-teal-200 dark:border-teal-700",
+                      },
+                      amber: {
+                        bg: "bg-amber-500/80 dark:bg-amber-500/90",
+                        icon: "text-amber-600 dark:text-amber-500",
+                        border: "border-amber-200 dark:border-amber-700",
+                      },
+                      rose: {
+                        bg: "bg-rose-500/80 dark:bg-rose-500/90",
+                        icon: "text-rose-600 dark:text-rose-500",
+                        border: "border-rose-200 dark:border-rose-700",
+                      },
+                    };
+                    const styles = colorClasses[color];
 
-              {/* Category Performance Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                  {
-                    title: "Standings",
-                    icon: BarChart3,
-                    data: standings,
-                    color: "teal",
-                  },
-                  {
-                    title: "Awards",
-                    icon: Award,
-                    data: awards,
-                    color: "amber",
-                  },
-                  { title: "Props", icon: Target, data: props, color: "rose" },
-                ].map(({ title, icon: Icon, data, color }) => {
-                  const percentage =
-                    data.max_points > 0
-                      ? Math.round((data.points / data.max_points) * 100)
-                      : 0;
-                  const colorClasses = {
-                    teal: "bg-teal-500/80 dark:bg-teal-500/90",
-                    amber: "bg-amber-500/80 dark:bg-amber-500/90",
-                    rose: "bg-rose-500/80 dark:bg-rose-500/90",
-                  };
-                  return (
-                    <div key={title} className={`${panelClasses} p-4`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
-                          <Icon className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                    const card = (
+                      <div
+                        className={`${panelClasses} p-4 hover:shadow-lg transition-all duration-200 ${href ? "cursor-pointer" : ""}`}
+                      >
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className={`p-2 rounded-lg ${styles.border} border bg-white dark:bg-slate-800`}>
+                            <Icon className={`w-5 h-5 ${styles.icon}`} />
+                          </div>
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white flex-1">
+                            {title}
+                          </h4>
+                          {href && <ExternalLink className="w-4 h-4 text-slate-400" />}
                         </div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">
-                          {title}
+                        <div className="mb-3">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-slate-900 dark:text-white">
+                              {data.points || 0}
+                            </span>
+                            <span className="text-lg text-slate-500 dark:text-slate-400">
+                              / {data.max_points || 0}
+                            </span>
+                            <span className="text-sm text-slate-600 dark:text-slate-400 ml-auto font-medium">
+                              {percentage}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                          <div
+                            className={`h-full ${styles.bg} transition-all duration-500`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                          {data.predictions?.length || 0} predictions made
+                        </div>
+                      </div>
+                    );
+
+                    return href ? (
+                      <a key={title} href={href} className="block">
+                        {card}
+                      </a>
+                    ) : (
+                      <div key={title}>{card}</div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Recent Activity */}
+                <div className={`${panelClasses} p-5`}>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
+                    Recent Predictions
+                  </h3>
+                  {answers.length === 0 ? (
+                    <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
+                      No predictions submitted yet
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {answers.slice(0, 5).map((a, idx) => {
+                        const isCorrect = a.is_correct === true;
+                        const isIncorrect = a.is_correct === false;
+                        const isPending = a.is_correct === null || typeof a.is_correct === "undefined";
+
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />}
+                              {isIncorrect && <XCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />}
+                              {isPending && <Hourglass className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                              <div className="min-w-0">
+                                <div className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                                  {a.question_text}
+                                </div>
+                                <div className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                                  {String(a.answer)}
+                                </div>
+                              </div>
+                            </div>
+                            {typeof a.points_earned === "number" && (
+                              <span
+                                className={`text-xs font-bold ml-2 flex-shrink-0 ${
+                                  a.points_earned > 0
+                                    ? "text-emerald-600 dark:text-emerald-500"
+                                    : "text-slate-400 dark:text-slate-500"
+                                }`}
+                              >
+                                +{a.points_earned}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {answers.length > 5 && (
+                        <button
+                          onClick={() => setActiveTab("questions")}
+                          className="w-full text-center text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium py-2"
+                        >
+                          View all {answers.length} predictions →
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Standings Preview */}
+                <div className={`${panelClasses} p-5`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Trophy className="w-5 h-5 text-teal-600 dark:text-teal-500" />
+                      Top Standings Picks
+                    </h3>
+                    <button
+                      onClick={() => setActiveTab("standings")}
+                      className="text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium"
+                    >
+                      View All →
+                    </button>
+                  </div>
+                  {standings.predictions?.length === 0 ? (
+                    <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
+                      No standings predictions yet
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {(standings.predictions || [])
+                        .filter((p) => (p.points || 0) > 0)
+                        .sort((a, b) => (b.points || 0) - (a.points || 0))
+                        .slice(0, 5)
+                        .map((p, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                                  (p.points || 0) === 3
+                                    ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                                    : (p.points || 0) === 1
+                                      ? "bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                                      : "bg-slate-300 dark:bg-slate-600 text-slate-700 dark:text-slate-400"
+                                }`}
+                              >
+                                {p.predicted_position}
+                              </span>
+                              <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                                {p.team}
+                              </span>
+                            </div>
+                            <span
+                              className={`text-xs font-bold ${
+                                (p.points || 0) > 0
+                                  ? "text-emerald-600 dark:text-emerald-500"
+                                  : "text-slate-400 dark:text-slate-500"
+                              }`}
+                            >
+                              +{p.points || 0}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "standings" && (
+            <div className="space-y-4">
+              {/* Standings Overview */}
+              <div className={`${panelClasses} p-5`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-teal-600 dark:text-teal-500" />
+                    Regular Season Standings Predictions
+                  </h3>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 text-xs">
+                      <div className="flex items-center gap-1">
+                        <span className="w-4 h-4 rounded-full bg-emerald-500/20" />
+                        <span className="text-slate-600 dark:text-slate-400">3 pts</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-4 h-4 rounded-full bg-amber-500/20" />
+                        <span className="text-slate-600 dark:text-slate-400">1 pt</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-4 h-4 rounded-full bg-slate-300 dark:bg-slate-600" />
+                        <span className="text-slate-600 dark:text-slate-400">0 pts</span>
+                      </div>
+                    </div>
+                    <a
+                      href={compareHref}
+                      className="text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium inline-flex items-center gap-1"
+                    >
+                      Full comparison <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+
+                {/* Points Summary */}
+                <div className="mb-5 p-4 rounded-lg bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 border border-teal-200 dark:border-teal-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-1">
+                        Total Standings Points
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-teal-900 dark:text-teal-100">
+                          {standings.points || 0}
+                        </span>
+                        <span className="text-lg text-teal-700 dark:text-teal-400">
+                          / {standings.max_points || 0}
                         </span>
                       </div>
-                      <div className="mb-2">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                            {data.points || 0}
-                          </span>
-                          <span className="text-sm text-slate-500 dark:text-slate-400">
-                            / {data.max_points || 0}
-                          </span>
-                        </div>
-                        <div className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
-                          {percentage}% accuracy
-                        </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-1">
+                        Accuracy
                       </div>
-                      <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                        <div
-                          className={`h-full ${colorClasses[color]} transition-all duration-300`}
-                          style={{ width: `${percentage}%` }}
-                        />
+                      <div className="text-3xl font-bold text-teal-900 dark:text-teal-100">
+                        {standings.max_points > 0
+                          ? Math.round((standings.points / standings.max_points) * 100)
+                          : 0}
+                        %
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "performance" && (
-            <div className="space-y-4">
-              <div className={`${panelClasses} p-4`}>
-                <UserExpandedView categories={expandedCategories} />
-              </div>
-
-              <div className={`${panelClasses} p-4`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Conference Standings Snapshot
-                  </h3>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Top 5 each
-                  </span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {/* Conference Breakdowns */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   {[
-                    { title: "Western Conference", list: confLists.west },
-                    { title: "Eastern Conference", list: confLists.east },
-                  ].map(({ title, list }) => (
-                    <div key={title}>
-                      <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                        {title}
-                      </h4>
-                      <ul className="space-y-2">
-                        {list.length === 0 ? (
-                          <li className="text-xs text-slate-500 dark:text-slate-400 italic py-2">
-                            No predictions yet
-                          </li>
-                        ) : (
-                          list.map((p, idx) => {
-                            const isCorrect = p.correct === true;
-                            const hasPoints = (p.points || 0) > 0;
-                            return (
-                              <li
-                                key={idx}
-                                className="flex items-center justify-between rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700/50"
-                              >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  {isCorrect ? (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                                  ) : hasPoints ? (
-                                    <span className="w-3.5 h-3.5 rounded-full bg-amber-400 flex-shrink-0" />
-                                  ) : (
-                                    <XCircle className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 flex-shrink-0" />
-                                  )}
-                                  <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">
-                                    {p.team}
-                                  </span>
-                                </div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2 flex-shrink-0">
-                                  <span>#{p.predicted_position}</span>
-                                  <span className="text-slate-400 dark:text-slate-500">
-                                    →
-                                  </span>
-                                  <span>#{p.actual_position ?? "?"}</span>
-                                  <span
-                                    className={`font-bold ml-1 ${hasPoints ? "text-emerald-600 dark:text-emerald-500" : "text-slate-400 dark:text-slate-500"}`}
-                                  >
-                                    +{p.points || 0}
-                                  </span>
-                                </div>
-                              </li>
-                            );
-                          })
-                        )}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    { title: "Western Conference", list: confLists.west, color: "rose" },
+                    { title: "Eastern Conference", list: confLists.east, color: "blue" },
+                  ].map(({ title, list, color }) => {
+                    const colorClasses = {
+                      rose: {
+                        header: "bg-rose-500/10 dark:bg-rose-500/20 border-rose-300 dark:border-rose-700",
+                        text: "text-rose-900 dark:text-rose-100",
+                      },
+                      blue: {
+                        header: "bg-blue-500/10 dark:bg-blue-500/20 border-blue-300 dark:border-blue-700",
+                        text: "text-blue-900 dark:text-blue-100",
+                      },
+                    };
+                    const styles = colorClasses[color];
 
-              <div className="flex justify-center">
-                <a
-                  href={compareHref}
-                  className="inline-flex items-center gap-2 rounded-md border border-teal-600 dark:border-teal-500 bg-slate-50 dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-slate-700"
-                >
-                  Open Detailed Comparison <ChevronRight className="w-4 h-4" />
-                </a>
+                    return (
+                      <div key={title}>
+                        <div className={`px-4 py-2 rounded-t-lg border ${styles.header} mb-2`}>
+                          <h4 className={`text-sm font-bold ${styles.text}`}>{title}</h4>
+                        </div>
+                        {list.length === 0 ? (
+                          <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400 italic">
+                            No predictions yet
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {list.map((p, idx) => {
+                              const points = p.points || 0;
+                              const cardBg =
+                                points === 3
+                                  ? "bg-emerald-50/80 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700/50"
+                                  : points === 1
+                                    ? "bg-amber-50/80 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700/50"
+                                    : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700";
+
+                              const pointBadge =
+                                points === 3
+                                  ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                                  : points === 1
+                                    ? "bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                                    : "bg-slate-300 dark:bg-slate-600 text-slate-700 dark:text-slate-400";
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`flex items-center justify-between p-3 rounded-lg border ${cardBg} transition-all hover:shadow-md`}
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="flex flex-col items-center gap-0.5">
+                                      <span
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border ${pointBadge}`}
+                                      >
+                                        {p.predicted_position}
+                                      </span>
+                                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                        pred
+                                      </span>
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                                        {p.team}
+                                      </div>
+                                      <div className="text-xs text-slate-600 dark:text-slate-400">
+                                        Actual: #{p.actual_position ?? "TBD"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div
+                                      className={`text-lg font-bold ${
+                                        points > 0
+                                          ? "text-emerald-600 dark:text-emerald-500"
+                                          : "text-slate-400 dark:text-slate-500"
+                                      }`}
+                                    >
+                                      +{points}
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                      pts
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
 
-                    {activeTab === "submissions" && (
+          {activeTab === "questions" && (
+            <div className="space-y-4">
+              <div className={`${panelClasses} p-5`}>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-teal-600 dark:text-teal-500" />
+                  Question Predictions
+                </h3>
 
-                      <div className="space-y-4">
+                {answers.length === 0 ? (
+                  <div className="text-center py-12 text-sm text-slate-500 dark:text-slate-400">
+                    No questions answered for {selectedSeason}
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    {(() => {
+                      // Group answers by question type
+                      const grouped = {};
+                      answers.forEach((a) => {
+                        const type = (a.question_type || "Other").toUpperCase();
+                        if (!grouped[type]) grouped[type] = [];
+                        grouped[type].push(a);
+                      });
 
-                        {/* Standings Submission */}
+                      // Color scheme for question types
+                      const typeInfo = {
+                        PROPQUESTION: {
+                          badge: "bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300",
+                          label: "Props",
+                          icon: Target,
+                        },
+                        SUPERLATIVEQUESTION: {
+                          badge: "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300",
+                          label: "Superlatives",
+                          icon: Award,
+                        },
+                        NBAFINALSPREDICTIONQUESTION: {
+                          badge: "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300",
+                          label: "Finals",
+                          icon: Trophy,
+                        },
+                        default: {
+                          badge: "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300",
+                          label: "Other",
+                          icon: AlertCircle,
+                        },
+                      };
 
-                        <div className={`${panelClasses} p-4`}>
+                      const getTypeInfo = (type) => typeInfo[type] || typeInfo["default"];
 
-                          <div className="flex items-center justify-between mb-3">
+                      return Object.entries(grouped).map(([type, items]) => {
+                        const info = getTypeInfo(type);
+                        const Icon = info.icon;
+                        const totalPoints = items.reduce((sum, a) => sum + (a.points_earned || 0), 0);
+                        const maxPoints = items.reduce((sum, a) => sum + (a.max_points || 0), 0);
+                        const percentage = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
 
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-
-                              Regular Season Predictions
-
-                            </h3>
-
-                            {canEdit ? (
-
-                              <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-semibold">
-
-                                <Unlock className="w-3.5 h-3.5" /> Open for editing
-
-                              </span>
-
-                            ) : (
-
-                              <span className="inline-flex items-center gap-1 text-xs text-rose-600 font-semibold">
-
-                                <Lock className="w-3.5 h-3.5" /> Locked
-
-                              </span>
-
-                            )}
-
-                          </div>
-
-                          <EditablePredictionBoard
-
-                            seasonSlug={selectedSeason}
-
-                            canEdit={!!canEdit}
-
-                            username={username}
-
-                          />
-
-                          {!canEdit && standings.points !== undefined && (
-
-                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-
-                              <div className="flex items-center justify-between text-sm">
-
-                                <span className="font-semibold text-slate-700 dark:text-slate-300">
-
-                                  Regular Season Total:
-
-                                </span>
-
-                                <span className="font-bold text-teal-600 dark:text-teal-400 text-lg">
-
-                                  {standings.points} / {standings.max_points} points
-
-                                </span>
-
+                        return (
+                          <div key={type}>
+                            {/* Type Header */}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border ${info.badge}`}>
+                                  <Icon className="w-4 h-4" />
+                                  <span className="text-sm font-bold uppercase tracking-wider">{info.label}</span>
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                  {items.length} {items.length === 1 ? "question" : "questions"}
+                                </div>
                               </div>
-
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <div className="text-sm font-bold text-slate-900 dark:text-slate-200">
+                                    {totalPoints} / {maxPoints} pts
+                                  </div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                                    {percentage}% accuracy
+                                  </div>
+                                </div>
+                              </div>
                             </div>
 
-                          )}
-
-                        </div>
-
-          
-
-                        {/* Question Submissions */}
-
-                        <div className={`${panelClasses} p-4`}>
-
-                          <div className="flex items-center justify-between mb-3">
-
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-
-                              Question Submissions
-
-                            </h3>
-
-                            {canEdit ? (
-
-                              <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-semibold">
-
-                                <Unlock className="w-3.5 h-3.5" /> Open for submission
-
-                              </span>
-
-                            ) : (
-
-                              <span className="inline-flex items-center gap-1 text-xs text-rose-600 font-semibold">
-
-                                <Lock className="w-3.5 h-3.5" /> Locked
-
-                              </span>
-
-                            )}
-
-                          </div>
-
-                          {canEdit ? (
-
-                            <QuestionForm
-
-                              seasonSlug={selectedSeason}
-
-                              canEdit={!!canEdit}
-
-                              submissionEndDate={
-
-                                selectedSeasonObj?.submission_end_date || null
-
-                              }
-
-                            />
-
-                          ) : answers.length === 0 ? (
-
-                            <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">
-
-                              No answers submitted for {selectedSeason}.
-
-                            </div>
-
-                          ) : (
-
-                            <div className="space-y-4">
-
-                              {(() => {
-
-                                // Group answers by question type
-
-                                const grouped = {};
-
-                                answers.forEach((a) => {
-
-                                  const type = (a.question_type || "Other").toUpperCase();
-
-                                  if (!grouped[type]) grouped[type] = [];
-
-                                  grouped[type].push(a);
-
-                                });
-
-          
-
-                                // Color scheme for question types
-
-                                const typeInfo = {
-
-                                  PROPQUESTION: {
-
-                                    badge:
-
-                                      "bg-purple-100 border-purple-300 text-purple-700",
-
-                                    label: "Props",
-
-                                  },
-
-                                  SUPERLATIVEQUESTION: {
-
-                                    badge: "bg-blue-100 border-blue-300 text-blue-700",
-
-                                    label: "Superlatives",
-
-                                  },
-
-                                  NBAFINALSPREDICTIONQUESTION: {
-
-                                    badge: "bg-amber-100 border-amber-300 text-amber-700",
-
-                                    label: "Finals",
-
-                                  },
-
-                                  default: {
-
-                                    badge: "bg-slate-100 border-slate-300 text-slate-700",
-
-                                    label: "Other",
-
-                                  },
-
-                                };
-
-          
-
-                                const getTypeInfo = (type) =>
-
-                                  typeInfo[type] || typeInfo["default"];
-
-          
-
-                                return Object.entries(grouped).map(([type, items]) => {
-
-                                  const info = getTypeInfo(type);
-
-                                  const totalPoints = items.reduce(
-
-                                    (sum, a) => sum + (a.points_earned || 0),
-
-                                    0,
-
-                                  );
-
-                                  const maxPoints = items.reduce(
-
-                                    (sum, a) => sum + (a.max_points || 0),
-
-                                    0,
-
-                                  );
-
-          
-
-                                  return (
-
-                                    <div key={type} className="space-y-2">
-
-                                      <div className="flex items-center justify-between">
-
-                                        <div className="flex items-center gap-2">
-
-                                          <div
-
-                                            className={`inline-flex items-center px-2.5 py-1 rounded-lg border ${info.badge}`}
-
-                                          >
-
-                                            <span className="text-xs font-bold uppercase tracking-wider">
-
-                                              {info.label}
-
-                                            </span>
-
-                                          </div>
-
-                                          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-
-                                            {items.length}{" "}
-
-                                            {items.length === 1
-
-                                              ? "question"
-
-                                              : "questions"}
-
-                                          </div>
-
-                                        </div>
-
-                                        <div className="text-sm font-bold text-slate-900 dark:text-slate-200">
-
-                                          {totalPoints} / {maxPoints} pts
-
-                                        </div>
-
-                                      </div>
-
-          
-
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-
-                                        {items.map((a, idx) => {
-
-                                          const isCorrect = a.is_correct === true;
-
-                                          const isIncorrect = a.is_correct === false;
-
-                                          const isPending =
-
-                                            a.is_correct === null ||
-
-                                            typeof a.is_correct === "undefined";
-
-          
-
-                                          const baseCard =
-
-                                            "rounded-md border p-3 transition-colors";
-
-                                          const cardClasses = `${baseCard} ${
-
-                                            isCorrect
-
-                                              ? "bg-emerald-50 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700/50 border-l-4 border-l-emerald-500"
-
-                                              : isIncorrect
-
-                                                ? "bg-rose-50 dark:bg-rose-900/50 border-rose-300 dark:border-rose-700/50 border-l-4 border-l-rose-500"
-
-                                                : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
-
-                                          }`;
-
-          
-
-                                          return (
-
-                                            <div key={idx} className={cardClasses}>
-
-                                              <div
-
-                                                className="text-sm font-semibold text-slate-900 dark:text-white mb-2 leading-tight"
-
-                                                title={a.question_text}
-
-                                              >
-
-                                                {a.question_text}
-
-                                              </div>
-
-                                              <div className="text-sm text-slate-800 dark:text-slate-300 mb-3">
-
-                                                <span className="text-slate-600 dark:text-slate-400">
-
-                                                  Your answer:
-
-                                                </span>{" "}
-
-                                                <span className="font-bold">
-
-                                                  {String(a.answer)}
-
-                                                </span>
-
-                                              </div>
-
-                                              <div className="flex items-center justify-between text-xs">
-
-                                                <div className="flex items-center gap-1.5">
-
-                                                  {isCorrect && (
-
-                                                    <>
-
-                                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />
-
-                                                      <span className="font-bold text-emerald-700 dark:text-emerald-400">
-
-                                                        Correct
-
-                                                      </span>
-
-                                                    </>
-
-                                                  )}
-
-                                                  {isIncorrect && (
-
-                                                    <>
-
-                                                      <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-500" />
-
-                                                      <span className="font-bold text-rose-700 dark:text-rose-400">
-
-                                                        Incorrect
-
-                                                      </span>
-
-                                                    </>
-
-                                                  )}
-
-                                                  {isPending && (
-
-                                                    <>
-
-                                                      <Hourglass className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-
-                                                      <span className="font-semibold text-slate-500 dark:text-slate-400">
-
-                                                        Pending
-
-                                                      </span>
-
-                                                    </>
-
-                                                  )}
-
-                                                </div>
-
-                                                {typeof a.points_earned === "number" && (
-
-                                                  <span
-
-                                                    className={`font-bold ${a.points_earned > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}
-
-                                                  >
-
-                                                    +{a.points_earned} pts
-
-                                                  </span>
-
-                                                )}
-
-                                              </div>
-
-                                            </div>
-
-                                          );
-
-                                        })}
-
-                                      </div>
-
+                            {/* Questions Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                              {items.map((a, idx) => {
+                                const isCorrect = a.is_correct === true;
+                                const isIncorrect = a.is_correct === false;
+                                const isPending = a.is_correct === null || typeof a.is_correct === "undefined";
+
+                                const baseCard = "rounded-lg border p-4 transition-all hover:shadow-md";
+                                const cardClasses = `${baseCard} ${
+                                  isCorrect
+                                    ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700/50"
+                                    : isIncorrect
+                                      ? "bg-rose-50 dark:bg-rose-900/20 border-rose-300 dark:border-rose-700/50"
+                                      : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                                }`;
+
+                                return (
+                                  <div key={idx} className={cardClasses}>
+                                    <div className="text-sm font-semibold text-slate-900 dark:text-white mb-2 leading-snug">
+                                      {a.question_text}
                                     </div>
-
-                                  );
-
-                                });
-
-                              })()}
-
+                                    <div className="text-sm text-slate-800 dark:text-slate-300 mb-3 p-2 rounded bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-700">
+                                      <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                        Your answer:
+                                      </span>{" "}
+                                      <span className="font-bold">{String(a.answer)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        {isCorrect && (
+                                          <>
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
+                                            <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm">
+                                              Correct
+                                            </span>
+                                          </>
+                                        )}
+                                        {isIncorrect && (
+                                          <>
+                                            <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-500" />
+                                            <span className="font-bold text-rose-700 dark:text-rose-400 text-sm">
+                                              Incorrect
+                                            </span>
+                                          </>
+                                        )}
+                                        {isPending && (
+                                          <>
+                                            <Hourglass className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                                            <span className="font-semibold text-slate-500 dark:text-slate-400 text-sm">
+                                              Pending
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
+                                      {typeof a.points_earned === "number" && (
+                                        <span
+                                          className={`font-bold text-base ${
+                                            a.points_earned > 0
+                                              ? "text-emerald-700 dark:text-emerald-400"
+                                              : "text-slate-500 dark:text-slate-400"
+                                          }`}
+                                        >
+                                          +{a.points_earned}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-                          )}
+          {activeTab === "submissions" && (
+            <div className="space-y-4">
+              {/* Info Banner */}
+              <div className={`${panelClasses} p-4 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 border-teal-200 dark:border-teal-800`}>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-teal-300 dark:border-teal-700">
+                    {canEdit ? (
+                      <Unlock className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
+                    ) : (
+                      <Lock className="w-5 h-5 text-rose-600 dark:text-rose-500" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                      {canEdit ? "Submissions Open" : "Submissions Locked"}
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {canEdit
+                        ? `Make or update your predictions for ${selectedSeason} below. Changes are saved automatically.`
+                        : `The submission period for ${selectedSeason} has ended. View your submitted predictions in the Dashboard, Standings, and Questions tabs.`}
+                    </p>
+                    {canEdit && selectedSeasonObj?.submission_end_date && (
+                      <p className="text-xs text-teal-700 dark:text-teal-400 font-medium mt-2">
+                        Deadline: {new Date(selectedSeasonObj.submission_end_date).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-                        </div>
+              {/* Standings Submission */}
+              <div className={`${panelClasses} p-5`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-500" />
+                    Regular Season Predictions
+                  </h3>
+                  {!canEdit && (
+                    <button
+                      onClick={() => setActiveTab("standings")}
+                      className="text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium"
+                    >
+                      View results →
+                    </button>
+                  )}
+                </div>
+                <EditablePredictionBoard
+                  seasonSlug={selectedSeason}
+                  canEdit={!!canEdit}
+                  username={username}
+                />
+              </div>
 
-                      </div>
-
-                    )
-
-          }
+              {/* Question Submissions */}
+              <div className={`${panelClasses} p-5`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Target className="w-5 h-5 text-teal-600 dark:text-teal-500" />
+                    Question Submissions
+                  </h3>
+                  {!canEdit && (
+                    <button
+                      onClick={() => setActiveTab("questions")}
+                      className="text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium"
+                    >
+                      View results →
+                    </button>
+                  )}
+                </div>
+                <QuestionForm
+                  seasonSlug={selectedSeason}
+                  canEdit={!!canEdit}
+                  submissionEndDate={selectedSeasonObj?.submission_end_date || null}
+                />
+              </div>
+            </div>
+          )}
 
           {activeTab === "settings" && (
             <div className="space-y-4">
