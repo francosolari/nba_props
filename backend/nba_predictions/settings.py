@@ -37,7 +37,8 @@ if IS_DEVELOPMENT:
         }
     }
 
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'predictnetwork', '134.209.213.185']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'predictnetwork', '134.209.213.185', 'blue.propspredictions.com',
+                'green.propspredictions.com']
 else:
     # Production settings (default)
     DEBUG = False
@@ -54,7 +55,8 @@ else:
         }
     }
 
-    ALLOWED_HOSTS = ['134.209.213.185', 'propspredictions.com', 'localhost', '127.0.0.1',]
+    ALLOWED_HOSTS = ['134.209.213.185', 'propspredictions.com', 'localhost', '127.0.0.1',
+                     "blue.propspredictions.com","green.propspredictions.com"]
 
 # Application definition
 
@@ -215,6 +217,10 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 CSRF_TRUSTED_ORIGINS = [
     'https://propspredictions.com',
     'https://www.propspredictions.com',  # Include both with and without 'www' if necessary
+    'https://blue.propspredictions.com',
+    'https://green.propspredictions.com',
+    'https://www.blue.propspredictions.com',
+    'https://www.green.propspredictions.com',
 ]
 
 # Google OAuth Configuration
