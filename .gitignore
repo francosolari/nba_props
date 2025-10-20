@@ -17,3 +17,10 @@ postgres_data/
 /STRIPE_SETUP.md
 /PAYMENT_FLOW_EXPLANATION.md
 /PAYMENT_IMPLEMENTATION_SUMMARY.md
+/coverage/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+.env.e2e

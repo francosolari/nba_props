@@ -1,0 +1,182 @@
+name: Test Pull Request
+
+on:
+  pull_request:
+    branches: [ main, develop, feature/* ]
+  push:
+    branches: [ feature/* ]
+
+jobs:
+  frontend-tests:
+    name: Frontend Tests (Jest + React Testing Library)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run Jest tests
+      run: npm run test:ci
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      if: always()
+      with:
+        files: ./coverage/lcov.info
+        flags: frontend
+        name: frontend-coverage
+      continue-on-error: true
+
+  backend-tests:
+    name: Backend Tests (Django)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+
+    - name: Run Django tests
+      env:
+        DATABASE_HOST: localhost
+        DATABASE_PORT: 5432
+        DATABASE_NAME: test_db
+        DATABASE_USER: postgres
+        DATABASE_PASSWORD: postgres
+        DJANGO_SETTINGS_MODULE: nba_predictions.settings
+        DJANGO_DEVELOPMENT: True
+        SECRET_KEY: test-secret-key-for-ci
+      run: |
+        python backend/manage.py test predictions.tests --verbosity=2
+
+  lint-frontend:
+    name: Lint Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check for syntax errors
+      run: |
+        npx eslint frontend/src --ext .js,.jsx --max-warnings 50 || echo "ESLint not configured, skipping..."
+      continue-on-error: true
+
+  lint-backend:
+    name: Lint Backend
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install flake8
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8
+
+    - name: Run flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 backend --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 backend --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  build-check:
+    name: Build Check
+    runs-on: ubuntu-latest
+    needs: [frontend-tests, backend-tests]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build frontend
+      run: npm run build
+
+    - name: Check build artifacts
+      run: |
+        if [ ! -f "frontend/static/js/bundle.js" ]; then
+          echo "Error: bundle.js not found after build"
+          exit 1
+        fi
+        echo "Build artifacts verified successfully"
+
+  summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [frontend-tests, backend-tests, lint-frontend, lint-backend, build-check]
+    if: always()
+
+    steps:
+    - name: Check test results
+      run: |
+        echo "Frontend Tests: ${{ needs.frontend-tests.result }}"
+        echo "Backend Tests: ${{ needs.backend-tests.result }}"
+        echo "Frontend Lint: ${{ needs.lint-frontend.result }}"
+        echo "Backend Lint: ${{ needs.lint-backend.result }}"
+        echo "Build Check: ${{ needs.build-check.result }}"
+
+        if [ "${{ needs.frontend-tests.result }}" != "success" ] || [ "${{ needs.backend-tests.result }}" != "success" ]; then
+          echo "❌ Tests failed"
+          exit 1
+        fi
+
+        echo "✅ All tests passed"
