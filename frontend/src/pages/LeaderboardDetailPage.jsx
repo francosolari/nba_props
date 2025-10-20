@@ -1206,7 +1206,7 @@ useEffect(() => {
                       const preds = e.user.categories?.[catKey]?.predictions || [];
                       preds.forEach(p => {
                         if (!p.question_id) return;
-                        if (!qMap.has(p.question_id)) qMap.set(p.question_id, { id: p.question_id, text: p.question });
+                        if (!qMap.has(p.question_id)) qMap.set(p.question_id, { id: p.question_id, text: p.question, is_finalized: p.is_finalized });
                       });
                     });
                     const qArr = Array.from(qMap.values()).sort((a,b)=> a.text.localeCompare(b.text));
@@ -1215,7 +1215,10 @@ useEffect(() => {
                         <td className="sticky left-0 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-3 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-200" style={{ minWidth: '320px', width: '320px' }}>
                           <div className="flex items-center gap-2.5">
                             <span className="inline-flex items-center justify-center w-6 h-6 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600 shrink-0">{idx+1}</span>
-                            <span className="inline-block px-2.5 py-1.5 rounded-md border border-slate-200/60 bg-white text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 truncate" title={q.text}>{q.text}</span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-slate-200/60 bg-white text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 truncate" title={q.text}>
+                              {q.text}
+                              {q.is_finalized && <Lock className="w-3 h-3 text-amber-500 dark:text-amber-400 shrink-0" title="Finalized" />}
+                            </span>
                           </div>
                         </td>
                         {displayedUsers.map((e, userIndex) => {

@@ -20,6 +20,7 @@ import HomePage from './pages/HomePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import SubmissionsPage from './pages/SubmissionsPage.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
+import AdminGradingPanel from './pages/AdminGradingPanel.jsx';
 import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
 import SiteLayout from './components/SiteLayout.jsx';
 
@@ -77,6 +78,7 @@ mountComponent(ProfilePage, 'profile-root', 'ProfilePage');
 mountComponent(SubmissionsPage, 'submissions-root', 'SubmissionsPage');
 
 mountComponent(AdminPanel, 'admin-panel-root', 'AdminPanel');
+mountComponent(AdminGradingPanel, 'admin-grading-root', 'AdminGradingPanel');
 
 // Mount SiteLayout globally - provides SideNav across all pages
 mountComponent(SiteLayout, 'site-layout-root', 'SiteLayout');
