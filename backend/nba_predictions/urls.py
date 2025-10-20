@@ -29,7 +29,7 @@ urlpatterns = [
     path('api/v1/', include('predictions.api.v1.urls')),  # Legacy REST API
     path('api/v2/', api_v2.urls),  # Modern Ninja API
     path('api/', include('predictions.api.v1.urls')),
-    path('webhooks/stripe/', stripe_webhook, name='stripe_webhook'),  # Stripe webhook handler
+    path('stripe/webhook/', stripe_webhook, name='stripe_webhook'),  # Stripe webhook handler
     path('', include('predictions.routing.view_urls')),  # React frontend and Django views
 
 ]
