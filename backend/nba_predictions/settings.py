@@ -243,6 +243,10 @@ SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_LOGIN_ON_GET = True  # Allow one-click social login
 
+# Custom adapters to handle email verification logic
+ACCOUNT_ADAPTER = 'accounts.adapters.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
+
 # Cloudflare Turnstile Configuration
 # Get keys from: https://dash.cloudflare.com/
 # If not provided, test keys will be used (always pass validation)
