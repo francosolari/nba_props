@@ -35,7 +35,11 @@ from ..schemas.admin_grading import (
     GradingCommandRequest,
     GradingCommandResponse,
     AnswerReviewResponse,
-    AnswerReviewItem
+    AnswerReviewItem,
+    QuestionForGradingItem,
+    QuestionsForGradingResponse,
+    UpdateQuestionRequest,
+    UpdateQuestionResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -406,6 +410,133 @@ def run_grading_command(request, payload: GradingCommandRequest):
             "error": f"Command failed: {str(e)}",
             "details": "This may fail on production if NBA API is blocked. Run locally instead."
         }, status=500)
+
+
+@router.get(
+    "/questions/{season_slug}",
+    response=QuestionsForGradingResponse,
+    summary="Get Questions for Grading",
+    description="Get all questions for a season to set correct answers",
+    auth=django_auth
+)
+def get_questions_for_grading(request, season_slug: str):
+    """
+    Get all questions for a season so admin can set correct answers.
+
+    This is the main endpoint for the question grading interface where admins:
+    - View all questions
+    - See which have correct answers set
+    - See submission counts
+    - Update correct answers
+    """
+    if not is_admin(request):
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    # Get season
+    if season_slug == "current":
+        season = Season.objects.order_by('-end_date').first()
+        if not season:
+            return JsonResponse({"error": "No season found"}, status=404)
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
+
+    # Get all questions for this season
+    questions = Question.objects.filter(season=season).select_related('polymorphic_ctype')
+
+    questions_list = []
+    for question in questions:
+        question_real = question.get_real_instance()
+        question_type = type(question_real).__name__
+
+        # Determine category
+        if isinstance(question_real, SuperlativeQuestion):
+            category = "Awards/Superlatives"
+        elif isinstance(question_real, InSeasonTournamentQuestion):
+            category = "In-Season Tournament"
+        elif question_type == "PropQuestion":
+            category = "Props"
+        elif question_type == "PlayerStatPredictionQuestion":
+            category = "Player Stats"
+        elif question_type == "HeadToHeadQuestion":
+            category = "Head-to-Head"
+        elif question_type == "NBAFinalsPredictionQuestion":
+            category = "NBA Finals"
+        else:
+            category = "Other"
+
+        # Get submission count
+        submission_count = Answer.objects.filter(question=question).count()
+
+        # Check if correct answer is set
+        has_correct_answer = bool(question_real.correct_answer and question_real.correct_answer.strip())
+
+        # Check if finalized
+        is_finalized = getattr(question_real, 'is_finalized', False)
+
+        questions_list.append({
+            'question_id': question.id,
+            'question_text': question_real.text,
+            'question_type': question_type,
+            'category': category,
+            'correct_answer': question_real.correct_answer or '',
+            'point_value': question_real.point_value or 0,
+            'is_finalized': is_finalized,
+            'submission_count': submission_count,
+            'has_correct_answer': has_correct_answer
+        })
+
+    # Sort by category then by question text
+    questions_list.sort(key=lambda x: (x['category'], x['question_text']))
+
+    return {
+        'season_slug': season.slug,
+        'season_year': season.year,
+        'total_questions': len(questions_list),
+        'questions': questions_list
+    }
+
+
+@router.post(
+    "/update-question",
+    response=UpdateQuestionResponse,
+    summary="Update Question Correct Answer",
+    description="Set the correct answer for a question",
+    auth=django_auth
+)
+def update_question_answer(request, payload: UpdateQuestionRequest):
+    """
+    Update a question's correct answer and optionally mark it as finalized.
+
+    After setting the correct answer, admin can run grading commands to
+    check all user submissions against this answer.
+    """
+    if not is_admin(request):
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    question = get_object_or_404(Question, id=payload.question_id)
+    question_real = question.get_real_instance()
+
+    # Update correct answer
+    question_real.correct_answer = payload.correct_answer
+
+    # Update finalized status if provided
+    if payload.is_finalized is not None and isinstance(question_real, SuperlativeQuestion):
+        question_real.is_finalized = payload.is_finalized
+
+    question_real.save()
+
+    logger.info(
+        f"Admin {request.user.username} updated question {payload.question_id} "
+        f"with answer: {payload.correct_answer}"
+    )
+
+    return {
+        'success': True,
+        'question_id': payload.question_id,
+        'correct_answer': question_real.correct_answer,
+        'is_finalized': getattr(question_real, 'is_finalized', False),
+        'message': f"Question updated successfully. Run grading to apply changes."
+    }
 
 
 @router.post(

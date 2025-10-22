@@ -106,3 +106,42 @@ class GradingCommandResponse(Schema):
     season_slug: str
     message: str
     timestamp: str
+
+
+# New schemas for question grading interface
+
+class QuestionForGradingItem(Schema):
+    """Single question for grading (setting correct answer)"""
+    question_id: int
+    question_text: str
+    question_type: str
+    category: str
+    correct_answer: Optional[str]
+    point_value: float
+    is_finalized: bool
+    submission_count: int  # Number of user submissions for this question
+    has_correct_answer: bool  # Whether correct_answer is set
+
+
+class QuestionsForGradingResponse(Schema):
+    """Response for questions-for-grading endpoint"""
+    season_slug: str
+    season_year: str
+    total_questions: int
+    questions: List[QuestionForGradingItem]
+
+
+class UpdateQuestionRequest(Schema):
+    """Request to update a question's correct answer"""
+    question_id: int
+    correct_answer: str
+    is_finalized: Optional[bool] = None
+
+
+class UpdateQuestionResponse(Schema):
+    """Response after updating question"""
+    success: bool
+    question_id: int
+    correct_answer: str
+    is_finalized: bool
+    message: str
