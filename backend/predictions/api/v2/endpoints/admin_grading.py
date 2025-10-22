@@ -70,6 +70,12 @@ def get_grading_audit(request, season_slug: str):
     - Points breakdown by category (Awards, Props, Standings, IST, etc.)
     - Number of correct/incorrect/pending answers per category
     - Identification of finalized vs non-finalized questions
+
+    Performance optimizations:
+    - Fetch ALL answers for the season once with select_related
+    - Fetch ALL standings predictions once with select_related
+    - Get real instances once and cache question type info
+    - Process in memory instead of per-user queries
     """
     if not is_admin(request):
         return JsonResponse({"error": "Admin access required"}, status=403)
@@ -85,46 +91,86 @@ def get_grading_audit(request, season_slug: str):
     # Get all users with stats for this season
     user_stats = UserStats.objects.filter(season=season).select_related('user')
 
+    # OPTIMIZATION: Fetch ALL answers for the season at once
+    all_answers = Answer.objects.filter(
+        question__season=season
+    ).select_related('user', 'question', 'question__polymorphic_ctype')
+
+    # Get real instances once and build a question info cache
+    question_ids = set(ans.question_id for ans in all_answers)
+    questions_real = Question.objects.filter(id__in=question_ids).get_real_instances()
+
+    # Build question info cache to avoid repeated get_real_instance() calls
+    question_info_cache = {}
+    for q in questions_real:
+        question_type = type(q).__name__
+
+        # Determine category once
+        if isinstance(q, SuperlativeQuestion):
+            category = "Awards/Superlatives"
+        elif isinstance(q, InSeasonTournamentQuestion):
+            category = "In-Season Tournament"
+        elif question_type == "PropQuestion":
+            category = "Props"
+        elif question_type == "PlayerStatPredictionQuestion":
+            category = "Player Stats"
+        elif question_type == "HeadToHeadQuestion":
+            category = "Head-to-Head"
+        elif question_type == "NBAFinalsPredictionQuestion":
+            category = "NBA Finals"
+        else:
+            category = "Other"
+
+        question_info_cache[q.id] = {
+            'text': q.text,
+            'type': question_type,
+            'category': category,
+            'correct_answer': q.correct_answer,
+            'point_value': q.point_value or 0,
+            'is_finalized': getattr(q, 'is_finalized', False)
+        }
+
+    # Group answers by user
+    answers_by_user = {}
+    for ans in all_answers:
+        if ans.user_id not in answers_by_user:
+            answers_by_user[ans.user_id] = []
+        answers_by_user[ans.user_id].append(ans)
+
+    # OPTIMIZATION: Fetch ALL standings predictions at once
+    all_standing_preds = StandingPrediction.objects.filter(
+        season=season
+    ).select_related('user')
+
+    # Group standings by user
+    standings_by_user = {}
+    for sp in all_standing_preds:
+        if sp.user_id not in standings_by_user:
+            standings_by_user[sp.user_id] = []
+        standings_by_user[sp.user_id].append(sp)
+
     users_breakdown = []
 
     for stat in user_stats:
         user = stat.user
 
-        # Get all answers for this user in this season
-        answers = Answer.objects.filter(
-            user=user,
-            question__season=season
-        ).select_related('question', 'question__polymorphic_ctype')
+        # Get this user's answers from pre-fetched dict (O(1) lookup)
+        answers = answers_by_user.get(user.id, [])
 
-        # Get standings predictions
-        standing_preds = StandingPrediction.objects.filter(
-            user=user,
-            season=season
-        )
+        # Get this user's standings from pre-fetched dict (O(1) lookup)
+        standing_preds = standings_by_user.get(user.id, [])
 
         # Build category breakdown
         categories = {}
 
-        # Group answers by question type
+        # Group answers by question type using cached question info
         for answer in answers:
-            question = answer.question.get_real_instance()
-            question_type = type(question).__name__
+            q_info = question_info_cache.get(answer.question_id)
+            if not q_info:
+                continue  # Skip if question info not found
 
-            # Determine category
-            if isinstance(question, SuperlativeQuestion):
-                category = "Awards/Superlatives"
-            elif isinstance(question, InSeasonTournamentQuestion):
-                category = "In-Season Tournament"
-            elif question_type == "PropQuestion":
-                category = "Props"
-            elif question_type == "PlayerStatPredictionQuestion":
-                category = "Player Stats"
-            elif question_type == "HeadToHeadQuestion":
-                category = "Head-to-Head"
-            elif question_type == "NBAFinalsPredictionQuestion":
-                category = "NBA Finals"
-            else:
-                category = "Other"
+            category = q_info['category']
+            question_type = q_info['type']
 
             if category not in categories:
                 categories[category] = {
@@ -141,7 +187,7 @@ def get_grading_audit(request, season_slug: str):
 
             cat = categories[category]
             cat['total_points'] += answer.points_earned or 0
-            cat['possible_points'] += question.point_value or 0
+            cat['possible_points'] += q_info['point_value']
 
             if answer.is_correct is True:
                 cat['correct_count'] += 1
@@ -150,33 +196,32 @@ def get_grading_audit(request, season_slug: str):
             else:
                 cat['pending_count'] += 1
 
-            # Check if question is finalized
-            is_finalized = getattr(question, 'is_finalized', False)
-            if is_finalized:
+            # Use cached finalized status
+            if q_info['is_finalized']:
                 cat['finalized_count'] += 1
             else:
                 cat['non_finalized_count'] += 1
 
             cat['questions'].append({
-                'question_id': question.id,
-                'question_text': question.text,
+                'question_id': answer.question_id,
+                'question_text': q_info['text'],
                 'question_type': question_type,
                 'user_answer': answer.answer,
-                'correct_answer': question.correct_answer,
+                'correct_answer': q_info['correct_answer'],
                 'is_correct': answer.is_correct,
                 'points_earned': answer.points_earned or 0,
-                'point_value': question.point_value or 0,
-                'is_finalized': is_finalized,
+                'point_value': q_info['point_value'],
+                'is_finalized': q_info['is_finalized'],
                 'submission_date': answer.submission_date.isoformat() if answer.submission_date else None
             })
 
         # Add standings category
-        if standing_preds.exists():
-            standings_points = standing_preds.aggregate(Sum('points'))['points__sum'] or 0
-            standings_count = standing_preds.count()
-            correct_standings = standing_preds.filter(points__gte=3).count()
-            partial_standings = standing_preds.filter(points=1).count()
-            incorrect_standings = standing_preds.filter(points=0).count()
+        if standing_preds:  # Now a list, not queryset
+            standings_points = sum(sp.points for sp in standing_preds)
+            standings_count = len(standing_preds)
+            correct_standings = sum(1 for sp in standing_preds if sp.points >= 3)
+            partial_standings = sum(1 for sp in standing_preds if sp.points == 1)
+            incorrect_standings = sum(1 for sp in standing_preds if sp.points == 0)
 
             categories['Regular Season Standings'] = {
                 'category_name': 'Regular Season Standings',
@@ -430,6 +475,11 @@ def get_questions_for_grading(request, season_slug: str):
     - See which have correct answers set
     - See submission counts
     - Update correct answers
+
+    Performance optimizations:
+    - Batch fetch all submission counts with a single query
+    - Use select_related for foreign keys
+    - Process questions in memory after fetch
     """
     if not is_admin(request):
         return JsonResponse({"error": "Admin access required"}, status=403)
@@ -442,12 +492,31 @@ def get_questions_for_grading(request, season_slug: str):
     else:
         season = get_object_or_404(Season, slug=season_slug)
 
-    # Get all questions for this season
-    questions = Question.objects.filter(season=season).select_related('polymorphic_ctype')
+    # Fetch all questions with related data in ONE query
+    questions = Question.objects.filter(season=season).select_related(
+        'polymorphic_ctype'
+    ).prefetch_related(
+        'propquestion__related_player',
+        'headtoheadquestion__team1',
+        'headtoheadquestion__team2',
+        'superlativequestion__current_leader',
+        'superlativequestion__current_runner_up'
+    )
+
+    # Get ALL submission counts for this season in ONE query
+    from django.db.models import Count
+    submission_counts = dict(
+        Answer.objects.filter(question__season=season)
+        .values('question_id')
+        .annotate(count=Count('id'))
+        .values_list('question_id', 'count')
+    )
+
+    # Convert to list and get real instances (still needed but only once per question)
+    questions_real = questions.get_real_instances()
 
     questions_list = []
-    for question in questions:
-        question_real = question.get_real_instance()
+    for question_real in questions_real:
         question_type = type(question_real).__name__
 
         # Determine category
@@ -466,8 +535,8 @@ def get_questions_for_grading(request, season_slug: str):
         else:
             category = "Other"
 
-        # Get submission count
-        submission_count = Answer.objects.filter(question=question).count()
+        # Get submission count from pre-fetched dict (O(1) lookup)
+        submission_count = submission_counts.get(question_real.id, 0)
 
         # Check if correct answer is set
         has_correct_answer = bool(question_real.correct_answer and question_real.correct_answer.strip())
@@ -487,6 +556,7 @@ def get_questions_for_grading(request, season_slug: str):
         if isinstance(question_real, PropQuestion):
             outcome_type = question_real.outcome_type
             line = question_real.line
+            # related_player is already prefetched, no extra query
             if question_real.related_player:
                 related_player_name = question_real.related_player.name
 
@@ -499,13 +569,14 @@ def get_questions_for_grading(request, season_slug: str):
 
         elif isinstance(question_real, HeadToHeadQuestion):
             input_type = 'team_choice'
+            # team1 and team2 are already prefetched, no extra queries
             team1_name = question_real.team1.name
             team2_name = question_real.team2.name
             choices = [team1_name, team2_name]
 
         elif isinstance(question_real, SuperlativeQuestion):
             input_type = 'player_search'
-            # Optionally, we could provide top candidates from odds
+            # current_leader and current_runner_up are prefetched
             if question_real.current_leader:
                 choices = [question_real.current_leader.name]
                 if question_real.current_runner_up:
@@ -515,7 +586,7 @@ def get_questions_for_grading(request, season_slug: str):
             input_type = 'player_search'
 
         questions_list.append({
-            'question_id': question.id,
+            'question_id': question_real.id,
             'question_text': question_real.text,
             'question_type': question_type,
             'category': category,
