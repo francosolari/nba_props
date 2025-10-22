@@ -492,16 +492,8 @@ def get_questions_for_grading(request, season_slug: str):
     else:
         season = get_object_or_404(Season, slug=season_slug)
 
-    # Fetch all questions with related data in ONE query
-    questions = Question.objects.filter(season=season).select_related(
-        'polymorphic_ctype'
-    ).prefetch_related(
-        'propquestion__related_player',
-        'headtoheadquestion__team1',
-        'headtoheadquestion__team2',
-        'superlativequestion__current_leader',
-        'superlativequestion__current_runner_up'
-    )
+    # Fetch all questions
+    questions = Question.objects.filter(season=season).select_related('polymorphic_ctype')
 
     # Get ALL submission counts for this season in ONE query
     from django.db.models import Count
@@ -512,8 +504,33 @@ def get_questions_for_grading(request, season_slug: str):
         .values_list('question_id', 'count')
     )
 
-    # Convert to list and get real instances (still needed but only once per question)
-    questions_real = questions.get_real_instances()
+    # Get real instances (polymorphic handles the SELECT for subclass tables efficiently)
+    questions_real = list(questions.get_real_instances())
+
+    # Build caches for related objects to avoid N+1 when accessing foreign keys
+    from predictions.models import Player, Team
+
+    # Collect IDs of related objects we'll need
+    player_ids = set()
+    team_ids = set()
+
+    for q in questions_real:
+        if isinstance(q, PropQuestion) and q.related_player_id:
+            player_ids.add(q.related_player_id)
+        elif isinstance(q, HeadToHeadQuestion):
+            if q.team1_id:
+                team_ids.add(q.team1_id)
+            if q.team2_id:
+                team_ids.add(q.team2_id)
+        elif isinstance(q, SuperlativeQuestion):
+            if q.current_leader_id:
+                player_ids.add(q.current_leader_id)
+            if q.current_runner_up_id:
+                player_ids.add(q.current_runner_up_id)
+
+    # Batch fetch all needed players and teams
+    players_cache = {p.id: p for p in Player.objects.filter(id__in=player_ids)} if player_ids else {}
+    teams_cache = {t.id: t for t in Team.objects.filter(id__in=team_ids)} if team_ids else {}
 
     questions_list = []
     for question_real in questions_real:
@@ -556,9 +573,11 @@ def get_questions_for_grading(request, season_slug: str):
         if isinstance(question_real, PropQuestion):
             outcome_type = question_real.outcome_type
             line = question_real.line
-            # related_player is already prefetched, no extra query
-            if question_real.related_player:
-                related_player_name = question_real.related_player.name
+            # Use cache to avoid N+1 query
+            if question_real.related_player_id:
+                player = players_cache.get(question_real.related_player_id)
+                if player:
+                    related_player_name = player.name
 
             if outcome_type == 'yes_no':
                 input_type = 'yes_no'
@@ -569,18 +588,27 @@ def get_questions_for_grading(request, season_slug: str):
 
         elif isinstance(question_real, HeadToHeadQuestion):
             input_type = 'team_choice'
-            # team1 and team2 are already prefetched, no extra queries
-            team1_name = question_real.team1.name
-            team2_name = question_real.team2.name
-            choices = [team1_name, team2_name]
+            # Use cache to avoid N+1 queries
+            team1 = teams_cache.get(question_real.team1_id)
+            team2 = teams_cache.get(question_real.team2_id)
+            if team1:
+                team1_name = team1.name
+            if team2:
+                team2_name = team2.name
+            if team1_name and team2_name:
+                choices = [team1_name, team2_name]
 
         elif isinstance(question_real, SuperlativeQuestion):
             input_type = 'player_search'
-            # current_leader and current_runner_up are prefetched
-            if question_real.current_leader:
-                choices = [question_real.current_leader.name]
-                if question_real.current_runner_up:
-                    choices.append(question_real.current_runner_up.name)
+            # Use cache to avoid N+1 queries
+            if question_real.current_leader_id:
+                leader = players_cache.get(question_real.current_leader_id)
+                if leader:
+                    choices = [leader.name]
+                    if question_real.current_runner_up_id:
+                        runner_up = players_cache.get(question_real.current_runner_up_id)
+                        if runner_up:
+                            choices.append(runner_up.name)
 
         elif isinstance(question_real, PlayerStatPredictionQuestion):
             input_type = 'player_search'
