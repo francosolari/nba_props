@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { getCSRFToken } from '../utils/csrf';
 import {
   CheckCircle2,
   XCircle,
@@ -75,6 +76,11 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
         question_id: questionId,
         correct_answer: correctAnswer,
         is_finalized: isFinalized,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken('csrftoken'),
+        },
       });
       return res.data;
     },
@@ -93,6 +99,11 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
         is_correct: isCorrect,
         points_override: pointsOverride,
         correct_answer: correctAnswer,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken('csrftoken'),
+        },
       });
       return res.data;
     },
@@ -108,6 +119,11 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
       const res = await axios.post('/api/v2/admin/grading/run-grading-command', {
         command,
         season_slug: seasonSlug,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken('csrftoken'),
+        },
       });
       return res.data;
     },
