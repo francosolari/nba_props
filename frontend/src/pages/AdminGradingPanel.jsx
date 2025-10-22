@@ -174,16 +174,31 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
   };
 
   const handleRunGradingCommand = async (command) => {
-    if (!window.confirm(`Run ${command} for ${selectedSeason}?\n\nNote: This may fail on production if NBA API is blocked.`)) {
+    const commandNames = {
+      'update_season_standings': 'Update Season Standings',
+      'scrape_award_odds': 'Scrape Award Odds',
+      'grade_props_answers': 'Grade Props Answers',
+      'grade_standing_predictions': 'Grade Standing Predictions',
+      'grade_ist_predictions': 'Grade IST Predictions'
+    };
+
+    const friendlyName = commandNames[command] || command;
+
+    if (!window.confirm(
+      `Run "${friendlyName}" for ${selectedSeason}?\n\n` +
+      `Note: This may fail on production if NBA API is blocked.\n` +
+      `This operation may take several seconds.`
+    )) {
       return;
     }
 
     try {
       const result = await runGradingMutation.mutateAsync({ command, seasonSlug: selectedSeason });
-      alert(result.message);
+      alert(`✓ Success!\n\n${result.message}`);
     } catch (error) {
       console.error('Error running grading command:', error);
-      alert(`Command failed: ${error.response?.data?.error || error.message}`);
+      const errorMsg = error.response?.data?.error || error.message;
+      alert(`✗ Command Failed\n\n${errorMsg}\n\nTip: Make sure you're running this locally where NBA API is accessible.`);
     }
   };
 
@@ -310,33 +325,72 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
             </div>
           )}
 
-          {/* Grading Commands */}
+          {/* Management Commands */}
           <div className="mt-4 pt-4 border-t border-slate-700/40">
-            <p className="text-xs text-slate-500 mb-2">
-              Run automated grading (LOCAL ONLY - will fail if NBA API blocked):
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => handleRunGradingCommand('grade_props_answers')}
-                disabled={runGradingMutation.isPending}
-                className="rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-400/20 px-3 py-1.5 text-xs font-medium transition"
-              >
-                Grade Props
-              </button>
-              <button
-                onClick={() => handleRunGradingCommand('grade_standing_predictions')}
-                disabled={runGradingMutation.isPending}
-                className="rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-400/20 px-3 py-1.5 text-xs font-medium transition"
-              >
-                Grade Standings
-              </button>
-              <button
-                onClick={() => handleRunGradingCommand('grade_ist_predictions')}
-                disabled={runGradingMutation.isPending}
-                className="rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-400/20 px-3 py-1.5 text-xs font-medium transition"
-              >
-                Grade IST
-              </button>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-slate-500">
+                <strong>Management Commands</strong> (LOCAL ONLY - will fail if NBA API blocked)
+              </p>
+              {runGradingMutation.isPending && (
+                <div className="flex items-center gap-2 text-xs text-blue-400">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  Running command...
+                </div>
+              )}
+            </div>
+
+            {/* Data Update Commands */}
+            <div className="mb-3">
+              <p className="text-xs text-slate-400 mb-2">Update Data:</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleRunGradingCommand('update_season_standings')}
+                  disabled={runGradingMutation.isPending}
+                  className="rounded-full bg-emerald-500/20 text-emerald-200 hover:bg-emerald-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  title="Fetch latest standings from NBA API"
+                >
+                  🔄 Update Standings
+                </button>
+                <button
+                  onClick={() => handleRunGradingCommand('scrape_award_odds')}
+                  disabled={runGradingMutation.isPending}
+                  className="rounded-full bg-amber-500/20 text-amber-200 hover:bg-amber-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  title="Scrape latest award odds from DraftKings"
+                >
+                  🎯 Scrape Award Odds
+                </button>
+              </div>
+            </div>
+
+            {/* Grading Commands */}
+            <div>
+              <p className="text-xs text-slate-400 mb-2">Run Grading:</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleRunGradingCommand('grade_props_answers')}
+                  disabled={runGradingMutation.isPending}
+                  className="rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  title="Grade all prop and award questions"
+                >
+                  ✓ Grade Props
+                </button>
+                <button
+                  onClick={() => handleRunGradingCommand('grade_standing_predictions')}
+                  disabled={runGradingMutation.isPending}
+                  className="rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  title="Grade standings predictions"
+                >
+                  ✓ Grade Standings
+                </button>
+                <button
+                  onClick={() => handleRunGradingCommand('grade_ist_predictions')}
+                  disabled={runGradingMutation.isPending}
+                  className="rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  title="Grade In-Season Tournament predictions"
+                >
+                  ✓ Grade IST
+                </button>
+              </div>
             </div>
           </div>
         </div>

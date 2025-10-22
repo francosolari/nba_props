@@ -375,7 +375,13 @@ def run_grading_command(request, payload: GradingCommandRequest):
     command = payload.command
     season_slug = payload.season_slug
 
-    allowed_commands = ['grade_props_answers', 'grade_standing_predictions', 'grade_ist_predictions']
+    allowed_commands = [
+        'grade_props_answers',
+        'grade_standing_predictions',
+        'grade_ist_predictions',
+        'update_season_standings',
+        'scrape_award_odds'
+    ]
 
     if command not in allowed_commands:
         return JsonResponse({"error": f"Invalid command. Allowed: {allowed_commands}"}, status=400)
