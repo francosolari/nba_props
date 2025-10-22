@@ -105,7 +105,7 @@
   --tw-contain-paint:  ;
   --tw-contain-style:  ;
 }/*
-! tailwindcss v3.4.18 | MIT License | https://tailwindcss.com
+! tailwindcss v3.4.12 | MIT License | https://tailwindcss.com
 *//*
 1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
 2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
@@ -496,7 +496,7 @@ video {
 }
 
 /* Make elements with the HTML hidden attribute stay hidden by default */
-[hidden]:where(:not([hidden="until-found"])) {
+[hidden] {
   display: none;
 }
   html {
@@ -508,16 +508,16 @@ video {
 }
   body {
   --tw-bg-opacity: 1;
-  background-color: rgb(248 250 252 / var(--tw-bg-opacity, 1));
+  background-color: rgb(248 250 252 / var(--tw-bg-opacity));
   --tw-text-opacity: 1;
-  color: rgb(30 41 59 / var(--tw-text-opacity, 1));
+  color: rgb(30 41 59 / var(--tw-text-opacity));
 }
   @media (prefers-color-scheme: dark) {
     body {
     --tw-bg-opacity: 1;
-    background-color: rgb(15 23 42 / var(--tw-bg-opacity, 1));
+    background-color: rgb(15 23 42 / var(--tw-bg-opacity));
     --tw-text-opacity: 1;
-    color: rgb(226 232 240 / var(--tw-text-opacity, 1));
+    color: rgb(226 232 240 / var(--tw-text-opacity));
   }
   }
   /* Optional: slightly tighter headings; components already set sizes */
@@ -969,7 +969,8 @@ video {
   padding: 0.65rem 0.9rem;
   min-width: 72px;
   background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
   border-left: 1px dashed rgba(148, 163, 184, 0.35);
   border-right: 1px dashed rgba(148, 163, 184, 0.35);
 }
@@ -1222,7 +1223,8 @@ video {
 
 .home-hero__preview .home-submission-card {
   width: 100%;
-  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
 }
 
 .home-hero__preview .home-submission-card__board {
@@ -1941,7 +1943,8 @@ video {
 
 .home-auth-modal {
   background: rgba(248, 250, 252, 0.9);
-  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 16px;
   padding: 1.75rem 2rem;

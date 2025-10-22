@@ -431,9 +431,9 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
                 {expandedUsers.has(entry.user.id) && (
                   <div className="px-3 pb-4 md:px-4 md:pb-5 bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-800/30 dark:to-slate-900/20">
                     <div className="grid gap-3 lg:grid-cols-3">
-                      <CategoryCard icon={BarChart3} title="Regular Season Standings" userId={entry.user.id} data={getCategory(entry, 'Regular Season Standings')} detailsHref={`/leaderboard/${seasonSlug}/detailed/?section=standings&user=${entry.user.id}`} />
-                      <CategoryCard icon={Award} title="Player Awards" userId={entry.user.id} data={getCategory(entry, 'Player Awards')} detailsHref={`/leaderboard/${seasonSlug}/detailed/?section=awards&user=${entry.user.id}`} />
-                      <CategoryCard icon={ListChecks} title="Props & Yes/No" userId={entry.user.id} data={getCategory(entry, 'Props & Yes/No')} detailsHref={`/leaderboard/${seasonSlug}/detailed/?section=props&user=${entry.user.id}`} />
+                      <CategoryCard icon={BarChart3} title="Regular Season Standings" userId={entry.user.id} data={getCategory(entry, 'Regular Season Standings')} detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=standings&user=${entry.user.id}`} />
+                      <CategoryCard icon={Award} title="Player Awards" userId={entry.user.id} data={getCategory(entry, 'Player Awards')} detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=awards&user=${entry.user.id}`} />
+                      <CategoryCard icon={ListChecks} title="Props & Yes/No" userId={entry.user.id} data={getCategory(entry, 'Props & Yes/No')} detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=props&user=${entry.user.id}`} />
                     </div>
                   </div>
                 )}
