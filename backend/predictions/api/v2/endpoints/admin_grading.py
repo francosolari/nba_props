@@ -23,7 +23,9 @@ import logging
 from predictions.models import (
     Season, Question, Answer, UserStats,
     StandingPrediction, SuperlativeQuestion,
-    InSeasonTournamentQuestion
+    InSeasonTournamentQuestion, PropQuestion,
+    HeadToHeadQuestion, PlayerStatPredictionQuestion,
+    NBAFinalsPredictionQuestion
 )
 from ..schemas.admin_grading import (
     GradingAuditResponse,
@@ -473,6 +475,45 @@ def get_questions_for_grading(request, season_slug: str):
         # Check if finalized
         is_finalized = getattr(question_real, 'is_finalized', False)
 
+        # Determine input type and choices based on question type
+        input_type = 'text'  # default
+        choices = None
+        outcome_type = None
+        line = None
+        team1_name = None
+        team2_name = None
+        related_player_name = None
+
+        if isinstance(question_real, PropQuestion):
+            outcome_type = question_real.outcome_type
+            line = question_real.line
+            if question_real.related_player:
+                related_player_name = question_real.related_player.name
+
+            if outcome_type == 'yes_no':
+                input_type = 'yes_no'
+                choices = ['Yes', 'No']
+            elif outcome_type == 'over_under':
+                input_type = 'over_under'
+                choices = ['Over', 'Under']
+
+        elif isinstance(question_real, HeadToHeadQuestion):
+            input_type = 'team_choice'
+            team1_name = question_real.team1.name
+            team2_name = question_real.team2.name
+            choices = [team1_name, team2_name]
+
+        elif isinstance(question_real, SuperlativeQuestion):
+            input_type = 'player_search'
+            # Optionally, we could provide top candidates from odds
+            if question_real.current_leader:
+                choices = [question_real.current_leader.name]
+                if question_real.current_runner_up:
+                    choices.append(question_real.current_runner_up.name)
+
+        elif isinstance(question_real, PlayerStatPredictionQuestion):
+            input_type = 'player_search'
+
         questions_list.append({
             'question_id': question.id,
             'question_text': question_real.text,
@@ -482,7 +523,14 @@ def get_questions_for_grading(request, season_slug: str):
             'point_value': question_real.point_value or 0,
             'is_finalized': is_finalized,
             'submission_count': submission_count,
-            'has_correct_answer': has_correct_answer
+            'has_correct_answer': has_correct_answer,
+            'outcome_type': outcome_type,
+            'line': line,
+            'team1_name': team1_name,
+            'team2_name': team2_name,
+            'related_player_name': related_player_name,
+            'input_type': input_type,
+            'choices': choices
         })
 
     # Sort by category then by question text

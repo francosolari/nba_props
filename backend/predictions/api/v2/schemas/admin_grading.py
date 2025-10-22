@@ -122,6 +122,17 @@ class QuestionForGradingItem(Schema):
     submission_count: int  # Number of user submissions for this question
     has_correct_answer: bool  # Whether correct_answer is set
 
+    # Additional metadata for rendering appropriate inputs
+    outcome_type: Optional[str] = None  # 'over_under' or 'yes_no' for PropQuestion
+    line: Optional[float] = None  # Line value for over/under props
+    team1_name: Optional[str] = None  # For HeadToHeadQuestion
+    team2_name: Optional[str] = None  # For HeadToHeadQuestion
+    related_player_name: Optional[str] = None  # For PropQuestion with related player
+
+    # For rendering the correct input type
+    input_type: str  # 'text', 'yes_no', 'over_under', 'team_choice', 'player_search'
+    choices: Optional[list] = None  # For dropdowns (team choices, etc.)
+
 
 class QuestionsForGradingResponse(Schema):
     """Response for questions-for-grading endpoint"""

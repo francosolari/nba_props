@@ -611,30 +611,150 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                                   {/* Edit Answer */}
                                   <div className="mt-3">
                                     {isEditing ? (
-                                      <div className="flex items-center gap-2">
-                                        <input
-                                          type="text"
-                                          value={editedAnswer}
-                                          onChange={(e) => setEditedAnswer(e.target.value)}
-                                          placeholder="Enter correct answer..."
-                                          className="flex-1 rounded-lg border border-slate-700/40 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
-                                          autoFocus
-                                        />
-                                        <button
-                                          onClick={() => handleSaveQuestion(question)}
-                                          disabled={updateQuestionMutation.isPending}
-                                          className="rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 px-3 py-2 text-sm"
-                                          title="Save"
-                                        >
-                                          <Save className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                          onClick={handleCancelEdit}
-                                          className="rounded-lg bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 px-3 py-2 text-sm"
-                                          title="Cancel"
-                                        >
-                                          <X className="w-4 h-4" />
-                                        </button>
+                                      <div className="space-y-2">
+                                        {/* Show line for over/under questions */}
+                                        {question.input_type === 'over_under' && question.line && (
+                                          <div className="text-xs text-slate-400">
+                                            Line: {question.line} {question.related_player_name && `(${question.related_player_name})`}
+                                          </div>
+                                        )}
+
+                                        {question.input_type === 'yes_no' && question.related_player_name && (
+                                          <div className="text-xs text-slate-400">
+                                            Player: {question.related_player_name}
+                                          </div>
+                                        )}
+
+                                        <div className="flex items-center gap-2">
+                                          {/* Yes/No Radio Buttons */}
+                                          {question.input_type === 'yes_no' && (
+                                            <div className="flex gap-3">
+                                              {question.choices?.map(choice => (
+                                                <label key={choice} className="flex items-center gap-2 cursor-pointer">
+                                                  <input
+                                                    type="radio"
+                                                    name={`q-${question.question_id}`}
+                                                    value={choice}
+                                                    checked={editedAnswer === choice}
+                                                    onChange={(e) => setEditedAnswer(e.target.value)}
+                                                    className="w-4 h-4 text-blue-500"
+                                                  />
+                                                  <span className="text-sm text-slate-300">{choice}</span>
+                                                </label>
+                                              ))}
+                                            </div>
+                                          )}
+
+                                          {/* Over/Under Radio Buttons */}
+                                          {question.input_type === 'over_under' && (
+                                            <div className="flex gap-3">
+                                              {question.choices?.map(choice => (
+                                                <label key={choice} className="flex items-center gap-2 cursor-pointer">
+                                                  <input
+                                                    type="radio"
+                                                    name={`q-${question.question_id}`}
+                                                    value={choice}
+                                                    checked={editedAnswer === choice}
+                                                    onChange={(e) => setEditedAnswer(e.target.value)}
+                                                    className="w-4 h-4 text-blue-500"
+                                                  />
+                                                  <span className="text-sm text-slate-300">{choice}</span>
+                                                </label>
+                                              ))}
+                                            </div>
+                                          )}
+
+                                          {/* Team Choice Dropdown */}
+                                          {question.input_type === 'team_choice' && (
+                                            <select
+                                              value={editedAnswer}
+                                              onChange={(e) => setEditedAnswer(e.target.value)}
+                                              className="flex-1 rounded-lg border border-slate-700/40 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                                              autoFocus
+                                            >
+                                              <option value="">Select team...</option>
+                                              {question.choices?.map(choice => (
+                                                <option key={choice} value={choice}>{choice}</option>
+                                              ))}
+                                            </select>
+                                          )}
+
+                                          {/* Player Search (with suggestions if available) */}
+                                          {question.input_type === 'player_search' && (
+                                            <div className="flex-1">
+                                              <input
+                                                type="text"
+                                                value={editedAnswer}
+                                                onChange={(e) => setEditedAnswer(e.target.value)}
+                                                placeholder="Enter player name..."
+                                                list={`players-${question.question_id}`}
+                                                className="w-full rounded-lg border border-slate-700/40 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                                                autoFocus
+                                              />
+                                              {question.choices && question.choices.length > 0 && (
+                                                <datalist id={`players-${question.question_id}`}>
+                                                  {question.choices.map(choice => (
+                                                    <option key={choice} value={choice} />
+                                                  ))}
+                                                </datalist>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {/* Regular Text Input (fallback) */}
+                                          {question.input_type === 'text' && (
+                                            <input
+                                              type="text"
+                                              value={editedAnswer}
+                                              onChange={(e) => setEditedAnswer(e.target.value)}
+                                              placeholder="Enter correct answer..."
+                                              className="flex-1 rounded-lg border border-slate-700/40 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                                              autoFocus
+                                            />
+                                          )}
+
+                                          {/* Save/Cancel buttons (for non-radio inputs) */}
+                                          {question.input_type !== 'yes_no' && question.input_type !== 'over_under' && (
+                                            <>
+                                              <button
+                                                onClick={() => handleSaveQuestion(question)}
+                                                disabled={updateQuestionMutation.isPending}
+                                                className="rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 px-3 py-2 text-sm"
+                                                title="Save"
+                                              >
+                                                <Save className="w-4 h-4" />
+                                              </button>
+                                              <button
+                                                onClick={handleCancelEdit}
+                                                className="rounded-lg bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 px-3 py-2 text-sm"
+                                                title="Cancel"
+                                              >
+                                                <X className="w-4 h-4" />
+                                              </button>
+                                            </>
+                                          )}
+                                        </div>
+
+                                        {/* Auto-save for radio buttons */}
+                                        {(question.input_type === 'yes_no' || question.input_type === 'over_under') && editedAnswer && (
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={() => handleSaveQuestion(question)}
+                                              disabled={updateQuestionMutation.isPending}
+                                              className="rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 px-3 py-1.5 text-xs flex items-center gap-1"
+                                            >
+                                              <Save className="w-3 h-3" />
+                                              Save
+                                            </button>
+                                            <button
+                                              onClick={handleCancelEdit}
+                                              className="rounded-lg bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 px-3 py-1.5 text-xs flex items-center gap-1"
+                                            >
+                                              <X className="w-3 h-3" />
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        )}
                                       </div>
                                     ) : (
                                       <div className="flex items-center gap-2">
@@ -643,6 +763,18 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                                           <span className={`text-sm ${question.has_correct_answer ? 'text-emerald-300' : 'text-slate-400'}`}>
                                             {question.correct_answer || '(not set)'}
                                           </span>
+                                          {/* Show line for over/under */}
+                                          {question.input_type === 'over_under' && question.line && (
+                                            <span className="text-xs text-slate-500 ml-2">
+                                              (Line: {question.line})
+                                            </span>
+                                          )}
+                                          {/* Show related player */}
+                                          {question.related_player_name && (
+                                            <span className="text-xs text-slate-500 ml-2">
+                                              ({question.related_player_name})
+                                            </span>
+                                          )}
                                         </div>
                                         <button
                                           onClick={() => handleEditQuestion(question)}
