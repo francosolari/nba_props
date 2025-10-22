@@ -624,7 +624,6 @@ useEffect(() => {
                 ))}
               </select>
             )}
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Season {seasonInfo?.year || selectedSeason.replace('-', '–')}</div>
           </div>
         </div>
 
@@ -644,13 +643,15 @@ useEffect(() => {
                 {sections.map((s) => {
                   const Icon = iconFor(s);
                   const label = fromSectionKey(s);
+                  const shortLabel = s === 'standings' ? 'Standings' : s === 'awards' ? 'Awards' : 'Props';
                   return (
                     <button
                       key={s}
                       onClick={() => setSection(s)}
                       className={`relative z-10 flex-1 basis-0 text-center px-2 py-1.5 text-[10px] md:text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors duration-200 ${section===s? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
                       <Icon className="w-3 h-3 md:w-3.5 md:h-3.5 shrink-0" />
-                      <span className="truncate">{label}</span>
+                      <span className="truncate md:hidden">{shortLabel}</span>
+                      <span className="truncate hidden md:inline">{label}</span>
                     </button>
                   );
                 })}
@@ -677,8 +678,12 @@ useEffect(() => {
               <option value="name">Name</option>
             </select>
             {mode==='compare' && (
-              <button onClick={()=>setShowAll(v=>!v)} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all whitespace-nowrap">
-                {showAll ? (<><Minimize2 className="w-3.5 h-3.5" /> Collapse</>) : (<><Expand className="w-3.5 h-3.5" /> All</>)}
+              <button onClick={()=> {
+                const allIds = (withSimTotals||[]).map(e => String(e.user.id));
+                setSelectedUserIds(allIds);
+                setShowAll(true);
+              }} className="hidden md:inline-flex text-xs font-semibold items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all whitespace-nowrap">
+                <Expand className="w-3.5 h-3.5" /> All
               </button>
             )}
             <label className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-all whitespace-nowrap ${section==='standings' ? (whatIfEnabled ? 'bg-slate-900 text-white border-slate-900 shadow-sm dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200' : 'bg-white text-slate-700 border-slate-200/60 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/50') : 'bg-slate-100 text-slate-400 border-slate-200/60 cursor-not-allowed dark:bg-slate-800/50 dark:text-slate-500 dark:border-slate-700/50'}`} title={section==='standings' ? 'Simulate by dragging rows in the grid' : 'What‑If available in Regular Season Standings tab'}>
@@ -863,8 +868,12 @@ useEffect(() => {
                   </span>
                 )}
                 <button onClick={()=> setShowManagePlayers(true)} className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">Manage</button>
-                <button onClick={()=>setShowAll(v=>!v)} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
-                  {showAll ? (<><Minimize2 className="w-3.5 h-3.5" /> Collapse</>) : (<><Expand className="w-3.5 h-3.5" /> All</>)}
+                <button onClick={()=> {
+                  const allIds = (withSimTotals||[]).map(e => String(e.user.id));
+                  setSelectedUserIds(allIds);
+                  setShowAll(true);
+                }} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
+                  <Expand className="w-3.5 h-3.5" /> All
                 </button>
               </div>
             </div>
@@ -1078,6 +1087,21 @@ useEffect(() => {
               </table>
             </div>
 
+            {/* Mobile Points Key */}
+            <div className="md:hidden px-3 py-2 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3 text-[10px]">
+                <span className="text-slate-600 dark:text-slate-400 font-medium">Points:</span>
+                <div className="flex items-center gap-1">
+                  <span className="inline-block w-4 h-4 rounded bg-emerald-100 dark:bg-emerald-500/30 border border-emerald-200 dark:border-emerald-600/30"></span>
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">3</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="inline-block w-4 h-4 rounded bg-amber-100 dark:bg-amber-500/30 border border-amber-200 dark:border-amber-600/30"></span>
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">1</span>
+                </div>
+              </div>
+            </div>
+
             {/* Mobile Grid - Users as rows, Teams as columns */}
             <div className="md:hidden max-h-[60vh] overflow-y-auto">
               {/* West Conference */}
@@ -1100,7 +1124,7 @@ useEffect(() => {
                           <thead className="bg-slate-50/95 dark:bg-slate-800/95">
                             <tr>
                               <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]">User</th>
-                              <th className="px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
+                              <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
                               {westTeams.map((row, idx) => (
                                 <th key={`mobile-west-h-${row.team}`} className="px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
                                   <div className="flex flex-col items-center gap-0.5">
@@ -1142,7 +1166,7 @@ useEffect(() => {
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]">
+                                  <td className="sticky left-[80px] z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]">
                                     {standPts}
                                   </td>
                                   {westTeams.map(row => {
@@ -1191,7 +1215,7 @@ useEffect(() => {
                           <thead className="bg-slate-50/95 dark:bg-slate-800/95">
                             <tr>
                               <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]">User</th>
-                              <th className="px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
+                              <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
                               {eastTeams.map((row, idx) => (
                                 <th key={`mobile-east-h-${row.team}`} className="px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
                                   <div className="flex flex-col items-center gap-0.5">
@@ -1233,7 +1257,7 @@ useEffect(() => {
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]">
+                                  <td className="sticky left-[80px] z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]">
                                     {standPts}
                                   </td>
                                   {eastTeams.map(row => {
@@ -1340,8 +1364,12 @@ useEffect(() => {
                   </span>
                 )}
                 <button onClick={()=> setShowManagePlayers(true)} className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">Manage</button>
-                <button onClick={()=>setShowAll(v=>!v)} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
-                  {showAll ? (<><Minimize2 className="w-3.5 h-3.5" /> Collapse</>) : (<><Expand className="w-3.5 h-3.5" /> All</>)}
+                <button onClick={()=> {
+                  const allIds = (withSimTotals||[]).map(e => String(e.user.id));
+                  setSelectedUserIds(allIds);
+                  setShowAll(true);
+                }} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
+                  <Expand className="w-3.5 h-3.5" /> All
                 </button>
               </div>
             </div>
@@ -1475,7 +1503,7 @@ useEffect(() => {
                     <thead className="bg-slate-50/95 dark:bg-slate-800/95 sticky top-0 z-10">
                       <tr>
                         <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 min-w-[80px]">User</th>
-                        <th className="px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 min-w-[32px]">Pts</th>
+                        <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 min-w-[32px]">Pts</th>
                         {questions.map((q, idx) => (
                           <th key={`mobile-q-h-${q.id}`} className="px-2 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 min-w-[100px] max-w-[120px]">
                             <div className="flex flex-col items-center gap-1">
@@ -1509,7 +1537,7 @@ useEffect(() => {
                                 </span>
                               </div>
                             </td>
-                            <td className="px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50">
+                            <td className="sticky left-[80px] z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50">
                               {catPts}
                             </td>
                             {questions.map(q => {
