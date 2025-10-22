@@ -628,7 +628,7 @@ useEffect(() => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-2 shrink-0">
           {/* Segmented control for sections with sliding highlight */}
           {(() => {
             const sections = ['standings','awards','props'];
@@ -636,52 +636,56 @@ useEffect(() => {
             const iconFor = (s) => (s==='standings'? Trophy : (s==='awards'? Award : Target));
             const segWidth = `${100/sections.length}%`;
             return (
-              <div className="relative flex overflow-hidden rounded-lg border border-slate-200/60 dark:border-slate-700/50 bg-slate-100/80 dark:bg-slate-800/60">
+              <div className="relative flex overflow-hidden rounded-lg border border-slate-200/60 dark:border-slate-700/50 bg-slate-100/80 dark:bg-slate-800/60 w-full md:w-auto">
                 <div
                   className="absolute top-0 bottom-0 left-0 rounded-md bg-white dark:bg-slate-700 shadow-sm transition-transform duration-200 will-change-transform"
                   style={{ width: segWidth, transform: `translateX(${activeIdx * 100}%)` }}
                 />
                 {sections.map((s) => {
                   const Icon = iconFor(s);
+                  const label = fromSectionKey(s);
                   return (
                     <button
                       key={s}
                       onClick={() => setSection(s)}
-                      className={`relative z-10 flex-1 basis-0 text-center px-2.5 py-1.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors duration-200 ${section===s? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
-                      <Icon className="w-3.5 h-3.5" /> {fromSectionKey(s)}
+                      className={`relative z-10 flex-1 basis-0 text-center px-2 py-1.5 text-[10px] md:text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors duration-200 ${section===s? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                      <Icon className="w-3 h-3 md:w-3.5 md:h-3.5 shrink-0" />
+                      <span className="truncate">{label}</span>
                     </button>
                   );
                 })}
               </div>
             );
           })()}
-          <div className="h-5 w-px bg-slate-300 dark:bg-slate-700 mx-0.5" />
+          <div className="hidden md:block h-5 w-px bg-slate-300 dark:bg-slate-700 mx-0.5" />
+          <div className="flex items-center gap-2 w-full md:w-auto">
           {['showcase','compare'].map(m => (
             <button key={m} onClick={() => setMode(m)}
-              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${mode===m? 'bg-emerald-600 text-white border-emerald-600 shadow-sm dark:bg-emerald-500 dark:border-emerald-500':'bg-white text-slate-700 border-slate-200/60 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/50 dark:hover:bg-slate-700'}`}>
+              className={`flex-1 md:flex-initial px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${mode===m? 'bg-emerald-600 text-white border-emerald-600 shadow-sm dark:bg-emerald-500 dark:border-emerald-500':'bg-white text-slate-700 border-slate-200/60 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/50 dark:hover:bg-slate-700'}`}>
               {m === 'showcase' ? 'Showcase' : 'Compare'}
             </button>
           ))}
-          <div className="ml-auto flex items-center gap-2">
-            <div className="relative">
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto md:ml-auto flex-wrap">
+            <div className="relative flex-1 md:flex-initial">
               <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2 top-1/2 -translate-y-1/2" />
-              <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search" className="pl-7 pr-2 py-1.5 rounded-lg border border-slate-200/60 bg-white text-xs dark:bg-slate-800 dark:border-slate-700/50 dark:text-slate-300 dark:placeholder-slate-500 transition-colors w-32 focus:w-48 focus:ring-2 focus:ring-teal-500/20" />
+              <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search" className="w-full pl-7 pr-2 py-1.5 rounded-lg border border-slate-200/60 bg-white text-xs dark:bg-slate-800 dark:border-slate-700/50 dark:text-slate-300 dark:placeholder-slate-500 transition-colors md:w-32 focus:ring-2 focus:ring-teal-500/20" />
             </div>
-            <select className="text-xs font-medium border border-slate-200/60 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-800 dark:border-slate-700/50 dark:text-slate-300 transition-colors" value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
+            <select className="text-xs font-medium border border-slate-200/60 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-800 dark:border-slate-700/50 dark:text-slate-300 transition-colors flex-1 md:flex-initial" value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
               <option value="standings">Standings pts</option>
               <option value="total">Total pts</option>
               <option value="name">Name</option>
             </select>
             {mode==='compare' && (
-              <button onClick={()=>setShowAll(v=>!v)} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
+              <button onClick={()=>setShowAll(v=>!v)} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all whitespace-nowrap">
                 {showAll ? (<><Minimize2 className="w-3.5 h-3.5" /> Collapse</>) : (<><Expand className="w-3.5 h-3.5" /> All</>)}
               </button>
             )}
-            <label className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-all ${section==='standings' ? (whatIfEnabled ? 'bg-slate-900 text-white border-slate-900 shadow-sm dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200' : 'bg-white text-slate-700 border-slate-200/60 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/50') : 'bg-slate-100 text-slate-400 border-slate-200/60 cursor-not-allowed dark:bg-slate-800/50 dark:text-slate-500 dark:border-slate-700/50'}`} title={section==='standings' ? 'Simulate by dragging rows in the grid' : 'What‑If available in Regular Season Standings tab'}>
+            <label className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-all whitespace-nowrap ${section==='standings' ? (whatIfEnabled ? 'bg-slate-900 text-white border-slate-900 shadow-sm dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200' : 'bg-white text-slate-700 border-slate-200/60 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/50') : 'bg-slate-100 text-slate-400 border-slate-200/60 cursor-not-allowed dark:bg-slate-800/50 dark:text-slate-500 dark:border-slate-700/50'}`} title={section==='standings' ? 'Simulate by dragging rows in the grid' : 'What‑If available in Regular Season Standings tab'}>
               <input type="checkbox" className="accent-slate-700 w-3 h-3" checked={whatIfEnabled && section==='standings'} onChange={(e)=> setWhatIfEnabled(e.target.checked)} disabled={section!=='standings'} /> What‑If
             </label>
             {section==='standings' && whatIfEnabled && (
-              <button className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all" onClick={()=>{ setWhatIfEnabled(false); setWestOrder([]); setEastOrder([]); }} title="Reset to actual">
+              <button className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all whitespace-nowrap" onClick={()=>{ setWhatIfEnabled(false); setWestOrder([]); setEastOrder([]); }} title="Reset to actual">
                 Reset
               </button>
             )}
@@ -689,7 +693,7 @@ useEffect(() => {
         </div>
         {/* Showcase mode */}
         {mode === 'showcase' && (
-          <div className="rounded-xl border border-slate-200/60 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/80 shadow-lg overflow-hidden transition-shadow hover:shadow-xl">
+          <div className="rounded-xl border border-slate-200/60 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/80 shadow-lg overflow-hidden transition-shadow hover:shadow-xl flex flex-col md:block flex-1 md:flex-initial overflow-y-auto md:overflow-visible">
             {/* Hero */}
             <div className="px-4 py-4 bg-gradient-to-r from-emerald-50/60 to-sky-50/60 dark:from-emerald-900/10 dark:to-sky-900/10 border-b border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -830,7 +834,7 @@ useEffect(() => {
         {/* Compare mode */}
         {mode === 'compare' && section === 'standings' && (
                   <div className="rounded-xl border border-slate-200/60 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/80 shadow-lg transition-shadow hover:shadow-xl">
-            <div className="px-3 py-3 md:px-4 md:py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="px-3 py-3 md:px-4 md:py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-2 text-slate-900 dark:text-white">
                 <Grid className="w-4 h-4" />
                 <div className="text-sm font-bold">Regular Season Standings</div>
@@ -1075,7 +1079,7 @@ useEffect(() => {
             </div>
 
             {/* Mobile Grid - Users as rows, Teams as columns */}
-            <div className="md:hidden">
+            <div className="md:hidden max-h-[60vh] overflow-y-auto">
               {/* West Conference */}
               {(() => {
                 const westTeams = westOrder.length
@@ -1084,7 +1088,7 @@ useEffect(() => {
 
                 return (
                   <div className="border-t border-slate-200 dark:border-slate-700">
-                    <div className="sticky top-0 z-10 bg-rose-50/95 dark:bg-rose-400/15 backdrop-blur-sm px-3 py-2.5 border-b border-slate-200 dark:border-slate-700">
+                    <div className="sticky top-0 z-10 bg-rose-50/95 dark:bg-rose-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
                       <button onClick={() => setCollapsedWest(v => !v)} className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 font-semibold">
                         <span className={`inline-block transition-transform duration-200 ${collapsedWest ? '-rotate-90' : 'rotate-0'}`}>▾</span>
                         Western Conference
@@ -1092,13 +1096,13 @@ useEffect(() => {
                     </div>
                     {!collapsedWest && (
                       <div className="overflow-x-auto">
-                        <table className="min-w-full">
-                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 sticky top-11 z-10">
+                        <table className="w-full">
+                          <thead className="bg-slate-50/95 dark:bg-slate-800/95">
                             <tr>
-                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 min-w-[80px]">User</th>
-                              <th className="px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 min-w-[32px]">Pts</th>
+                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]">User</th>
+                              <th className="px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
                               {westTeams.map((row, idx) => (
-                                <th key={`mobile-west-h-${row.team}`} className="px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 min-w-[48px]">
+                                <th key={`mobile-west-h-${row.team}`} className="px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <img
                                       src={`/static/img/teams/${teamSlug(row.team)}.png`}
@@ -1128,8 +1132,8 @@ useEffect(() => {
                               const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
                               return (
                                 <tr key={`mobile-west-u-${e.user.id}`} className={userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40'}>
-                                  <td className="sticky left-0 z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50">
-                                    <div className="flex items-center gap-1.5 min-w-[80px]">
+                                  <td className="sticky left-0 z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]">
+                                    <div className="flex items-center gap-1.5">
                                       <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-600 dark:text-slate-300 shrink-0">
                                         {(e.user.display_name || e.user.username).slice(0, 2).toUpperCase()}
                                       </div>
@@ -1138,7 +1142,7 @@ useEffect(() => {
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50">
+                                  <td className="px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]">
                                     {standPts}
                                   </td>
                                   {westTeams.map(row => {
@@ -1175,7 +1179,7 @@ useEffect(() => {
 
                 return (
                   <div className="border-t border-slate-200 dark:border-slate-700">
-                    <div className="sticky top-0 z-10 bg-sky-50/95 dark:bg-sky-400/15 backdrop-blur-sm px-3 py-2.5 border-b border-slate-200 dark:border-slate-700">
+                    <div className="sticky top-0 z-10 bg-sky-50/95 dark:bg-sky-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
                       <button onClick={() => setCollapsedEast(v => !v)} className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 font-semibold">
                         <span className={`inline-block transition-transform duration-200 ${collapsedEast ? '-rotate-90' : 'rotate-0'}`}>▾</span>
                         Eastern Conference
@@ -1183,13 +1187,13 @@ useEffect(() => {
                     </div>
                     {!collapsedEast && (
                       <div className="overflow-x-auto">
-                        <table className="min-w-full">
-                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 sticky top-11 z-10">
+                        <table className="w-full">
+                          <thead className="bg-slate-50/95 dark:bg-slate-800/95">
                             <tr>
-                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 min-w-[80px]">User</th>
-                              <th className="px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 min-w-[32px]">Pts</th>
+                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]">User</th>
+                              <th className="px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
                               {eastTeams.map((row, idx) => (
-                                <th key={`mobile-east-h-${row.team}`} className="px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 min-w-[48px]">
+                                <th key={`mobile-east-h-${row.team}`} className="px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <img
                                       src={`/static/img/teams/${teamSlug(row.team)}.png`}
@@ -1219,8 +1223,8 @@ useEffect(() => {
                               const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
                               return (
                                 <tr key={`mobile-east-u-${e.user.id}`} className={userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40'}>
-                                  <td className="sticky left-0 z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50">
-                                    <div className="flex items-center gap-1.5 min-w-[80px]">
+                                  <td className="sticky left-0 z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]">
+                                    <div className="flex items-center gap-1.5">
                                       <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-600 dark:text-slate-300 shrink-0">
                                         {(e.user.display_name || e.user.username).slice(0, 2).toUpperCase()}
                                       </div>
@@ -1229,7 +1233,7 @@ useEffect(() => {
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50">
+                                  <td className="px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]">
                                     {standPts}
                                   </td>
                                   {eastTeams.map(row => {
@@ -1307,7 +1311,7 @@ useEffect(() => {
 
         {mode === 'compare' && section !== 'standings' && (
           <div className="rounded-xl border border-slate-200/60 dark:border-slate-700/50 bg-white/90 dark:bg-slate-800/80 shadow-lg transition-shadow hover:shadow-xl">
-            <div className="px-3 py-3 md:px-4 md:py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="px-3 py-3 md:px-4 md:py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-2 text-slate-900 dark:text-white">
                 <Grid className="w-4 h-4" />
                 <div className="text-sm font-bold">{fromSectionKey(section)}</div>
@@ -1452,7 +1456,8 @@ useEffect(() => {
             </div>
 
             {/* Mobile Grid - Users as rows, Questions as columns */}
-            <div className="md:hidden overflow-x-auto">
+            <div className="md:hidden max-h-[60vh] overflow-y-auto">
+              <div className="overflow-x-auto overflow-y-visible">
               {(() => {
                 const catKey = fromSectionKey(section);
                 const qMap = new Map();
@@ -1539,6 +1544,7 @@ useEffect(() => {
                   </table>
                 );
               })()}
+              </div>
             </div>
           </div>
         )}
