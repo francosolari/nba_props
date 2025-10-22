@@ -1103,7 +1103,7 @@ useEffect(() => {
             </div>
 
             {/* Mobile Grid - Users as rows, Teams as columns */}
-            <div className="md:hidden max-h-[60vh] overflow-y-auto">
+            <div className="md:hidden max-h-[60vh] overflow-y-auto no-scrollbar">
               {/* West Conference */}
               {(() => {
                 const westTeams = westOrder.length
@@ -1112,21 +1112,21 @@ useEffect(() => {
 
                 return (
                   <div className="border-t border-slate-200 dark:border-slate-700">
-                    <div className="sticky top-0 z-10 bg-rose-50/95 dark:bg-rose-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+                    <div className="sticky top-0 z-20 bg-rose-50/95 dark:bg-rose-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
                       <button onClick={() => setCollapsedWest(v => !v)} className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 font-semibold">
                         <span className={`inline-block transition-transform duration-200 ${collapsedWest ? '-rotate-90' : 'rotate-0'}`}>▾</span>
                         Western Conference
                       </button>
                     </div>
                     {!collapsedWest && (
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto no-scrollbar">
                         <table className="w-full">
-                          <thead className="bg-slate-50/95 dark:bg-slate-800/95">
+                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky top-[44px] z-10">
                             <tr>
                               <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]">User</th>
                               <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
                               {westTeams.map((row, idx) => (
-                                <th key={`mobile-west-h-${row.team}`} className="px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
+                                <th key={`mobile-west-h-${row.team}`} className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <img
                                       src={`/static/img/teams/${teamSlug(row.team)}.png`}
@@ -1154,9 +1154,11 @@ useEffect(() => {
                             {displayedUsers.map((e, userIdx) => {
                               const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
                               const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
+                              const rowBg = userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40';
+                              const stickyBg = userIdx % 2 === 0 ? 'bg-white/95 dark:bg-slate-800/95' : 'bg-white/95 dark:bg-slate-800/95';
                               return (
-                                <tr key={`mobile-west-u-${e.user.id}`} className={userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40'}>
-                                  <td className="sticky left-0 z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]">
+                                <tr key={`mobile-west-u-${e.user.id}`} className={rowBg}>
+                                  <td className={`sticky left-0 z-10 ${stickyBg} backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]`}>
                                     <div className="flex items-center gap-1.5">
                                       <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-600 dark:text-slate-300 shrink-0">
                                         {(e.user.display_name || e.user.username).slice(0, 2).toUpperCase()}
@@ -1166,7 +1168,7 @@ useEffect(() => {
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="sticky left-[80px] z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]">
+                                  <td className={`sticky left-[80px] z-10 ${stickyBg} backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]`}>
                                     {standPts}
                                   </td>
                                   {westTeams.map(row => {
@@ -1203,21 +1205,21 @@ useEffect(() => {
 
                 return (
                   <div className="border-t border-slate-200 dark:border-slate-700">
-                    <div className="sticky top-0 z-10 bg-sky-50/95 dark:bg-sky-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+                    <div className="sticky top-0 z-20 bg-sky-50/95 dark:bg-sky-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
                       <button onClick={() => setCollapsedEast(v => !v)} className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 font-semibold">
                         <span className={`inline-block transition-transform duration-200 ${collapsedEast ? '-rotate-90' : 'rotate-0'}`}>▾</span>
                         Eastern Conference
                       </button>
                     </div>
                     {!collapsedEast && (
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto no-scrollbar">
                         <table className="w-full">
-                          <thead className="bg-slate-50/95 dark:bg-slate-800/95">
+                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky top-[44px] z-10">
                             <tr>
                               <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]">User</th>
                               <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
                               {eastTeams.map((row, idx) => (
-                                <th key={`mobile-east-h-${row.team}`} className="px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
+                                <th key={`mobile-east-h-${row.team}`} className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <img
                                       src={`/static/img/teams/${teamSlug(row.team)}.png`}
@@ -1245,9 +1247,11 @@ useEffect(() => {
                             {displayedUsers.map((e, userIdx) => {
                               const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
                               const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
+                              const rowBg = userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40';
+                              const stickyBg = userIdx % 2 === 0 ? 'bg-white/95 dark:bg-slate-800/95' : 'bg-white/95 dark:bg-slate-800/95';
                               return (
-                                <tr key={`mobile-east-u-${e.user.id}`} className={userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40'}>
-                                  <td className="sticky left-0 z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]">
+                                <tr key={`mobile-east-u-${e.user.id}`} className={rowBg}>
+                                  <td className={`sticky left-0 z-10 ${stickyBg} backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]`}>
                                     <div className="flex items-center gap-1.5">
                                       <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-600 dark:text-slate-300 shrink-0">
                                         {(e.user.display_name || e.user.username).slice(0, 2).toUpperCase()}
@@ -1257,7 +1261,7 @@ useEffect(() => {
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="sticky left-[80px] z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]">
+                                  <td className={`sticky left-[80px] z-10 ${stickyBg} backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]`}>
                                     {standPts}
                                   </td>
                                   {eastTeams.map(row => {
@@ -1484,8 +1488,8 @@ useEffect(() => {
             </div>
 
             {/* Mobile Grid - Users as rows, Questions as columns */}
-            <div className="md:hidden max-h-[60vh] overflow-y-auto">
-              <div className="overflow-x-auto overflow-y-visible">
+            <div className="md:hidden max-h-[60vh] overflow-auto no-scrollbar">
+              <div className="min-w-full">
               {(() => {
                 const catKey = fromSectionKey(section);
                 const qMap = new Map();
@@ -1500,12 +1504,12 @@ useEffect(() => {
 
                 return (
                   <table className="min-w-full border-t border-slate-200 dark:border-slate-700">
-                    <thead className="bg-slate-50/95 dark:bg-slate-800/95 sticky top-0 z-10">
+                    <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky top-0 z-20">
                       <tr>
                         <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 min-w-[80px]">User</th>
                         <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 min-w-[32px]">Pts</th>
                         {questions.map((q, idx) => (
-                          <th key={`mobile-q-h-${q.id}`} className="px-2 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 min-w-[100px] max-w-[120px]">
+                          <th key={`mobile-q-h-${q.id}`} className="bg-slate-50/95 dark:bg-slate-800/95 px-2 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 min-w-[100px] max-w-[120px]">
                             <div className="flex flex-col items-center gap-1">
                               <span className="inline-flex items-center justify-center w-5 h-5 text-[9px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
                                 {idx + 1}
