@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import useLeaderboard from '../hooks/useLeaderboard';
@@ -44,6 +44,28 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const [pinPulseId, setPinPulseId] = useState(null);
   const [showManagePlayers, setShowManagePlayers] = useState(false);
   const [manageQuery, setManageQuery] = useState('');
+  const westHeaderRef = useRef(null);
+  const eastHeaderRef = useRef(null);
+  const [mobileStickyOffset, setMobileStickyOffset] = useState(0);
+  const updateMobileStickyOffset = useCallback(() => {
+    const westHeight = westHeaderRef.current?.getBoundingClientRect().height || 0;
+    const eastHeight = eastHeaderRef.current?.getBoundingClientRect().height || 0;
+    const next = Math.max(westHeight, eastHeight);
+    setMobileStickyOffset(prev => (Math.abs(prev - next) > 0.5 ? next : prev));
+  }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    updateMobileStickyOffset();
+    const handleResize = () => updateMobileStickyOffset();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [updateMobileStickyOffset]);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const rafId = window.requestAnimationFrame(updateMobileStickyOffset);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [collapsedWest, collapsedEast, updateMobileStickyOffset]);
+  const mobileHeaderStickyStyle = useMemo(() => ({ top: mobileStickyOffset }), [mobileStickyOffset]);
   
 
   const usersMap = useMemo(() => {
@@ -1112,7 +1134,7 @@ useEffect(() => {
 
                 return (
                   <div className="border-t border-slate-200 dark:border-slate-700">
-                    <div className="sticky top-0 z-20 bg-rose-50/95 dark:bg-rose-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+                    <div ref={westHeaderRef} className="sticky top-0 z-20 bg-rose-50/95 dark:bg-rose-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
                       <button onClick={() => setCollapsedWest(v => !v)} className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 font-semibold">
                         <span className={`inline-block transition-transform duration-200 ${collapsedWest ? '-rotate-90' : 'rotate-0'}`}>▾</span>
                         Western Conference
@@ -1120,13 +1142,13 @@ useEffect(() => {
                     </div>
                     {!collapsedWest && (
                       <div className="overflow-x-auto no-scrollbar">
-                        <table className="w-full">
-                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky top-[44px] z-10">
+                        <table className="w-full border-collapse">
+                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky z-10" style={mobileHeaderStickyStyle}>
                             <tr>
-                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]">User</th>
-                              <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
+                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]" style={mobileHeaderStickyStyle}>User</th>
+                              <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]" style={mobileHeaderStickyStyle}>Pts</th>
                               {westTeams.map((row, idx) => (
-                                <th key={`mobile-west-h-${row.team}`} className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
+                                <th key={`mobile-west-h-${row.team}`} className="sticky bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]" style={mobileHeaderStickyStyle}>
                                   <div className="flex flex-col items-center gap-0.5">
                                     <img
                                       src={`/static/img/teams/${teamSlug(row.team)}.png`}
@@ -1205,7 +1227,7 @@ useEffect(() => {
 
                 return (
                   <div className="border-t border-slate-200 dark:border-slate-700">
-                    <div className="sticky top-0 z-20 bg-sky-50/95 dark:bg-sky-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+                    <div ref={eastHeaderRef} className="sticky top-0 z-20 bg-sky-50/95 dark:bg-sky-400/15 backdrop-blur-sm px-3 py-2 border-b border-slate-200 dark:border-slate-700">
                       <button onClick={() => setCollapsedEast(v => !v)} className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-700 dark:text-slate-300 font-semibold">
                         <span className={`inline-block transition-transform duration-200 ${collapsedEast ? '-rotate-90' : 'rotate-0'}`}>▾</span>
                         Eastern Conference
@@ -1213,13 +1235,13 @@ useEffect(() => {
                     </div>
                     {!collapsedEast && (
                       <div className="overflow-x-auto no-scrollbar">
-                        <table className="w-full">
-                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky top-[44px] z-10">
+                        <table className="w-full border-collapse">
+                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky z-10" style={mobileHeaderStickyStyle}>
                             <tr>
-                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]">User</th>
-                              <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]">Pts</th>
+                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]" style={mobileHeaderStickyStyle}>User</th>
+                              <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]" style={mobileHeaderStickyStyle}>Pts</th>
                               {eastTeams.map((row, idx) => (
-                                <th key={`mobile-east-h-${row.team}`} className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]">
+                                <th key={`mobile-east-h-${row.team}`} className="sticky bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]" style={mobileHeaderStickyStyle}>
                                   <div className="flex flex-col items-center gap-0.5">
                                     <img
                                       src={`/static/img/teams/${teamSlug(row.team)}.png`}
