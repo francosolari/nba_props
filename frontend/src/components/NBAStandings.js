@@ -9,11 +9,12 @@ import axios from 'axios';
  *
  * Props:
  * - seasonSlug (string): Optional. The slug for the NBA season (e.g., '2024-25'). Defaults to current season.
+ * - theme (string): Optional. 'light' or 'dark'. Defaults to 'light'.
  *
  * Usage:
- * <NBAStandings seasonSlug="2024-25" />
+ * <NBAStandings seasonSlug="2024-25" theme="dark" />
  */
-const NBAStandings = memo(({ seasonSlug }) => {
+const NBAStandings = memo(({ seasonSlug, theme = 'light' }) => {
   // State to hold standings data
   const [eastStandings, setEastStandings] = useState([]);
   const [westStandings, setWestStandings] = useState([]);
@@ -118,13 +119,19 @@ const NBAStandings = memo(({ seasonSlug }) => {
 
     switch (status) {
       case 'Playoffs':
-        statusColor = 'bg-green-100 text-green-800';
+        statusColor = theme === 'dark'
+          ? 'bg-green-500/20 text-green-300'
+          : 'bg-green-100 text-green-800';
         break;
       case 'Play-In':
-        statusColor = 'bg-yellow-100 text-yellow-800';
+        statusColor = theme === 'dark'
+          ? 'bg-yellow-500/20 text-yellow-300'
+          : 'bg-yellow-100 text-yellow-800';
         break;
       default:
-        statusColor = 'bg-red-100 text-red-800';
+        statusColor = theme === 'dark'
+          ? 'bg-red-500/20 text-red-300'
+          : 'bg-red-100 text-red-800';
     }
 
     // Handle undefined win_percentage with logging
@@ -143,7 +150,12 @@ const NBAStandings = memo(({ seasonSlug }) => {
         : 'N/A';
 
     return (
-      <tr key={team.id} className="hover:bg-gray-100 transition-colors duration-150">
+      <tr
+        key={team.id}
+        className={`transition-colors duration-150 ${
+          theme === 'dark' ? 'hover:bg-slate-800/50' : 'hover:bg-gray-100'
+        }`}
+      >
         <td className="px-1 py-0.5 text-center text-xs w-6">{index + 1}</td>
         <td className="px-1 py-0.5 text-left text-xs w-32">
           <div className="flex items-center">
@@ -175,8 +187,12 @@ const NBAStandings = memo(({ seasonSlug }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-4">
-        <div className="loader ease-linear rounded-full border-2 border-t-2 border-gray-200 h-4 w-4"></div>
-        <span className="ml-1 text-gray-600 text-xs">Loading...</span>
+        <div className={`loader ease-linear rounded-full border-2 border-t-2 h-4 w-4 ${
+          theme === 'dark' ? 'border-slate-600 border-t-blue-400' : 'border-gray-200 border-t-blue-500'
+        }`}></div>
+        <span className={`ml-1 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+          Loading...
+        </span>
       </div>
     );
   }
@@ -185,7 +201,9 @@ const NBAStandings = memo(({ seasonSlug }) => {
   if (error) {
     return (
       <div className="flex justify-center items-center py-4">
-        <span className="text-red-500 text-xs">{error}</span>
+        <span className={`text-xs ${theme === 'dark' ? 'text-red-400' : 'text-red-500'}`}>
+          {error}
+        </span>
       </div>
     );
   }
@@ -195,13 +213,19 @@ const NBAStandings = memo(({ seasonSlug }) => {
     <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
       {/* Eastern Conference Standings */}
       <div className="w-full md:w-1/2">
-        <div className="bg-blue-50 rounded-md shadow-sm">
-          <div className="bg-blue-100 text-center text-xs font-semibold py-1">
+        <div className={`rounded-md shadow-sm ${
+          theme === 'dark' ? 'bg-blue-900/20 border border-blue-700/30' : 'bg-blue-50'
+        }`}>
+          <div className={`text-center text-xs font-semibold py-1 ${
+            theme === 'dark' ? 'bg-blue-800/40 text-blue-200' : 'bg-blue-100 text-blue-900'
+          }`}>
             Eastern Conference
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-xs">
-              <thead className="bg-gray-100">
+            <table className={`w-full table-fixed text-xs ${
+              theme === 'dark' ? 'text-slate-300' : 'text-slate-900'
+            }`}>
+              <thead className={theme === 'dark' ? 'bg-slate-800/50' : 'bg-gray-100'}>
                 <tr>
                   <th className="px-1 py-0.5 text-center w-6">#</th>
                   <th className="px-1 py-0.5 text-left w-32">Team</th>
@@ -212,7 +236,11 @@ const NBAStandings = memo(({ seasonSlug }) => {
                   <th className="px-1 py-0.5 text-center w-12">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className={`divide-y ${
+                theme === 'dark'
+                  ? 'bg-slate-900/40 divide-slate-700/40'
+                  : 'bg-white divide-gray-200'
+              }`}>
                 {eastStandings.map((team, index) => renderTeamRow(team, index, 'Eastern'))}
               </tbody>
             </table>
@@ -222,13 +250,19 @@ const NBAStandings = memo(({ seasonSlug }) => {
 
       {/* Western Conference Standings */}
       <div className="w-full md:w-1/2">
-        <div className="bg-red-50 rounded-md shadow-sm">
-          <div className="bg-red-100 text-center text-xs font-semibold py-1">
+        <div className={`rounded-md shadow-sm ${
+          theme === 'dark' ? 'bg-red-900/20 border border-red-700/30' : 'bg-red-50'
+        }`}>
+          <div className={`text-center text-xs font-semibold py-1 ${
+            theme === 'dark' ? 'bg-red-800/40 text-red-200' : 'bg-red-100 text-red-900'
+          }`}>
             Western Conference
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-xs">
-              <thead className="bg-gray-100">
+            <table className={`w-full table-fixed text-xs ${
+              theme === 'dark' ? 'text-slate-300' : 'text-slate-900'
+            }`}>
+              <thead className={theme === 'dark' ? 'bg-slate-800/50' : 'bg-gray-100'}>
                 <tr>
                   <th className="px-1 py-0.5 text-center w-6">#</th>
                   <th className="px-1 py-0.5 text-left w-32">Team</th>
@@ -239,7 +273,11 @@ const NBAStandings = memo(({ seasonSlug }) => {
                   <th className="px-1 py-0.5 text-center w-12">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className={`divide-y ${
+                theme === 'dark'
+                  ? 'bg-slate-900/40 divide-slate-700/40'
+                  : 'bg-white divide-gray-200'
+              }`}>
                 {westStandings.map((team, index) => renderTeamRow(team, index, 'Western'))}
               </tbody>
             </table>

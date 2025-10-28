@@ -4,6 +4,11 @@
 /frontend/node_modules/
 /frontend/staticfiles/
 
+# Webpack hot-update files (development only)
+*.hot-update.js
+*.hot-update.json
+/frontend/static/js/*.hot-update.*
+
 # Docker environment files (contain secrets)
 .env.dev.local
 .env.dev.prod-db

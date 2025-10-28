@@ -38,6 +38,35 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Project styles built via Webpack/Tailwind (overrides where needed) -->
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+
+    <!-- Development: Live Reload Script -->
+    {% if debug %}
+    <script>
+        // Live reload: poll for changes to bundle.js
+        (function() {
+            let lastModified = null;
+
+            function checkForUpdates() {
+                fetch('/static/js/bundle.js', { method: 'HEAD' })
+                    .then(response => {
+                        const modified = response.headers.get('Last-Modified');
+                        if (lastModified && modified && lastModified !== modified) {
+                            console.log('Changes detected - reloading...');
+                            window.location.reload();
+                        }
+                        lastModified = modified;
+                    })
+                    .catch(() => {
+                        // Silently fail if bundle doesn't exist yet
+                    });
+            }
+
+            // Check every 1 second
+            setInterval(checkForUpdates, 1000);
+            checkForUpdates();
+        })();
+    </script>
+    {% endif %}
 </head>
 <body>
     <!-- Global Site Layout (SideNav) -->

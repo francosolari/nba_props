@@ -1,8 +1,10 @@
 // File: frontend/src/pages/AdminGradingPanelNew.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { getCSRFToken } from '../utils/csrf';
+import { useToast } from '../components/Toast';
+import NBAStandings from '../components/NBAStandings';
 import {
   CheckCircle2,
   XCircle,
@@ -24,9 +26,17 @@ import {
   X
 } from 'lucide-react';
 
-const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
+const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
+  const toast = useToast();
   const [selectedSeason, setSelectedSeason] = useState(seasonSlug);
-  const [activeTab, setActiveTab] = useState('grading'); // 'grading' or 'audit'
+
+  // Initialize activeTab from URL parameters
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const subtabParam = params.get('subtab');
+    return ['grading', 'audit'].includes(subtabParam) ? subtabParam : 'grading';
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedUsers, setExpandedUsers] = useState(new Set());
   const [expandedCategories, setExpandedCategories] = useState(new Map());
@@ -35,8 +45,38 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
   const [bulkGradeMode, setBulkGradeMode] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [editedAnswer, setEditedAnswer] = useState('');
+  const [showStandings, setShowStandings] = useState(false);
 
   const queryClient = useQueryClient();
+
+  // Update URL when subtab changes
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('subtab', activeTab);
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', newUrl);
+  }, [activeTab]);
+
+  // Theme helper
+  const getThemeClasses = () => ({
+    card: theme === 'dark'
+      ? 'backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40'
+      : 'bg-white border border-slate-200 shadow-sm',
+    text: {
+      primary: theme === 'dark' ? 'text-slate-100' : 'text-slate-900',
+      secondary: theme === 'dark' ? 'text-slate-300' : 'text-slate-700',
+      muted: theme === 'dark' ? 'text-slate-400' : 'text-slate-500',
+    },
+    input: theme === 'dark'
+      ? 'rounded-xl border border-slate-700/40 bg-slate-900/70 text-slate-100 focus:ring-blue-500/60'
+      : 'rounded-xl border border-slate-300 bg-white text-slate-900 focus:ring-blue-500',
+    button: {
+      primary: 'bg-blue-500 text-white hover:bg-blue-600',
+      secondary: theme === 'dark'
+        ? 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/80'
+        : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+    },
+  });
 
   // Fetch questions for grading
   const { data: questionsData, isLoading: questionsLoading, error: questionsError, refetch: refetchQuestions } = useQuery({
@@ -160,10 +200,10 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
   const handleUpdateQuestion = async (questionId, correctAnswer, isFinalized = null) => {
     try {
       await updateQuestionMutation.mutateAsync({ questionId, correctAnswer, isFinalized });
-      alert('✓ Question updated successfully!\n\nRun grading to apply this answer to all user submissions.');
+      toast.success('Question updated successfully!\n\nRun grading to apply this answer to all user submissions.');
     } catch (error) {
       console.error('Error updating question:', error);
-      alert(`✗ Failed to update question: ${error.response?.data?.error || error.message}`);
+      toast.error(`Failed to update question: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -174,7 +214,7 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
 
   const handleSaveQuestion = async (question) => {
     if (!editedAnswer.trim()) {
-      alert('Please enter a correct answer');
+      toast.warning('Please enter a correct answer');
       return;
     }
     await handleUpdateQuestion(question.question_id, editedAnswer);
@@ -188,15 +228,16 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
   const handleGradeAnswer = async (answerId, isCorrect, pointsOverride = null, correctAnswer = null) => {
     try {
       await manualGradeMutation.mutateAsync({ answerId, isCorrect, pointsOverride, correctAnswer });
+      toast.success('Answer graded successfully');
     } catch (error) {
       console.error('Error grading answer:', error);
-      alert(`Failed to grade answer: ${error.response?.data?.error || error.message}`);
+      toast.error(`Failed to grade answer: ${error.response?.data?.error || error.message}`);
     }
   };
 
   const handleBulkGrade = async (isCorrect) => {
     if (selectedAnswers.size === 0) {
-      alert('No answers selected');
+      toast.warning('No answers selected');
       return;
     }
 
@@ -210,10 +251,10 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
           manualGradeMutation.mutateAsync({ answerId, isCorrect, pointsOverride: null, correctAnswer: null })
         )
       );
-      alert(`Successfully graded ${selectedAnswers.size} answers`);
+      toast.success(`Successfully graded ${selectedAnswers.size} answers`);
     } catch (error) {
       console.error('Error in bulk grading:', error);
-      alert(`Bulk grading failed: ${error.message}`);
+      toast.error(`Bulk grading failed: ${error.message}`);
     }
   };
 
@@ -238,11 +279,16 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
 
     try {
       const result = await runGradingMutation.mutateAsync({ command, seasonSlug: selectedSeason });
-      alert(`✓ Success!\n\n${result.message}`);
+      toast.success(`Success!\n\n${result.message}`, 7000);
+
+      // Show standings after successful update
+      if (command === 'update_season_standings') {
+        setShowStandings(true);
+      }
     } catch (error) {
       console.error('Error running grading command:', error);
       const errorMsg = error.response?.data?.error || error.message;
-      alert(`✗ Command Failed\n\n${errorMsg}\n\nTip: Make sure you're running this locally where NBA API is accessible.`);
+      toast.error(`Command Failed\n\n${errorMsg}\n\nTip: Make sure you're running this locally where NBA API is accessible.`, 10000);
     }
   };
 
@@ -295,16 +341,24 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
-        <div className="text-slate-300">Loading...</div>
+      <div className={`flex items-center justify-center min-h-screen transition-colors duration-300 ${
+        theme === 'dark'
+          ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-300'
+          : 'bg-gradient-to-br from-slate-100 via-white to-slate-100 text-slate-700'
+      }`}>
+        <div>Loading...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
-        <div className="text-rose-400">
+      <div className={`flex items-center justify-center min-h-screen transition-colors duration-300 ${
+        theme === 'dark'
+          ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-black'
+          : 'bg-gradient-to-br from-slate-100 via-white to-slate-100'
+      }`}>
+        <div className={theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}>
           <AlertCircle className="w-8 h-8 mx-auto mb-2" />
           Error loading data: {error.message}
         </div>
@@ -313,12 +367,16 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100'
+        : 'bg-gradient-to-br from-slate-100 via-white to-slate-100 text-slate-900'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Admin Grading Panel</h1>
-          <p className="text-slate-400">
+          <h1 className={`text-4xl font-bold mb-2 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>Admin Grading Panel</h1>
+          <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
             {activeTab === 'grading'
               ? 'Set correct answers for questions and run grading'
               : 'Review user submissions and manually grade answers'
@@ -333,7 +391,9 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
             className={`px-6 py-3 rounded-xl font-medium transition ${
               activeTab === 'grading'
                 ? 'bg-blue-500 text-white'
-                : 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/80'
+                : theme === 'dark'
+                  ? 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/80'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             📝 Question Grading
@@ -343,7 +403,9 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
             className={`px-6 py-3 rounded-xl font-medium transition ${
               activeTab === 'audit'
                 ? 'bg-blue-500 text-white'
-                : 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/80'
+                : theme === 'dark'
+                  ? 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/80'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             📊 Results Audit
@@ -351,15 +413,15 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
         </div>
 
         {/* Controls */}
-        <div className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-3xl p-6 mb-6">
+        <div className={`rounded-3xl p-6 mb-6 ${getThemeClasses().card}`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Season Selector */}
             <div>
-              <label className="block text-sm text-slate-400 mb-2">Season</label>
+              <label className={`block text-sm mb-2 ${getThemeClasses().text.muted}`}>Season</label>
               <select
                 value={selectedSeason}
                 onChange={(e) => setSelectedSeason(e.target.value)}
-                className="w-full rounded-xl border border-slate-700/40 bg-slate-900/70 px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                className={getThemeClasses().input}
               >
                 {seasonsData?.map(season => (
                   <option key={season.slug} value={season.slug}>{season.year}</option>
@@ -370,15 +432,15 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
             {/* Search (only for audit tab) */}
             {activeTab === 'audit' && (
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Search Users</label>
+                <label className={`block text-sm mb-2 ${getThemeClasses().text.muted}`}>Search Users</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${getThemeClasses().text.muted}`} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Username or name..."
-                    className="w-full rounded-xl border border-slate-700/40 bg-slate-900/70 pl-10 pr-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                    className={`${getThemeClasses().input} pl-10`}
                   />
                 </div>
               </div>
@@ -387,13 +449,13 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
             {/* Bulk Actions (only for audit tab) */}
             {activeTab === 'audit' && (
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Bulk Actions</label>
+                <label className={`block text-sm mb-2 ${getThemeClasses().text.muted}`}>Bulk Actions</label>
                 <button
                   onClick={() => setBulkGradeMode(!bulkGradeMode)}
                   className={`w-full rounded-xl px-4 py-2 text-sm font-medium transition ${
                     bulkGradeMode
                       ? 'bg-blue-500 text-white'
-                      : 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/80'
+                      : getThemeClasses().button.secondary
                   }`}
                 >
                   {bulkGradeMode ? 'Exit Bulk Mode' : 'Bulk Grade Mode'}
@@ -403,11 +465,11 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
 
             {/* Refresh */}
             <div>
-              <label className="block text-sm text-slate-400 mb-2">Actions</label>
+              <label className={`block text-sm mb-2 ${getThemeClasses().text.muted}`}>Actions</label>
               <button
                 onClick={() => activeTab === 'grading' ? refetchQuestions() : refetchAudit()}
                 disabled={isLoading}
-                className="w-full rounded-xl bg-slate-800/70 text-slate-300 hover:bg-slate-700/80 px-4 py-2 text-sm font-medium transition flex items-center justify-center gap-2"
+                className={`w-full rounded-xl px-4 py-2 text-sm font-medium transition flex items-center justify-center gap-2 ${getThemeClasses().button.secondary}`}
               >
                 <RefreshCw className="w-4 h-4" />
                 Refresh
@@ -417,7 +479,9 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
 
           {/* Bulk Grade Buttons (only for audit tab) */}
           {activeTab === 'audit' && bulkGradeMode && selectedAnswers.size > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-700/40 flex gap-3">
+            <div className={`mt-4 pt-4 flex gap-3 ${
+              theme === 'dark' ? 'border-t border-slate-700/40' : 'border-t border-slate-200'
+            }`}>
               <span className="text-sm text-slate-400">{selectedAnswers.size} selected</span>
               <button
                 onClick={() => handleBulkGrade(true)}
@@ -441,9 +505,11 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
           )}
 
           {/* Management Commands */}
-          <div className="mt-4 pt-4 border-t border-slate-700/40">
+          <div className={`mt-4 pt-4 ${
+            theme === 'dark' ? 'border-t border-slate-700/40' : 'border-t border-slate-200'
+          }`}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-slate-500">
+              <p className={`text-xs ${getThemeClasses().text.muted}`}>
                 <strong>Management Commands</strong> (LOCAL ONLY - will fail if NBA API blocked)
               </p>
               {runGradingMutation.isPending && (
@@ -456,20 +522,53 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
 
             {/* Data Update Commands */}
             <div className="mb-3">
-              <p className="text-xs text-slate-400 mb-2">Update Data:</p>
+              <p className={`text-xs mb-2 ${getThemeClasses().text.muted}`}>Update Data:</p>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => handleRunGradingCommand('update_season_standings')}
                   disabled={runGradingMutation.isPending}
-                  className="rounded-full bg-emerald-500/20 text-emerald-200 hover:bg-emerald-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+                    theme === 'dark'
+                      ? 'bg-emerald-500/20 text-emerald-200 hover:bg-emerald-400/20'
+                      : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-300'
+                  }`}
                   title="Fetch latest standings from NBA API"
                 >
                   🔄 Update Standings
                 </button>
+                {showStandings ? (
+                  <button
+                    onClick={() => setShowStandings(false)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                      theme === 'dark'
+                        ? 'bg-slate-600/20 text-slate-200 hover:bg-slate-500/20'
+                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300 border border-slate-300'
+                    }`}
+                    title="Hide standings"
+                  >
+                    👁️ Hide Standings
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowStandings(true)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                      theme === 'dark'
+                        ? 'bg-slate-600/20 text-slate-200 hover:bg-slate-500/20'
+                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300 border border-slate-300'
+                    }`}
+                    title="Show standings"
+                  >
+                    👁️ Show Standings
+                  </button>
+                )}
                 <button
                   onClick={() => handleRunGradingCommand('scrape_award_odds')}
                   disabled={runGradingMutation.isPending}
-                  className="rounded-full bg-amber-500/20 text-amber-200 hover:bg-amber-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+                    theme === 'dark'
+                      ? 'bg-amber-500/20 text-amber-200 hover:bg-amber-400/20'
+                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
+                  }`}
                   title="Scrape latest award odds from DraftKings"
                 >
                   🎯 Scrape Award Odds
@@ -479,12 +578,16 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
 
             {/* Grading Commands */}
             <div>
-              <p className="text-xs text-slate-400 mb-2">Run Grading:</p>
+              <p className={`text-xs mb-2 ${getThemeClasses().text.muted}`}>Run Grading:</p>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => handleRunGradingCommand('grade_props_answers')}
                   disabled={runGradingMutation.isPending}
-                  className="rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+                    theme === 'dark'
+                      ? 'bg-blue-500/20 text-blue-200 hover:bg-blue-400/20'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300'
+                  }`}
                   title="Grade all prop and award questions"
                 >
                   ✓ Grade Props
@@ -492,7 +595,11 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                 <button
                   onClick={() => handleRunGradingCommand('grade_standing_predictions')}
                   disabled={runGradingMutation.isPending}
-                  className="rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+                    theme === 'dark'
+                      ? 'bg-blue-500/20 text-blue-200 hover:bg-blue-400/20'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300'
+                  }`}
                   title="Grade standings predictions"
                 >
                   ✓ Grade Standings
@@ -500,7 +607,11 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                 <button
                   onClick={() => handleRunGradingCommand('grade_ist_predictions')}
                   disabled={runGradingMutation.isPending}
-                  className="rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-400/20 px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+                    theme === 'dark'
+                      ? 'bg-blue-500/20 text-blue-200 hover:bg-blue-400/20'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300'
+                  }`}
                   title="Grade In-Season Tournament predictions"
                 >
                   ✓ Grade IST
@@ -515,49 +626,76 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
           <div>
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl p-4">
+              <div className={`rounded-2xl p-4 ${getThemeClasses().card}`}>
                 <div className="flex items-center gap-3">
                   <AlertCircle className="w-8 h-8 text-blue-400" />
                   <div>
-                    <div className="text-2xl font-bold">{questionsData?.total_questions || 0}</div>
-                    <div className="text-xs text-slate-400">Total Questions</div>
+                    <div className={`text-2xl font-bold ${getThemeClasses().text.primary}`}>{questionsData?.total_questions || 0}</div>
+                    <div className={`text-xs ${getThemeClasses().text.muted}`}>Total Questions</div>
                   </div>
                 </div>
               </div>
-              <div className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl p-4">
+              <div className={`rounded-2xl p-4 ${getThemeClasses().card}`}>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-8 h-8 text-emerald-400" />
                   <div>
-                    <div className="text-2xl font-bold">
+                    <div className={`text-2xl font-bold ${getThemeClasses().text.primary}`}>
                       {questionsData?.questions?.filter(q => q.has_correct_answer).length || 0}
                     </div>
-                    <div className="text-xs text-slate-400">Answers Set</div>
+                    <div className={`text-xs ${getThemeClasses().text.muted}`}>Answers Set</div>
                   </div>
                 </div>
               </div>
-              <div className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl p-4">
+              <div className={`rounded-2xl p-4 ${getThemeClasses().card}`}>
                 <div className="flex items-center gap-3">
                   <Lock className="w-8 h-8 text-amber-400" />
                   <div>
-                    <div className="text-2xl font-bold">
+                    <div className={`text-2xl font-bold ${getThemeClasses().text.primary}`}>
                       {questionsData?.questions?.filter(q => q.is_finalized).length || 0}
                     </div>
-                    <div className="text-xs text-slate-400">Finalized</div>
+                    <div className={`text-xs ${getThemeClasses().text.muted}`}>Finalized</div>
                   </div>
                 </div>
               </div>
-              <div className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl p-4">
+              <div className={`rounded-2xl p-4 ${getThemeClasses().card}`}>
                 <div className="flex items-center gap-3">
                   <Users className="w-8 h-8 text-purple-400" />
                   <div>
-                    <div className="text-2xl font-bold">
+                    <div className={`text-2xl font-bold ${getThemeClasses().text.primary}`}>
                       {questionsData?.questions?.reduce((sum, q) => sum + q.submission_count, 0) || 0}
                     </div>
-                    <div className="text-xs text-slate-400">Total Submissions</div>
+                    <div className={`text-xs ${getThemeClasses().text.muted}`}>Total Submissions</div>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* NBA Standings Section */}
+            {showStandings && (
+              <div className={`mb-6 rounded-2xl p-6 ${
+                theme === 'dark'
+                  ? 'backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40'
+                  : 'bg-white border border-slate-200 shadow-sm'
+              }`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-lg font-semibold ${getThemeClasses().text.primary}`}>
+                    Updated NBA Standings
+                  </h3>
+                  <button
+                    onClick={() => setShowStandings(false)}
+                    className={`p-2 rounded-lg transition ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/80'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                    title="Hide standings"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <NBAStandings seasonSlug={selectedSeason} theme={theme} />
+              </div>
+            )}
 
             {/* Questions by Category */}
             <div className="space-y-3">
@@ -568,35 +706,39 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                 return (
                   <div
                     key={categoryName}
-                    className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl overflow-hidden"
+                    className={`rounded-2xl overflow-hidden ${getThemeClasses().card}`}
                   >
                     {/* Category Header */}
                     <button
                       onClick={() => toggleQuestionCategory(categoryName)}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-800/30 transition"
+                      className={`w-full px-6 py-4 flex items-center justify-between transition ${
+                        theme === 'dark' ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'
+                      }`}
                     >
                       <div className="flex items-center gap-4">
                         {isExpanded ? (
-                          <ChevronDown className="w-5 h-5 text-slate-400" />
+                          <ChevronDown className={`w-5 h-5 ${getThemeClasses().text.muted}`} />
                         ) : (
-                          <ChevronRight className="w-5 h-5 text-slate-400" />
+                          <ChevronRight className={`w-5 h-5 ${getThemeClasses().text.muted}`} />
                         )}
                         {getCategoryIcon(categoryName)}
                         <div className="text-left">
-                          <div className="font-semibold text-lg">{categoryName}</div>
-                          <div className="text-sm text-slate-400">
+                          <div className={`font-semibold text-lg ${getThemeClasses().text.primary}`}>{categoryName}</div>
+                          <div className={`text-sm ${getThemeClasses().text.muted}`}>
                             {answeredCount} / {questions.length} answered
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-slate-400">{questions.length} questions</div>
+                        <div className={`text-sm ${getThemeClasses().text.muted}`}>{questions.length} questions</div>
                       </div>
                     </button>
 
                     {/* Expanded Questions */}
                     {isExpanded && (
-                      <div className="border-t border-slate-700/40 p-6 space-y-3">
+                      <div className={`p-6 space-y-3 ${
+                        theme === 'dark' ? 'border-t border-slate-700/40' : 'border-t border-slate-200'
+                      }`}>
                         {questions.map(question => {
                           const isEditing = editingQuestion === question.question_id;
 
@@ -605,20 +747,24 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                               key={question.question_id}
                               className={`border rounded-xl p-4 transition ${
                                 question.has_correct_answer
-                                  ? 'border-emerald-500/30 bg-emerald-500/5'
-                                  : 'border-slate-700/30 bg-slate-900/40'
+                                  ? theme === 'dark'
+                                    ? 'border-emerald-500/30 bg-emerald-500/5'
+                                    : 'border-emerald-300 bg-emerald-50'
+                                  : theme === 'dark'
+                                    ? 'border-slate-700/30 bg-slate-900/40'
+                                    : 'border-slate-200 bg-slate-50'
                               }`}
                             >
                               <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <div className="text-sm font-medium">{question.question_text}</div>
+                                    <div className={`text-sm font-medium ${getThemeClasses().text.secondary}`}>{question.question_text}</div>
                                     {question.is_finalized && (
                                       <Lock className="w-4 h-4 text-amber-400" title="Finalized" />
                                     )}
                                   </div>
 
-                                  <div className="text-xs text-slate-400 space-y-1">
+                                  <div className={`text-xs space-y-1 ${getThemeClasses().text.muted}`}>
                                     <div>Type: {question.question_type}</div>
                                     <div>Points: {question.point_value}</div>
                                     <div>Submissions: {question.submission_count}</div>
@@ -630,13 +776,13 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                                       <div className="space-y-2">
                                         {/* Show line for over/under questions */}
                                         {question.input_type === 'over_under' && question.line && (
-                                          <div className="text-xs text-slate-400">
+                                          <div className={`text-xs ${getThemeClasses().text.muted}`}>
                                             Line: {question.line} {question.related_player_name && `(${question.related_player_name})`}
                                           </div>
                                         )}
 
                                         {question.input_type === 'yes_no' && question.related_player_name && (
-                                          <div className="text-xs text-slate-400">
+                                          <div className={`text-xs ${getThemeClasses().text.muted}`}>
                                             Player: {question.related_player_name}
                                           </div>
                                         )}
@@ -685,7 +831,7 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                                             <select
                                               value={editedAnswer}
                                               onChange={(e) => setEditedAnswer(e.target.value)}
-                                              className="flex-1 rounded-lg border border-slate-700/40 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                                              className={`flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${getThemeClasses().input}`}
                                               autoFocus
                                             >
                                               <option value="">Select team...</option>
@@ -704,7 +850,7 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                                                 onChange={(e) => setEditedAnswer(e.target.value)}
                                                 placeholder="Enter player name..."
                                                 list={`players-${question.question_id}`}
-                                                className="w-full rounded-lg border border-slate-700/40 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                                                className={`w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${getThemeClasses().input}`}
                                                 autoFocus
                                               />
                                               {question.choices && question.choices.length > 0 && (
@@ -836,49 +982,49 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
           <div>
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl p-4">
+              <div className={`rounded-2xl p-4 ${getThemeClasses().card}`}>
                 <div className="flex items-center gap-3">
                   <Users className="w-8 h-8 text-blue-400" />
                   <div>
-                    <div className="text-2xl font-bold">{filteredUsers.length}</div>
-                    <div className="text-xs text-slate-400">Total Users</div>
+                    <div className={`text-2xl font-bold ${getThemeClasses().text.primary}`}>{filteredUsers.length}</div>
+                    <div className={`text-xs ${getThemeClasses().text.muted}`}>Total Users</div>
                   </div>
                 </div>
               </div>
-              <div className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl p-4">
+              <div className={`rounded-2xl p-4 ${getThemeClasses().card}`}>
                 <div className="flex items-center gap-3">
                   <Trophy className="w-8 h-8 text-amber-400" />
                   <div>
-                    <div className="text-2xl font-bold">
+                    <div className={`text-2xl font-bold ${getThemeClasses().text.primary}`}>
                       {filteredUsers[0]?.total_points?.toFixed(1) || 0}
                     </div>
-                    <div className="text-xs text-slate-400">Top Score</div>
+                    <div className={`text-xs ${getThemeClasses().text.muted}`}>Top Score</div>
                   </div>
                 </div>
               </div>
-              <div className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl p-4">
+              <div className={`rounded-2xl p-4 ${getThemeClasses().card}`}>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-8 h-8 text-emerald-400" />
                   <div>
-                    <div className="text-2xl font-bold">
+                    <div className={`text-2xl font-bold ${getThemeClasses().text.primary}`}>
                       {filteredUsers.reduce((sum, u) =>
                         sum + u.categories.reduce((s, c) => s + c.correct_count, 0), 0
                       )}
                     </div>
-                    <div className="text-xs text-slate-400">Correct Answers</div>
+                    <div className={`text-xs ${getThemeClasses().text.muted}`}>Correct Answers</div>
                   </div>
                 </div>
               </div>
-              <div className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl p-4">
+              <div className={`rounded-2xl p-4 ${getThemeClasses().card}`}>
                 <div className="flex items-center gap-3">
                   <AlertCircle className="w-8 h-8 text-yellow-400" />
                   <div>
-                    <div className="text-2xl font-bold">
+                    <div className={`text-2xl font-bold ${getThemeClasses().text.primary}`}>
                       {filteredUsers.reduce((sum, u) =>
                         sum + u.categories.reduce((s, c) => s + c.pending_count, 0), 0
                       )}
                     </div>
-                    <div className="text-xs text-slate-400">Pending</div>
+                    <div className={`text-xs ${getThemeClasses().text.muted}`}>Pending</div>
                   </div>
                 </div>
               </div>
@@ -892,43 +1038,51 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
                 return (
                   <div
                     key={user.user_id}
-                    className="backdrop-blur-2xl bg-slate-900/60 border border-slate-700/40 rounded-2xl overflow-hidden"
+                    className={`rounded-2xl overflow-hidden ${getThemeClasses().card}`}
                   >
                     {/* User Header */}
                     <button
                       onClick={() => toggleUser(user.user_id)}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-800/30 transition"
+                      className={`w-full px-6 py-4 flex items-center justify-between transition ${
+                        theme === 'dark' ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'
+                      }`}
                     >
                       <div className="flex items-center gap-4">
                         {isExpanded ? (
-                          <ChevronDown className="w-5 h-5 text-slate-400" />
+                          <ChevronDown className={`w-5 h-5 ${getThemeClasses().text.muted}`} />
                         ) : (
-                          <ChevronRight className="w-5 h-5 text-slate-400" />
+                          <ChevronRight className={`w-5 h-5 ${getThemeClasses().text.muted}`} />
                         )}
                         <div className="text-left">
-                          <div className="font-semibold text-lg">{user.display_name}</div>
-                          <div className="text-sm text-slate-400">@{user.username}</div>
+                          <div className={`font-semibold text-lg ${getThemeClasses().text.primary}`}>{user.display_name}</div>
+                          <div className={`text-sm ${getThemeClasses().text.muted}`}>@{user.username}</div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-blue-400">{user.total_points.toFixed(1)}</div>
-                        <div className="text-xs text-slate-500">total points</div>
+                        <div className={`text-xs ${getThemeClasses().text.muted}`}>total points</div>
                       </div>
                     </button>
 
                     {/* Expanded User Content */}
                     {isExpanded && (
-                      <div className="border-t border-slate-700/40 p-6 space-y-4">
+                      <div className={`p-6 space-y-4 ${
+                        theme === 'dark' ? 'border-t border-slate-700/40' : 'border-t border-slate-200'
+                      }`}>
                         {user.categories.map(category => {
                           const catKey = `${user.user_id}-${category.category_name}`;
                           const isCatExpanded = expandedCategories.has(catKey);
 
                           return (
-                            <div key={category.category_name} className="border border-slate-700/30 rounded-xl overflow-hidden">
+                            <div key={category.category_name} className={`border rounded-xl overflow-hidden ${
+                              theme === 'dark' ? 'border-slate-700/30' : 'border-slate-200'
+                            }`}>
                               {/* Category Header */}
                               <button
                                 onClick={() => toggleCategory(user.user_id, category.category_name)}
-                                className="w-full px-4 py-3 flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/50 transition"
+                                className={`w-full px-4 py-3 flex items-center justify-between transition ${
+                                  theme === 'dark' ? 'bg-slate-800/30 hover:bg-slate-800/50' : 'bg-slate-100 hover:bg-slate-200'
+                                }`}
                               >
                                 <div className="flex items-center gap-3">
                                   {isCatExpanded ? (

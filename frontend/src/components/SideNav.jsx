@@ -8,7 +8,8 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  Menu
+  Menu,
+  Settings
 } from 'lucide-react';
 
 function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }) {
@@ -16,6 +17,7 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [currentSeasonSlug, setCurrentSeasonSlug] = useState(propSeasonSlug);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchLatestSeason = async () => {
@@ -39,6 +41,21 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   }, [propSeasonSlug]);
 
   useEffect(() => {
+    const fetchUserContext = async () => {
+      try {
+        const response = await axios.get('/api/v2/user/context');
+        if (response.data && response.data.is_admin) {
+          setIsAdmin(true);
+        }
+      } catch (error) {
+        console.error('Error fetching user context:', error);
+      }
+    };
+
+    fetchUserContext();
+  }, []);
+
+  useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
     const mq = window.matchMedia('(max-width: 768px)');
     const onChange = () => setIsMobile(!!mq.matches);
@@ -57,6 +74,7 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, href: `/leaderboard/${currentSeasonSlug}/` },
     { id: 'breakdown', label: 'Points Breakdown', icon: BarChart3, href: `/leaderboard/${currentSeasonSlug}/detailed/` },
     { id: 'profile', label: 'Profile', icon: User, href: `/user/profile/` },
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Settings, href: '/admin-dashboard/' }] : []),
   ];
 
   const NavContent = () => (
