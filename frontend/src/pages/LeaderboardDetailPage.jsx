@@ -47,6 +47,13 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const westHeaderRef = useRef(null);
   const eastHeaderRef = useRef(null);
   const [mobileStickyOffset, setMobileStickyOffset] = useState(0);
+  const [showMobileDragTooltip, setShowMobileDragTooltip] = useState(() => {
+    try {
+      return !localStorage.getItem('nba-mobile-drag-tooltip-seen');
+    } catch {
+      return true;
+    }
+  });
   const updateMobileStickyOffset = useCallback(() => {
     const westHeight = westHeaderRef.current?.getBoundingClientRect().height || 0;
     const eastHeight = eastHeaderRef.current?.getBoundingClientRect().height || 0;
@@ -250,6 +257,15 @@ useEffect(() => {
     setPinnedUserIds(prev => prev.includes(String(id)) ? prev.filter(x => String(x)!==String(id)) : [...prev, String(id)]);
     setPinPulseId(String(id));
     window.setTimeout(() => setPinPulseId(null), 350);
+  };
+
+  const dismissMobileDragTooltip = () => {
+    setShowMobileDragTooltip(false);
+    try {
+      localStorage.setItem('nba-mobile-drag-tooltip-seen', 'true');
+    } catch {
+      // localStorage not available
+    }
   };
 
   // URL persistence: read once
@@ -509,7 +525,11 @@ useEffect(() => {
                     <div key={`mrow-${id}`} className={`flex items-center justify-between rounded-xl border transition-all duration-200 ${isSel? 'border-emerald-300/80 bg-emerald-50/70 dark:border-emerald-700/60 dark:bg-emerald-900/30':'border-slate-200/60 bg-white dark:border-slate-800 dark:bg-slate-900'} px-3 py-2.5 hover:shadow-sm`}>
                       <label className="flex items-center gap-3 min-w-0 cursor-pointer">
                         <input type="checkbox" className="accent-emerald-600 w-4 h-4" checked={isSel} onChange={(ev)=> {
-                          if (ev.target.checked) addUser(id); else setSelectedUserIds(prev => prev.filter(x => String(x)!==id));
+                          if (ev.target.checked) {
+                            addUser(id);
+                          } else {
+                            setSelectedUserIds(prev => prev.filter(x => String(x)!==id));
+                          }
                         }} />
                         <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold shrink-0">
                           {(e.user.display_name || e.user.username).slice(0,2).toUpperCase()}
@@ -664,16 +684,14 @@ useEffect(() => {
                 />
                 {sections.map((s) => {
                   const Icon = iconFor(s);
-                  const label = fromSectionKey(s);
-                  const shortLabel = s === 'standings' ? 'Standings' : s === 'awards' ? 'Awards' : 'Props';
+                  const label = s === 'standings' ? 'Standings' : s === 'awards' ? 'Awards' : 'Props';
                   return (
                     <button
                       key={s}
                       onClick={() => setSection(s)}
-                      className={`relative z-10 flex-1 basis-0 text-center px-2 py-1.5 text-[10px] md:text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors duration-200 ${section===s? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
-                      <Icon className="w-3 h-3 md:w-3.5 md:h-3.5 shrink-0" />
-                      <span className="truncate md:hidden">{shortLabel}</span>
-                      <span className="truncate hidden md:inline">{label}</span>
+                      className={`relative z-10 flex-1 basis-0 px-3 md:px-6 py-1.5 md:py-2.5 text-[10px] md:text-sm font-semibold flex items-center justify-center gap-1.5 md:gap-2 transition-colors duration-200 ${section===s? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                      <Icon className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
+                      <span className="truncate">{label}</span>
                     </button>
                   );
                 })}
@@ -700,12 +718,8 @@ useEffect(() => {
               <option value="name">Name</option>
             </select>
             {mode==='compare' && (
-              <button onClick={()=> {
-                const allIds = (withSimTotals||[]).map(e => String(e.user.id));
-                setSelectedUserIds(allIds);
-                setShowAll(true);
-              }} className="hidden md:inline-flex text-xs font-semibold items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all whitespace-nowrap">
-                <Expand className="w-3.5 h-3.5" /> All
+              <button onClick={()=> setShowAll(prev => !prev)} className={`hidden md:inline-flex text-xs font-semibold items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-all whitespace-nowrap shrink-0 ${showAll ? 'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500' : 'border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300'}`}>
+                {showAll ? <Minimize2 className="w-3.5 h-3.5" /> : <Expand className="w-3.5 h-3.5" />} {showAll ? 'Selected' : 'All'}
               </button>
             )}
             <label className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-all whitespace-nowrap ${section==='standings' ? (whatIfEnabled ? 'bg-slate-900 text-white border-slate-900 shadow-sm dark:bg-slate-200 dark:text-slate-900 dark:border-slate-200' : 'bg-white text-slate-700 border-slate-200/60 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/50') : 'bg-slate-100 text-slate-400 border-slate-200/60 cursor-not-allowed dark:bg-slate-800/50 dark:text-slate-500 dark:border-slate-700/50'}`} title={section==='standings' ? 'Simulate by dragging rows in the grid' : 'What‑If available in Regular Season Standings tab'}>
@@ -867,7 +881,7 @@ useEffect(() => {
                 <div className="text-sm font-bold">Regular Season Standings</div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <select className="text-xs font-medium border border-slate-200/60 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>addUser(e.target.value)} value="">
+                <select className="text-xs font-semibold border border-slate-200/60 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-800 dark:border-slate-700/50 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all" onChange={(e)=>addUser(e.target.value)} value="">
                   <option value="">Add…</option>
                   {(withSimTotals||[])
                     .filter(e => !selectedUserIds.map(String).includes(String(e.user.id)))
@@ -890,12 +904,8 @@ useEffect(() => {
                   </span>
                 )}
                 <button onClick={()=> setShowManagePlayers(true)} className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">Manage</button>
-                <button onClick={()=> {
-                  const allIds = (withSimTotals||[]).map(e => String(e.user.id));
-                  setSelectedUserIds(allIds);
-                  setShowAll(true);
-                }} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
-                  <Expand className="w-3.5 h-3.5" /> All
+                <button onClick={()=> setShowAll(prev => !prev)} className={`text-xs font-semibold inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 ${showAll ? 'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500' : 'border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300'}`}>
+                  {showAll ? <Minimize2 className="w-3.5 h-3.5" /> : <Expand className="w-3.5 h-3.5" />} <span className="hidden sm:inline">{showAll ? 'Selected' : 'All'}</span>
                 </button>
               </div>
             </div>
@@ -1124,6 +1134,22 @@ useEffect(() => {
               </div>
             </div>
 
+            {/* Mobile What-If Tooltip */}
+            {whatIfEnabled && showMobileDragTooltip && section === 'standings' && (
+              <div className="md:hidden fixed bottom-4 left-4 right-4 z-50 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl shadow-2xl p-4 animate-bounce">
+                <button
+                  onClick={dismissMobileDragTooltip}
+                  className="absolute top-2 right-2 text-white/80 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="pr-6">
+                  <p className="text-sm font-semibold mb-1">Drag teams to reorder!</p>
+                  <p className="text-xs opacity-90">Press and hold any team, then drag to desired position to see point impacts.</p>
+                </div>
+              </div>
+            )}
+
             {/* Mobile Grid - Users as rows, Teams as columns */}
             <div className="md:hidden max-h-[60vh] overflow-y-auto no-scrollbar">
               {/* West Conference */}
@@ -1142,77 +1168,117 @@ useEffect(() => {
                     </div>
                     {!collapsedWest && (
                       <div className="overflow-x-auto no-scrollbar">
-                        <table className="w-full border-collapse">
-                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky z-10" style={mobileHeaderStickyStyle}>
-                            <tr>
-                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]" style={mobileHeaderStickyStyle}>User</th>
-                              <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]" style={mobileHeaderStickyStyle}>Pts</th>
-                              {westTeams.map((row, idx) => (
-                                <th key={`mobile-west-h-${row.team}`} className="sticky bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]" style={mobileHeaderStickyStyle}>
-                                  <div className="flex flex-col items-center gap-0.5">
-                                    <img
-                                      src={`/static/img/teams/${teamSlug(row.team)}.png`}
-                                      alt={row.team}
-                                      className="w-6 h-6 object-contain"
-                                      onError={(e) => {
-                                        const img = e.currentTarget;
-                                        const slug = teamSlug(row.team);
-                                        const step = parseInt(img.dataset.step || '0', 10);
-                                        if (step === 0) { img.dataset.step = '1'; img.src = `/static/img/teams/${slug}.svg`; return; }
-                                        if (step === 1) { img.dataset.step = '2'; img.src = `/static/img/teams/${slug}.PNG`; return; }
-                                        if (step === 2) { img.dataset.step = '3'; img.src = `/static/img/teams/${slug}.SVG`; return; }
-                                        img.onerror = null; img.src = '/static/img/teams/unknown.svg';
-                                      }}
-                                    />
-                                    <span className="text-[9px] text-slate-600 dark:text-slate-400 font-medium">
-                                      {whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}
-                                    </span>
-                                  </div>
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {displayedUsers.map((e, userIdx) => {
-                              const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
-                              const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
-                              const rowBg = userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40';
-                              const stickyBg = userIdx % 2 === 0 ? 'bg-white/95 dark:bg-slate-800/95' : 'bg-white/95 dark:bg-slate-800/95';
-                              return (
-                                <tr key={`mobile-west-u-${e.user.id}`} className={rowBg}>
-                                  <td className={`sticky left-0 z-10 ${stickyBg} backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]`}>
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-600 dark:text-slate-300 shrink-0">
-                                        {(e.user.display_name || e.user.username).slice(0, 2).toUpperCase()}
-                                      </div>
-                                      <span className="text-[10px] font-medium text-slate-800 dark:text-slate-200 truncate">
-                                        {(e.user.display_name || e.user.username).slice(0, 10)}
-                                      </span>
-                                    </div>
-                                  </td>
-                                  <td className={`sticky left-[80px] z-10 ${stickyBg} backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]`}>
-                                    {standPts}
-                                  </td>
-                                  {westTeams.map(row => {
-                                    const p = preds.find(x => x.team === row.team);
-                                    const pts = whatIfEnabled ? standingPoints(p?.predicted_position, simActualMap.get(row.team)) : (p?.points || 0);
-                                    const predPos = p?.predicted_position ?? '—';
-                                    const color = pts >= 3 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/30 dark:text-emerald-300' : pts >= 1 ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/30 dark:text-amber-300' : 'bg-slate-50 text-slate-600 dark:bg-slate-700/50 dark:text-slate-400';
-                                    return (
-                                      <td key={`mobile-west-c-${e.user.id}-${row.team}`} className="px-1 py-2 border-b border-slate-100 dark:border-slate-700/50">
-                                        <div className="flex justify-center">
-                                          <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded ${color}`}>
-                                            {predPos}
-                                          </span>
-                                        </div>
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                        <DragDropContext onDragEnd={(result) => {
+                          const { destination, source } = result;
+                          if (!destination) return;
+                          if (!whatIfEnabled) {
+                            setShowWhatIfConfirm(true);
+                            return;
+                          }
+                          const reorder = (list, startIndex, endIndex) => {
+                            const arr = Array.from(list);
+                            const [removed] = arr.splice(startIndex, 1);
+                            arr.splice(endIndex, 0, removed);
+                            return arr;
+                          };
+                          if (source.droppableId === 'mobile-west') {
+                            setWestOrder(prev => reorder(prev, source.index, destination.index));
+                          }
+                        }}>
+                          <Droppable droppableId="mobile-west" direction="horizontal">
+                            {(provided) => (
+                              <div ref={provided.innerRef} {...provided.droppableProps}>
+                                <table className="w-full border-collapse">
+                                  <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky z-10" style={mobileHeaderStickyStyle}>
+                                    <tr>
+                                      <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]" style={mobileHeaderStickyStyle}>User</th>
+                                      <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]" style={mobileHeaderStickyStyle}>Pts</th>
+                                      {westTeams.map((row, idx) => {
+                                        const isChanged = whatIfEnabled && westOrder[idx] && westOrder[idx].actual_position !== (idx + 1);
+                                        return (
+                                          <Draggable key={`mobile-W-${row.team}`} draggableId={`mobile-W-${row.team}`} index={idx} isDragDisabled={!whatIfEnabled}>
+                                            {(provided, snapshot) => (
+                                              <th
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                                className={`sticky z-15 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px] transition-all ${
+                                                  snapshot.isDragging ? 'opacity-50 shadow-xl' : ''
+                                                } ${isChanged ? 'bg-amber-50/95 dark:bg-amber-400/15' : 'bg-slate-50/95 dark:bg-slate-800/95'}`}
+                                                style={{...mobileHeaderStickyStyle, ...provided.draggableProps.style}}
+                                              >
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                  <img
+                                                    src={`/static/img/teams/${teamSlug(row.team)}.png`}
+                                                    alt={row.team}
+                                                    className="w-6 h-6 object-contain"
+                                                    onError={(e) => {
+                                                      const img = e.currentTarget;
+                                                      const slug = teamSlug(row.team);
+                                                      const step = parseInt(img.dataset.step || '0', 10);
+                                                      if (step === 0) { img.dataset.step = '1'; img.src = `/static/img/teams/${slug}.svg`; return; }
+                                                      if (step === 1) { img.dataset.step = '2'; img.src = `/static/img/teams/${slug}.PNG`; return; }
+                                                      if (step === 2) { img.dataset.step = '3'; img.src = `/static/img/teams/${slug}.SVG`; return; }
+                                                      img.onerror = null; img.src = '/static/img/teams/unknown.svg';
+                                                    }}
+                                                  />
+                                                  <span className="text-[9px] text-slate-600 dark:text-slate-400 font-medium">
+                                                    {whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}
+                                                  </span>
+                                                </div>
+                                              </th>
+                                            )}
+                                          </Draggable>
+                                        );
+                                      })}
+                                      {provided.placeholder}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {displayedUsers.map((e, userIdx) => {
+                                      const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
+                                      const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
+                                      const rowBg = userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40';
+                                      const stickyBg = userIdx % 2 === 0 ? 'bg-white/95 dark:bg-slate-800/95' : 'bg-white/95 dark:bg-slate-800/95';
+                                      return (
+                                        <tr key={`mobile-west-u-${e.user.id}`} className={rowBg}>
+                                          <td className={`sticky left-0 z-10 ${stickyBg} backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]`}>
+                                            <div className="flex items-center gap-1.5">
+                                              <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-600 dark:text-slate-300 shrink-0">
+                                                {(e.user.display_name || e.user.username).slice(0, 2).toUpperCase()}
+                                              </div>
+                                              <span className="text-[10px] font-medium text-slate-800 dark:text-slate-200 truncate">
+                                                {(e.user.display_name || e.user.username).slice(0, 10)}
+                                              </span>
+                                            </div>
+                                          </td>
+                                          <td className={`sticky left-[80px] z-10 ${stickyBg} backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]`}>
+                                            {standPts}
+                                          </td>
+                                          {westTeams.map(row => {
+                                            const p = preds.find(x => x.team === row.team);
+                                            const pts = whatIfEnabled ? standingPoints(p?.predicted_position, simActualMap.get(row.team)) : (p?.points || 0);
+                                            const predPos = p?.predicted_position ?? '—';
+                                            const color = pts >= 3 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/30 dark:text-emerald-300' : pts >= 1 ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/30 dark:text-amber-300' : 'bg-slate-50 text-slate-600 dark:bg-slate-700/50 dark:text-slate-400';
+                                            return (
+                                              <td key={`mobile-west-c-${e.user.id}-${row.team}`} className="px-1 py-2 border-b border-slate-100 dark:border-slate-700/50">
+                                                <div className="flex justify-center">
+                                                  <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded ${color}`}>
+                                                    {predPos}
+                                                  </span>
+                                                </div>
+                                              </td>
+                                            );
+                                          })}
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
                       </div>
                     )}
                   </div>
@@ -1235,77 +1301,117 @@ useEffect(() => {
                     </div>
                     {!collapsedEast && (
                       <div className="overflow-x-auto no-scrollbar">
-                        <table className="w-full border-collapse">
-                          <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky z-10" style={mobileHeaderStickyStyle}>
-                            <tr>
-                              <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]" style={mobileHeaderStickyStyle}>User</th>
-                              <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]" style={mobileHeaderStickyStyle}>Pts</th>
-                              {eastTeams.map((row, idx) => (
-                                <th key={`mobile-east-h-${row.team}`} className="sticky bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px]" style={mobileHeaderStickyStyle}>
-                                  <div className="flex flex-col items-center gap-0.5">
-                                    <img
-                                      src={`/static/img/teams/${teamSlug(row.team)}.png`}
-                                      alt={row.team}
-                                      className="w-6 h-6 object-contain"
-                                      onError={(e) => {
-                                        const img = e.currentTarget;
-                                        const slug = teamSlug(row.team);
-                                        const step = parseInt(img.dataset.step || '0', 10);
-                                        if (step === 0) { img.dataset.step = '1'; img.src = `/static/img/teams/${slug}.svg`; return; }
-                                        if (step === 1) { img.dataset.step = '2'; img.src = `/static/img/teams/${slug}.PNG`; return; }
-                                        if (step === 2) { img.dataset.step = '3'; img.src = `/static/img/teams/${slug}.SVG`; return; }
-                                        img.onerror = null; img.src = '/static/img/teams/unknown.svg';
-                                      }}
-                                    />
-                                    <span className="text-[9px] text-slate-600 dark:text-slate-400 font-medium">
-                                      {whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}
-                                    </span>
-                                  </div>
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {displayedUsers.map((e, userIdx) => {
-                              const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
-                              const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
-                              const rowBg = userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40';
-                              const stickyBg = userIdx % 2 === 0 ? 'bg-white/95 dark:bg-slate-800/95' : 'bg-white/95 dark:bg-slate-800/95';
-                              return (
-                                <tr key={`mobile-east-u-${e.user.id}`} className={rowBg}>
-                                  <td className={`sticky left-0 z-10 ${stickyBg} backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]`}>
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-600 dark:text-slate-300 shrink-0">
-                                        {(e.user.display_name || e.user.username).slice(0, 2).toUpperCase()}
-                                      </div>
-                                      <span className="text-[10px] font-medium text-slate-800 dark:text-slate-200 truncate">
-                                        {(e.user.display_name || e.user.username).slice(0, 10)}
-                                      </span>
-                                    </div>
-                                  </td>
-                                  <td className={`sticky left-[80px] z-10 ${stickyBg} backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]`}>
-                                    {standPts}
-                                  </td>
-                                  {eastTeams.map(row => {
-                                    const p = preds.find(x => x.team === row.team);
-                                    const pts = whatIfEnabled ? standingPoints(p?.predicted_position, simActualMap.get(row.team)) : (p?.points || 0);
-                                    const predPos = p?.predicted_position ?? '—';
-                                    const color = pts >= 3 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/30 dark:text-emerald-300' : pts >= 1 ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/30 dark:text-amber-300' : 'bg-slate-50 text-slate-600 dark:bg-slate-700/50 dark:text-slate-400';
-                                    return (
-                                      <td key={`mobile-east-c-${e.user.id}-${row.team}`} className="px-1 py-2 border-b border-slate-100 dark:border-slate-700/50">
-                                        <div className="flex justify-center">
-                                          <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded ${color}`}>
-                                            {predPos}
-                                          </span>
-                                        </div>
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                        <DragDropContext onDragEnd={(result) => {
+                          const { destination, source } = result;
+                          if (!destination) return;
+                          if (!whatIfEnabled) {
+                            setShowWhatIfConfirm(true);
+                            return;
+                          }
+                          const reorder = (list, startIndex, endIndex) => {
+                            const arr = Array.from(list);
+                            const [removed] = arr.splice(startIndex, 1);
+                            arr.splice(endIndex, 0, removed);
+                            return arr;
+                          };
+                          if (source.droppableId === 'mobile-east') {
+                            setEastOrder(prev => reorder(prev, source.index, destination.index));
+                          }
+                        }}>
+                          <Droppable droppableId="mobile-east" direction="horizontal">
+                            {(provided) => (
+                              <div ref={provided.innerRef} {...provided.droppableProps}>
+                                <table className="w-full border-collapse">
+                                  <thead className="bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm sticky z-10" style={mobileHeaderStickyStyle}>
+                                    <tr>
+                                      <th className="sticky left-0 z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-2 py-2 text-left text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[80px]" style={mobileHeaderStickyStyle}>User</th>
+                                      <th className="sticky left-[80px] z-20 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm px-1 py-2 text-center text-[10px] font-bold text-slate-700 dark:text-slate-200 border-b border-slate-200/80 dark:border-slate-700/60 w-[32px]" style={mobileHeaderStickyStyle}>Pts</th>
+                                      {eastTeams.map((row, idx) => {
+                                        const isChanged = whatIfEnabled && eastOrder[idx] && eastOrder[idx].actual_position !== (idx + 1);
+                                        return (
+                                          <Draggable key={`mobile-E-${row.team}`} draggableId={`mobile-E-${row.team}`} index={idx} isDragDisabled={!whatIfEnabled}>
+                                            {(provided, snapshot) => (
+                                              <th
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                                className={`sticky z-15 backdrop-blur-sm px-1 py-2 text-center border-b border-slate-200/80 dark:border-slate-700/60 w-[48px] transition-all ${
+                                                  snapshot.isDragging ? 'opacity-50 shadow-xl' : ''
+                                                } ${isChanged ? 'bg-amber-50/95 dark:bg-amber-400/15' : 'bg-slate-50/95 dark:bg-slate-800/95'}`}
+                                                style={{...mobileHeaderStickyStyle, ...provided.draggableProps.style}}
+                                              >
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                  <img
+                                                    src={`/static/img/teams/${teamSlug(row.team)}.png`}
+                                                    alt={row.team}
+                                                    className="w-6 h-6 object-contain"
+                                                    onError={(e) => {
+                                                      const img = e.currentTarget;
+                                                      const slug = teamSlug(row.team);
+                                                      const step = parseInt(img.dataset.step || '0', 10);
+                                                      if (step === 0) { img.dataset.step = '1'; img.src = `/static/img/teams/${slug}.svg`; return; }
+                                                      if (step === 1) { img.dataset.step = '2'; img.src = `/static/img/teams/${slug}.PNG`; return; }
+                                                      if (step === 2) { img.dataset.step = '3'; img.src = `/static/img/teams/${slug}.SVG`; return; }
+                                                      img.onerror = null; img.src = '/static/img/teams/unknown.svg';
+                                                    }}
+                                                  />
+                                                  <span className="text-[9px] text-slate-600 dark:text-slate-400 font-medium">
+                                                    {whatIfEnabled ? (simActualMap.get(row.team) ?? row.actual_position ?? '—') : (row.actual_position ?? '—')}
+                                                  </span>
+                                                </div>
+                                              </th>
+                                            )}
+                                          </Draggable>
+                                        );
+                                      })}
+                                      {provided.placeholder}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {displayedUsers.map((e, userIdx) => {
+                                      const preds = e.user.categories?.['Regular Season Standings']?.predictions || [];
+                                      const standPts = e.user.categories?.['Regular Season Standings']?.points || 0;
+                                      const rowBg = userIdx % 2 === 0 ? 'bg-white/80 dark:bg-slate-800/60' : 'bg-white/50 dark:bg-slate-800/40';
+                                      const stickyBg = userIdx % 2 === 0 ? 'bg-white/95 dark:bg-slate-800/95' : 'bg-white/95 dark:bg-slate-800/95';
+                                      return (
+                                        <tr key={`mobile-east-u-${e.user.id}`} className={rowBg}>
+                                          <td className={`sticky left-0 z-10 ${stickyBg} backdrop-blur-sm px-2 py-2 border-b border-slate-100 dark:border-slate-700/50 w-[80px]`}>
+                                            <div className="flex items-center gap-1.5">
+                                              <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-600 dark:text-slate-300 shrink-0">
+                                                {(e.user.display_name || e.user.username).slice(0, 2).toUpperCase()}
+                                              </div>
+                                              <span className="text-[10px] font-medium text-slate-800 dark:text-slate-200 truncate">
+                                                {(e.user.display_name || e.user.username).slice(0, 10)}
+                                              </span>
+                                            </div>
+                                          </td>
+                                          <td className={`sticky left-[80px] z-10 ${stickyBg} backdrop-blur-sm px-1 py-2 text-center text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-700/50 w-[32px]`}>
+                                            {standPts}
+                                          </td>
+                                          {eastTeams.map(row => {
+                                            const p = preds.find(x => x.team === row.team);
+                                            const pts = whatIfEnabled ? standingPoints(p?.predicted_position, simActualMap.get(row.team)) : (p?.points || 0);
+                                            const predPos = p?.predicted_position ?? '—';
+                                            const color = pts >= 3 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/30 dark:text-emerald-300' : pts >= 1 ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/30 dark:text-amber-300' : 'bg-slate-50 text-slate-600 dark:bg-slate-700/50 dark:text-slate-400';
+                                            return (
+                                              <td key={`mobile-east-c-${e.user.id}-${row.team}`} className="px-1 py-2 border-b border-slate-100 dark:border-slate-700/50">
+                                                <div className="flex justify-center">
+                                                  <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded ${color}`}>
+                                                    {predPos}
+                                                  </span>
+                                                </div>
+                                              </td>
+                                            );
+                                          })}
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
                       </div>
                     )}
                   </div>
@@ -1367,7 +1473,7 @@ useEffect(() => {
                 <div className="text-sm font-bold">{fromSectionKey(section)}</div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <select className="text-xs font-medium border border-slate-200/60 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300" onChange={(e)=>addUser(e.target.value)} value="">
+                <select className="text-xs font-semibold border border-slate-200/60 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-800 dark:border-slate-700/50 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all" onChange={(e)=>addUser(e.target.value)} value="">
                   <option value="">Add…</option>
                   {(withSimTotals||[])
                     .filter(e => !selectedUserIds.map(String).includes(String(e.user.id)))
@@ -1390,12 +1496,8 @@ useEffect(() => {
                   </span>
                 )}
                 <button onClick={()=> setShowManagePlayers(true)} className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">Manage</button>
-                <button onClick={()=> {
-                  const allIds = (withSimTotals||[]).map(e => String(e.user.id));
-                  setSelectedUserIds(allIds);
-                  setShowAll(true);
-                }} className="text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300 transition-all">
-                  <Expand className="w-3.5 h-3.5" /> All
+                <button onClick={()=> setShowAll(prev => !prev)} className={`text-xs font-semibold inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-all shrink-0 ${showAll ? 'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500' : 'border-slate-200/60 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:text-slate-300'}`}>
+                  {showAll ? <Minimize2 className="w-3.5 h-3.5" /> : <Expand className="w-3.5 h-3.5" />} <span className="hidden sm:inline">{showAll ? 'Selected' : 'All'}</span>
                 </button>
               </div>
             </div>
@@ -1643,7 +1745,11 @@ useEffect(() => {
                     <div key={`drow-${id}`} className={`flex items-center justify-between rounded-xl border transition-all duration-200 ${isSel? 'border-emerald-300/80 bg-emerald-50/70 dark:border-emerald-700/60 dark:bg-emerald-900/30':'border-slate-200/60 bg-white dark:border-slate-800 dark:bg-slate-900'} px-3 py-2.5 hover:shadow-sm`}>
                       <label className="flex items-center gap-3 min-w-0 cursor-pointer">
                         <input type="checkbox" className="accent-emerald-600 w-4 h-4" checked={isSel} onChange={(ev)=> {
-                          if (ev.target.checked) addUser(id); else setSelectedUserIds(prev => prev.filter(x => String(x)!==id));
+                          if (ev.target.checked) {
+                            addUser(id);
+                          } else {
+                            setSelectedUserIds(prev => prev.filter(x => String(x)!==id));
+                          }
                         }} />
                         <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold shrink-0">
                           {(e.user.display_name || e.user.username).slice(0,2).toUpperCase()}
