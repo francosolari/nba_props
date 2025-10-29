@@ -22,6 +22,8 @@ function SiteLayout() {
       setCurrentPage('submissions');
     } else if (path.startsWith('/user/profile')) {
       setCurrentPage('profile');
+    } else if (path.startsWith('/admin-dashboard')) {
+      setCurrentPage('admin');
     } else {
       setCurrentPage('home');
     }

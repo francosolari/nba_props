@@ -3,6 +3,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ToastProvider } from './components/Toast';
 import './styles.css';  // Ensure Tailwind CSS is included if not via CDN
 import './styles/utilities.css';  // Import accessibility utilities
 import PredictionBoard from './components/PredictionBoard';
@@ -20,6 +21,8 @@ import HomePage from './pages/HomePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import SubmissionsPage from './pages/SubmissionsPage.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
+import AdminGradingPanel from './pages/AdminGradingPanel.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
 import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
 import SiteLayout from './components/SiteLayout.jsx';
 
@@ -37,9 +40,13 @@ const mountComponent = (component, rootId, componentName) => {
     const root = createRoot(rootElement);
     root.render(
       React.createElement(
-        QueryClientProvider,
-        { client: queryClient },
-        React.createElement(component, { seasonSlug })
+        ToastProvider,
+        null,
+        React.createElement(
+          QueryClientProvider,
+          { client: queryClient },
+          React.createElement(component, { seasonSlug })
+        )
       )
     );
   } else {
@@ -77,6 +84,8 @@ mountComponent(ProfilePage, 'profile-root', 'ProfilePage');
 mountComponent(SubmissionsPage, 'submissions-root', 'SubmissionsPage');
 
 mountComponent(AdminPanel, 'admin-panel-root', 'AdminPanel');
+mountComponent(AdminGradingPanel, 'admin-grading-root', 'AdminGradingPanel');
+mountComponent(AdminDashboard, 'admin-dashboard-root', 'AdminDashboard');
 
 // Mount SiteLayout globally - provides SideNav across all pages
 mountComponent(SiteLayout, 'site-layout-root', 'SiteLayout');

@@ -349,10 +349,62 @@ def admin_panel_view(request):
     if not is_admin_user(request.user):
         messages.error(request, "You don't have permission to access the admin panel.")
         return redirect('predictions_views:home')
-    
+
     # Get all seasons for dropdown
     seasons = Season.objects.all().order_by('-start_date')
-    
+
     return render(request, 'predictions/admin_panel.html', {
         'seasons': seasons,
+    })
+
+
+@login_required
+def admin_grading_panel_view(request, season_slug='current'):
+    """
+    Render the admin grading panel for auditing and manually grading answers.
+    Only accessible to admin users.
+    """
+    # Check if user is admin
+    if not is_admin_user(request.user):
+        messages.error(request, "You don't have permission to access the admin grading panel.")
+        return redirect('predictions_views:home')
+
+    # Get the season
+    if season_slug == 'current':
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            raise Http404("No seasons available.")
+        season_slug = season.slug
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
+
+    return render(request, 'predictions/admin_grading.html', {
+        'season': season,
+        'season_slug': season_slug,
+    })
+
+
+@login_required
+def admin_dashboard_view(request, season_slug='current'):
+    """
+    Render the combined admin dashboard with tabs for both question management and grading.
+    Only accessible to admin users.
+    """
+    # Check if user is admin
+    if not is_admin_user(request.user):
+        messages.error(request, "You don't have permission to access the admin dashboard.")
+        return redirect('predictions_views:home')
+
+    # Get the season
+    if season_slug == 'current':
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            raise Http404("No seasons available.")
+        season_slug = season.slug
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
+
+    return render(request, 'predictions/admin_dashboard.html', {
+        'season': season,
+        'season_slug': season_slug,
     })

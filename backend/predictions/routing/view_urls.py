@@ -11,7 +11,8 @@ from predictions.views.user_views import (
     home, view_predictions, what_if_view,
     profile_view, view_ist_standings, user_leaderboard,
     submit_predictions, render_questions, submit_answers, leaderboard_page,
-    leaderboard_detail_page, submit_predictions_view, admin_panel_view
+    leaderboard_detail_page, submit_predictions_view, admin_panel_view,
+    admin_grading_panel_view, admin_dashboard_view
 )
 
 app_name = 'predictions_views'
@@ -57,6 +58,10 @@ urlpatterns = [
     # Submissions (new)
     path('submit/<slug:season_slug>/', submit_predictions_view, name='submit_predictions_view'),
 
-    # Admin panel (new)
+    # Admin panels
     path('admin-panel/', admin_panel_view, name='admin_panel'),
+    path('admin-grading/', admin_grading_panel_view, name='admin_grading'),
+    path('admin-grading/<slug:season_slug>/', admin_grading_panel_view, name='admin_grading_season'),
+    path('admin-dashboard/', admin_dashboard_view, name='admin_dashboard'),
+    path('admin-dashboard/<slug:season_slug>/', admin_dashboard_view, name='admin_dashboard_season'),
 ]

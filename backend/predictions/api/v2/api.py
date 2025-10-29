@@ -37,6 +37,8 @@ from .endpoints.seasons import router as seasons_router
 from .endpoints.user_submissions import router as submissions_router
 from .endpoints.admin_questions import router as admin_questions_router
 from .endpoints.payments import router as payments_router
+from .endpoints.admin_grading import router as admin_grading_router
+from .endpoints.odds import router as odds_router
 
 # Import schemas for documentation
 from .schemas import ErrorSchema
@@ -238,7 +240,9 @@ api.add_router("/leaderboards/", leaderboards_router)
 api.add_router("/seasons/", seasons_router)
 api.add_router("/submissions", submissions_router)
 api.add_router("/admin", admin_questions_router)
+api.add_router("/admin/grading", admin_grading_router)
 api.add_router("/payments", payments_router)
+api.add_router("/odds", odds_router)
 
 # ====================
 # TEMPORARY PLACEHOLDER ENDPOINTS

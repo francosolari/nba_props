@@ -306,14 +306,11 @@ print(f"{player_name} has the highest points per game with {ppg} for the {season
 
 player_name = "Victor Wembanyama"  # replace with the desired player's name
 season = '2025-26'
-
-# ----- UPDATING ACTIVE PLAYERS ------
-
 # averages = get_player_averages(player_name, season=season)
 # print(f"{player_name} {season} averages:\n{pd.Series(averages)}")
 # print("Updating active player list")
-fetch_ist_standings(season="2025-26")
-fetch_nba_standings(season="2025-26")
+fetch_ist_standings(season=season)
+fetch_nba_standings(season=season)
 # fetch_active_players()
 
 # Bronny james
