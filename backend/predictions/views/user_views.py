@@ -321,6 +321,26 @@ def leaderboard_detail_page(request, season_slug):
     })
 
 
+def leaderboard_detail_page_ts(request, season_slug):
+    """Render TypeScript refactored leaderboard detail grid view.
+    Reads optional query params: section, user (id) to pre-expand UI.
+    """
+    if season_slug == 'current':
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            raise Http404("No seasons available.")
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
+    initial_section = request.GET.get('section', 'standings')
+    initial_user_id = request.GET.get('user')  # may be None
+
+    return render(request, 'predictions/leaderboard_detail_page_ts.html', {
+        'season': season,
+        'initial_section': initial_section,
+        'initial_user_id': initial_user_id or '',
+    })
+
+
 @login_required
 def submit_predictions_view(request, season_slug):
     """

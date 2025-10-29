@@ -16,7 +16,8 @@
     "django": "venv/bin/python backend/manage.py runserver 127.0.0.1:8000",
     "webpack-watch": "webpack --watch --config frontend/webpack.config.js",
     "webpack-dev": "webpack serve --config frontend/webpack.config.js",
-    "dev": "bash ./scripts/dev.sh",
+    "dev": "bash ./scripts/dev-clean.sh",
+    "dev:no-kill": "bash ./scripts/dev.sh",
     "build": "webpack --mode production --config frontend/webpack.config.js",
     "fetch:team-slugs": "node scripts/fetch_nba_team_slugs.js",
     "clean:hot-updates": "rm -f frontend/static/js/*.hot-update.*"

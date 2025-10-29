@@ -16,7 +16,7 @@ import QuestionForm from "./components/QuestionForm";
 import UserPredictionModal from "./components/UserPredictionModal.jsx";
 import PredictionsTable from './components/archive/PredictionsTable';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
-import LeaderboardDetailPage from './pages/LeaderboardDetailPage.jsx';
+import LeaderboardDetailPage from './pages/LeaderboardDetailPage.tsx';
 import HomePage from './pages/HomePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import SubmissionsPage from './pages/SubmissionsPage.jsx';
