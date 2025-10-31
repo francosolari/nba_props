@@ -202,8 +202,46 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     const pts = data?.points || 0;
     const max = data?.max_points || 0;
     const pct = max > 0 ? Math.round((pts / max) * 100) : 0;
-    // Stable sampling per user+category to avoid changing lists across re-renders
+
+    // For Regular Season Standings, calculate stats based on points
+    const isStandings = title === 'Regular Season Standings';
+    const [expandedSections, setExpandedSections] = useState(new Set());
+
+    const toggleSection = (sectionKey) => {
+      const next = new Set(expandedSections);
+      next.has(sectionKey) ? next.delete(sectionKey) : next.add(sectionKey);
+      setExpandedSections(next);
+    };
+
+    const standingsStats = React.useMemo(() => {
+      if (!isStandings || !Array.isArray(data?.predictions)) {
+        return null;
+      }
+
+      const predictions = data.predictions;
+
+      // Breakdown by conference with team lists
+      const eastStats = { exact: [], offByOne: [], wrong: [] };
+      const westStats = { exact: [], offByOne: [], wrong: [] };
+
+      predictions.forEach(p => {
+        const points = p.points ?? 0;
+        const conference = p.conference || p.team_conference;
+        const stats = conference === 'East' ? eastStats : westStats;
+        const teamName = p.team || p.team_name || 'Unknown Team';
+
+        if (points === 3) stats.exact.push(teamName);
+        else if (points === 1) stats.offByOne.push(teamName);
+        else stats.wrong.push(teamName);
+      });
+
+      return { east: eastStats, west: westStats };
+    }, [data?.predictions, isStandings]);
+
+    // For non-standings categories, sample predictions
     const { rights, wrongs } = React.useMemo(() => {
+      if (isStandings) return { rights: [], wrongs: [] }; // Not used for standings
+
       if (data?.interesting && (data.interesting.hard_wins?.length || data.interesting.easy_misses?.length)) {
         return {
           rights: (data.interesting.hard_wins || []).slice(0, 3),
@@ -232,7 +270,8 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         return out;
       };
       return { rights: pickN(r, 3), wrongs: pickN(w, 3) };
-    }, [data?.predictions, data?.interesting, userId, title]);
+    }, [data?.predictions, data?.interesting, userId, title, isStandings]);
+
     return (
       <div className={`group relative overflow-hidden rounded-xl border ${data?.is_best ? 'border-emerald-400/60 dark:border-emerald-500/50 shadow-emerald-100/50 dark:shadow-emerald-900/30' : 'border-slate-200/70 dark:border-slate-700/50'} bg-white/90 dark:bg-slate-800/70 shadow-md backdrop-blur-sm transition-shadow hover:shadow-lg`}>
         <div className="p-4 space-y-3 relative">
@@ -249,32 +288,196 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
             </div>
           </div>
           <ProgressBar value={pts} max={max || 1} size="md" color="bg-gradient-to-r from-teal-500 to-teal-600 dark:from-teal-400 dark:to-teal-500" bgColor="bg-slate-200 dark:bg-slate-700" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold"><CircleCheck className="w-3.5 h-3.5" />Correct</div>
-              <ul className="space-y-1">
-                {rights.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
-                {rights.map((p, i) => (
-                  <li key={`r-${i}`} className="text-[11px] text-emerald-900 dark:text-emerald-100 bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Hard win • only ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
-                    {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
-                    <span className="ml-1 font-bold">+{p.points ?? 0}</span>
-                  </li>
-                ))}
-              </ul>
+
+          {/* Standings-specific stats */}
+          {isStandings && standingsStats ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              {/* Eastern Conference */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5 text-slate-700 dark:text-slate-300 text-[11px] font-bold">Eastern</div>
+                <div className="space-y-1">
+                  {/* Exact */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('east-exact')}
+                      className="w-full flex items-center justify-between text-[11px] bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 hover:bg-emerald-100/80 dark:hover:bg-emerald-500/20 transition-colors"
+                    >
+                      <span className="text-emerald-700 dark:text-emerald-300 font-medium">Exact (3pts)</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-emerald-700 dark:text-emerald-300">{standingsStats.east.exact.length}</span>
+                        {standingsStats.east.exact.length > 0 && (
+                          expandedSections.has('east-exact') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                        )}
+                      </div>
+                    </button>
+                    {expandedSections.has('east-exact') && standingsStats.east.exact.length > 0 && (
+                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
+                        {standingsStats.east.exact.map((team, i) => (
+                          <div key={i} className="text-[10px] text-emerald-800 dark:text-emerald-200 text-right py-0.5 px-1.5 rounded bg-emerald-50/50 dark:bg-emerald-900/20">{team}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Off by 1 */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('east-offByOne')}
+                      className="w-full flex items-center justify-between text-[11px] bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-md px-2 py-1 hover:bg-amber-100/80 dark:hover:bg-amber-500/20 transition-colors"
+                    >
+                      <span className="text-amber-700 dark:text-amber-300 font-medium">Off by 1 (1pt)</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-amber-700 dark:text-amber-300">{standingsStats.east.offByOne.length}</span>
+                        {standingsStats.east.offByOne.length > 0 && (
+                          expandedSections.has('east-offByOne') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                        )}
+                      </div>
+                    </button>
+                    {expandedSections.has('east-offByOne') && standingsStats.east.offByOne.length > 0 && (
+                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
+                        {standingsStats.east.offByOne.map((team, i) => (
+                          <div key={i} className="text-[10px] text-amber-800 dark:text-amber-200 text-right py-0.5 px-1.5 rounded bg-amber-50/50 dark:bg-amber-900/20">{team}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Missed */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('east-wrong')}
+                      className="w-full flex items-center justify-between text-[11px] bg-slate-100/80 dark:bg-slate-700/30 border border-slate-200/60 dark:border-slate-600/30 rounded-md px-2 py-1 hover:bg-slate-200/80 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <span className="text-slate-700 dark:text-slate-300 font-medium">Missed (0pts)</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-700 dark:text-slate-300">{standingsStats.east.wrong.length}</span>
+                        {standingsStats.east.wrong.length > 0 && (
+                          expandedSections.has('east-wrong') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                        )}
+                      </div>
+                    </button>
+                    {expandedSections.has('east-wrong') && standingsStats.east.wrong.length > 0 && (
+                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
+                        {standingsStats.east.wrong.map((team, i) => (
+                          <div key={i} className="text-[10px] text-slate-700 dark:text-slate-300 text-right py-0.5 px-1.5 rounded bg-slate-50/50 dark:bg-slate-800/30">{team}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Western Conference */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5 text-slate-700 dark:text-slate-300 text-[11px] font-bold">Western</div>
+                <div className="space-y-1">
+                  {/* Exact */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('west-exact')}
+                      className="w-full flex items-center justify-between text-[11px] bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 hover:bg-emerald-100/80 dark:hover:bg-emerald-500/20 transition-colors"
+                    >
+                      <span className="text-emerald-700 dark:text-emerald-300 font-medium">Exact (3pts)</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-emerald-700 dark:text-emerald-300">{standingsStats.west.exact.length}</span>
+                        {standingsStats.west.exact.length > 0 && (
+                          expandedSections.has('west-exact') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                        )}
+                      </div>
+                    </button>
+                    {expandedSections.has('west-exact') && standingsStats.west.exact.length > 0 && (
+                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
+                        {standingsStats.west.exact.map((team, i) => (
+                          <div key={i} className="text-[10px] text-emerald-800 dark:text-emerald-200 text-right py-0.5 px-1.5 rounded bg-emerald-50/50 dark:bg-emerald-900/20">{team}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Off by 1 */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('west-offByOne')}
+                      className="w-full flex items-center justify-between text-[11px] bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-md px-2 py-1 hover:bg-amber-100/80 dark:hover:bg-amber-500/20 transition-colors"
+                    >
+                      <span className="text-amber-700 dark:text-amber-300 font-medium">Off by 1 (1pt)</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-amber-700 dark:text-amber-300">{standingsStats.west.offByOne.length}</span>
+                        {standingsStats.west.offByOne.length > 0 && (
+                          expandedSections.has('west-offByOne') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                        )}
+                      </div>
+                    </button>
+                    {expandedSections.has('west-offByOne') && standingsStats.west.offByOne.length > 0 && (
+                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
+                        {standingsStats.west.offByOne.map((team, i) => (
+                          <div key={i} className="text-[10px] text-amber-800 dark:text-amber-200 text-right py-0.5 px-1.5 rounded bg-amber-50/50 dark:bg-amber-900/20">{team}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Missed */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('west-wrong')}
+                      className="w-full flex items-center justify-between text-[11px] bg-slate-100/80 dark:bg-slate-700/30 border border-slate-200/60 dark:border-slate-600/30 rounded-md px-2 py-1 hover:bg-slate-200/80 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <span className="text-slate-700 dark:text-slate-300 font-medium">Missed (0pts)</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-700 dark:text-slate-300">{standingsStats.west.wrong.length}</span>
+                        {standingsStats.west.wrong.length > 0 && (
+                          expandedSections.has('west-wrong') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                        )}
+                      </div>
+                    </button>
+                    {expandedSections.has('west-wrong') && standingsStats.west.wrong.length > 0 && (
+                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
+                        {standingsStats.west.wrong.map((team, i) => (
+                          <div key={i} className="text-[10px] text-slate-700 dark:text-slate-300 text-right py-0.5 px-1.5 rounded bg-slate-50/50 dark:bg-slate-800/30">{team}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5 text-rose-600 dark:text-rose-400 text-[11px] font-bold"><CircleX className="w-3.5 h-3.5" />Missed</div>
-              <ul className="space-y-1">
-                {wrongs.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
-                {wrongs.map((p, i) => (
-                  <li key={`w-${i}`} className="text-[11px] text-rose-900 dark:text-rose-100 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Surprising miss • ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
-                    {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
-                    <span className="ml-1 font-bold">{p.points ? `+${p.points}` : '0'}</span>
-                  </li>
-                ))}
-              </ul>
+          ) : (
+            /* Non-standings categories: show sample predictions */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold"><CircleCheck className="w-3.5 h-3.5" />Correct</div>
+                <ul className="space-y-1">
+                  {rights.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
+                  {rights.map((p, i) => (
+                    <li key={`r-${i}`} className="text-[11px] text-emerald-900 dark:text-emerald-100 bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Hard win • only ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
+                      {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
+                      <span className="ml-1 font-bold">+{p.points ?? 0}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5 text-rose-600 dark:text-rose-400 text-[11px] font-bold"><CircleX className="w-3.5 h-3.5" />Missed</div>
+                <ul className="space-y-1">
+                  {wrongs.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
+                  {wrongs.map((p, i) => (
+                    <li key={`w-${i}`} className="text-[11px] text-rose-900 dark:text-rose-100 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Surprising miss • ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
+                      {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
+                      <span className="ml-1 font-bold">{p.points ? `+${p.points}` : '0'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
+          )}
+
           {detailsHref && (
             <div className="flex items-center justify-end pt-1">
               <a href={detailsHref} className="text-[11px] text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 underline underline-offset-2 font-medium transition-colors">View details</a>
