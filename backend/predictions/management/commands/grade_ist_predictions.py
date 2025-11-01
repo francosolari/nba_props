@@ -17,9 +17,15 @@ class Command(BaseCommand):
         parser.add_argument(
             'season_slug', type=str, help='The slug of the season to grade IST answers for.'
         )
+        parser.add_argument(
+            '--force-knockout',
+            action='store_true',
+            help='Force grading of conference winners / champion picks even if knockout games may be incomplete.'
+        )
 
     def handle(self, *args, **options):
         season_slug = options['season_slug']
+        force_knockout = options['force_knockout']
 
         try:
             season = Season.objects.get(slug=season_slug)
@@ -37,6 +43,19 @@ class Command(BaseCommand):
         ist_standings = InSeasonTournamentStandings.objects.select_related('team').filter(season=season)
         if not ist_standings.exists():
             raise CommandError(f'No IST standings found for season "{season_slug}".')
+
+        # Calculate games played metrics to infer tournament stage
+        games_played_per_team = {
+            standing.team_id: (standing.wins or 0) + (standing.losses or 0)
+            for standing in ist_standings
+        }
+        if games_played_per_team:
+            max_games_played = max(games_played_per_team.values())
+        else:
+            max_games_played = 0
+        # Group stage ends after four IST games. Anything beyond indicates knockout play.
+        knockout_progress_detected = max_games_played > 4
+        allow_knockout = force_knockout or knockout_progress_detected
 
         # Create mappings for quick lookups
         # Mapping for group winners: {(ist_group, team_id): is_group_winner}
@@ -100,12 +119,19 @@ class Command(BaseCommand):
                     points = 1 if is_wildcard else 0
 
                 elif question.prediction_type == 'conference_winner':
-                    is_conference_winner = conference_winners_map.get(team_id, False)
-                    points = 1 if is_conference_winner else 0
+                    if allow_knockout:
+                        is_conference_winner = conference_winners_map.get(team_id, False)
+                        points = 1 if is_conference_winner else 0
+                    else:
+                        points = 0
 
-                # Update the answer's points only if there's a change
-                if answer.points_earned != points:
+                # Derive correctness: award points implies a correct prediction
+                is_correct = bool(points)
+
+                # Update the answer when points or correctness changed
+                if answer.points_earned != points or answer.is_correct != is_correct:
                     answer.points_earned = points
+                    answer.is_correct = is_correct
                     answers_to_update.append(answer)
 
             # Log any invalid answers
@@ -114,12 +140,20 @@ class Command(BaseCommand):
 
             # Bulk update answers if there are any changes
             if answers_to_update:
-                Answer.objects.bulk_update(answers_to_update, ['points_earned'])
+                Answer.objects.bulk_update(answers_to_update, ['points_earned', 'is_correct'])
                 self.stdout.write(
                     self.style.SUCCESS(f'Updated {len(answers_to_update)} answers.')
                 )
             else:
                 self.stdout.write(self.style.WARNING('No answers needed updating.'))
+
+            if not allow_knockout:
+                self.stdout.write(
+                    self.style.WARNING(
+                        'Skipped grading conference winners and NBA Cup champion. '
+                        'These will activate automatically once knockout games are recorded (or run with --force-knockout).'
+                    )
+                )
 
             # Aggregate user points for IST questions
             user_points = (

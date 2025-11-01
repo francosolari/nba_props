@@ -7,6 +7,8 @@ import {
   CheckCircle2,
   XCircle,
   Dot,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 
 const GROUP_ALPHABET = ['A', 'B', 'C'];
@@ -102,6 +104,43 @@ const buildBreakdown = (predictions = []) => {
   return breakdown;
 };
 
+const collectEntries = (breakdown) => {
+  const list = [];
+  ['East', 'West'].forEach((conference) => {
+    breakdown.groupWinners[conference].forEach((entry) => {
+      list.push({ ...entry, category: `${conference} Groups` });
+    });
+  });
+  ['East', 'West', 'Champion', 'Other'].forEach((conference) => {
+    breakdown.wildcards[conference].forEach((entry) => {
+      list.push({ ...entry, category: `${conference} Wildcards` });
+    });
+  });
+  ['East', 'West', 'Champion'].forEach((key) => {
+    const entry = breakdown.conferenceTitles[key];
+    if (entry) list.push({ ...entry, category: key === 'Champion' ? 'Finals' : `${key} Winner` });
+  });
+  breakdown.tiebreakers.forEach((entry) => list.push({ ...entry, category: 'Tiebreakers' }));
+  breakdown.misc.forEach((entry) => list.push({ ...entry, category: 'Other' }));
+  return list;
+};
+
+const sortEntriesForPreview = (entries) => {
+  const score = (status) => {
+    if (status === true) return 0;
+    if (status === null || typeof status === 'undefined') return 1;
+    return 2;
+  };
+  const sorted = [...entries].sort((a, b) => {
+    const diff = score(a.status) - score(b.status);
+    if (diff !== 0) return diff;
+    return (a.label || '').localeCompare(b.label || '');
+  });
+  const top = sorted.slice(0, 4);
+  const mobileTop = sorted.slice(0, 2);
+  return { sorted, top, mobileTop };
+};
+
 const statusStyles = (status) => {
   if (status === true) {
     return {
@@ -143,6 +182,19 @@ const PredictionChip = ({ entry }) => {
  */
 function ISTUserLeaderboard({ users = [] }) {
   const [visibleCount, setVisibleCount] = useState(10);
+  const [expandedUserIds, setExpandedUserIds] = useState(() => new Set());
+
+  const toggleExpanded = (userId) => {
+    setExpandedUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  };
 
   const rankIcon = (rank) => {
     if (rank === 1) return <Trophy className="w-4 h-4 text-yellow-400" />;
@@ -195,6 +247,10 @@ function ISTUserLeaderboard({ users = [] }) {
           const incorrectCount = predictions.filter(p => p.is_correct === false).length;
           const pendingCount = predictions.filter(p => p.is_correct === null).length;
           const breakdown = buildBreakdown(predictions);
+          const previews = sortEntriesForPreview(collectEntries(breakdown));
+          const previewEntries = previews.top;
+          const previewEntriesMobile = previews.mobileTop;
+          const isExpanded = expandedUserIds.has(user.id);
 
           return (
             <div
@@ -235,7 +291,22 @@ function ISTUserLeaderboard({ users = [] }) {
                   {/* Inline Predictions */}
                   {predictions.length > 0 && (
                     <div className="mt-2 space-y-2">
-                      {(breakdown.groupWinners.East.length > 0 || breakdown.groupWinners.West.length > 0) && (
+                      {!isExpanded && previewEntries.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-1 sm:hidden">
+                            {previewEntriesMobile.map((item, index) => (
+                              <PredictionChip key={`preview-mobile-${index}-${item.team}`} entry={item} />
+                            ))}
+                          </div>
+                          <div className="hidden sm:flex sm:flex-wrap sm:gap-1">
+                            {previewEntries.map((item, index) => (
+                              <PredictionChip key={`preview-${index}-${item.team}`} entry={item} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {isExpanded && (breakdown.groupWinners.East.length > 0 || breakdown.groupWinners.West.length > 0) && (
                         <div className="rounded-md bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 px-2 py-2">
                           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Group Winners
@@ -259,7 +330,7 @@ function ISTUserLeaderboard({ users = [] }) {
                         </div>
                       )}
 
-                      {(breakdown.wildcards.East.length > 0 || breakdown.wildcards.West.length > 0 || breakdown.wildcards.Champion.length > 0) && (
+                      {isExpanded && (breakdown.wildcards.East.length > 0 || breakdown.wildcards.West.length > 0 || breakdown.wildcards.Champion.length > 0) && (
                         <div className="rounded-md bg-slate-100/60 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 px-2 py-2">
                           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Wildcards
@@ -277,7 +348,7 @@ function ISTUserLeaderboard({ users = [] }) {
                         </div>
                       )}
 
-                      {(breakdown.conferenceTitles.East || breakdown.conferenceTitles.West || breakdown.conferenceTitles.Champion) && (
+                      {isExpanded && (breakdown.conferenceTitles.East || breakdown.conferenceTitles.West || breakdown.conferenceTitles.Champion) && (
                         <div className="rounded-md bg-slate-100/50 dark:bg-slate-800/20 border border-slate-200 dark:border-slate-700 px-2 py-2">
                           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Conference & Finals
@@ -294,7 +365,7 @@ function ISTUserLeaderboard({ users = [] }) {
                         </div>
                       )}
 
-                      {breakdown.tiebreakers.length > 0 && (
+                      {isExpanded && breakdown.tiebreakers.length > 0 && (
                         <div className="rounded-md bg-slate-100/40 dark:bg-slate-800/10 border border-slate-200 dark:border-slate-700 px-2 py-2">
                           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Tiebreakers
@@ -318,6 +389,22 @@ function ISTUserLeaderboard({ users = [] }) {
                   <p className="text-[9px] text-slate-500 dark:text-slate-400 font-medium uppercase">pts</p>
                 </div>
               </div>
+
+              {predictions.length > 0 && (
+                <div className="mt-2 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => toggleExpanded(user.id)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition"
+                  >
+                    {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                    {isExpanded ? 'Hide breakdown' : 'Show breakdown'}
+                  </button>
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500">
+                    {predictions.length} picks
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
