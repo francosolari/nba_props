@@ -24,7 +24,7 @@ import AdminPanel from './pages/AdminPanel.jsx';
 import AdminGradingPanel from './pages/AdminGradingPanel.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
-import ISTCenterPage from './pages/ISTCenterPage.jsx';
+import ISTCenterPage from './pages/ist/ISTCenterPage.jsx';
 import SiteLayout from './components/SiteLayout.jsx';
 
 console.log("React bundle loaded and running!");

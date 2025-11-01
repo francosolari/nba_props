@@ -31,66 +31,8 @@ function useISTData(seasonSlug = 'current') {
   } = useQuery({
     queryKey: ['ist-leaderboard', seasonSlug],
     queryFn: async () => {
-      // This endpoint needs to be created - for now we'll use a placeholder
-      // that filters regular leaderboard data for IST-specific points
-      try {
-        const res = await axios.get(`/api/v2/leaderboards/ist/${seasonSlug}`);
-        return res.data;
-      } catch (e) {
-        // Fallback: fetch all user answers and filter for IST questions
-        const res = await axios.get(`/api/v2/answers/all-by-season/`, {
-          params: { season_slug: seasonSlug }
-        });
-
-        // Process to extract IST-specific points
-        const istUsers = new Map();
-
-        if (res.data?.items) {
-          res.data.items.forEach(item => {
-            const user = item.user;
-            const istAnswers = (item.answers || []).filter(a =>
-              a.question_type === 'ist'
-            );
-
-            if (istAnswers.length > 0) {
-              const totalPoints = istAnswers.reduce((sum, a) =>
-                sum + (a.points_earned || 0), 0
-              );
-
-              const correctAnswers = istAnswers.filter(a => a.is_correct === true).length;
-              const accuracy = istAnswers.length > 0
-                ? correctAnswers / istAnswers.length
-                : 0;
-
-              istUsers.set(user.id, {
-                id: user.id,
-                username: user.username,
-                display_name: user.display_name || user.username,
-                avatar: user.avatar || null,
-                total_points: totalPoints,
-                accuracy: accuracy,
-                predictions: istAnswers.map(a => ({
-                  question: a.question_text,
-                  answer: a.answer,
-                  points: a.points_earned || 0,
-                  correct: a.is_correct,
-                  prediction_type: a.prediction_type,
-                })),
-              });
-            }
-          });
-        }
-
-        // Convert to array and sort by points
-        const leaderboard = Array.from(istUsers.values())
-          .sort((a, b) => b.total_points - a.total_points)
-          .map((user, index) => ({
-            rank: index + 1,
-            user: user,
-          }));
-
-        return { leaderboard };
-      }
+      const res = await axios.get(`/api/v2/leaderboards/ist/${seasonSlug}`);
+      return res.data;
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -99,9 +41,6 @@ function useISTData(seasonSlug = 'current') {
   // Process standings data into a more usable format
   const processedStandings = useMemo(() => {
     if (!standingsData) return { East: {}, West: {} };
-
-    // Data is already organized by conference and group
-    // Example: { East: { "East Group A": [...], "East Group B": [...] }, West: {...} }
     return standingsData;
   }, [standingsData]);
 
@@ -111,37 +50,39 @@ function useISTData(seasonSlug = 'current') {
     return leaderboardData.leaderboard;
   }, [leaderboardData]);
 
-  // Calculate totals and stats
+  // Get stats from leaderboard response
   const stats = useMemo(() => {
-    const totalUsers = userLeaderboard.length;
-
-    let totalPredictions = 0;
-    let correctPredictions = 0;
-
-    userLeaderboard.forEach(entry => {
-      const predictions = entry.user?.predictions || [];
-      totalPredictions += predictions.length;
-      correctPredictions += predictions.filter(p => p.correct === true).length;
-    });
-
-    const avgAccuracy = totalPredictions > 0
-      ? correctPredictions / totalPredictions
-      : 0;
+    if (!leaderboardData) {
+      return {
+        totalUsers: 0,
+        totalPredictions: 0,
+        avgAccuracy: 0,
+      };
+    }
 
     return {
-      totalUsers,
-      totalPredictions,
-      avgAccuracy,
+      totalUsers: leaderboardData.total_users || 0,
+      totalPredictions: leaderboardData.total_predictions || 0,
+      avgAccuracy: leaderboardData.avg_accuracy || 0,
     };
-  }, [userLeaderboard]);
+  }, [leaderboardData]);
 
-  // Get list of all groups for rendering
+  // Get list of all groups for rendering, sorted A -> B -> C
   const groups = useMemo(() => {
     const groupList = [];
 
     ['East', 'West'].forEach(conference => {
       const confGroups = processedStandings[conference] || {};
-      Object.keys(confGroups).forEach(groupName => {
+
+      // Sort groups alphabetically (A, B, C)
+      const sortedGroupNames = Object.keys(confGroups).sort((a, b) => {
+        // Extract the letter from group names like "East Group A"
+        const letterA = a.split(' ').pop();
+        const letterB = b.split(' ').pop();
+        return letterA.localeCompare(letterB);
+      });
+
+      sortedGroupNames.forEach(groupName => {
         groupList.push({
           conference,
           name: groupName,
@@ -153,14 +94,54 @@ function useISTData(seasonSlug = 'current') {
     return groupList;
   }, [processedStandings]);
 
+  // Extract wildcard standings (2nd/3rd place teams competing for wildcard)
+  const wildcardRace = useMemo(() => {
+    const east = [];
+    const west = [];
+
+    ['East', 'West'].forEach(conference => {
+      const confGroups = processedStandings[conference] || {};
+      const targetArray = conference === 'East' ? east : west;
+
+      Object.entries(confGroups).forEach(([groupName, teams]) => {
+        // Get teams that aren't first place (potential wildcard contenders)
+        const wildcardContenders = teams.filter(team =>
+          (team.group_rank || team.ist_group_rank) !== 1
+        );
+        // Add the group name to each team
+        wildcardContenders.forEach(team => {
+          team.ist_group = groupName;
+        });
+        targetArray.push(...wildcardContenders);
+      });
+
+      // Sort by wildcard rank
+      targetArray.sort((a, b) => {
+        const rankA = a.wildcard_rank || a.ist_wildcard_rank || 999;
+        const rankB = b.wildcard_rank || b.ist_wildcard_rank || 999;
+        return rankA - rankB;
+      });
+    });
+
+    return { East: east, West: west };
+  }, [processedStandings]);
+
   const isLoading = standingsLoading || leaderboardLoading;
   const error = standingsError || leaderboardError;
+
+  // Get season info from leaderboard data
+  const season = useMemo(() => {
+    if (!leaderboardData?.season) return null;
+    return leaderboardData.season;
+  }, [leaderboardData]);
 
   return {
     standings: processedStandings,
     groups,
+    wildcardRace,
     userLeaderboard,
     stats,
+    season,
     error,
     isLoading,
   };
