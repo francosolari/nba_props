@@ -24,6 +24,7 @@ import AdminPanel from './pages/AdminPanel.jsx';
 import AdminGradingPanel from './pages/AdminGradingPanel.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
+import ISTCenterPage from './pages/ISTCenterPage.jsx';
 import SiteLayout from './components/SiteLayout.jsx';
 
 console.log("React bundle loaded and running!");
@@ -86,6 +87,9 @@ mountComponent(SubmissionsPage, 'submissions-root', 'SubmissionsPage');
 mountComponent(AdminPanel, 'admin-panel-root', 'AdminPanel');
 mountComponent(AdminGradingPanel, 'admin-grading-root', 'AdminGradingPanel');
 mountComponent(AdminDashboard, 'admin-dashboard-root', 'AdminDashboard');
+
+// Mount IST Tournament Center
+mountComponent(ISTCenterPage, 'ist-center-root', 'ISTCenterPage');
 
 // Mount SiteLayout globally - provides SideNav across all pages
 mountComponent(SiteLayout, 'site-layout-root', 'SiteLayout');
