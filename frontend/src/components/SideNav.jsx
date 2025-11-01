@@ -10,7 +10,7 @@ import {
   ChevronRight,
   Menu,
   Settings,
-  Sparkles
+  Medal
 } from 'lucide-react';
 
 function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }) {
@@ -72,7 +72,7 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, href: '/' },
     { id: 'submissions', label: 'My Submissions', icon: FileText, href: `/submit/${currentSeasonSlug}/` },
-    { id: 'ist-center', label: 'IST Center', icon: Sparkles, href: `/ist/${currentSeasonSlug}/`, special: true },
+    { id: 'ist-center', label: 'IST Center', icon: Medal, href: `/ist/${currentSeasonSlug}/`, special: true },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, href: `/leaderboard/${currentSeasonSlug}/` },
     { id: 'breakdown', label: 'Points Breakdown', icon: BarChart3, href: `/leaderboard/${currentSeasonSlug}/detailed/` },
     { id: 'profile', label: 'Profile', icon: User, href: `/user/profile/` },
@@ -105,25 +105,29 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
           const Icon = item.icon;
           const isActive = currentPage === item.id;
           const isSpecial = item.special === true;
+          const isCompact = !isExpanded && !isMobile;
+          const paddingClasses = isCompact ? 'px-2.5 py-2.5' : 'px-3 py-2.5';
+          const gapClasses = isCompact ? 'gap-0 justify-center' : 'gap-3';
+          const iconPulseClass = isSpecial ? 'text-amber-600 dark:text-amber-400' : '';
 
           return (
             <div key={item.id} className="relative group">
               <a
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                className={`flex items-center ${gapClasses} ${paddingClasses} rounded-lg transition-all duration-200 ${
                   isActive
                     ? isSpecial
-                      ? 'bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 dark:from-amber-900/30 dark:to-amber-800/30 dark:text-amber-300 shadow-md border border-amber-200 dark:border-amber-500/30'
+                      ? 'bg-amber-100/80 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200 shadow-md border border-amber-200 dark:border-amber-500/30'
                       : 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 shadow-sm'
                     : isSpecial
-                    ? 'bg-gradient-to-r from-amber-50/50 to-yellow-50/30 dark:from-amber-900/10 dark:to-yellow-900/5 text-amber-700 dark:text-amber-300 hover:from-amber-100/70 hover:to-yellow-100/50 dark:hover:from-amber-900/20 dark:hover:to-yellow-900/10 border border-amber-200/40 dark:border-amber-500/20'
+                    ? 'bg-amber-50/70 text-amber-700 dark:bg-amber-900/15 dark:text-amber-300 hover:bg-amber-100/80 dark:hover:bg-amber-900/25 border border-amber-200/40 dark:border-amber-500/20'
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 <Icon className={`w-5 h-5 shrink-0 ${
                   isActive
                     ? isSpecial ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-orange-600 dark:text-orange-400'
-                    : isSpecial ? 'text-amber-600 dark:text-amber-400' : ''
+                    : iconPulseClass
                 }`} />
                 {(isExpanded || isMobileOpen) && (
                   <span className={`text-sm font-medium truncate ${isSpecial ? 'font-semibold' : ''}`}>

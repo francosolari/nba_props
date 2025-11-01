@@ -65,7 +65,7 @@ function ISTCenterPage({ seasonSlug: initialSeasonSlug = 'current' }) {
                 In-Season Tournament
               </h1>
               <p className="text-base md:text-lg text-slate-300 max-w-2xl">
-                Six groups battle for eight knockout spots. Track your predictions and compete for the crown.
+                Six groups battle for eight knockout spots. Track your predictions and compete for the mid-season payout.
               </p>
             </div>
 

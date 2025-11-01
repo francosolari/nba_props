@@ -50,7 +50,7 @@ function ISTWildcardRace({ conference, teams = [] }) {
             <li><strong>Head-to-head record</strong> in group play games</li>
             <li><strong>Point differential</strong> across all group play (no OT)</li>
             <li><strong>Total points scored</strong> in group play (no OT)</li>
-            <li><strong>Previous season record</strong> (2023-24 regular season)</li>
+            <li><strong>Previous season record</strong></li>
           </ol>
         </div>
       )}
