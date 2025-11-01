@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useMemo } from 'react';
 
@@ -8,35 +8,50 @@ import { useMemo } from 'react';
  * @returns {Object} - Returns standings, userLeaderboard, error, isLoading states
  */
 function useISTData(seasonSlug = 'current') {
-  // Fetch IST standings grouped by conference and group
-  const {
-    data: standingsData,
-    error: standingsError,
-    isLoading: standingsLoading
-  } = useQuery({
-    queryKey: ['ist-standings', seasonSlug],
-    queryFn: async () => {
-      const res = await axios.get(`/api/v2/standings/ist/${seasonSlug}`);
-      return res.data;
-    },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    refetchOnWindowFocus: false,
-  });
+  const queryClient = useQueryClient();
 
-  // Fetch IST user leaderboard (users ranked by IST points only)
   const {
-    data: leaderboardData,
-    error: leaderboardError,
-    isLoading: leaderboardLoading
+    data,
+    error: combinedError,
+    isLoading,
+    isFetching
   } = useQuery({
-    queryKey: ['ist-leaderboard', seasonSlug],
+    queryKey: ['ist-center', seasonSlug],
     queryFn: async () => {
-      const res = await axios.get(`/api/v2/leaderboards/ist/${seasonSlug}`);
-      return res.data;
+      const [standingsRes, leaderboardRes] = await Promise.all([
+        axios.get(`/api/v2/standings/ist/${seasonSlug}`),
+        axios.get(`/api/v2/leaderboards/ist/${seasonSlug}`),
+      ]);
+
+      queryClient.setQueryData(['ist-standings', seasonSlug], standingsRes.data);
+      queryClient.setQueryData(['ist-leaderboard', seasonSlug], leaderboardRes.data);
+
+      return {
+        standingsData: standingsRes.data,
+        leaderboardData: leaderboardRes.data,
+      };
     },
     staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
+    keepPreviousData: true,
+    initialData: () => {
+      const cachedStandings = queryClient.getQueryData(['ist-standings', seasonSlug]);
+      const cachedLeaderboard = queryClient.getQueryData(['ist-leaderboard', seasonSlug]);
+
+      if (cachedStandings && cachedLeaderboard) {
+        return {
+          standingsData: cachedStandings,
+          leaderboardData: cachedLeaderboard,
+        };
+      }
+
+      return undefined;
+    },
   });
+
+  const standingsData = data?.standingsData;
+  const leaderboardData = data?.leaderboardData;
 
   // Process standings data into a more usable format
   const processedStandings = useMemo(() => {
@@ -126,8 +141,7 @@ function useISTData(seasonSlug = 'current') {
     return { East: east, West: west };
   }, [processedStandings]);
 
-  const isLoading = standingsLoading || leaderboardLoading;
-  const error = standingsError || leaderboardError;
+  const error = combinedError;
 
   // Get season info from leaderboard data
   const season = useMemo(() => {
@@ -144,6 +158,7 @@ function useISTData(seasonSlug = 'current') {
     season,
     error,
     isLoading,
+    isRefetching: isFetching && !isLoading,
   };
 }
 

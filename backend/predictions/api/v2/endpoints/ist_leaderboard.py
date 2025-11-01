@@ -4,11 +4,14 @@ Provides In-Season Tournament specific leaderboard data
 """
 from typing import List, Optional
 from ninja import Router
-from django.db.models import Q, F
 from django.contrib.auth import get_user_model
+from collections import defaultdict
+
 from predictions.models import Answer, Season, InSeasonTournamentQuestion
 from predictions.api.v2.schemas import UserDisplaySchema
 from pydantic import BaseModel, Field
+
+from predictions.api.common.services.answer_lookup_service import AnswerLookupService
 
 User = get_user_model()
 
@@ -74,8 +77,8 @@ def get_ist_leaderboard(request, season_slug: str):
                 avg_accuracy=0.0
             )
 
-        # Get all IST answers for this season
-        ist_answers = Answer.objects.filter(
+        # Get all IST answers for this season (evaluate queryset once for performance)
+        ist_answers_qs = Answer.objects.filter(
             question__season=season,
             question__polymorphic_ctype__model='inseasontournamentquestion'
         ).select_related(
@@ -84,27 +87,50 @@ def get_ist_leaderboard(request, season_slug: str):
             'question'
         )
 
+        ist_answers = list(ist_answers_qs)
+
+        if not ist_answers:
+            return ISTLeaderboardResponse(
+                leaderboard=[],
+                total_users=0,
+                total_predictions=0,
+                avg_accuracy=0.0,
+                season=SeasonInfoSchema(slug=season.slug, year=season.year) if season else None
+            )
+
+        question_ids = {answer.question_id for answer in ist_answers}
+        ist_questions_map = InSeasonTournamentQuestion.objects.filter(id__in=question_ids).in_bulk()
+
+        # Resolve answer values to friendly names using cached lookups
+        resolved_answer_map = AnswerLookupService.bulk_resolve_answers_optimized(
+            ist_answers,
+            ist_questions_map
+        )
+
         # Group by user
-        user_data = {}
+        user_data = defaultdict(lambda: {
+            'user': None,
+            'predictions': [],
+            'total_points': 0.0,
+            'correct_count': 0,
+            'total_count': 0
+        })
+
         for answer in ist_answers:
+            ist_question = ist_questions_map.get(answer.question_id)
+            if not ist_question:
+                continue
+
             user_id = answer.user.id
+            entry = user_data[user_id]
 
-            if user_id not in user_data:
-                user_data[user_id] = {
-                    'user': answer.user,
-                    'predictions': [],
-                    'total_points': 0.0,
-                    'correct_count': 0,
-                    'total_count': 0
-                }
-
-            # Get IST question details
-            ist_question = answer.question.get_real_instance()
+            if entry['user'] is None:
+                entry['user'] = answer.user
 
             prediction = ISTUserPredictionSchema(
                 question_id=answer.question.id,
                 question_text=answer.question.text,
-                answer=answer.answer,
+                answer=resolved_answer_map.get(answer.id, str(answer.answer)),
                 prediction_type=getattr(ist_question, 'prediction_type', 'unknown'),
                 ist_group=getattr(ist_question, 'ist_group', None),
                 points_earned=float(answer.points_earned or 0),
@@ -112,12 +138,12 @@ def get_ist_leaderboard(request, season_slug: str):
                 max_points=float(answer.question.point_value or 1.0)
             )
 
-            user_data[user_id]['predictions'].append(prediction)
-            user_data[user_id]['total_points'] += prediction.points_earned
-            user_data[user_id]['total_count'] += 1
+            entry['predictions'].append(prediction)
+            entry['total_points'] += prediction.points_earned
+            entry['total_count'] += 1
 
             if answer.is_correct:
-                user_data[user_id]['correct_count'] += 1
+                entry['correct_count'] += 1
 
         # Build leaderboard entries
         leaderboard_entries = []

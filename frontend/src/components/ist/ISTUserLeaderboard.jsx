@@ -3,36 +3,153 @@ import {
   Trophy,
   Star,
   Award,
-  ChevronDown,
-  ChevronUp,
-  Target,
   Users as UsersIcon,
-  CircleCheck,
-  CircleX,
+  CheckCircle2,
+  XCircle,
+  Dot,
 } from 'lucide-react';
-import ProgressBar from '../ProgressBar';
+
+const GROUP_ALPHABET = ['A', 'B', 'C'];
+
+const inferConference = (text = '') => {
+  const lower = text.toLowerCase();
+  if (lower.includes('east')) return 'East';
+  if (lower.includes('west')) return 'West';
+  if (lower.includes('champ') || lower.includes('cup')) return 'Champion';
+  return null;
+};
+
+const parseGroupMeta = (groupRaw = '') => {
+  const match = groupRaw.match(/(East|West)\s+Group\s+([a-z])/i);
+  if (match) {
+    return {
+      conference: match[1] === 'West' || match[1] === 'west' ? 'West' : 'East',
+      label: `Group ${match[2].toUpperCase()}`,
+    };
+  }
+
+  const fallbackConference = inferConference(groupRaw) || 'East';
+  const foundLetter = GROUP_ALPHABET.find(letter => groupRaw.toUpperCase().includes(`GROUP ${letter}`));
+  return {
+    conference: fallbackConference,
+    label: foundLetter ? `Group ${foundLetter}` : groupRaw || 'Group',
+  };
+};
+
+const buildBreakdown = (predictions = []) => {
+  const breakdown = {
+    groupWinners: { East: [], West: [] },
+    wildcards: { East: [], West: [], Champion: [], Other: [] },
+    conferenceTitles: { East: null, West: null, Champion: null },
+    tiebreakers: [],
+    misc: [],
+  };
+
+  predictions.forEach((prediction) => {
+    const baseEntry = {
+      team: prediction.answer,
+      status: prediction.is_correct,
+      points: prediction.points_earned,
+      question: prediction.question_text,
+    };
+
+    switch (prediction.prediction_type) {
+      case 'group_winner': {
+        const { conference, label } = parseGroupMeta(prediction.ist_group || prediction.question_text || 'Group');
+        breakdown.groupWinners[conference === 'West' ? 'West' : 'East'].push({
+          ...baseEntry,
+          label,
+        });
+        break;
+      }
+      case 'wildcard': {
+        const conference = inferConference(prediction.ist_group || prediction.question_text) || 'Other';
+        breakdown.wildcards[conference].push({
+          ...baseEntry,
+          label: conference !== 'Other' ? `${conference} Wildcard` : 'Wildcard',
+        });
+        break;
+      }
+      case 'conference_winner': {
+        const conference = inferConference(prediction.ist_group || prediction.question_text) || 'Champion';
+        const label = conference === 'Champion' ? 'NBA Cup Champion' : `${conference} Winner`;
+        breakdown.conferenceTitles[conference] = {
+          ...baseEntry,
+          label,
+        };
+        break;
+      }
+      case 'tiebreaker': {
+        breakdown.tiebreakers.push({
+          ...baseEntry,
+          label: prediction.question_text,
+        });
+        break;
+      }
+      default:
+        breakdown.misc.push({
+          ...baseEntry,
+          label: prediction.question_text,
+        });
+    }
+  });
+
+  // Sort groups by letter for consistency
+  ['East', 'West'].forEach((conference) => {
+    breakdown.groupWinners[conference].sort((a, b) => a.label.localeCompare(b.label));
+  });
+
+  return breakdown;
+};
+
+const statusStyles = (status) => {
+  if (status === true) {
+    return {
+      container: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-300',
+      icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+    };
+  }
+  if (status === false) {
+    return {
+      container: 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-500/10 dark:border-rose-500/30 dark:text-rose-300',
+      icon: <XCircle className="w-3.5 h-3.5" />,
+    };
+  }
+  return {
+    container: 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-slate-700/30 dark:border-slate-600/50 dark:text-slate-300',
+    icon: <Dot className="w-3.5 h-3.5" />,
+  };
+};
+
+const PredictionChip = ({ entry }) => {
+  const { container, icon } = statusStyles(entry.status);
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium ${container}`}>
+      {icon}
+      <span className="uppercase tracking-tight text-[10px] text-slate-500 dark:text-slate-400">
+        {entry.label}
+      </span>
+      <span className="text-xs font-semibold text-slate-900 dark:text-white">
+        {entry.team}
+      </span>
+    </span>
+  );
+};
 
 /**
- * Component to display IST user leaderboard with expandable details
+ * Component to display IST user leaderboard - compact inline version
  * @param {Object} props
  * @param {Array} props.users - Array of user leaderboard entries
  */
 function ISTUserLeaderboard({ users = [] }) {
-  const [expandedUsers, setExpandedUsers] = useState(new Set());
   const [visibleCount, setVisibleCount] = useState(10);
 
-  const toggleUserExpansion = (userId) => {
-    const next = new Set(expandedUsers);
-    next.has(userId) ? next.delete(userId) : next.add(userId);
-    setExpandedUsers(next);
-  };
-
   const rankIcon = (rank) => {
-    if (rank === 1) return <Trophy className="w-5 h-5 text-yellow-400" />;
-    if (rank === 2) return <Star className="w-5 h-5 text-slate-300" />;
-    if (rank === 3) return <Award className="w-5 h-5 text-amber-500" />;
+    if (rank === 1) return <Trophy className="w-4 h-4 text-yellow-400" />;
+    if (rank === 2) return <Star className="w-4 h-4 text-slate-300" />;
+    if (rank === 3) return <Award className="w-4 h-4 text-amber-500" />;
     return (
-      <span className="w-5 h-5 flex items-center justify-center text-sm font-bold text-black dark:text-white">
+      <span className="w-4 h-4 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-400">
         {rank}
       </span>
     );
@@ -50,188 +167,157 @@ function ISTUserLeaderboard({ users = [] }) {
   }
 
   return (
-    <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/50 rounded-xl shadow-lg">
-      {/* Title */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200/80 dark:border-slate-700/60">
-        <Trophy className="w-5 h-5 text-amber-500" />
-        <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
-          IST Leaderboard
-        </h2>
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-amber-500" />
+            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+              Prediction Leaders
+            </h2>
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            {users.length} {users.length === 1 ? 'player' : 'players'}
+          </div>
+        </div>
       </div>
 
-      {/* User Rows */}
+      {/* Compact User List */}
       <div className="divide-y divide-slate-100 dark:divide-slate-700/40">
         {users.slice(0, visibleCount).map((entry) => {
           const user = entry.user;
           const predictions = entry.predictions || [];
           const totalPoints = entry.total_points || 0;
-          const maxPossiblePoints = predictions.length; // Each IST prediction is worth up to 1 point
-          const accuracy = entry.accuracy || 0;
+
+          // Count correct and incorrect
+          const correctCount = predictions.filter(p => p.is_correct === true).length;
+          const incorrectCount = predictions.filter(p => p.is_correct === false).length;
+          const pendingCount = predictions.filter(p => p.is_correct === null).length;
+          const breakdown = buildBreakdown(predictions);
 
           return (
             <div
               key={user.id}
-              className="bg-white/60 dark:bg-slate-800/40 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/30"
+              className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors"
             >
               {/* Main Row */}
-              <button
-                type="button"
-                onClick={() => toggleUserExpansion(user.id)}
-                className="w-full px-3 py-3 md:px-4 md:py-3.5 flex items-center justify-between transition-colors"
-              >
-                {/* Left side (rank, avatar, name) */}
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {/* Rank */}
+                <div className="shrink-0">
                   {rankIcon(entry.rank)}
+                </div>
 
-                  <div className="relative w-9 h-9">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={`${user.display_name || user.username} avatar`}
-                        className="w-full h-full rounded-full object-cover border-2 border-slate-200 dark:border-slate-600"
-                        onError={(e) => (e.currentTarget.style.display = 'none')}
-                      />
-                    ) : (
-                      <div className="w-full h-full rounded-full border-2 border-slate-200 dark:border-slate-600 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
-                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                          {(user.display_name || user.username)
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="font-semibold text-[15px] text-slate-900 dark:text-white text-left">
+                {/* User Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                       {user.display_name || user.username}
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {(accuracy * 100).toFixed(0)}% accuracy
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right side (points, progress, chevron) */}
-                <div className="flex items-center gap-4 md:gap-6">
-                  {/* Points */}
-                  <div className="text-right">
-                    <p className="text-xl md:text-2xl font-bold text-teal-600 dark:text-teal-400">
-                      {totalPoints.toFixed(1)}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">pts</p>
-                  </div>
-
-                  {/* Progress bar (desktop only) */}
-                  <div className="hidden md:block min-w-[120px]">
-                    <ProgressBar
-                      value={totalPoints}
-                      max={maxPossiblePoints || 1}
-                      size="sm"
-                      color="bg-gradient-to-r from-teal-500 to-teal-600"
-                      bgColor="bg-slate-200 dark:bg-slate-700"
-                    />
-                    <p className="mt-1 text-[10px] text-slate-600 dark:text-slate-300 font-medium text-center">
-                      {totalPoints.toFixed(1)}/{maxPossiblePoints}
-                    </p>
+                    {/* Record badges */}
+                    <div className="flex items-center gap-1 text-[10px] font-medium">
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="w-2.5 h-2.5" />
+                        {correctCount}
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400">
+                        <XCircle className="w-2.5 h-2.5" />
+                        {incorrectCount}
+                      </span>
+                      {pendingCount > 0 && (
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
+                          {pendingCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Expand/collapse icon */}
-                  {expandedUsers.has(user.id) ? (
-                    <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                  )}
-                </div>
-              </button>
-
-              {/* Expanded Details */}
-              {expandedUsers.has(user.id) && (
-                <div className="px-3 pb-4 md:px-4 md:pb-5 bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-800/30 dark:to-slate-900/20">
-                  {predictions.length === 0 ? (
-                    <p className="text-sm text-slate-500 dark:text-slate-400 italic">
-                      No predictions yet
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {/* Group predictions by type */}
-                      {[
-                        { type: 'group_winner', label: 'Group Winners', icon: Target },
-                        { type: 'wildcard', label: 'Wildcards', icon: Star },
-                        { type: 'conference_winner', label: 'Conference Winners', icon: Trophy },
-                      ].map(({ type, label, icon: Icon }) => {
-                        const typePredictions = predictions.filter(
-                          (p) => p.prediction_type === type
-                        );
-
-                        if (typePredictions.length === 0) return null;
-
-                        const correctPredictions = typePredictions.filter((p) => p.is_correct === true);
-                        const wrongPredictions = typePredictions.filter((p) => p.is_correct === false);
-
-                        return (
-                          <div key={type} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/70 p-3">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Icon className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                              <h4 className="text-sm font-bold text-slate-900 dark:text-white">{label}</h4>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {/* Correct predictions */}
-                              <div>
-                                <div className="flex items-center gap-1.5 mb-1.5 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
-                                  <CircleCheck className="w-3.5 h-3.5" />
-                                  Correct ({correctPredictions.length})
-                                </div>
-                                <ul className="space-y-1">
-                                  {correctPredictions.length === 0 && (
-                                    <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-                                      None yet
-                                    </li>
-                                  )}
-                                  {correctPredictions.map((p, i) => (
-                                    <li
-                                      key={`correct-${i}`}
-                                      className="text-[11px] text-emerald-900 dark:text-emerald-100 bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 leading-tight"
-                                    >
-                                      {p.answer}
-                                      <span className="ml-1 font-bold">+{p.points_earned.toFixed(1)}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-
-                              {/* Wrong predictions */}
-                              <div>
-                                <div className="flex items-center gap-1.5 mb-1.5 text-rose-600 dark:text-rose-400 text-[11px] font-bold">
-                                  <CircleX className="w-3.5 h-3.5" />
-                                  Missed ({wrongPredictions.length})
-                                </div>
-                                <ul className="space-y-1">
-                                  {wrongPredictions.length === 0 && (
-                                    <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-                                      None yet
-                                    </li>
-                                  )}
-                                  {wrongPredictions.map((p, i) => (
-                                    <li
-                                      key={`wrong-${i}`}
-                                      className="text-[11px] text-rose-900 dark:text-rose-100 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/30 rounded-md px-2 py-1 leading-tight"
-                                    >
-                                      {p.answer}
-                                      <span className="ml-1 font-bold">{p.points_earned.toFixed(1)}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
+                  {/* Inline Predictions */}
+                  {predictions.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {(breakdown.groupWinners.East.length > 0 || breakdown.groupWinners.West.length > 0) && (
+                        <div className="rounded-md bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 px-2 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Group Winners
                           </div>
-                        );
-                      })}
+                          <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {['East', 'West'].map((conference) => (
+                              breakdown.groupWinners[conference].length > 0 && (
+                                <div key={conference}>
+                                  <div className="text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">
+                                    {conference}
+                                  </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {breakdown.groupWinners[conference].map((item) => (
+                                      <PredictionChip key={`${conference}-${item.label}-${item.team}`} entry={item} />
+                                    ))}
+                                  </div>
+                                </div>
+                              )
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {(breakdown.wildcards.East.length > 0 || breakdown.wildcards.West.length > 0 || breakdown.wildcards.Champion.length > 0) && (
+                        <div className="rounded-md bg-slate-100/60 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 px-2 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Wildcards
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {['East', 'West', 'Champion'].map((conference) => (
+                              breakdown.wildcards[conference].map((item) => (
+                                <PredictionChip key={`${conference}-wildcard-${item.team}`} entry={item} />
+                              ))
+                            ))}
+                            {breakdown.wildcards.Other.map((item, index) => (
+                              <PredictionChip key={`wildcard-other-${index}`} entry={item} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {(breakdown.conferenceTitles.East || breakdown.conferenceTitles.West || breakdown.conferenceTitles.Champion) && (
+                        <div className="rounded-md bg-slate-100/50 dark:bg-slate-800/20 border border-slate-200 dark:border-slate-700 px-2 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Conference & Finals
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {['East', 'West', 'Champion'].map((key) => {
+                              const entryObj = breakdown.conferenceTitles[key];
+                              if (!entryObj) return null;
+                              return (
+                                <PredictionChip key={`title-${key}`} entry={entryObj} />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {breakdown.tiebreakers.length > 0 && (
+                        <div className="rounded-md bg-slate-100/40 dark:bg-slate-800/10 border border-slate-200 dark:border-slate-700 px-2 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Tiebreakers
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {breakdown.tiebreakers.map((item, index) => (
+                              <PredictionChip key={`tiebreaker-${index}`} entry={item} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
+
+                {/* Points */}
+                <div className="text-right shrink-0">
+                  <p className="text-base font-bold text-teal-600 dark:text-teal-400">
+                    {totalPoints.toFixed(1)}
+                  </p>
+                  <p className="text-[9px] text-slate-500 dark:text-slate-400 font-medium uppercase">pts</p>
+                </div>
+              </div>
             </div>
           );
         })}
