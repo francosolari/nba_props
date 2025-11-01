@@ -65,8 +65,9 @@ class Command(BaseCommand):
         }
 
         # Mapping for wildcard winners: {team_id: is_wildcard_winner}
+        # Exclude group winners from wildcard consideration
         wildcard_winners_map = {
-            standing.team_id: standing.ist_wildcard_rank == 1
+            standing.team_id: standing.ist_wildcard_rank == 1 and standing.ist_group_rank != 1
             for standing in ist_standings
         }
 
