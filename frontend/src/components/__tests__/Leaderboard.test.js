@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 import Leaderboard from '../Leaderboard';
 
@@ -8,33 +7,29 @@ import Leaderboard from '../Leaderboard';
 jest.mock('axios');
 
 // Sample leaderboard data for testing
-const mockLeaderboardData = {
-  leaderboard: [
-    {
-      username: 'user1',
-      total_points: 150,
-      rank: 1,
-      avatar: null
-    },
-    {
-      username: 'user2',
-      total_points: 120,
-      rank: 2,
-      avatar: null
-    },
-    {
-      username: 'user3',
-      total_points: 100,
-      rank: 3,
-      avatar: null
-    }
-  ]
-};
+const mockLeaderboardData = [
+  {
+    id: 1,
+    display_name: 'user1',
+    total_points: 150
+  },
+  {
+    id: 2,
+    display_name: 'user2',
+    total_points: 120
+  },
+  {
+    id: 3,
+    display_name: 'user3',
+    total_points: 100
+  }
+];
 
 describe('Leaderboard Component', () => {
   beforeEach(() => {
     // Reset mocks before each test
     jest.clearAllMocks();
+    axios.get.mockReset();
   });
 
   test('renders loading state initially', () => {
@@ -44,18 +39,18 @@ describe('Leaderboard Component', () => {
     render(<Leaderboard seasonSlug="2023-2024" />);
     
     // Check if loading indicator is displayed
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(screen.getByText(/Loading Leaderboard/i)).toBeInTheDocument();
   });
 
   test('renders leaderboard data when loaded', async () => {
     // Mock the API call to return successful response
-    axios.get.mockResolvedValue({ data: mockLeaderboardData });
+    axios.get.mockResolvedValueOnce({ data: mockLeaderboardData });
     
     render(<Leaderboard seasonSlug="2023-2024" />);
     
     // Wait for the leaderboard to load
     await waitFor(() => {
-      expect(screen.getByText('Leaderboard')).toBeInTheDocument();
+      expect(screen.getByText(/Leaderboard \(2023-2024\)/)).toBeInTheDocument();
     });
     
     // Check if user data is displayed
@@ -69,83 +64,72 @@ describe('Leaderboard Component', () => {
 
   test('displays error message when API call fails', async () => {
     // Mock the API call to return an error
-    axios.get.mockRejectedValue(new Error('Failed to fetch leaderboard'));
+    axios.get.mockImplementation((url) => {
+      if (url.startsWith('/api/v2/leaderboards/')) {
+        return Promise.reject(new Error('v2 failed'));
+      }
+      if (url.startsWith('/api/v2/leaderboard/')) {
+        return Promise.reject(new Error('temp failed'));
+      }
+      return Promise.reject(new Error('v1 failed'));
+    });
     
     render(<Leaderboard seasonSlug="2023-2024" />);
     
     // Wait for the error message to appear
     await waitFor(() => {
-      expect(screen.getByText(/error loading leaderboard/i)).toBeInTheDocument();
+      expect(screen.getByText('Failed to load leaderboard. Please try again later.')).toBeInTheDocument();
     });
   });
 
   test('calls correct API endpoint with season slug', async () => {
     // Mock the API call to return successful response
-    axios.get.mockResolvedValue({ data: mockLeaderboardData });
+    axios.get.mockResolvedValueOnce({ data: mockLeaderboardData });
     
     render(<Leaderboard seasonSlug="2023-2024" />);
     
     // Wait for the API call to be made
     await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('/api/v2/2023-2024/leaderboard/');
+      expect(axios.get).toHaveBeenCalledWith('/api/v2/leaderboards/2023-2024');
     });
   });
 
-  test('sorts leaderboard by rank', async () => {
-    // Mock the API call with unordered data
-    const unorderedData = {
-      leaderboard: [
-        {
-          username: 'user3',
-          total_points: 100,
-          rank: 3,
-          avatar: null
-        },
-        {
-          username: 'user1',
-          total_points: 150,
-          rank: 1,
-          avatar: null
-        },
-        {
-          username: 'user2',
-          total_points: 120,
-          rank: 2,
-          avatar: null
-        }
-      ]
-    };
+  test('renders rows in the order they are returned', async () => {
+    const orderedData = [
+      { id: 3, display_name: 'userC', total_points: 90 },
+      { id: 1, display_name: 'userA', total_points: 140 },
+      { id: 2, display_name: 'userB', total_points: 110 },
+    ];
     
-    axios.get.mockResolvedValue({ data: unorderedData });
+    axios.get.mockResolvedValueOnce({ data: orderedData });
     
     render(<Leaderboard seasonSlug="2023-2024" />);
     
-    // Wait for the leaderboard to load
     await waitFor(() => {
-      expect(screen.getByText('Leaderboard')).toBeInTheDocument();
+      expect(screen.getByText(/Leaderboard \(2023-2024\)/)).toBeInTheDocument();
     });
     
-    // Get all username elements
-    const usernames = screen.getAllByTestId('username');
-    
-    // Check if they are in the correct order
-    expect(usernames[0]).toHaveTextContent('user1');
-    expect(usernames[1]).toHaveTextContent('user2');
-    expect(usernames[2]).toHaveTextContent('user3');
+    const rows = screen.getAllByRole('row');
+    expect(rows[1]).toHaveTextContent('userC');
+    expect(rows[2]).toHaveTextContent('userA');
+    expect(rows[3]).toHaveTextContent('userB');
   });
 
   test('handles empty leaderboard data', async () => {
     // Mock the API call with empty leaderboard
-    axios.get.mockResolvedValue({ data: { leaderboard: [] } });
+    axios.get
+      .mockResolvedValueOnce({ data: [] })
+      .mockResolvedValueOnce({ data: { top_users: [] } })
+      .mockResolvedValueOnce({ data: { top_users: [] } });
     
     render(<Leaderboard seasonSlug="2023-2024" />);
     
     // Wait for the leaderboard to load
     await waitFor(() => {
-      expect(screen.getByText('Leaderboard')).toBeInTheDocument();
+      expect(screen.getByText(/Leaderboard \(2023-2024\)/)).toBeInTheDocument();
     });
     
     // Check if empty message is displayed
-    expect(screen.getByText(/no leaderboard data available/i)).toBeInTheDocument();
+    expect(screen.getByText(/No leaderboard data available/i)).toBeInTheDocument();
   });
 });

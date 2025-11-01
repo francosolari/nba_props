@@ -33,6 +33,7 @@ from .endpoints.standings import router as standings_router
 from .endpoints.homepage import router as homepage_router
 from .endpoints.answers import router as answers_router
 from .endpoints.leaderboard import router as leaderboards_router
+from .endpoints.ist_leaderboard import router as ist_leaderboard_router
 from .endpoints.seasons import router as seasons_router
 from .endpoints.user_submissions import router as submissions_router
 from .endpoints.admin_questions import router as admin_questions_router
@@ -237,6 +238,7 @@ api.add_router("/standings", standings_router)
 api.add_router("/homepage/", homepage_router)
 api.add_router("/answers/", answers_router)
 api.add_router("/leaderboards/", leaderboards_router)
+api.add_router("/leaderboards/ist", ist_leaderboard_router)
 api.add_router("/seasons/", seasons_router)
 api.add_router("/submissions", submissions_router)
 api.add_router("/admin", admin_questions_router)

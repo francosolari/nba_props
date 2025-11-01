@@ -12,7 +12,7 @@ from predictions.views.user_views import (
     profile_view, view_ist_standings, user_leaderboard,
     submit_predictions, render_questions, submit_answers, leaderboard_page,
     leaderboard_detail_page, submit_predictions_view, admin_panel_view,
-    admin_grading_panel_view, admin_dashboard_view
+    admin_grading_panel_view, admin_dashboard_view, ist_center_view
 )
 
 app_name = 'predictions_views'
@@ -32,6 +32,7 @@ leaderboard_patterns = [
     path('what-if/<slug:season_slug>/', what_if_view, name='what_if_view'),
     path('leaderboard/<slug:season_slug>/', leaderboard_page, name='leaderboard_page'),
     path('leaderboard/<slug:season_slug>/detailed/', leaderboard_detail_page, name='leaderboard_detail_page'),
+    path('ist/<slug:season_slug>/', ist_center_view, name='ist_center'),
 ]
 
 # User authentication patterns
