@@ -12,7 +12,9 @@ function SiteLayout() {
 
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.startsWith('/leaderboard')) {
+    if (path.startsWith('/ist')) {
+      setCurrentPage('ist-center');
+    } else if (path.startsWith('/leaderboard')) {
       if (path.includes('/detailed')) {
         setCurrentPage('breakdown');
       } else {
