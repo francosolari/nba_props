@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}In-Season Tournament Center - NBA Predictions{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-0">
+  <div
+    id="ist-center-root"
+    data-season-slug="{{ season.slug }}"
+  ></div>
+</div>
+<script src="{% static 'js/bundle.js' %}"></script>
+{% endblock %}

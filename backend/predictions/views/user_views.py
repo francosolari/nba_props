@@ -408,3 +408,20 @@ def admin_dashboard_view(request, season_slug='current'):
         'season': season,
         'season_slug': season_slug,
     })
+
+
+def ist_center_view(request, season_slug):
+    """
+    View to render the In-Season Tournament (IST) Center page.
+    Displays IST groups, standings, and user leaderboard.
+    """
+    if season_slug == 'current':
+        season = Season.objects.order_by('-start_date').first()
+        if not season:
+            raise Http404("No seasons available.")
+    else:
+        season = get_object_or_404(Season, slug=season_slug)
+
+    return render(request, 'predictions/ist_center.html', {
+        'season': season,
+    })
