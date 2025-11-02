@@ -1,0 +1,59 @@
+{% extends "allauth/layouts/base.html" %}
+{% load allauth %}
+{% block body %}
+    <div class="flex-grow flex">
+        <aside class="w-1/5 bg-gray-800 text-white">
+            <ul class="p-3">
+                {% url 'account_email' as email_url_ %}
+                {% if email_url_ %}
+                    <li class="mb-2">
+                        <a class="{% block nav_class_email %}block py-2 px-4 text-white hover:bg-gray-700 rounded{% endblock %}"
+                           href="{{ email_url_ }}">Change Email</a>
+                    </li>
+                {% endif %}
+                {% url 'account_change_password' as change_password_url_ %}
+                {% if change_password_url_ %}
+                    <li class="mb-2">
+                        <a class="{% block nav_class_password %}block py-2 px-4 text-white hover:bg-gray-700 rounded{% endblock %}"
+                           href="{{ change_password_url_ }}">Change Password</a>
+                    </li>
+                {% endif %}
+                {% url 'socialaccount_connections' as connections_url_ %}
+                {% if connections_url_ %}
+                    <li class="mb-2">
+                        <a class="{% block nav_class_socialaccount %}block py-2 px-4 text-white hover:bg-gray-700 rounded{% endblock %}"
+                           href="{{ connections_url_ }}">Third-Party Accounts</a>
+                    </li>
+                {% endif %}
+                {% url 'mfa_index' as mfa_index_url_ %}
+                {% if mfa_index_url_ %}
+                    <li class="mb-2">
+                        <a class="{% block nav_class_mfa %}block py-2 px-4 text-white hover:bg-gray-700 rounded{% endblock %}"
+                           href="{{ mfa_index_url_ }}">Two-Factor Authentication</a>
+                    </li>
+                {% endif %}
+                {% url 'usersessions_list' as usersessions_list_url_ %}
+                {% if usersessions_list_url_ %}
+                    <li class="mb-2">
+                        <a class="{% block nav_class_usersessions %}block py-2 px-4 text-white hover:bg-gray-700 rounded{% endblock %}"
+                           href="{{ usersessions_list_url_ }}">Sessions</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </aside>
+        <main class="w-4/5">
+            <div class="container mx-auto">
+                {% if messages %}
+                    <div class="pt-4">
+                        {% for message in messages %}
+                            <div class="p-4 mb-4 text-sm rounded-lg {% if message.tags == 'success' %} bg-green-100 text-green-800 {% elif message.tags == 'error' %} bg-red-100 text-red-800 {% else %} bg-blue-100 text-blue-800 {% endif %}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+{% endblock %}

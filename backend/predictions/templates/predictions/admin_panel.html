@@ -1,0 +1,10 @@
+{% extends 'predictions/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- React mount point for AdminPanel -->
+<div id="admin-panel-root"></div>
+
+<!-- React bundle will be loaded by base template -->
+<script src="{% static 'js/bundle.js' %}"></script>
+{% endblock %}

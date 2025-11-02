@@ -1,0 +1,11 @@
+{% extends 'predictions/base.html' %}
+{% load static %}
+
+{% block title %}Admin Grading Panel - NBA Predictions{% endblock %}
+
+{% block content %}
+<div id="admin-grading-root" data-season-slug="{{ season_slug }}"></div>
+
+<!-- Load React bundle -->
+<script src="{% static 'js/bundle.js' %}"></script>
+{% endblock %}

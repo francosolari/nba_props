@@ -1,30 +1,29 @@
-# Step 1: Use an official Python runtime as a parent image
+# Lightweight Python-only Dockerfile (frontend built locally via npm run build)
 FROM python:3.11-slim-bullseye
 
-# Step 2: Set environment variables to prevent Python from buffering stdout and stdin
 ENV PYTHONUNBUFFERED=1
 
-# Step 3: Set the working directory in the container
-WORKDIR /nba_predictions
+WORKDIR /app
 
-# Step 4: Copy the requirements file into the container
-COPY requirements.txt /nba_predictions/
+# Copy requirements first (for better layer caching)
+COPY backend/requirements.txt /app/
 
-# Step 5: Install any necessary dependencies
+# Install dependencies with --no-cache-dir to save space (~50MB savings)
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
-# Step 6: Copy the application code into the container at /nba_predictions
-COPY . /nba_predictions/
+# Copy backend code
+COPY backend/ /app/
 
-# Step 7: Collect static files
+# Copy pre-built frontend static files (already built via npm run build)
+COPY frontend/static /app/../frontend/static
+
+# Collect static files (Django + WhiteNoise will serve these)
 RUN python manage.py collectstatic --noinput
 
-# Step 8: Set environment variables for Django (optional)
 ENV DJANGO_SETTINGS_MODULE=nba_predictions.settings
 
-# Step 9: Expose the port that your app runs on
 EXPOSE 8000
 
-# Step 10: Run the Django app using Gunicorn for production
+# Run the Django app using Gunicorn for production
 CMD ["gunicorn", "nba_predictions.wsgi:application", "--bind", "0.0.0.0:8000"]

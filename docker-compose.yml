@@ -1,6 +1,12 @@
+# Docker Compose for NBA Predictions
+# NOTE: Web containers (blue/green) are managed by blue_green_deploy.sh script
+# This file only manages the database for sustainable deployment
+
 services:
   db:
     image: postgres:latest
+    container_name: nba_props_db_1
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -8,54 +14,17 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432" # Expose Postgresql to port 5432
+      - "5432:5432"
     networks:
-      - mynetwork
-
-  web-blue:
-    build: .
-    command: sh -c "python manage.py migrate &&
-             gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000"
-    ports:
-      - "8000:8000"  # Expose web-blue on port 8001 locally
-    volumes:
-      - .:/nba_predictions
-    environment:
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DJANGO_DEVELOPMENT=False
-      - DATABASE_HOST=${DATABASE_HOST}
-      - DATABASE_PORT=${DATABASE_PORT}
-      - DATABASE_NAME=${DATABASE_NAME}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-    depends_on:
-      - db
-    networks:
-      - mynetwork
-
-  web-green:
-    build: .
-    command: sh -c "python manage.py migrate &&
-             gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000"
-    ports:
-      - "8002:8000"  # Expose web-green on port 8002 locally
-    volumes:
-      - .:/nba_predictions
-    environment:
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DJANGO_DEVELOPMENT=True
-      - DATABASE_HOST=${DATABASE_HOST}
-      - DATABASE_PORT=${DATABASE_PORT}
-      - DATABASE_NAME=${DATABASE_NAME}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-    depends_on:
-      - db
-    networks:
-      - mynetwork
+      mynetwork:
+        aliases:
+          - db  # Makes it accessible as 'db' for DATABASE_HOST=db
 
 networks:
   mynetwork:
+    name: nba_props_mynetwork
+    driver: bridge
 
 volumes:
   postgres_data:
+    name: nba_props_postgres_data

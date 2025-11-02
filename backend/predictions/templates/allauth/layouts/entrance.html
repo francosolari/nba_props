@@ -1,0 +1,22 @@
+{% extends "allauth/layouts/base.html" %}
+{% load i18n allauth %}
+{% block content %}
+    <div class="flex items-center justify-center min-h-[calc(100vh-16rem)]">
+        <div class="w-full max-w-md">
+            {% if messages %}
+                {% for message in messages %}
+                    {% element alert level=message.tags %}
+                        {% slot message %}
+                            {{ message }}
+                        {% endslot %}
+                    {% endelement %}
+                {% endfor %}
+            {% endif %}
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="p-8">
+                    {% block entrance_content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

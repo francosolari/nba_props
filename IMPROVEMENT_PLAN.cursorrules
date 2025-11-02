@@ -1,0 +1,382 @@
+# NBA Predictions Game - Improvement Plan
+
+## Format
+This file follows a specific format designed for LLMs to parse and execute improvements to the codebase.
+Each rule follows this structure:
+
+```
+[RULE: <rule_id>]
+TITLE: <descriptive title>
+CATEGORY: <backend|frontend|devops|documentation>
+PRIORITY: <high|medium|low>
+DESCRIPTION: <detailed description of the improvement>
+IMPLEMENTATION:
+- <step-by-step implementation instructions>
+FILES:
+- <file path or pattern>
+VALIDATION:
+- <criteria to validate the implementation>
+DEPENDENCIES:
+- <rule_ids that must be completed first>
+```
+
+## Backend Improvements
+
+[RULE: BE-001]
+TITLE: Consolidate API to v2
+CATEGORY: backend
+PRIORITY: high
+DESCRIPTION: Gradually migrate all endpoints to API v2 (Django Ninja) and create a deprecation plan for API v1.
+IMPLEMENTATION:
+- Identify all API v1 endpoints in predictions/api/v1/
+- Create equivalent endpoints in predictions/api/v2/endpoints/
+- Add deprecation warnings to API v1 endpoints
+- Update frontend code to use API v2 endpoints
+FILES:
+- predictions/api/v1/*.py
+- predictions/api/v2/endpoints/*.py
+- predictions/api/v2/api.py
+- src/hooks/useApi.js
+VALIDATION:
+- All API v1 endpoints have equivalent v2 endpoints
+- API v1 endpoints include deprecation warnings
+- Frontend uses API v2 endpoints
+- All tests pass for both API versions
+DEPENDENCIES:
+- None
+
+[RULE: BE-002]
+TITLE: Implement service layer
+CATEGORY: backend
+PRIORITY: medium
+DESCRIPTION: Move business logic from views to service classes to improve separation of concerns.
+IMPLEMENTATION:
+- Create a services/ directory in the predictions app
+- Create service classes for each domain (teams, players, predictions, etc.)
+- Move business logic from views to service classes
+- Update views to use service classes
+FILES:
+- predictions/services/*.py
+- predictions/views/*.py
+- predictions/api/v2/endpoints/*.py
+VALIDATION:
+- Views contain minimal logic and delegate to service classes
+- Service classes are well-documented and tested
+- No business logic duplication between views
+DEPENDENCIES:
+- None
+
+[RULE: BE-003]
+TITLE: Implement comprehensive testing
+CATEGORY: backend
+PRIORITY: high
+DESCRIPTION: Add unit tests, integration tests, and API tests to ensure code quality.
+IMPLEMENTATION:
+- Create test directories for each app
+- Implement model tests for all models
+- Implement API tests for all endpoints
+- Implement view tests for all views
+- Set up test coverage reporting
+FILES:
+- predictions/tests/*.py
+- accounts/tests/*.py
+- .github/workflows/ci-cd.yml
+VALIDATION:
+- Test coverage is at least 80%
+- All models have unit tests
+- All API endpoints have integration tests
+- CI pipeline runs all tests
+DEPENDENCIES:
+- None
+
+[RULE: BE-004]
+TITLE: Implement error handling and logging
+CATEGORY: backend
+PRIORITY: medium
+DESCRIPTION: Add consistent error handling and structured logging across the application.
+IMPLEMENTATION:
+- Create a common error handling module
+- Implement middleware for exception handling
+- Set up structured logging with proper formatters
+- Add logging to all views and services
+FILES:
+- predictions/utils/error_handling.py
+- predictions/middleware/exception_middleware.py
+- nba_predictions/settings.py
+- predictions/views/*.py
+- predictions/services/*.py
+VALIDATION:
+- All exceptions are properly caught and handled
+- Logs are structured and include context
+- Error responses follow a consistent format
+DEPENDENCIES:
+- BE-002
+
+[RULE: BE-005]
+TITLE: Implement role-based access control
+CATEGORY: backend
+PRIORITY: high
+DESCRIPTION: Add proper authentication and authorization with role-based access control.
+IMPLEMENTATION:
+- Define user roles (admin, user, guest)
+- Create permission classes for each role
+- Apply permissions to views and API endpoints
+- Update user model to include roles
+FILES:
+- accounts/models.py
+- accounts/permissions.py
+- predictions/api/v2/endpoints/*.py
+- predictions/views/*.py
+VALIDATION:
+- All endpoints have appropriate permission checks
+- Users can only access authorized resources
+- Admin-only features are protected
+DEPENDENCIES:
+- None
+
+## Frontend Improvements
+
+[RULE: FE-001]
+TITLE: Implement state management
+CATEGORY: frontend
+PRIORITY: high
+DESCRIPTION: Add proper state management using React Query and Context API.
+IMPLEMENTATION:
+- Set up React Query for API data fetching
+- Create context providers for global state
+- Refactor components to use context and React Query
+- Add proper error handling for API requests
+FILES:
+- src/context/*.js
+- src/hooks/useQuery.js
+- src/components/*.js
+- src/App.js
+VALIDATION:
+- API data is cached and revalidated properly
+- Global state is managed through context
+- Components don't contain API fetching logic
+- Loading and error states are handled consistently
+DEPENDENCIES:
+- None
+
+[RULE: FE-002]
+TITLE: Reorganize components by feature
+CATEGORY: frontend
+PRIORITY: medium
+DESCRIPTION: Restructure components directory to organize by feature rather than flat structure.
+IMPLEMENTATION:
+- Create feature-based directories (predictions, leaderboard, profile, etc.)
+- Move components to appropriate feature directories
+- Create index.jsx files to export components
+- Update imports in all files
+FILES:
+- src/components/**/*.js
+- src/features/**/*.js
+VALIDATION:
+- Components are organized by feature
+- No components in the root components directory
+- All imports are updated
+DEPENDENCIES:
+- None
+
+[RULE: FE-003]
+TITLE: Migrate to TypeScript
+CATEGORY: frontend
+PRIORITY: medium
+DESCRIPTION: Gradually migrate JavaScript files to TypeScript for better type safety.
+IMPLEMENTATION:
+- Set up TypeScript configuration
+- Create type definitions for API responses
+- Convert utility functions to TypeScript
+- Convert hooks to TypeScript
+- Convert components to TypeScript
+FILES:
+- tsconfig.json
+- src/types/*.ts
+- src/utils/*.ts
+- src/hooks/*.ts
+- src/components/**/*.tsx
+VALIDATION:
+- TypeScript compilation succeeds
+- No any types in converted files
+- API response types match backend schemas
+DEPENDENCIES:
+- None
+
+[RULE: FE-004]
+TITLE: Implement frontend testing
+CATEGORY: frontend
+PRIORITY: high
+DESCRIPTION: Add Jest and React Testing Library tests for components and hooks.
+IMPLEMENTATION:
+- Set up Jest configuration
+- Create test files for all components
+- Create test files for all hooks
+- Add snapshot tests for UI components
+- Add integration tests for forms and interactive components
+FILES:
+- src/components/**/__tests__/*.js
+- src/hooks/__tests__/*.js
+- jest.config.js
+- .github/workflows/ci-cd.yml
+VALIDATION:
+- All components have tests
+- All hooks have tests
+- Test coverage is at least 80%
+- CI pipeline runs all tests
+DEPENDENCIES:
+- None
+
+## DevOps Improvements
+
+[RULE: DO-001]
+TITLE: Optimize Docker configuration
+CATEGORY: devops
+PRIORITY: high
+DESCRIPTION: Improve Docker configuration with multi-stage builds and optimized images.
+IMPLEMENTATION:
+- Create multi-stage Dockerfile for frontend and backend
+- Optimize image size by removing unnecessary dependencies
+- Add proper health checks
+- Configure proper resource limits
+FILES:
+- Dockerfile
+- docker-compose.yml
+- .dockerignore
+VALIDATION:
+- Docker image size is reduced
+- Build time is optimized
+- Health checks are implemented
+- Container starts without errors
+DEPENDENCIES:
+- None
+
+[RULE: DO-002]
+TITLE: Enhance CI/CD pipeline
+CATEGORY: devops
+PRIORITY: high
+DESCRIPTION: Improve GitHub Actions workflow with proper testing, building, and deployment.
+IMPLEMENTATION:
+- Add linting step
+- Add test coverage reporting
+- Configure caching for dependencies
+- Implement proper blue-green deployment
+- Add notifications for failures
+FILES:
+- .github/workflows/ci-cd.yml
+- .github/workflows/pr-checks.yml
+VALIDATION:
+- CI pipeline runs on all PRs
+- CD pipeline deploys to production on main branch
+- Blue-green deployment works correctly
+- Notifications are sent on failures
+DEPENDENCIES:
+- None
+
+[RULE: DO-003]
+TITLE: Implement environment configuration
+CATEGORY: devops
+PRIORITY: medium
+DESCRIPTION: Improve environment configuration with proper secrets management.
+IMPLEMENTATION:
+- Create environment-specific configuration files
+- Set up secrets management
+- Update Docker Compose to use secrets
+- Document environment setup process
+FILES:
+- .env.example
+- .env.production
+- .env.development
+- docker-compose.yml
+- README.md
+VALIDATION:
+- Sensitive information is not hardcoded
+- Environment variables are documented
+- Different environments use different configurations
+DEPENDENCIES:
+- None
+
+## Documentation Improvements
+
+[RULE: DOC-001]
+TITLE: Create comprehensive README
+CATEGORY: documentation
+PRIORITY: high
+DESCRIPTION: Improve project README with detailed setup and usage instructions.
+IMPLEMENTATION:
+- Add project overview
+- Add setup instructions
+- Add development workflow
+- Add deployment process
+- Add architecture overview
+FILES:
+- README.md
+VALIDATION:
+- README contains all required sections
+- Setup instructions are clear and complete
+- Architecture overview includes diagrams
+DEPENDENCIES:
+- None
+
+[RULE: DOC-002]
+TITLE: Add code documentation
+CATEGORY: documentation
+PRIORITY: medium
+DESCRIPTION: Add docstrings and comments to all functions and classes.
+IMPLEMENTATION:
+- Add docstrings to all functions and classes
+- Add type hints to Python code
+- Document complex business logic
+- Generate API documentation from code
+FILES:
+- predictions/**/*.py
+- accounts/**/*.py
+- src/**/*.js
+VALIDATION:
+- All functions and classes have docstrings
+- All parameters and return values are documented
+- Complex logic has explanatory comments
+DEPENDENCIES:
+- None
+
+[RULE: DOC-003]
+TITLE: Create API documentation
+CATEGORY: documentation
+PRIORITY: high
+DESCRIPTION: Generate and maintain API documentation for all endpoints.
+IMPLEMENTATION:
+- Set up automatic API documentation generation
+- Document all API endpoints
+- Include request/response examples
+- Add authentication requirements
+FILES:
+- predictions/api/v2/api.py
+- predictions/api/v2/endpoints/*.py
+- docs/api.md
+VALIDATION:
+- API documentation is accessible
+- All endpoints are documented
+- Request/response examples are provided
+- Authentication requirements are clear
+DEPENDENCIES:
+- BE-001
+
+[RULE: DOC-004]
+TITLE: Create architecture documentation
+CATEGORY: documentation
+PRIORITY: medium
+DESCRIPTION: Add architecture diagrams and documentation.
+IMPLEMENTATION:
+- Create system architecture diagram
+- Create data flow diagram
+- Create component interaction diagram
+- Document design decisions
+FILES:
+- docs/architecture.md
+- docs/diagrams/*.png
+VALIDATION:
+- Architecture documentation is clear
+- Diagrams are up-to-date
+- Design decisions are explained
+DEPENDENCIES:
+- None

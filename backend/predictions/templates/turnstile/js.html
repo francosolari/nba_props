@@ -1,0 +1,17 @@
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+    // Debug: Cloudflare Turnstile script loading
+    console.log('Cloudflare Turnstile script tag added');
+    window.addEventListener('load', function() {
+        console.log('Page loaded - checking for Turnstile');
+        setTimeout(function() {
+            const widget = document.querySelector('.cf-turnstile');
+            if (widget) {
+                console.log('Turnstile widget element found:', widget);
+                console.log('Widget data-sitekey:', widget.getAttribute('data-sitekey'));
+            } else {
+                console.error('Turnstile widget element NOT found!');
+            }
+        }, 1000);
+    });
+</script>

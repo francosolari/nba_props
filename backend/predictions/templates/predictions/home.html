@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div
+  id="home-root"
+  class="home-page-root w-full"
+  data-is-authenticated="{{ is_authenticated|yesno:'true,false' }}"
+  data-user-id="{{ user_id }}"
+  data-username="{{ username }}"
+  data-display-name="{{ display_name }}"
+  data-season-slug="{{ season_slug }}"
+  data-has-standing-submission="{{ has_standing_submission|yesno:'true,false' }}"
+  data-has-answer-submission="{{ has_answer_submission|yesno:'true,false' }}"
+  data-has-submission="{{ has_submission|yesno:'true,false' }}"
+  data-submission-open="{{ submission_open|yesno:'true,false' }}"
+  data-submission-start="{{ submission_start_iso }}"
+  data-submission-end="{{ submission_end_iso }}"
+  data-submit-url="{{ submit_url }}"
+  data-signup-url="{{ signup_url }}"
+  data-login-url="{{ login_url }}"
+  data-leaderboard-url="{{ leaderboard_url }}"
+  data-profile-url="{{ profile_url }}"
+></div>
+<noscript>
+  <div class="mx-auto mt-10 max-w-3xl rounded-lg bg-white p-6 text-center shadow">
+    <img src="{% static 'img/nba_predictions_logo.png' %}" alt="NBA Predictions Logo" class="mx-auto mb-6 h-24 w-24">
+    <h2 class="text-2xl font-semibold text-gray-800">NBA Predictions</h2>
+    <p class="mt-2 text-gray-600">Enable JavaScript to experience the interactive homepage.</p>
+  </div>
+</noscript>
+<script src="{% static 'js/bundle.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}NBA Predictions - Make Your NBA Season Predictions{% endblock %}</title>
+    <meta name="description" content="{% block description %}Submit your NBA predictions and compete on the leaderboard! Predict MVP, awards, player stats, and more throughout the NBA season.{% endblock %}">
+
+    <!-- Favicon (logo in browser tab/bookmarks) -->
+    <link rel="icon" href="{% static 'img/nba_predictions_logo.png' %}" type="image/png">
+    <link rel="apple-touch-icon" href="{% static 'img/nba_predictions_logo.png' %}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="{% block og_title %}NBA Predictions - Make Your NBA Season Predictions{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Submit your NBA predictions and compete on the leaderboard! Predict MVP, awards, player stats, and more throughout the NBA season.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/homepage-preview.png' %}{% endblock %}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+    <meta property="twitter:title" content="{% block twitter_title %}NBA Predictions - Make Your NBA Season Predictions{% endblock %}">
+    <meta property="twitter:description" content="{% block twitter_description %}Submit your NBA predictions and compete on the leaderboard! Predict MVP, awards, player stats, and more throughout the NBA season.{% endblock %}">
+    <meta property="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/homepage-preview.png' %}{% endblock %}">
+
+    <!-- Include Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Tailwind CSS (runtime JIT for arbitrary values) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Project styles built via Webpack/Tailwind (overrides where needed) -->
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+
+    <!-- Development: Live Reload Script -->
+    {% if debug %}
+    <script>
+        // Live reload: poll for changes to bundle.js
+        (function() {
+            let lastModified = null;
+
+            function checkForUpdates() {
+                fetch('/static/js/bundle.js', { method: 'HEAD' })
+                    .then(response => {
+                        const modified = response.headers.get('Last-Modified');
+                        if (lastModified && modified && lastModified !== modified) {
+                            console.log('Changes detected - reloading...');
+                            window.location.reload();
+                        }
+                        lastModified = modified;
+                    })
+                    .catch(() => {
+                        // Silently fail if bundle doesn't exist yet
+                    });
+            }
+
+            // Check every 1 second
+            setInterval(checkForUpdates, 1000);
+            checkForUpdates();
+        })();
+    </script>
+    {% endif %}
+</head>
+<body>
+    <!-- Global Site Layout (SideNav) -->
+    <div id="site-layout-root"
+         data-current-page="{% block current_page %}home{% endblock %}"
+         data-season-slug="{% block season_slug %}current{% endblock %}">
+    </div>
+
+    <!-- Header Section -->
+    <header id="main-header" class="bg-blue-600 text-white text-sm py-0 fixed w-full top-0 left-0 z-30 transition-all duration-300 ease-in-out md:ml-16 md:w-[calc(100%-64px)];">
+        <!-- Navigation Bar -->
+        <nav class="bg-gray-800 p-1 h-12 fixed top-0 w-full z-30">
+            <div class="container mx-auto flex justify-between items-center h-full px-2 md:px-4">
+                <!-- Left: Navigation Links -->
+                <div class="space-x-2 md:space-x-4 flex-shrink-0">
+                    {% if user.is_authenticated %}
+
+                        {% if user.is_staff or user.username == 'francosolari' %}
+                            <a href="{% url 'predictions_views:admin_panel' %}"
+                               class="text-blue-400 hover:text-blue-300 transition-colors duration-200 text-xs md:text-sm">
+                                ⚙️ Admin
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <!-- Center: Logo -->
+                <div class="flex-1 flex justify-center items-center px-2 min-w-0">
+                    <img src="{% static 'img/nba_predictions_logo.png' %}" alt="NBA Predictions Logo" class="h-8 md:h-10 max-w-full object-contain">
+                </div>
+
+                <!-- Right: User Info (Login/Logout) -->
+                <div class="flex flex-col sm:flex-row items-end sm:items-center space-y-0 sm:space-x-2 md:space-x-4 text-gray-300 flex-shrink-0 text-xs md:text-sm">
+                    {% if user.is_authenticated %}
+                        <span class="hidden sm:inline">Logged in as <span class="font-semibold text-gray-400">{{ user.username }}</span></span>
+                        <span class="sm:hidden font-semibold text-gray-400">{{ user.username }}</span>
+                        <a href="{% url 'account_logout' %}" class="hover:text-white whitespace-nowrap">(Log out)</a>
+                    {% else %}
+                        <a href="{% url 'account_login' %}?next={{ request.path }}" class="hover:text-white whitespace-nowrap">Log in</a>
+                        <a href="{% url 'account_signup' %}?next={{ request.path }}" class="hover:text-white whitespace-nowrap">Sign up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+<!--        <div class="container mx-auto flex justify-between items-center">-->
+<!--            <div class="text-left" id="header-text">-->
+<!--                <h1 class="text-4xl font-bold">NBA Predictions</h1>-->
+<!--                <p class="mt-2">Submit your predictions and track the leaderboard!</p>-->
+<!--            </div>-->
+<!--&lt;!&ndash;            <img src="{% static 'img/nba_predictions_logo.png' %}" alt="NBA Predictions Logo" class="mx-auto h-24" id="header-logo">&ndash;&gt;-->
+<!--        </div>-->
+    </header>
+    
+    <!-- Main Content -->
+    <main class="container mx-auto mt-16 md:ml-16">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white p-4 text-center">
+        <p>&copy; 2024 NBA Predictions. All rights reserved.</p>
+    </footer>
+    
+    <script>
+        window.onscroll = function() {
+            let header = document.getElementById('main-header');
+            let scrollPosition = window.scrollY;
+            if (scrollPosition > 50) {
+                header.classList.add('shrink');
+            } else {
+                header.classList.remove('shrink');
+            }
+        };
+    </script>
+</body>
+</html>

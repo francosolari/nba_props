@@ -1,0 +1,83 @@
+{% extends "allauth/layouts/entrance.html" %}
+{% load i18n %}
+{% load allauth account %}
+
+{% block head_title %}{% trans "Sign In" %} - NBA Predictions{% endblock head_title %}
+
+{% block entrance_content %}
+    <div class="text-center mb-8">
+        {% element h1 %}
+            {% trans "Welcome Back" %}
+        {% endelement %}
+        <p class="text-gray-600 mt-2">Sign in to make your NBA predictions for the 2024-25 season</p>
+    </div>
+
+    {% if SOCIALACCOUNT_ENABLED %}
+        {# Google Sign-In Button (Primary CTA) #}
+        {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+
+        {% if not SOCIALACCOUNT_ONLY %}
+            {# Divider #}
+            <div class="flex items-center my-6">
+                <div class="flex-grow border-t border-gray-300"></div>
+                <span class="px-4 text-sm text-gray-500 font-medium">or sign in with email</span>
+                <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {% if not SOCIALACCOUNT_ONLY %}
+        {# Email Login Form #}
+        {% url 'account_login' as login_url %}
+        {% element form form=form method="post" action=login_url tags="entrance,login" %}
+            {% slot body %}
+                {% csrf_token %}
+                {% element fields form=form %}
+                {% endelement %}
+
+                <div class="flex items-center justify-end mt-4 mb-6">
+                    <a href="{% url 'account_reset_password' %}" class="text-sm text-blue-600 hover:text-blue-800">Forgot password?</a>
+                </div>
+
+                {{ redirect_field }}
+            {% endslot %}
+            {% slot actions %}
+                {% element button type="submit" tags="prominent,login" %}
+                    {% trans "Sign In" %}
+                {% endelement %}
+            {% endslot %}
+        {% endelement %}
+
+        {# Sign Up Link #}
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                Don't have an account?
+                <a href="{% url 'account_signup' %}" class="font-medium text-blue-600 hover:text-blue-800">Create one now</a>
+            </p>
+        </div>
+    {% endif %}
+
+    {% if LOGIN_BY_CODE_ENABLED or PASSKEY_LOGIN_ENABLED %}
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            {% element button_group vertical=True %}
+                {% if PASSKEY_LOGIN_ENABLED %}
+                    {% element button type="submit" form="mfa_login" id="passkey_login" tags="prominent,login,outline,secondary" %}
+                        {% trans "Sign in with a passkey" %}
+                    {% endelement %}
+                {% endif %}
+                {% if LOGIN_BY_CODE_ENABLED %}
+                    {% element button href=request_login_code_url tags="prominent,login,outline,secondary" %}
+                        {% trans "Mail me a sign-in code" %}
+                    {% endelement %}
+                {% endif %}
+            {% endelement %}
+        </div>
+    {% endif %}
+{% endblock entrance_content %}
+
+{% block extra_body %}
+    {{ block.super }}
+    {% if PASSKEY_LOGIN_ENABLED %}
+        {% include "mfa/webauthn/snippets/login_script.html" with button_id="passkey_login" %}
+    {% endif %}
+{% endblock %}

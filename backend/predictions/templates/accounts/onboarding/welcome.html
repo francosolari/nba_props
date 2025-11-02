@@ -1,0 +1,93 @@
+{% extends "allauth/layouts/base.html" %}
+{% load static %}
+
+{% block head_title %}Welcome to NBA Predictions{% endblock head_title %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl w-full">
+        {# Progress Bar #}
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">Step {{ current_step }} of {{ total_steps }}</span>
+                <span class="text-sm font-medium text-gray-700">{{ onboarding.progress_percentage }}% Complete</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: {{ onboarding.progress_percentage }}%"></div>
+            </div>
+        </div>
+
+        {# Welcome Card #}
+        <div class="bg-white rounded-xl shadow-lg p-8 md:p-12">
+            <div class="text-center mb-8">
+                {# Basketball Icon #}
+                <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-orange-100 mb-6">
+                    <svg class="h-12 w-12 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L11 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                </div>
+
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">
+                    Welcome to NBA Predictions!
+                </h1>
+                <p class="text-lg text-gray-600 mb-2">
+                    Get ready for the 2024-25 NBA season
+                </p>
+                <p class="text-gray-500">
+                    Predict player stats, team standings, and compete with friends for the top spot on the leaderboard.
+                </p>
+            </div>
+
+            {# Features List #}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="text-center p-4">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-3">
+                        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-1">Make Predictions</h3>
+                    <p class="text-sm text-gray-600">Answer questions about player stats, awards, and standings</p>
+                </div>
+
+                <div class="text-center p-4">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-3">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-1">Earn Points</h3>
+                    <p class="text-sm text-gray-600">Get points for correct predictions throughout the season</p>
+                </div>
+
+                <div class="text-center p-4">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-3">
+                        <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-1">Climb the Leaderboard</h3>
+                    <p class="text-sm text-gray-600">Compete with others to reach the top of the rankings</p>
+                </div>
+            </div>
+
+            {# Call to Action #}
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                    Get Started
+                </button>
+
+                <button type="button" onclick="document.getElementById('skip-form').submit()" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200">
+                    Skip for now
+                </button>
+            </form>
+
+            {# Hidden skip form #}
+            <form id="skip-form" method="post" action="{% url 'skip_onboarding' %}" style="display: none;">
+                {% csrf_token %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,15 @@
+{% include "turnstile/js.html" %}
+<div class="my-4">
+    <label class="block text-sm font-medium text-gray-700 mb-2">Security Verification</label>
+    <div class="p-4 bg-white border-2 border-gray-300 rounded-lg shadow-sm">
+        <div class="cf-turnstile"
+             data-theme="light"
+             style="min-height: 65px;"
+             {% include "django/forms/widgets/attrs.html" %}></div>
+    </div>
+    <p class="text-xs text-gray-500 mt-2">Please verify you're human to continue</p>
+</div>
+<!-- Debug: Turnstile widget template loaded -->
+<script>
+console.log('Turnstile widget attrs:', document.querySelector('.cf-turnstile'));
+</script>

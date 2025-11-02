@@ -1,0 +1,60 @@
+services:
+  # Local PostgreSQL database for development
+  # This service is optional - you can skip it if you want to use the production database
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nba_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-devuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # Expose on port 5433 to avoid conflict with local PostgreSQL
+    networks:
+      - mynetwork
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devuser}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Development web server
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    # For true hot reload, uncomment the volume mount below
+    # Note: When volume is mounted, you'll need to manually manage .env files
+    # volumes:
+    #   - ./backend:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-nba_predictions.settings}
+      - DJANGO_DEVELOPMENT=${DJANGO_DEVELOPMENT:-True}
+      - DATABASE_HOST=${DATABASE_HOST:-db}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_NAME=${DATABASE_NAME:-nba_dev}
+      - DATABASE_USER=${DATABASE_USER:-devuser}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-devpassword}
+      - SECRET_KEY=${SECRET_KEY}
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
+      - GOOGLE_OAUTH_SECRET=${GOOGLE_OAUTH_SECRET}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - USE_SENDGRID_IN_DEV=${USE_SENDGRID_IN_DEV:-False}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
+      - CF_TURNSTILE_SITE_KEY=${CF_TURNSTILE_SITE_KEY}
+      - CF_TURNSTILE_SECRET_KEY=${CF_TURNSTILE_SECRET_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+
+volumes:
+  postgres_data_dev:
