@@ -4,6 +4,7 @@ Factory classes for creating test data using factory_boy.
 These factories provide an easy way to create model instances for testing
 with sensible defaults while allowing customization.
 """
+import uuid
 import factory
 from factory.django import DjangoModelFactory
 from django.contrib.auth import get_user_model
@@ -11,14 +12,24 @@ from predictions.models import (
     Season,
     Team,
     Player,
+    PlayerStat,
     PropQuestion,
     SuperlativeQuestion,
     HeadToHeadQuestion,
+    InSeasonTournamentQuestion,
+    PlayerStatPredictionQuestion,
+    NBAFinalsPredictionQuestion,
     Answer,
     UserStats,
     StandingPrediction,
+    PlayoffPrediction,
+    Award,
+    Payment,
+    PaymentStatus,
 )
 from datetime import date, timedelta
+from decimal import Decimal
+from django.utils import timezone
 
 
 User = get_user_model()
@@ -34,7 +45,7 @@ class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
 
-    username = factory.Sequence(lambda n: f'user{n}')
+    username = factory.LazyFunction(lambda: f'user-{uuid.uuid4().hex[:8]}')
     email = factory.LazyAttribute(lambda obj: f'{obj.username}@example.com')
     password = factory.PostGenerationMethodCall('set_password', 'testpass123')
     is_active = True
@@ -45,7 +56,7 @@ class UserFactory(DjangoModelFactory):
 class AdminUserFactory(UserFactory):
     """Factory for creating admin users."""
 
-    username = factory.Sequence(lambda n: f'admin{n}')
+    username = factory.LazyFunction(lambda: f'admin-{uuid.uuid4().hex[:8]}')
     is_staff = True
     is_superuser = True
 
@@ -53,7 +64,7 @@ class AdminUserFactory(UserFactory):
 class PremiumUserFactory(UserFactory):
     """Factory for creating premium users."""
 
-    username = factory.Sequence(lambda n: f'premium{n}')
+    username = factory.LazyFunction(lambda: f'premium-{uuid.uuid4().hex[:8]}')
     # Add premium-specific fields based on your user model
 
 
@@ -71,8 +82,8 @@ class SeasonFactory(DjangoModelFactory):
     year = factory.LazyAttribute(lambda obj: obj.slug)
     start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=30))
     end_date = factory.LazyFunction(lambda: date.today() + timedelta(days=150))
+    submission_start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=30))
     submission_end_date = factory.LazyFunction(lambda: date.today() + timedelta(days=7))
-    submissions_open = True
 
 
 class CurrentSeasonFactory(SeasonFactory):
@@ -80,7 +91,6 @@ class CurrentSeasonFactory(SeasonFactory):
 
     slug = '2024-25'
     year = '2024-25'
-    submissions_open = True
 
 
 class PastSeasonFactory(SeasonFactory):
@@ -90,8 +100,8 @@ class PastSeasonFactory(SeasonFactory):
     year = '2023-24'
     start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=365))
     end_date = factory.LazyFunction(lambda: date.today() - timedelta(days=180))
+    submission_start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=400))
     submission_end_date = factory.LazyFunction(lambda: date.today() - timedelta(days=200))
-    submissions_open = False
 
 
 class TeamFactory(DjangoModelFactory):
@@ -102,24 +112,19 @@ class TeamFactory(DjangoModelFactory):
 
     name = factory.Sequence(lambda n: f'Team {n}')
     abbreviation = factory.Sequence(lambda n: f'T{n:02d}')
-    city = factory.Sequence(lambda n: f'City {n}')
     conference = factory.Iterator(['East', 'West'])
-    division = factory.Iterator(['Atlantic', 'Central', 'Southeast', 'Northwest', 'Pacific', 'Southwest'])
-    nba_team_id = factory.Sequence(lambda n: 1610612700 + n)
 
 
 class EasternTeamFactory(TeamFactory):
     """Factory for Eastern Conference teams."""
 
     conference = 'East'
-    division = factory.Iterator(['Atlantic', 'Central', 'Southeast'])
 
 
 class WesternTeamFactory(TeamFactory):
     """Factory for Western Conference teams."""
 
     conference = 'West'
-    division = factory.Iterator(['Northwest', 'Pacific', 'Southwest'])
 
 
 class PlayerFactory(DjangoModelFactory):
@@ -129,9 +134,15 @@ class PlayerFactory(DjangoModelFactory):
         model = Player
 
     name = factory.Sequence(lambda n: f'Player {n}')
-    team = factory.SubFactory(TeamFactory)
-    position = factory.Iterator(['G', 'F', 'C', 'G-F', 'F-C'])
-    nba_player_id = factory.Sequence(lambda n: 1628000 + n)
+
+
+class AwardFactory(DjangoModelFactory):
+    """Factory for creating NBA awards."""
+
+    class Meta:
+        model = Award
+
+    name = factory.Iterator(['MVP', 'DPOY', 'ROY', 'MIP', 'SMOY', '6MOY'])
 
 
 # ============================================================================
@@ -147,8 +158,8 @@ class PropQuestionFactory(DjangoModelFactory):
     season = factory.SubFactory(CurrentSeasonFactory)
     text = factory.Sequence(lambda n: f'Prop question {n}')
     point_value = 3
-    is_active = True
     correct_answer = None
+    outcome_type = 'yes_no'  # Required field for PropQuestion
 
 
 class SuperlativeQuestionFactory(DjangoModelFactory):
@@ -158,11 +169,11 @@ class SuperlativeQuestionFactory(DjangoModelFactory):
         model = SuperlativeQuestion
 
     season = factory.SubFactory(CurrentSeasonFactory)
+    award = factory.SubFactory(AwardFactory)
     text = factory.Sequence(lambda n: f'Superlative question {n}')
     point_value = 5
-    is_active = True
-    award_type = factory.Iterator(['MVP', 'ROY', 'DPOY', 'MIP', 'SMOY', 'COY'])
     correct_answer = None
+    is_finalized = False
 
 
 class HeadToHeadQuestionFactory(DjangoModelFactory):
@@ -174,10 +185,62 @@ class HeadToHeadQuestionFactory(DjangoModelFactory):
     season = factory.SubFactory(CurrentSeasonFactory)
     text = factory.Sequence(lambda n: f'H2H question {n}')
     point_value = 3
-    is_active = True
-    player_a = factory.SubFactory(PlayerFactory)
-    player_b = factory.SubFactory(PlayerFactory)
-    stat_category = factory.Iterator(['PPG', 'RPG', 'APG', 'FG%', '3P%', 'FT%'])
+    team1 = factory.SubFactory(TeamFactory)
+    team2 = factory.SubFactory(TeamFactory)
+    correct_answer = None
+
+
+class InSeasonTournamentQuestionFactory(DjangoModelFactory):
+    """Factory for creating IST questions."""
+
+    class Meta:
+        model = InSeasonTournamentQuestion
+
+    season = factory.SubFactory(CurrentSeasonFactory)
+    text = factory.Sequence(lambda n: f'IST question {n}')
+    point_value = 4
+    prediction_type = 'group_winner'
+    ist_group = 'East Group A'
+    correct_answer = None
+
+
+class PlayerStatFactory(DjangoModelFactory):
+    """Factory for creating player stat snapshots."""
+
+    class Meta:
+        model = PlayerStat
+
+    player = factory.SubFactory(PlayerFactory)
+    season = factory.SubFactory(CurrentSeasonFactory)
+    games_played = 10
+    points_per_game = Decimal('25.3')
+
+
+class PlayerStatPredictionQuestionFactory(DjangoModelFactory):
+    """Factory for creating player stat prediction questions."""
+
+    class Meta:
+        model = PlayerStatPredictionQuestion
+
+    season = factory.SubFactory(CurrentSeasonFactory)
+    player_stat = factory.SubFactory(PlayerStatFactory)
+    text = factory.Sequence(lambda n: f'Player stat question {n}')
+    point_value = 5
+    stat_type = 'points'
+    fixed_value = 25.0
+    correct_answer = None
+
+
+class NBAFinalsPredictionQuestionFactory(DjangoModelFactory):
+    """Factory for creating NBA Finals prediction questions."""
+
+    class Meta:
+        model = NBAFinalsPredictionQuestion
+
+    season = factory.SubFactory(CurrentSeasonFactory)
+    text = factory.Sequence(lambda n: f'NBA Finals prediction {n}')
+    point_value = 6
+    group_name = 'NBA Finals'
     correct_answer = None
 
 
@@ -193,7 +256,7 @@ class AnswerFactory(DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     question = factory.SubFactory(PropQuestionFactory)
-    answer_text = factory.Sequence(lambda n: f'Answer {n}')
+    answer = factory.Sequence(lambda n: f'Answer {n}')
     points_earned = 0
     is_correct = None
 
@@ -210,9 +273,36 @@ class UserStatsFactory(DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     season = factory.SubFactory(CurrentSeasonFactory)
-    total_points = 0
-    total_possible_points = 0
-    questions_answered = 0
+    points = 0
+    entry_fee_paid = False
+
+
+# ============================================================================
+# Payment Factories
+# ============================================================================
+
+class PaymentFactory(DjangoModelFactory):
+    """Factory for creating payments."""
+
+    class Meta:
+        model = Payment
+
+    user = factory.SubFactory(UserFactory)
+    season = factory.SubFactory(CurrentSeasonFactory)
+    checkout_session_id = factory.LazyFunction(lambda: f'cs_{uuid.uuid4().hex}')
+    payment_intent_id = factory.LazyFunction(lambda: f'pi_{uuid.uuid4().hex}')
+    amount = Decimal('20.00')
+    currency = 'usd'
+    email = factory.LazyAttribute(lambda obj: obj.user.email)
+    payment_status = PaymentStatus.PENDING
+    created_at = factory.LazyFunction(timezone.now)
+
+
+class SucceededPaymentFactory(PaymentFactory):
+    """Factory for successful payments."""
+
+    payment_status = PaymentStatus.SUCCEEDED
+    paid_at = factory.LazyFunction(timezone.now)
 
 
 # ============================================================================
@@ -227,8 +317,24 @@ class StandingPredictionFactory(DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     season = factory.SubFactory(CurrentSeasonFactory)
-    conference = factory.Iterator(['East', 'West'])
-    standings_data = factory.LazyFunction(lambda: {})
+    team = factory.SubFactory(TeamFactory)
+    predicted_position = factory.Sequence(lambda n: n + 1)
+    points = factory.Iterator([0, 1, 3])
+
+
+class PlayoffPredictionFactory(DjangoModelFactory):
+    """Factory for creating playoff predictions."""
+
+    class Meta:
+        model = PlayoffPrediction
+
+    user = factory.SubFactory(UserFactory)
+    season = factory.SubFactory(CurrentSeasonFactory)
+    team = factory.SubFactory(TeamFactory)
+    wins = 4
+    losses = 2
+    round = 4  # NBA Finals
+    points = 0
 
 
 # ============================================================================
@@ -293,10 +399,7 @@ def create_full_team_set():
         team = TeamFactory.create(
             name=name,
             abbreviation=abbr,
-            city=city,
-            conference=conf,
-            division=div,
-            nba_team_id=nba_id
+            conference=conf
         )
 
         if conf == 'East':

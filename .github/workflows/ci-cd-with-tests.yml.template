@@ -1,0 +1,402 @@
+name: CI/CD Pipeline with Tests
+
+# NOTE: This workflow is DISABLED by default (template file)
+# To enable: Rename to ci-cd-with-tests.yml after implementing test suite
+# See TEST_SUITE_IMPLEMENTATION_PLAN.md for implementation details
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOCKER_IMAGE: fsolaric/nba_props_web
+  REGISTRY: docker.io
+
+jobs:
+  # ============================================================================
+  # Backend Testing
+  # ============================================================================
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest pytest-django pytest-cov factory-boy faker freezegun
+
+      - name: Run Django tests with coverage
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: test_db
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
+          DJANGO_SETTINGS_MODULE: nba_predictions.settings
+          DJANGO_DEVELOPMENT: True
+          SECRET_KEY: test-secret-key-for-ci
+        run: |
+          cd backend
+          pytest --cov=predictions --cov=accounts \
+                 --cov-report=xml \
+                 --cov-report=term-missing \
+                 --cov-fail-under=80 \
+                 -v
+
+      - name: Upload backend coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  # ============================================================================
+  # Backend Linting
+  # ============================================================================
+  backend-lint:
+    name: Backend Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort
+
+      - name: Run flake8
+        run: |
+          flake8 backend --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 backend --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Run black (check only)
+        run: |
+          black backend --check --diff
+
+      - name: Run isort (check only)
+        run: |
+          isort backend --check-only --diff
+
+  # ============================================================================
+  # Frontend Testing
+  # ============================================================================
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Jest tests with coverage
+        run: |
+          npm test -- --coverage --watchAll=false --maxWorkers=2
+
+      - name: Upload frontend coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+
+  # ============================================================================
+  # Frontend Linting
+  # ============================================================================
+  frontend-lint:
+    name: Frontend Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint || echo "ESLint not configured yet"
+
+      - name: Run Prettier check
+        run: npx prettier --check "frontend/src/**/*.{js,jsx}" || echo "Prettier not configured yet"
+
+  # ============================================================================
+  # Build Docker Image
+  # ============================================================================
+  build:
+    name: Build and Push Docker Image
+    needs: [backend-tests, backend-lint, frontend-tests, frontend-lint]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      image_tag: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Read and increment version
+        id: version
+        run: |
+          if [ -f .docker-version ]; then
+            CURRENT_VERSION=$(cat .docker-version)
+          else
+            CURRENT_VERSION="v1.3.19"
+          fi
+
+          # Parse version
+          VERSION_NUMBER="${CURRENT_VERSION#v}"
+          IFS='.' read -r -a VERSION_PARTS <<< "$VERSION_NUMBER"
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH="${VERSION_PARTS[2]}"
+
+          # Increment patch
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+          # Save version back to file for next run
+          echo "$NEW_VERSION" > .docker-version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .docker-version
+          git commit -m "Bump version to $NEW_VERSION [skip ci]" || true
+          git push || true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ env.DOCKER_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ============================================================================
+  # Deploy to Production
+  # ============================================================================
+  deploy:
+    name: Deploy to Production
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://your-domain.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        env:
+          DOCKER_VERSION: ${{ needs.build.outputs.image_tag }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+          CF_TURNSTILE_SITE_KEY: ${{ secrets.CF_TURNSTILE_SITE_KEY }}
+          CF_TURNSTILE_SECRET_KEY: ${{ secrets.CF_TURNSTILE_SECRET_KEY }}
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_SECRET: ${{ secrets.GOOGLE_OAUTH_SECRET }}
+          STRIPE_PUBLIC_KEY: ${{ secrets.STRIPE_PUBLIC_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          envs: DOCKER_VERSION,SECRET_KEY,DATABASE_HOST,DATABASE_PORT,DATABASE_NAME,DATABASE_USER,DATABASE_PASSWORD,SENDGRID_API_KEY,DEFAULT_FROM_EMAIL,CF_TURNSTILE_SITE_KEY,CF_TURNSTILE_SECRET_KEY,GOOGLE_OAUTH_CLIENT_ID,GOOGLE_OAUTH_SECRET,STRIPE_PUBLIC_KEY,STRIPE_SECRET_KEY
+          script: |
+            cd /var/www/nba_props
+            git pull origin main
+            chmod +x scripts/blue_green_deploy.sh
+
+            # Export env vars for the deployment script
+            export SECRET_KEY="$SECRET_KEY"
+            export DATABASE_HOST="$DATABASE_HOST"
+            export DATABASE_PORT="$DATABASE_PORT"
+            export DATABASE_NAME="$DATABASE_NAME"
+            export DATABASE_USER="$DATABASE_USER"
+            export DATABASE_PASSWORD="$DATABASE_PASSWORD"
+            export SENDGRID_API_KEY="$SENDGRID_API_KEY"
+            export DEFAULT_FROM_EMAIL="$DEFAULT_FROM_EMAIL"
+            export CF_TURNSTILE_SITE_KEY="$CF_TURNSTILE_SITE_KEY"
+            export CF_TURNSTILE_SECRET_KEY="$CF_TURNSTILE_SECRET_KEY"
+            export GOOGLE_OAUTH_CLIENT_ID="$GOOGLE_OAUTH_CLIENT_ID"
+            export GOOGLE_OAUTH_SECRET="$GOOGLE_OAUTH_SECRET"
+            export STRIPE_PUBLIC_KEY="$STRIPE_PUBLIC_KEY"
+            export STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY"
+
+            # Run deployment script with specific version (auto-confirms for CI/CD)
+            DEPLOY_IMAGE="fsolaric/nba_props_web:$DOCKER_VERSION"
+            echo "Deploying image: $DEPLOY_IMAGE"
+            echo "y" | bash scripts/blue_green_deploy.sh "$DEPLOY_IMAGE"
+
+      - name: Run smoke tests
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            # Wait for deployment to stabilize
+            sleep 30
+
+            # Basic health check
+            curl -f http://localhost:8000/api/v2/health/ || exit 1
+
+            # Check critical endpoints
+            curl -f http://localhost:8000/ || exit 1
+
+            echo "Smoke tests passed!"
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "Image: ${{ needs.build.outputs.image_tag }}"
+          echo "Environment: production"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check logs for details"
+          # Add Slack/Discord notification here
+
+  # ============================================================================
+  # Integration Tests (Post-Deployment)
+  # ============================================================================
+  integration-tests:
+    name: Integration Tests
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run integration tests against production
+        run: |
+          # Add integration test suite here
+          echo "Integration tests would run here"
+          # Example: pytest backend/tests/integration/ --base-url=https://your-domain.com
+
+  # ============================================================================
+  # Rollback (Manual Trigger)
+  # ============================================================================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment:
+      name: production
+
+    steps:
+      - name: Rollback to previous version
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd /var/www/nba_props
+            # Switch back to previous environment
+            ./scripts/blue_green_deploy.sh rollback

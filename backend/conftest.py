@@ -5,7 +5,7 @@ This file contains fixtures that are available to all test files.
 """
 import pytest
 from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
+from django.test import Client
 from predictions.models import Season, Team, Player
 
 
@@ -55,28 +55,28 @@ def premium_user(db):
 
 @pytest.fixture
 def api_client():
-    """DRF API client for making test requests."""
-    return APIClient()
+    """Django test client for making test requests."""
+    return Client()
 
 
 @pytest.fixture
 def authenticated_client(api_client, user):
     """API client authenticated as regular user."""
-    api_client.force_authenticate(user=user)
+    api_client.force_login(user)
     return api_client
 
 
 @pytest.fixture
 def admin_client(api_client, admin_user):
     """API client authenticated as admin user."""
-    api_client.force_authenticate(user=admin_user)
+    api_client.force_login(admin_user)
     return api_client
 
 
 @pytest.fixture
 def premium_client(api_client, premium_user):
     """API client authenticated as premium user."""
-    api_client.force_authenticate(user=premium_user)
+    api_client.force_login(premium_user)
     return api_client
 
 
@@ -87,34 +87,36 @@ def premium_client(api_client, premium_user):
 @pytest.fixture
 def current_season(db):
     """Create a current NBA season for testing."""
-    from datetime import date, timedelta
+    from datetime import timedelta
+    from django.utils import timezone
 
-    today = date.today()
+    now = timezone.now()
 
     return Season.objects.create(
         slug='2024-25',
         year='2024-25',
-        start_date=today - timedelta(days=30),
-        end_date=today + timedelta(days=150),
-        submission_end_date=today + timedelta(days=7),  # Still open
-        submissions_open=True
+        start_date=now.date() - timedelta(days=30),
+        end_date=now.date() + timedelta(days=150),
+        submission_start_date=now - timedelta(days=30),  # Opened 30 days ago
+        submission_end_date=now + timedelta(days=7)  # Still open for 7 days
     )
 
 
 @pytest.fixture
 def past_season(db):
     """Create a past NBA season for testing."""
-    from datetime import date, timedelta
+    from datetime import timedelta
+    from django.utils import timezone
 
-    today = date.today()
+    now = timezone.now()
 
     return Season.objects.create(
         slug='2023-24',
         year='2023-24',
-        start_date=today - timedelta(days=365),
-        end_date=today - timedelta(days=180),
-        submission_end_date=today - timedelta(days=200),
-        submissions_open=False
+        start_date=now.date() - timedelta(days=365),
+        end_date=now.date() - timedelta(days=180),
+        submission_start_date=now - timedelta(days=400),
+        submission_end_date=now - timedelta(days=200)  # Closed
     )
 
 
@@ -244,17 +246,20 @@ def mock_stripe(mocker):
 # Database Fixtures
 # ============================================================================
 
-@pytest.fixture(scope='session')
-def django_db_setup():
+def pytest_configure(config):
     """
-    Configure test database settings.
-    This runs once per test session.
+    Configure Django settings for tests before Django initializes.
+    This runs once before all tests.
     """
     from django.conf import settings
 
-    settings.DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+    # Override database to use SQLite in-memory for all tests
+    settings.DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+            'ATOMIC_REQUESTS': True,
+        }
     }
 
 

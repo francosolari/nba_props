@@ -73,3 +73,10 @@ sendgrid==6.11.0
 django-cf-turnstile==0.1.0
 disposable-email-domains==0.0.106
 stripe>=8.0.0
+# Testing dependencies
+pytest>=7.4.0
+pytest-django>=4.5.2
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
+factory-boy>=3.3.0
+faker>=19.3.0
