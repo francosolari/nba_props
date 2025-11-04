@@ -3,6 +3,7 @@ Tests for the prediction models.
 """
 from django.test import TestCase
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 from predictions.models.season import Season
 from predictions.models.team import Team
 from predictions.models.prediction import StandingPrediction, PlayoffPrediction
@@ -91,7 +92,7 @@ class PredictionModelTests(TestCase):
         )
         
         # Try to create another standing prediction for the same user, season, and team
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError):
             StandingPrediction.objects.create(
                 user=self.user,
                 season=self.season,
@@ -110,7 +111,7 @@ class PredictionModelTests(TestCase):
         )
         
         # Try to create another playoff prediction for the same user, season, and team
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError):
             PlayoffPrediction.objects.create(
                 user=self.user,
                 season=self.season,

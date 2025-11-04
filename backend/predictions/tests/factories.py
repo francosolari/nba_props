@@ -78,7 +78,8 @@ class SeasonFactory(DjangoModelFactory):
     class Meta:
         model = Season
 
-    slug = factory.Sequence(lambda n: f'202{3+n}-2{4+n}')
+    # Use 'YY-YY' format to fit in 7 character limit
+    slug = factory.Sequence(lambda n: f'{20+n}-{21+n}')
     year = factory.LazyAttribute(lambda obj: obj.slug)
     start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=30))
     end_date = factory.LazyFunction(lambda: date.today() + timedelta(days=150))
@@ -87,17 +88,18 @@ class SeasonFactory(DjangoModelFactory):
 
 
 class CurrentSeasonFactory(SeasonFactory):
-    """Factory for creating the current active season."""
+    """Factory for creating the current active season with unique slugs."""
 
-    slug = '2024-25'
-    year = '2024-25'
+    # Ensure unique slugs with format '24-XXX'
+    slug = factory.Sequence(lambda n: f'24-{25+n:02d}')
+    year = factory.LazyAttribute(lambda obj: obj.slug)
 
 
 class PastSeasonFactory(SeasonFactory):
-    """Factory for creating a past season."""
+    """Factory for creating a past season with unique slugs."""
 
-    slug = '2023-24'
-    year = '2023-24'
+    slug = factory.Sequence(lambda n: f'23-{24+n:02d}')
+    year = factory.LazyAttribute(lambda obj: obj.slug)
     start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=365))
     end_date = factory.LazyFunction(lambda: date.today() - timedelta(days=180))
     submission_start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=400))

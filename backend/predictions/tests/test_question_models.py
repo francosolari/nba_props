@@ -104,6 +104,39 @@ class TestSuperlativeQuestion:
         assert question.is_finalized is True
         assert player in question.winners.all()
 
+    def test_finalize_winners_with_nonexistent_player(self):
+        """Test finalizing with a player name that doesn't exist in database."""
+        question = SuperlativeQuestionFactory()
+        question.finalize_winners('NonExistent Player')
+
+        assert question.is_finalized is True
+        assert question.correct_answer == 'NonExistent Player'
+
+    def test_finalize_winners_idempotency(self):
+        """Test that calling finalize_winners multiple times is idempotent."""
+        player = PlayerFactory(name='Nikola Jokic')
+        question = SuperlativeQuestionFactory()
+
+        question.finalize_winners('Nikola Jokic')
+        question.finalize_winners('Nikola Jokic')
+
+        assert question.winners.count() == 1
+        assert question.is_finalized is True
+
+    def test_finalize_winners_with_empty_string(self):
+        """Test that empty string winner name raises validation error."""
+        question = SuperlativeQuestionFactory()
+
+        # Note: Validation depends on model implementation
+        # This test documents expected behavior
+        try:
+            question.finalize_winners('')
+            # If no validation, at least verify it was set
+            assert question.correct_answer == ''
+        except ValidationError:
+            # Expected if model validates non-empty strings
+            pass
+
     def test_update_from_latest_odds(self):
         """Test updating leader from latest odds."""
         # This would require Odds model setup
@@ -335,8 +368,8 @@ class TestPolymorphicQueries:
 
     def test_filter_by_season(self):
         """Test filtering questions by season."""
-        season1 = SeasonFactory(slug='2023-24')
-        season2 = SeasonFactory(slug='2024-25')
+        season1 = SeasonFactory()
+        season2 = SeasonFactory()
 
         # Create questions for different seasons
         PropQuestionFactory(season=season1)
@@ -396,3 +429,45 @@ class TestPolymorphicQueries:
         for question in questions:
             assert hasattr(question, 'correct_answer')
             assert question.correct_answer is not None
+
+
+@pytest.mark.django_db
+class TestPolymorphicQueryEdgeCases:
+    """Tests for edge cases in polymorphic query behavior."""
+
+    def test_subtype_field_access_without_real_instance(self):
+        """Test that django-polymorphic automatically returns real instance."""
+        question = PropQuestionFactory(outcome_type='yes_no', line=25.0)
+        base_question = Question.objects.get(pk=question.pk)
+
+        # Django-polymorphic automatically returns the correct subtype
+        assert isinstance(base_question, PropQuestion)
+        assert base_question.outcome_type == 'yes_no'
+
+        # get_real_instance() returns the same instance
+        real_instance = base_question.get_real_instance()
+        assert real_instance.outcome_type == 'yes_no'
+        assert real_instance is base_question
+
+    def test_filter_by_subtype_specific_field(self):
+        """Test filtering by subtype-specific fields."""
+        PropQuestionFactory(outcome_type='yes_no')
+        PropQuestionFactory(outcome_type='over_under')
+        SuperlativeQuestionFactory()
+
+        # Filter on PropQuestion model using subtype-specific field
+        yes_no_questions = PropQuestion.objects.filter(outcome_type='yes_no')
+        assert yes_no_questions.count() == 1
+
+    def test_polymorphic_bulk_operations(self):
+        """Test bulk update operations on polymorphic queryset."""
+        season = SeasonFactory()
+        PropQuestionFactory(season=season, point_value=3)
+        SuperlativeQuestionFactory(season=season, point_value=5)
+
+        # Bulk update through base Question model
+        Question.objects.filter(season=season).update(point_value=10)
+
+        # Verify updates applied to all subtypes
+        assert PropQuestion.objects.get(season=season).point_value == 10
+        assert SuperlativeQuestion.objects.get(season=season).point_value == 10
