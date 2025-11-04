@@ -113,7 +113,7 @@ class TeamFactory(DjangoModelFactory):
         model = Team
 
     name = factory.Sequence(lambda n: f'Team {n}')
-    abbreviation = factory.Sequence(lambda n: f'T{n:02d}')
+    abbreviation = factory.Sequence(lambda n: f'T{n:01d}'[:3])  # Max 3 chars
     conference = factory.Iterator(['East', 'West'])
 
 

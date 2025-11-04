@@ -24,10 +24,16 @@ class APITestCase(TestCase):
         )
         
         # Create a test season
+        from django.utils import timezone
+        from datetime import timedelta
+        now = timezone.now()
         self.season = Season.objects.create(
-            name='2023-2024 Season',
-            slug='2023-2024',
-            is_active=True
+            year='2023-24',
+            slug='2023-24',
+            start_date=now.date() - timedelta(days=30),
+            end_date=now.date() + timedelta(days=150),
+            submission_start_date=now - timedelta(days=7),
+            submission_end_date=now + timedelta(days=21)
         )
         
         # Create test teams
@@ -43,13 +49,11 @@ class APITestCase(TestCase):
         
         # Create test players
         self.player1 = Player.objects.create(
-            name='LeBron James',
-            team=self.team_west
+            name='LeBron James'
         )
-        
+
         self.player2 = Player.objects.create(
-            name='Jayson Tatum',
-            team=self.team_east
+            name='Jayson Tatum'
         )
         
         # Create test predictions

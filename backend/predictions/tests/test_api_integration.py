@@ -482,13 +482,18 @@ class TestSeasonLifecycleIntegration:
         assert "already exists" in resp.json()["detail"]
 
     def test_list_seasons_returns_descending_order(self):
+        # Clear existing seasons for isolation
+        Season.objects.all().delete()
+
         older = SeasonFactory(
             year="2023-24",
+            slug="2023-24",
             start_date=date(2023, 10, 1),
             end_date=date(2024, 6, 10),
         )
         newer = SeasonFactory(
             year="2024-25",
+            slug="2024-25",
             start_date=date(2024, 10, 1),
             end_date=date(2025, 6, 10),
         )
@@ -500,13 +505,18 @@ class TestSeasonLifecycleIntegration:
         assert slugs[1] == older.slug
 
     def test_latest_season_tracks_most_recent(self):
+        # Clear existing seasons for isolation
+        Season.objects.all().delete()
+
         _ = SeasonFactory(
             year="2022-23",
+            slug="2022-23",
             start_date=date(2022, 10, 1),
             end_date=date(2023, 6, 10),
         )
         latest = SeasonFactory(
             year="2023-24",
+            slug="2023-24",
             start_date=date(2023, 10, 1),
             end_date=date(2024, 6, 10),
         )
