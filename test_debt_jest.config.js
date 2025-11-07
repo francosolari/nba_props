@@ -3,7 +3,7 @@ module.exports = {
   // Test environment
   testEnvironment: 'jsdom',
 
-  // Setup files - use the more comprehensive setupTests.js
+  // Setup files
   setupFilesAfterEnv: ['<rootDir>/frontend/src/setupTests.js'],
 
   // Module paths
@@ -11,8 +11,8 @@ module.exports = {
 
   // Test match patterns
   testMatch: [
-    '<rootDir>/frontend/src/**/__tests__/**/*.[jt]s?(x)',
-    '<rootDir>/frontend/src/**/*.(spec|test).[jt]s?(x)',
+    '**/__tests__/**/*.{js,jsx,ts,tsx}',
+    '**/*.{spec,test}.{js,jsx,ts,tsx}',
   ],
 
   // Transform files with babel
@@ -39,11 +39,6 @@ module.exports = {
     '^@components/(.*)$': '<rootDir>/frontend/src/components/$1',
     '^@hooks/(.*)$': '<rootDir>/frontend/src/hooks/$1',
     '^@pages/(.*)$': '<rootDir>/frontend/src/pages/$1',
-
-    // React packages (ensure correct resolution)
-    '^react$': '<rootDir>/node_modules/react',
-    '^react-dom$': '<rootDir>/node_modules/react-dom',
-    '^react-dom/client$': '<rootDir>/node_modules/react-dom/client',
   },
 
   // Coverage configuration
@@ -87,7 +82,7 @@ module.exports = {
     '/coverage/',
   ],
 
-  // Transform ignore patterns - allow ESM modules
+  // Transform ignore patterns
   transformIgnorePatterns: [
     'node_modules/(?!(lucide-react|@tanstack)/)',
   ],
@@ -116,4 +111,13 @@ module.exports = {
 
   // Timeout for tests (in milliseconds)
   testTimeout: 10000,
+
+  // Globals
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        jsx: 'react',
+      },
+    },
+  },
 };

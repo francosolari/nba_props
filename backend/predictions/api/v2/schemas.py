@@ -68,7 +68,21 @@ class StandingSchema(Schema):
     wins: int = Field(..., description="Games won", example=45, ge=0, le=82)
     losses: int = Field(..., description="Games lost", example=37, ge=0, le=82)
     position: int = Field(..., description="Conference ranking", example=3, ge=1, le=15)
-    win_percentage: float = Field(..., description="Win percentage", example=0.549, ge=0.0, le=1.0)
+    win_percentage: Optional[float] = Field(
+        default=None,
+        description="Win percentage (null when no games played)",
+        example=0.549,
+    )
+
+    @field_validator('win_percentage')
+    @classmethod
+    def validate_win_percentage(cls, value):
+        """Ensure win percentage stays within 0..1 when present."""
+        if value is None:
+            return value
+        if not 0.0 <= value <= 1.0:
+            raise ValueError('Win percentage must be between 0.0 and 1.0')
+        return round(float(value), 3)
 
 
 class ISTStandingSchema(Schema):
@@ -313,6 +327,9 @@ class StandingsResponseSchema(Schema):
     """Response schema for standings endpoint"""
     east: List[StandingSchema] = Field(..., description="Eastern Conference standings")
     west: List[StandingSchema] = Field(..., description="Western Conference standings")
+
+    class Config:
+        extra = "allow"
 
 
 class LeaderboardResponseSchema(Schema):
