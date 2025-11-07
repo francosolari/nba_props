@@ -56,6 +56,10 @@ This guide will help you get the NBA Predictions Game up and running on your loc
 
 For more detailed information about the project, please see the [documentation](./docs/README.md).
 
+### CI/CD Deployment
+
+This project uses a two-stage deployment workflow with manual approval gates. See [STAGED_DEPLOYMENT_SETUP.md](./STAGED_DEPLOYMENT_SETUP.md) for details.
+
 ## Contributing
 
 We welcome contributions from the open-source community. For more information, please see the [contributing guide](docs/CONTRIBUTING.md).
