@@ -73,9 +73,9 @@ class LeaderboardAPITests(APITestCase):
 
     def test_get_leaderboard(self):
         """Test retrieving the leaderboard."""
-        url = reverse('api:v1:leaderboard', kwargs={'season_slug': self.season.slug})
+        url = reverse('leaderboard', kwargs={'season_slug': self.season.slug})
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertIn('leaderboard', response.data)
         
@@ -96,7 +96,7 @@ class TeamAPITests(APITestCase):
 
     def test_get_teams(self):
         """Test retrieving the teams list."""
-        url = reverse('api:v1:teams')
+        url = reverse('teams')
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, 200)
@@ -119,7 +119,7 @@ class PlayerAPITests(APITestCase):
 
     def test_get_players(self):
         """Test retrieving the players list."""
-        url = reverse('api:v1:players')
+        url = reverse('players')
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, 200)
@@ -142,9 +142,8 @@ class UserPredictionsAPITests(APITestCase):
 
     def test_get_user_predictions(self):
         """Test retrieving a user's predictions."""
-        url = reverse('api:v1:user_predictions', kwargs={
-            'season_slug': self.season.slug,
-            'username': self.user.username
+        url = reverse('user_predictions', kwargs={
+            'season_slug': self.season.slug
         })
         response = self.client.get(url)
         
@@ -170,7 +169,7 @@ class SubmitPredictionsAPITests(APITestCase):
 
     def test_submit_predictions(self):
         """Test submitting predictions."""
-        url = reverse('api:v1:submit_predictions', kwargs={'season_slug': self.season.slug})
+        url = reverse('submit_answers', kwargs={'season_slug': self.season.slug})
         
         # Prepare prediction data
         data = {

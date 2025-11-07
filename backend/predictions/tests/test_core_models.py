@@ -573,7 +573,7 @@ class TestModelIndexes:
         assert succeeded_payments.count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 class TestCascadeDeletion:
     """Tests for cascade deletion behavior across related models."""
 

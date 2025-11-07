@@ -286,14 +286,6 @@ class MiniStandingsSchema(Schema):
     eastern: List[MiniStandingSchema] = Field(..., description="Top Eastern Conference teams")
     western: List[MiniStandingSchema] = Field(..., description="Top Western Conference teams")
 
-    @field_validator('eastern', 'western')
-    @classmethod
-    def validate_standings_not_empty(cls, v):
-        """Ensure each conference has at least one team"""
-        if not v:
-            raise ValueError('Conference standings cannot be empty')
-        return v
-
 
 # ====================
 # RESPONSE WRAPPER SCHEMAS

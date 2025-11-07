@@ -133,6 +133,9 @@ def sample_teams():
 @pytest.fixture
 def sample_questions(open_season):
     """Create various question types for testing."""
+    # Ensure open_season is the most recent season for 'current' shortcut
+    Season.objects.exclude(id=open_season.id).delete()
+
     award = AwardFactory(name='MVP')
 
     questions = {
