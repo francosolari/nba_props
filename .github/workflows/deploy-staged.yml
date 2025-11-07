@@ -1,0 +1,310 @@
+name: Staged Deployment with Manual Traffic Switch
+
+# Two-stage deployment:
+# 1. Deploy to idle container (requires approval)
+# 2. Switch traffic (requires second approval after testing)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: fsolaric/nba_props_web
+  REGISTRY: docker.io
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Read and increment version
+        id: version
+        run: |
+          if [ -f .docker-version ]; then
+            CURRENT_VERSION=$(cat .docker-version)
+          else
+            CURRENT_VERSION="v1.3.19"
+          fi
+
+          VERSION_NUMBER="${CURRENT_VERSION#v}"
+          IFS='.' read -r -a VERSION_PARTS <<< "$VERSION_NUMBER"
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH="${VERSION_PARTS[2]}"
+
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+          echo "$NEW_VERSION" > .docker-version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .docker-version
+          git commit -m "Bump version to $NEW_VERSION [skip ci]" || true
+          git push || true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ env.DOCKER_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-to-idle:
+    name: Deploy to Idle Container (No Traffic Switch)
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: staging-deploy
+      url: http://134.209.213.185:8002
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to idle container WITHOUT traffic switch
+        uses: appleboy/ssh-action@v1.0.0
+        env:
+          DOCKER_VERSION: ${{ needs.build-and-push.outputs.image_tag }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+          CF_TURNSTILE_SITE_KEY: ${{ secrets.CF_TURNSTILE_SITE_KEY }}
+          CF_TURNSTILE_SECRET_KEY: ${{ secrets.CF_TURNSTILE_SECRET_KEY }}
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_SECRET: ${{ secrets.GOOGLE_OAUTH_SECRET }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          envs: DOCKER_VERSION,SECRET_KEY,DATABASE_HOST,DATABASE_PORT,DATABASE_NAME,DATABASE_USER,DATABASE_PASSWORD,SENDGRID_API_KEY,DEFAULT_FROM_EMAIL,CF_TURNSTILE_SITE_KEY,CF_TURNSTILE_SECRET_KEY,GOOGLE_OAUTH_CLIENT_ID,GOOGLE_OAUTH_SECRET
+          script: |
+            cd /var/www/nba_props
+            git pull origin main
+
+            # Export environment variables
+            export SECRET_KEY="$SECRET_KEY"
+            export DATABASE_HOST="$DATABASE_HOST"
+            export DATABASE_PORT="$DATABASE_PORT"
+            export DATABASE_NAME="$DATABASE_NAME"
+            export DATABASE_USER="$DATABASE_USER"
+            export DATABASE_PASSWORD="$DATABASE_PASSWORD"
+            export SENDGRID_API_KEY="$SENDGRID_API_KEY"
+            export DEFAULT_FROM_EMAIL="$DEFAULT_FROM_EMAIL"
+            export CF_TURNSTILE_SITE_KEY="$CF_TURNSTILE_SITE_KEY"
+            export CF_TURNSTILE_SECRET_KEY="$CF_TURNSTILE_SECRET_KEY"
+            export GOOGLE_OAUTH_CLIENT_ID="$GOOGLE_OAUTH_CLIENT_ID"
+            export GOOGLE_OAUTH_SECRET="$GOOGLE_OAUTH_SECRET"
+
+            DEPLOY_IMAGE="fsolaric/nba_props_web:$DOCKER_VERSION"
+
+            # Determine which container is currently live
+            CURRENT_PORT=$(grep "proxy_pass.*127.0.0.1:" /etc/nginx/sites-enabled/propspredictions.conf | grep -oP ':\K[0-9]+' | head -1)
+
+            if [ "$CURRENT_PORT" = "8000" ]; then
+                IDLE_PORT="8002"
+                IDLE_CONTAINER="nba_props_web-green_1"
+                IDLE_COLOR="green"
+            else
+                IDLE_PORT="8000"
+                IDLE_CONTAINER="nba_props_web-blue_1"
+                IDLE_COLOR="blue"
+            fi
+
+            echo "Current live port: $CURRENT_PORT"
+            echo "Deploying to idle $IDLE_COLOR container (port $IDLE_PORT)"
+
+            # Create backup
+            mkdir -p /var/www/backups
+            BACKUP_FILE="/var/www/backups/nba_predictions_backup_$(date +%Y%m%d_%H%M%S).sql"
+            docker exec nba_props_db_1 pg_dump -U ${DATABASE_USER} ${DATABASE_NAME} > "$BACKUP_FILE" 2>/dev/null || echo "Backup warning"
+            echo "Backup created: $BACKUP_FILE"
+
+            # Pull new image
+            echo "Pulling Docker image: $DEPLOY_IMAGE"
+            docker pull "$DEPLOY_IMAGE"
+
+            # Stop and remove old idle container
+            echo "Stopping old idle container..."
+            docker stop "$IDLE_CONTAINER" 2>/dev/null || true
+            docker rm "$IDLE_CONTAINER" 2>/dev/null || true
+
+            # Start new idle container
+            echo "Starting new idle container on port $IDLE_PORT..."
+            docker run -d \
+              --name "$IDLE_CONTAINER" \
+              --network nba_props_mynetwork \
+              -p "$IDLE_PORT:8000" \
+              -v /var/www/nba_props/backend:/app \
+              -e DJANGO_SETTINGS_MODULE="nba_predictions.settings" \
+              -e DJANGO_DEVELOPMENT=False \
+              -e SECRET_KEY="$SECRET_KEY" \
+              -e DATABASE_HOST="$DATABASE_HOST" \
+              -e DATABASE_PORT="$DATABASE_PORT" \
+              -e DATABASE_NAME="$DATABASE_NAME" \
+              -e DATABASE_USER="$DATABASE_USER" \
+              -e DATABASE_PASSWORD="$DATABASE_PASSWORD" \
+              -e SENDGRID_API_KEY="$SENDGRID_API_KEY" \
+              -e DEFAULT_FROM_EMAIL="$DEFAULT_FROM_EMAIL" \
+              -e CF_TURNSTILE_SITE_KEY="$CF_TURNSTILE_SITE_KEY" \
+              -e CF_TURNSTILE_SECRET_KEY="$CF_TURNSTILE_SECRET_KEY" \
+              -e GOOGLE_OAUTH_CLIENT_ID="$GOOGLE_OAUTH_CLIENT_ID" \
+              -e GOOGLE_OAUTH_SECRET="$GOOGLE_OAUTH_SECRET" \
+              "$DEPLOY_IMAGE" \
+              sh -c "python manage.py migrate && gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile -"
+
+            # Wait for container to start
+            echo "Waiting for container to start..."
+            sleep 15
+
+            # Health check
+            echo "Running health check on port $IDLE_PORT..."
+            HEALTH_CHECK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$IDLE_PORT/ || echo "000")
+
+            if [ "$HEALTH_CHECK" = "200" ]; then
+              echo "✅ Health check passed (HTTP $HEALTH_CHECK)"
+              echo "Idle container is ready for testing!"
+            else
+              echo "⚠️ Health check returned HTTP $HEALTH_CHECK"
+              docker logs "$IDLE_CONTAINER" --tail 50
+              exit 1
+            fi
+
+            # Save deployment info for traffic switch job
+            echo "$IDLE_PORT" > /tmp/idle_port.txt
+            echo "$CURRENT_PORT" > /tmp/live_port.txt
+            echo "$IDLE_COLOR" > /tmp/idle_color.txt
+
+      - name: Deployment to idle container complete
+        run: |
+          echo "🎉 New version deployed to idle container!"
+          echo "Image: ${{ needs.build-and-push.outputs.image_tag }}"
+          echo ""
+          echo "📍 The new version is running but NOT receiving production traffic"
+          echo ""
+          echo "🧪 Test the idle container:"
+          echo "   curl http://134.209.213.185:8002/"
+          echo "   (or http://134.209.213.185:8000/ depending on which is idle)"
+          echo ""
+          echo "✅ Once you've tested and verified it works:"
+          echo "   Approve the 'Switch Traffic' job to complete deployment"
+          echo ""
+          echo "⚠️  If there are issues:"
+          echo "   Just don't approve - production will keep running on the old version"
+
+  switch-traffic:
+    name: Switch Traffic to New Version
+    needs: [build-and-push, deploy-to-idle]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production-traffic-switch
+      url: https://propspredictions.com
+
+    steps:
+      - name: Switch nginx traffic to new container
+        uses: appleboy/ssh-action@v1.0.0
+        env:
+          DOCKER_VERSION: ${{ needs.build-and-push.outputs.image_tag }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          envs: DOCKER_VERSION
+          script: |
+            cd /var/www/nba_props
+
+            # Read deployment info from previous job
+            IDLE_PORT=$(cat /tmp/idle_port.txt)
+            LIVE_PORT=$(cat /tmp/live_port.txt)
+            IDLE_COLOR=$(cat /tmp/idle_color.txt)
+
+            echo "Switching traffic from port $LIVE_PORT to port $IDLE_PORT"
+
+            # Backup nginx config
+            BACKUP_CONFIG="/etc/nginx/sites-enabled/propspredictions.conf.backup.$(date +%Y%m%d_%H%M%S)"
+            cp /etc/nginx/sites-enabled/propspredictions.conf "$BACKUP_CONFIG"
+            echo "Nginx config backed up to: $BACKUP_CONFIG"
+
+            # Switch traffic
+            sed -i "s/127.0.0.1:$LIVE_PORT/127.0.0.1:$IDLE_PORT/g" /etc/nginx/sites-enabled/propspredictions.conf
+
+            # Test nginx config
+            if nginx -t 2>/dev/null; then
+              echo "✅ Nginx config test passed"
+              systemctl reload nginx
+              echo "✅ Nginx reloaded - traffic switched to port $IDLE_PORT"
+            else
+              echo "❌ Nginx config test failed, restoring backup"
+              cp "$BACKUP_CONFIG" /etc/nginx/sites-enabled/propspredictions.conf
+              exit 1
+            fi
+
+            # Verify production
+            sleep 3
+            PUBLIC_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" https://propspredictions.com/ || echo "000")
+
+            if [ "$PUBLIC_HEALTH" = "200" ] || [ "$PUBLIC_HEALTH" = "301" ] || [ "$PUBLIC_HEALTH" = "302" ]; then
+              echo "✅ Production health check passed (HTTP $PUBLIC_HEALTH)"
+            else
+              echo "⚠️ Production health check returned HTTP $PUBLIC_HEALTH"
+            fi
+
+            echo ""
+            echo "=== Traffic Switch Complete ==="
+            echo "Image: fsolaric/nba_props_web:$DOCKER_VERSION"
+            echo "Live port: $IDLE_PORT (was $LIVE_PORT)"
+            echo "Old container still running on port $LIVE_PORT for rollback"
+
+      - name: Deployment complete
+        run: |
+          echo "🎉 Deployment complete!"
+          echo "✅ Traffic successfully switched to new version"
+          echo "🔗 Production: https://propspredictions.com"
+          echo ""
+          echo "Old container is still running for easy rollback if needed"
+          echo "To rollback, SSH to server and switch nginx back to previous port"

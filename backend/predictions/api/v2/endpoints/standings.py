@@ -14,8 +14,9 @@ Endpoints:
 
 from typing import Dict, List, Any
 from ninja import Router
+from ninja.errors import HttpError
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 
 from predictions.models import (
     Season,
@@ -162,10 +163,16 @@ def get_regular_season_standings(request, season_slug: str):
 
         return standings_data
 
-    except Season.DoesNotExist:
+    except (Season.DoesNotExist, Http404):
         return JsonResponse(
             {"error": f"Season '{season_slug}' not found"},
             status=404
+        )
+    except HttpError as http_error:
+        message = getattr(http_error, "message", str(http_error))
+        return JsonResponse(
+            {"error": message},
+            status=http_error.status_code
         )
     except Exception as e:
         print(f"Error fetching standings: {str(e)}")
@@ -303,10 +310,16 @@ def get_ist_standings(request, season_slug: str):
 
         return standings_data
 
-    except Season.DoesNotExist:
+    except (Season.DoesNotExist, Http404):
         return JsonResponse(
             {"error": f"Season '{season_slug}' not found"},
             status=404
+        )
+    except HttpError as http_error:
+        message = getattr(http_error, "message", str(http_error))
+        return JsonResponse(
+            {"error": message},
+            status=http_error.status_code
         )
     except Exception as e:
         print(f"Error fetching IST standings: {str(e)}")

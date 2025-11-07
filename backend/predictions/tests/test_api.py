@@ -1,10 +1,9 @@
 """
 Tests for the API endpoints.
 """
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
 from predictions.models.season import Season
 from predictions.models.team import Team
 from predictions.models.player import Player
@@ -22,36 +21,40 @@ class APITestCase(TestCase):
             email='test@example.com',
             password='testpassword'
         )
-        
+
         # Create a test season
+        from django.utils import timezone
+        from datetime import timedelta
+        now = timezone.now()
         self.season = Season.objects.create(
-            name='2023-2024 Season',
-            slug='2023-2024',
-            is_active=True
+            year='2023-24',
+            slug='2023-24',
+            start_date=now.date() - timedelta(days=30),
+            end_date=now.date() + timedelta(days=150),
+            submission_start_date=now - timedelta(days=7),
+            submission_end_date=now + timedelta(days=21)
         )
-        
+
         # Create test teams
         self.team_east = Team.objects.create(
             name='Boston Celtics',
             conference='East'
         )
-        
+
         self.team_west = Team.objects.create(
             name='Los Angeles Lakers',
             conference='West'
         )
-        
+
         # Create test players
         self.player1 = Player.objects.create(
-            name='LeBron James',
-            team=self.team_west
+            name='LeBron James'
         )
-        
+
         self.player2 = Player.objects.create(
-            name='Jayson Tatum',
-            team=self.team_east
+            name='Jayson Tatum'
         )
-        
+
         # Create test predictions
         self.prediction = StandingPrediction.objects.create(
             user=self.user,
@@ -59,10 +62,10 @@ class APITestCase(TestCase):
             team=self.team_east,
             predicted_position=1
         )
-        
-        # Set up API client
-        self.client = APIClient()
-        self.client.force_authenticate(user=self.user)
+
+        # Set up Django test client
+        self.client = Client()
+        self.client.force_login(self.user)
 
 
 class LeaderboardAPITests(APITestCase):

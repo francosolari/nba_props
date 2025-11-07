@@ -20,7 +20,10 @@
     "dev:no-kill": "bash ./scripts/dev.sh",
     "build": "webpack --mode production --config frontend/webpack.config.js",
     "fetch:team-slugs": "node scripts/fetch_nba_team_slugs.js",
-    "clean:hot-updates": "rm -f frontend/static/js/*.hot-update.*"
+    "clean:hot-updates": "rm -f frontend/static/js/*.hot-update.*",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.79.0",

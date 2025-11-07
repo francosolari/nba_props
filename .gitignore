@@ -3,6 +3,9 @@
 /venv/
 /frontend/node_modules/
 /frontend/staticfiles/
+/frontend/static/css/styles.css
+/frontend/static/js/bundle.js
+/frontend/static/js/bundle.js.LICENSE.txt
 
 # Webpack hot-update files (development only)
 *.hot-update.js

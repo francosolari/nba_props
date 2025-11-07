@@ -134,12 +134,19 @@ def get_random_props(request):
 def get_homepage_data(request):
     """Get all homepage data in one call"""
     try:
-        current_season = Season.objects.get(is_current=True)
+        # Get current/latest season (no is_current field exists, use latest by start_date)
+        current_season = Season.objects.order_by('-start_date').first()
 
-        # Mini leaderboard (top 5)
+        if not current_season:
+            return {
+                'mini_leaderboard': [],
+                'mini_standings': {'eastern': [], 'western': []}
+            }
+
+        # Mini leaderboard (top 5) - use 'points' not 'total_points'
         top_users = UserStats.objects.filter(
             season=current_season
-        ).select_related('user', 'user__userprofile').order_by('-total_points')[:5]
+        ).select_related('user', 'user__userprofile').order_by('-points')[:5]
 
         mini_leaderboard = []
         for i, user_stat in enumerate(top_users, 1):
@@ -148,20 +155,21 @@ def get_homepage_data(request):
                 'rank': i,
                 'user': {
                     'username': user_stat.user.username,
-                    'display_name': display_name
+                    'display_name': display_name,
+                    'id': user_stat.user.id
                 },
-                'points': user_stat.total_points
+                'points': user_stat.points
             })
 
         # Mini standings (top 3 from each conference)
         east_standings = RegularSeasonStandings.objects.filter(
             season=current_season,
-            team__conference='Eastern'
+            team__conference='East'
         ).select_related('team').order_by('position')[:3]
 
         west_standings = RegularSeasonStandings.objects.filter(
             season=current_season,
-            team__conference='Western'
+            team__conference='West'
         ).select_related('team').order_by('position')[:3]
 
         mini_standings = {
@@ -227,7 +235,8 @@ def get_interesting_stats(request, username: str, season_slug: str = None):
             except Season.DoesNotExist:
                 return JsonResponse({'error': 'Season not found'}, status=404)
         else:
-            season = Season.objects.filter(is_current=True).first()
+            # Get latest season (no is_current field exists)
+            season = Season.objects.order_by('-start_date').first()
 
         if not season:
             return JsonResponse({'error': 'No active season'}, status=404)
