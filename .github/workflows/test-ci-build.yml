@@ -1,0 +1,62 @@
+name: Test CI Build (No Deploy)
+
+# This workflow tests Docker builds without deploying
+# Safe to run on test branches - builds but doesn't push to production
+
+on:
+  push:
+    branches: [ test/**, feature/** ]
+  pull_request:
+    branches: [ main, project/** ]
+
+env:
+  DOCKER_IMAGE: fsolaric/nba_props_web
+  REGISTRY: docker.io
+
+jobs:
+  test-build:
+    name: Test Docker Build (No Push)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (test only - no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false  # IMPORTANT: Don't push to DockerHub
+          tags: ${{ env.DOCKER_IMAGE }}:test-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Success notification
+        if: success()
+        run: |
+          echo "✅ Docker build test successful!"
+          echo "Image: ${{ env.DOCKER_IMAGE }}:test-${{ github.sha }}"
+          echo "Built but NOT pushed to DockerHub (test only)"
+
+      - name: Failure notification
+        if: failure()
+        run: |
+          echo "❌ Docker build test failed!"
+          echo "Check the logs above for details"

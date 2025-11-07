@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install frontend dependencies
 COPY package.json package-lock.json ./
-COPY babel.config.js tailwind.config.js tsconfig.json ./
+COPY babel.config.js ./
 RUN npm ci
 
 # Copy frontend source and build assets

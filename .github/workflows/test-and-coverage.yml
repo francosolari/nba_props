@@ -1,0 +1,164 @@
+name: Tests and Coverage
+
+# Run tests and report coverage without blocking PRs
+# Coverage is informational only - tests must pass but low coverage is OK
+
+on:
+  push:
+    branches: [ main, project/**, test/** ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-tests:
+    name: Backend Tests with Coverage
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Django migrations
+        env:
+          DJANGO_SETTINGS_MODULE: nba_predictions.settings
+          DJANGO_DEVELOPMENT: 'True'
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: test_db
+          DATABASE_USER: test_user
+          DATABASE_PASSWORD: test_password
+          SECRET_KEY: test-secret-key-for-ci-testing
+        run: |
+          cd backend
+          python manage.py migrate --noinput
+
+      - name: Run backend tests with coverage
+        env:
+          DJANGO_SETTINGS_MODULE: nba_predictions.settings
+          DJANGO_DEVELOPMENT: 'True'
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: test_db
+          DATABASE_USER: test_user
+          DATABASE_PASSWORD: test_password
+          SECRET_KEY: test-secret-key-for-ci-testing
+        run: |
+          cd backend
+          pytest predictions/tests/ -v \
+            --cov=predictions \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-fail-under=0 \
+            --tb=short
+
+      - name: Upload coverage reports to Codecov (optional)
+        if: always()
+        uses: codecov/codecov-action@v4
+        continue-on-error: true
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Coverage Summary
+        if: always()
+        run: |
+          cd backend
+          echo "📊 Coverage Summary:"
+          python -m coverage report --skip-empty || echo "Coverage report not available"
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: backend/htmlcov/
+          retention-days: 30
+
+      - name: Test Results Summary
+        if: always()
+        run: |
+          echo "✅ Backend tests completed"
+          echo "Coverage report available in artifacts"
+
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run frontend tests (if any)
+        run: npm test -- --passWithNoTests --coverage
+        continue-on-error: true
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Frontend build verification
+        run: |
+          echo "✅ Frontend built successfully"
+          ls -lh frontend/static/js/ || echo "No build artifacts found"
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    if: always()
+
+    steps:
+      - name: Test Summary
+        run: |
+          echo "🧪 Test Suite Summary"
+          echo "====================="
+          echo "Backend Tests: ${{ needs.backend-tests.result }}"
+          echo "Frontend Tests: ${{ needs.frontend-tests.result }}"
+          echo ""
+          if [ "${{ needs.backend-tests.result }}" != "success" ]; then
+            echo "❌ Backend tests failed - check logs above"
+            exit 1
+          fi
+          echo "✅ All required tests passed"
+          echo ""
+          echo "📊 Coverage reports are informational only"
+          echo "Low coverage is OK - we're building up test suites incrementally"
