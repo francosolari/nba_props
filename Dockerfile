@@ -1,4 +1,19 @@
-# Lightweight Python-only Dockerfile (frontend built locally via npm run build)
+# Multi-stage build to compile frontend assets during Docker build
+
+FROM node:18-bullseye-slim AS frontend-build
+
+WORKDIR /app
+
+# Install frontend dependencies
+COPY package.json package-lock.json ./
+COPY babel.config.js tailwind.config.js tsconfig.json ./
+RUN npm ci
+
+# Copy frontend source and build assets
+COPY frontend ./frontend
+RUN npm run build
+
+
 FROM python:3.11-slim-bullseye
 
 ENV PYTHONUNBUFFERED=1
@@ -15,8 +30,11 @@ RUN pip install --upgrade pip && \
 # Copy backend code
 COPY backend/ /app/
 
-# Copy pre-built frontend static files (already built via npm run build)
-COPY frontend/static /app/../frontend/static
+# Copy compiled frontend static assets from the build stage
+COPY --from=frontend-build /app/frontend/static /frontend/static
+
+# Copy static image assets that live in the repository
+COPY frontend/static/img /frontend/static/img
 
 # Collect static files (Django + WhiteNoise will serve these)
 RUN python manage.py collectstatic --noinput
