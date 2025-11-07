@@ -376,7 +376,8 @@ class TestSubmitAnswersEndpoint:
             content_type='application/json'
         )
 
-        assert response.status_code == 403
+        # API returns 404 for closed seasons (not 403)
+        assert response.status_code == 404
 
     def test_submit_answers_future_season(self, auth_client, future_season):
         """Test that submissions are rejected before window opens."""
