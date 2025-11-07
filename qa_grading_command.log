@@ -17436,3 +17436,7 @@ Answers Updated (props fields): 21
 Answers Skipped (props): 777
 UserStats Created: 0
 UserStats Updated: 20
+2025-11-02 22:33:45,552 - qa_grading_command - INFO - Season "2024-25" found.
+2025-11-02 22:33:45,553 - qa_grading_command - INFO - Starting grading process for season "2024-25".
+2025-11-02 22:33:45,610 - qa_grading_command - INFO - AnswerLookupService caches pre-warmed.
+2025-11-02 22:33:45,643 - qa_grading_command - WARNING - No answers found for season "2024-25".
