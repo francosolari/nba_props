@@ -1,4 +1,7 @@
 [run]
+source =
+    backend/accounts
+    backend/predictions
 omit =
     */migrations/*
     */tests/*
@@ -7,13 +10,22 @@ omit =
     */venv/*
     */env/*
     manage.py
+    */wsgi.py
+    */asgi.py
+    */settings.py
 
 [report]
+skip_empty = True
+show_missing = True
+precision = 2
 exclude_lines =
     pragma: no cover
     def __repr__
+    def __str__
     raise AssertionError
     raise NotImplementedError
-    if __name__ == .__main__.:
-    if TYPE_CHECKING:
+    if __name__ == "__main__":
     @abstractmethod
+    @abc.abstractmethod
+    if TYPE_CHECKING:
+    ...
