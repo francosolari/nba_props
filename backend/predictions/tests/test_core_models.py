@@ -584,8 +584,10 @@ class TestCascadeDeletion:
         Django-polymorphic creates child tables with FK constraints to the parent Question table,
         which interferes with cascade deletion order. In production, this works correctly
         because we delete questions before deleting seasons in the admin interface.
+
+        Related issue: https://github.com/francosolari/nba_props/issues/28
         """
-        pytest.skip("Known django-polymorphic cascade deletion limitation - FK constraint to parent table")
+        pytest.skip("Issue #28: Django-polymorphic cascade deletion limitation - FK constraint to parent table")
         season = SeasonFactory()
         PropQuestionFactory(season=season)
         SuperlativeQuestionFactory(season=season)

@@ -512,8 +512,10 @@ class TestHomepageEndpoints:
 
         NOTE: This test is temporarily skipped. The endpoint returns 500 error when all seasons
         are deleted and a new one is created. Requires investigation of homepage endpoint dependencies.
+
+        Related issue: https://github.com/francosolari/nba_props/issues/27
         """
-        pytest.skip("Temporarily disabled - endpoint returns 500 after Season.objects.all().delete()")
+        pytest.skip("Issue #27: Homepage endpoint returns 500 after Season.objects.all().delete()")
         Season.objects.all().delete()
 
         current = CurrentSeasonFactory()

@@ -138,7 +138,11 @@ class TestSuperlativeQuestion:
             pass
 
     def test_update_from_latest_odds(self):
-        """Test updating leader from latest odds."""
+        """Test updating leader from latest odds.
+
+        TODO: This requires Odds model setup and proper fixtures.
+        Related issue: https://github.com/francosolari/nba_props/issues/29
+        """
         # This would require Odds model setup
         # Skipping for now as it requires more complex setup
         pass
