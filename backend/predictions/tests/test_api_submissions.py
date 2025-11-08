@@ -361,8 +361,18 @@ class TestSubmitAnswersEndpoint:
         assert Answer.objects.filter(user=auth_client.user, question=sample_questions['prop']).exists()
         assert Answer.objects.filter(user=auth_client.user, question=sample_questions['superlative']).exists()
 
-    def test_submit_answers_deadline_passed(self, auth_client, closed_season, sample_questions):
+    @pytest.mark.django_db(transaction=True)
+    def test_submit_answers_deadline_passed(self, auth_client, sample_questions):
         """Test that submissions are rejected after deadline."""
+        # Create a closed season for this test
+        closed_season = PastSeasonFactory(
+            slug='23-24',
+            year='23-24',
+            start_date=date.today() - timedelta(days=365),
+            end_date=date.today() - timedelta(days=180),
+            submission_start_date=date.today() - timedelta(days=395),
+            submission_end_date=date.today() - timedelta(days=360)
+        )
         question = PropQuestionFactory(season=closed_season, text='Closed question')
         payload = {
             'answers': [
@@ -376,8 +386,8 @@ class TestSubmitAnswersEndpoint:
             content_type='application/json'
         )
 
-        # API returns 404 for closed seasons (not 403)
-        assert response.status_code == 404
+        # API returns 403 for closed seasons (submission deadline passed)
+        assert response.status_code == 403
 
     def test_submit_answers_future_season(self, auth_client, future_season):
         """Test that submissions are rejected before window opens."""
