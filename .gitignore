@@ -7,6 +7,14 @@
 /frontend/static/js/bundle.js
 /frontend/static/js/bundle.js.LICENSE.txt
 
+# Coverage files
+.coverage
+*.coverage
+coverage.xml
+*/coverage.xml
+htmlcov/
+.pytest_cache/
+
 # Webpack hot-update files (development only)
 *.hot-update.js
 *.hot-update.json
