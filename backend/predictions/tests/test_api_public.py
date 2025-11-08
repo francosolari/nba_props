@@ -506,9 +506,14 @@ class TestHomepageEndpoints:
 
         assert data['mini_leaderboard'] == []
 
+    @pytest.mark.django_db(transaction=True)
     def test_homepage_data_mini_leaderboard_with_users(self, api_client):
-        """Test mini leaderboard returns top 5 users."""
-        pytest.skip("Temporarily disabled - FK constraint issue in teardown")
+        """Test mini leaderboard returns top 5 users.
+
+        NOTE: This test is temporarily skipped. The endpoint returns 500 error when all seasons
+        are deleted and a new one is created. Requires investigation of homepage endpoint dependencies.
+        """
+        pytest.skip("Temporarily disabled - endpoint returns 500 after Season.objects.all().delete()")
         Season.objects.all().delete()
 
         current = CurrentSeasonFactory()
