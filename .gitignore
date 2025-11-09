@@ -193,5 +193,11 @@ postgres_data/
 /test-results/.playwright-artifacts-4/ca9ce9f48845b8db173d07fa2d7b8061.png
 /test-results/.playwright-artifacts-5/3c4f8327d5640c4bb7e07c791138dfec.png
 /test-results/.playwright-artifacts-5/3ee99e071e26c2360541888c4b3aced4.webm
+# Python cache and coverage
 .coverage
 *.coverage
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
