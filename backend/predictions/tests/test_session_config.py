@@ -39,12 +39,12 @@ class SessionConfigTest(TestCase):
         self.assertEqual(settings.SESSION_COOKIE_SAMESITE, 'Lax')
 
     def test_session_cookie_secure_in_production(self):
-        """Verify SESSION_COOKIE_SECURE is False in development, True in production."""
-        # In development (IS_DEVELOPMENT=True), should be False
-        if settings.DEBUG:
-            self.assertEqual(settings.SESSION_COOKIE_SECURE, False)
-        else:
-            self.assertEqual(settings.SESSION_COOKIE_SECURE, True)
+        """Verify SESSION_COOKIE_SECURE matches IS_DEVELOPMENT setting."""
+        # SESSION_COOKIE_SECURE is set to: not IS_DEVELOPMENT in settings.py
+        # This ensures it's False in development (HTTP) and True in production (HTTPS)
+        is_development = getattr(settings, 'IS_DEVELOPMENT', settings.DEBUG)
+        expected_secure = not is_development
+        self.assertEqual(settings.SESSION_COOKIE_SECURE, expected_secure)
 
 
 class SessionBehaviorTest(TestCase):
@@ -68,9 +68,10 @@ class SessionBehaviorTest(TestCase):
         initial_session_key = self.client.session.session_key
         self.assertIsNotNone(initial_session_key)
 
-        # Make multiple requests
+        # Make multiple requests (allow redirects from onboarding middleware)
         for _ in range(5):
-            response = self.client.get('/')
+            response = self.client.get('/', follow=True)
+            # Should get 200 after following redirects
             self.assertEqual(response.status_code, 200)
 
         # Verify session key hasn't changed
@@ -233,7 +234,7 @@ class DjangoAllauthCompatibilityTest(TestCase):
         self.client.login(username='testuser', password='testpass123')
 
         # Make a request to get response with cookie
-        response = self.client.get('/')
+        response = self.client.get('/', follow=True)
 
         # Get session cookie
         session_cookie = response.cookies.get(settings.SESSION_COOKIE_NAME)
@@ -245,6 +246,13 @@ class DjangoAllauthCompatibilityTest(TestCase):
             # Verify SameSite
             self.assertEqual(session_cookie.get('samesite', ''), 'Lax')
 
-            # Verify Secure (only in production)
-            if not settings.DEBUG:
+            # Verify Secure matches configuration
+            # In development (DEBUG=True), SESSION_COOKIE_SECURE should be False
+            # In production (DEBUG=False), SESSION_COOKIE_SECURE should be True
+            if settings.DEBUG:
+                # In development, secure flag may not be set (empty string is acceptable)
+                # The important thing is it's not forcing HTTPS in development
+                self.assertIn(session_cookie.get('secure', ''), ['', False])
+            else:
+                # In production, should be True
                 self.assertTrue(session_cookie.get('secure', False))
