@@ -25,11 +25,19 @@ services:
     container_name: nba_props_session_cleanup
     restart: unless-stopped
     command: >
-      sh -c "while true; do
-        echo '[Session Cleanup] Running cleanup at $(date)';
-        python manage.py cleanup_sessions;
-        echo '[Session Cleanup] Next run in 24 hours';
-        sleep 86400;
+      sh -c "
+      echo '[Session Cleanup] Service started. Cleanup scheduled for 03:00 UTC daily';
+      while true; do
+        current_hour=\$(date -u +%H);
+        current_minute=\$(date -u +%M);
+        if [ \"\$current_hour\" = '03' ] && [ \"\$current_minute\" -lt '05' ]; then
+          echo '[Session Cleanup] Running cleanup at \$(date)';
+          python manage.py clearsessions;
+          echo '[Session Cleanup] Cleanup completed. Next run tomorrow at 03:00 UTC';
+          sleep 3600;
+        else
+          sleep 300;
+        fi;
       done"
     env_file:
       - backend/.env
@@ -37,6 +45,14 @@ services:
       - db
     networks:
       - mynetwork
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
 
 networks:
   mynetwork:

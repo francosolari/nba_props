@@ -371,6 +371,44 @@ docker-compose exec web python manage.py clearsessions
 - Monitor database write load after deploying session changes
 - Check `django_session` table size: `SELECT COUNT(*) FROM django_session;`
 - If performance issues arise, consider Redis session backend or reduce `SESSION_COOKIE_AGE`
+- See `PERFORMANCE_MONITORING.md` for detailed monitoring guide
+
+**Rollback Procedures:**
+
+If session changes cause issues, follow these steps:
+
+**Quick Rollback (Disable Middleware Only):**
+```python
+# In backend/nba_predictions/settings.py, comment out:
+# 'nba_predictions.middleware.ThrottledSessionMiddleware',
+
+# Restart services
+docker-compose restart web-blue web-green
+```
+
+**Full Rollback (Restore Previous Behavior):**
+```python
+# In backend/nba_predictions/settings.py:
+# 1. Add back:
+SESSION_SAVE_EVERY_REQUEST = True
+
+# 2. Remove middleware from MIDDLEWARE list
+# 3. Stop session-cleanup service
+docker-compose stop session-cleanup
+
+# 4. Restart web services
+docker-compose restart web-blue web-green
+```
+
+**Emergency: All Users Logged Out (Manual Session Clear):**
+```bash
+# If session table corruption or critical issues
+docker-compose exec web python manage.py shell
+```
+```python
+from django.contrib.sessions.models import Session
+Session.objects.all().delete()  # CAUTION: Logs out all users
+```
 
 ## Production Deployment
 

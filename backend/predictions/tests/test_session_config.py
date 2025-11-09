@@ -25,8 +25,10 @@ class SessionConfigTest(TestCase):
         self.assertEqual(settings.SESSION_EXPIRE_AT_BROWSER_CLOSE, False)
 
     def test_session_save_every_request(self):
-        """Verify session is updated on every request."""
-        self.assertEqual(settings.SESSION_SAVE_EVERY_REQUEST, True)
+        """Verify SESSION_SAVE_EVERY_REQUEST is False (using middleware instead)."""
+        # We use ThrottledSessionMiddleware instead of SESSION_SAVE_EVERY_REQUEST
+        # to reduce database writes while keeping users logged in
+        self.assertFalse(settings.SESSION_SAVE_EVERY_REQUEST)
 
     def test_session_cookie_httponly(self):
         """Verify session cookie is HTTP-only (prevents XSS)."""
@@ -75,26 +77,34 @@ class SessionBehaviorTest(TestCase):
         self.assertEqual(self.client.session.session_key, initial_session_key)
 
     def test_session_expiry_extends_on_activity(self):
-        """Verify session expiry is extended when SESSION_SAVE_EVERY_REQUEST is True."""
+        """Verify session expiry is extended by ThrottledSessionMiddleware."""
         # Login
         self.client.login(username='testuser', password='testpass123')
         session_key = self.client.session.session_key
 
-        # Get initial expiry
-        session = Session.objects.get(session_key=session_key)
-        initial_expiry = session.expire_date
-
-        # Wait a moment
-        time.sleep(0.1)
-
-        # Make a request (should extend expiry with SESSION_SAVE_EVERY_REQUEST=True)
+        # Make initial request to set last_activity
         self.client.get('/')
 
-        # Get updated expiry
+        # Verify last_activity was set by middleware
+        self.assertIn('last_activity', self.client.session)
+
+        # Get initial values
+        session = Session.objects.get(session_key=session_key)
+        initial_expiry = session.expire_date
+        initial_activity = self.client.session['last_activity']
+
+        # Wait longer than test timing but less than throttle interval
+        time.sleep(1)
+
+        # Make another request (won't update due to throttling)
+        self.client.get('/')
+
+        # Activity timestamp should be the same (throttled)
+        self.assertEqual(self.client.session['last_activity'], initial_activity)
+
+        # Expiry should remain stable for throttled requests
         session.refresh_from_db()
         updated_expiry = session.expire_date
-
-        # Expiry should be extended (or at minimum stay the same in fast tests)
         self.assertGreaterEqual(updated_expiry, initial_expiry)
 
     def test_session_cleanup_removes_expired_sessions(self):

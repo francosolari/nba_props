@@ -84,7 +84,8 @@ SITE_ID = 1
 # Best practices to prevent frequent logouts
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep users logged in across browser sessions
-SESSION_SAVE_EVERY_REQUEST = True  # Extend session on each request for active users
+# SESSION_SAVE_EVERY_REQUEST: False (default) - Using ThrottledSessionMiddleware instead
+# The middleware updates sessions every 15 minutes to reduce DB writes while keeping users logged in
 SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie (security)
 SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection while allowing normal navigation
 SESSION_COOKIE_SECURE = not IS_DEVELOPMENT  # Use secure cookies in production (HTTPS only)
