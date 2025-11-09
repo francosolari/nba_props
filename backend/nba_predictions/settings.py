@@ -80,6 +80,15 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
+# Session Configuration
+# Best practices to prevent frequent logouts
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep users logged in across browser sessions
+SESSION_SAVE_EVERY_REQUEST = True  # Extend session on each request for active users
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie (security)
+SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection while allowing normal navigation
+SESSION_COOKIE_SECURE = not IS_DEVELOPMENT  # Use secure cookies in production (HTTPS only)
+
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
