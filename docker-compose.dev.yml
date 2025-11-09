@@ -53,6 +53,33 @@ services:
     networks:
       - mynetwork
 
+  # Session cleanup service (runs daily)
+  session-cleanup:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: >
+      sh -c "while true; do
+        echo '[Session Cleanup] Running cleanup at $(date)';
+        python manage.py cleanup_sessions;
+        echo '[Session Cleanup] Next run in 24 hours';
+        sleep 86400;
+      done"
+    environment:
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-nba_predictions.settings}
+      - DJANGO_DEVELOPMENT=${DJANGO_DEVELOPMENT:-True}
+      - DATABASE_HOST=${DATABASE_HOST:-db}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_NAME=${DATABASE_NAME:-nba_dev}
+      - DATABASE_USER=${DATABASE_USER:-devuser}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-devpassword}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - mynetwork
+
 networks:
   mynetwork:
 

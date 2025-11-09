@@ -322,6 +322,56 @@ A corrected CI/CD workflow is available at `.github/workflows/ci-cd-corrected.ym
 4. **Rebuild after dependency changes:** `npm install` or `pip install` changes require rebuild
 5. **Use --no-cache for major changes:** Frontend updates, Dockerfile modifications
 
+## Session Management
+
+### Database Session Cleanup
+
+The application uses database-backed sessions with `SESSION_SAVE_EVERY_REQUEST = True`, which extends session expiry on each user request. This improves user experience but increases session table growth.
+
+**Recommended:** Set up a periodic cleanup job to remove expired sessions.
+
+**Option 1: Cron Job (Production Server)**
+```bash
+# Add to crontab (run daily at 3 AM)
+0 3 * * * /path/to/venv/bin/python /path/to/backend/manage.py clearsessions
+
+# Or via Docker:
+0 3 * * * cd /path/to/project && docker-compose exec web python manage.py clearsessions
+```
+
+**Option 2: Docker Service (Scheduled Container)**
+
+Add to `docker-compose.yml`:
+```yaml
+services:
+  session-cleanup:
+    image: your-app-image
+    command: sh -c "while true; do python manage.py clearsessions && sleep 86400; done"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_NAME=mydb
+      # ... other env vars
+```
+
+**Option 3: Manual Cleanup**
+```bash
+# Local development
+venv/bin/python backend/manage.py clearsessions
+
+# Docker development
+docker-compose -f docker-compose.dev.yml exec web python manage.py clearsessions
+
+# Production
+docker-compose exec web python manage.py clearsessions
+```
+
+**Performance Monitoring:**
+- Monitor database write load after deploying session changes
+- Check `django_session` table size: `SELECT COUNT(*) FROM django_session;`
+- If performance issues arise, consider Redis session backend or reduce `SESSION_COOKIE_AGE`
+
 ## Production Deployment
 
 When deploying to production:
@@ -336,7 +386,8 @@ When deploying to production:
    ```bash
    docker-compose run web python manage.py migrate
    ```
-5. **Start services:**
+5. **Set up session cleanup cron job** (see Session Management section above)
+6. **Start services:**
    ```bash
    docker-compose up -d
    ```

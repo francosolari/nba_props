@@ -20,6 +20,24 @@ services:
         aliases:
           - db  # Makes it accessible as 'db' for DATABASE_HOST=db
 
+  session-cleanup:
+    image: ${DOCKER_IMAGE:-francosolari/nba_props:latest}
+    container_name: nba_props_session_cleanup
+    restart: unless-stopped
+    command: >
+      sh -c "while true; do
+        echo '[Session Cleanup] Running cleanup at $(date)';
+        python manage.py cleanup_sessions;
+        echo '[Session Cleanup] Next run in 24 hours';
+        sleep 86400;
+      done"
+    env_file:
+      - backend/.env
+    depends_on:
+      - db
+    networks:
+      - mynetwork
+
 networks:
   mynetwork:
     name: nba_props_mynetwork

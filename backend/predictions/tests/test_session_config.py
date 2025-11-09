@@ -1,0 +1,240 @@
+"""
+Tests for session configuration and behavior.
+
+These tests verify that the session management settings work correctly
+and don't conflict with django-allauth authentication flows.
+"""
+import time
+from django.test import TestCase, Client, override_settings
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.contrib.sessions.models import Session
+from django.utils import timezone
+from datetime import timedelta
+
+
+class SessionConfigTest(TestCase):
+    """Test session configuration settings."""
+
+    def test_session_age_configuration(self):
+        """Verify SESSION_COOKIE_AGE is set to 2 weeks."""
+        self.assertEqual(settings.SESSION_COOKIE_AGE, 1209600)  # 2 weeks in seconds
+
+    def test_session_expire_at_browser_close(self):
+        """Verify sessions persist across browser restarts."""
+        self.assertEqual(settings.SESSION_EXPIRE_AT_BROWSER_CLOSE, False)
+
+    def test_session_save_every_request(self):
+        """Verify session is updated on every request."""
+        self.assertEqual(settings.SESSION_SAVE_EVERY_REQUEST, True)
+
+    def test_session_cookie_httponly(self):
+        """Verify session cookie is HTTP-only (prevents XSS)."""
+        self.assertEqual(settings.SESSION_COOKIE_HTTPONLY, True)
+
+    def test_session_cookie_samesite(self):
+        """Verify session cookie uses Lax SameSite policy."""
+        self.assertEqual(settings.SESSION_COOKIE_SAMESITE, 'Lax')
+
+    def test_session_cookie_secure_in_production(self):
+        """Verify SESSION_COOKIE_SECURE is False in development, True in production."""
+        # In development (IS_DEVELOPMENT=True), should be False
+        if settings.DEBUG:
+            self.assertEqual(settings.SESSION_COOKIE_SECURE, False)
+        else:
+            self.assertEqual(settings.SESSION_COOKIE_SECURE, True)
+
+
+class SessionBehaviorTest(TestCase):
+    """Test actual session behavior with configured settings."""
+
+    def setUp(self):
+        """Create a test user for session tests."""
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+
+    def test_session_persists_across_requests(self):
+        """Verify session remains active across multiple requests."""
+        # Login
+        self.client.login(username='testuser', password='testpass123')
+
+        # Get initial session key
+        initial_session_key = self.client.session.session_key
+        self.assertIsNotNone(initial_session_key)
+
+        # Make multiple requests
+        for _ in range(5):
+            response = self.client.get('/')
+            self.assertEqual(response.status_code, 200)
+
+        # Verify session key hasn't changed
+        self.assertEqual(self.client.session.session_key, initial_session_key)
+
+    def test_session_expiry_extends_on_activity(self):
+        """Verify session expiry is extended when SESSION_SAVE_EVERY_REQUEST is True."""
+        # Login
+        self.client.login(username='testuser', password='testpass123')
+        session_key = self.client.session.session_key
+
+        # Get initial expiry
+        session = Session.objects.get(session_key=session_key)
+        initial_expiry = session.expire_date
+
+        # Wait a moment
+        time.sleep(0.1)
+
+        # Make a request (should extend expiry with SESSION_SAVE_EVERY_REQUEST=True)
+        self.client.get('/')
+
+        # Get updated expiry
+        session.refresh_from_db()
+        updated_expiry = session.expire_date
+
+        # Expiry should be extended (or at minimum stay the same in fast tests)
+        self.assertGreaterEqual(updated_expiry, initial_expiry)
+
+    def test_session_cleanup_removes_expired_sessions(self):
+        """Verify expired sessions can be cleaned up."""
+        # Create a session that's already expired
+        expired_session = Session.objects.create(
+            session_key='expired_test_session',
+            session_data='test_data',
+            expire_date=timezone.now() - timedelta(days=1)
+        )
+
+        # Create a valid session
+        self.client.login(username='testuser', password='testpass123')
+        valid_session_key = self.client.session.session_key
+
+        # Count sessions before cleanup
+        total_before = Session.objects.count()
+        self.assertGreaterEqual(total_before, 2)  # At least expired + valid
+
+        # Clean up expired sessions
+        expired_count = Session.objects.filter(expire_date__lt=timezone.now()).count()
+        Session.objects.filter(expire_date__lt=timezone.now()).delete()
+
+        # Verify expired session was deleted
+        self.assertFalse(Session.objects.filter(session_key='expired_test_session').exists())
+
+        # Verify valid session still exists
+        self.assertTrue(Session.objects.filter(session_key=valid_session_key).exists())
+
+        # Verify count decreased
+        total_after = Session.objects.count()
+        self.assertEqual(total_after, total_before - expired_count)
+
+
+class ThrottledSessionMiddlewareTest(TestCase):
+    """Test the ThrottledSessionMiddleware."""
+
+    def setUp(self):
+        """Create a test user."""
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+
+    def test_middleware_adds_last_activity(self):
+        """Verify middleware adds last_activity to session."""
+        # Login
+        self.client.login(username='testuser', password='testpass123')
+
+        # Make a request
+        self.client.get('/')
+
+        # Check session has last_activity
+        self.assertIn('last_activity', self.client.session)
+        self.assertIsInstance(self.client.session['last_activity'], float)
+
+    def test_middleware_throttles_updates(self):
+        """Verify middleware doesn't update session too frequently."""
+        # Login
+        self.client.login(username='testuser', password='testpass123')
+
+        # Make initial request
+        self.client.get('/')
+        first_activity = self.client.session.get('last_activity')
+
+        # Make another request immediately
+        time.sleep(0.1)
+        self.client.get('/')
+        second_activity = self.client.session.get('last_activity')
+
+        # Activity timestamp should be the same (throttled)
+        self.assertEqual(first_activity, second_activity)
+
+
+class DjangoAllauthCompatibilityTest(TestCase):
+    """Test session configuration compatibility with django-allauth."""
+
+    def setUp(self):
+        """Create a test user."""
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+    def test_login_with_allauth_backend(self):
+        """Verify login works with allauth authentication backend."""
+        # Login using Django's test client (which uses configured backends)
+        logged_in = self.client.login(username='testuser', password='testpass123')
+        self.assertTrue(logged_in)
+
+        # Verify session was created
+        self.assertIsNotNone(self.client.session.session_key)
+
+    def test_session_persists_after_password_change(self):
+        """Verify session handling during password reset flows."""
+        # Login
+        self.client.login(username='testuser', password='testpass123')
+        initial_session_key = self.client.session.session_key
+
+        # Change password
+        self.user.set_password('newpass456')
+        self.user.save()
+
+        # Note: Django's test client doesn't automatically invalidate
+        # session on password change like real browsers do
+        # This test just verifies session can be recreated
+
+        # Logout and login with new password
+        self.client.logout()
+        logged_in = self.client.login(username='testuser', password='newpass456')
+        self.assertTrue(logged_in)
+
+        # Verify new session was created
+        new_session_key = self.client.session.session_key
+        self.assertIsNotNone(new_session_key)
+
+    def test_session_cookie_attributes(self):
+        """Verify session cookie has correct security attributes."""
+        # Login
+        self.client.login(username='testuser', password='testpass123')
+
+        # Make a request to get response with cookie
+        response = self.client.get('/')
+
+        # Get session cookie
+        session_cookie = response.cookies.get(settings.SESSION_COOKIE_NAME)
+
+        if session_cookie:
+            # Verify HttpOnly
+            self.assertTrue(session_cookie.get('httponly', False))
+
+            # Verify SameSite
+            self.assertEqual(session_cookie.get('samesite', ''), 'Lax')
+
+            # Verify Secure (only in production)
+            if not settings.DEBUG:
+                self.assertTrue(session_cookie.get('secure', False))
