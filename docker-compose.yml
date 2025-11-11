@@ -27,13 +27,30 @@ services:
     command: >
       sh -c "
       echo '[Session Cleanup] Service started. Cleanup scheduled for 03:00 UTC daily';
+      LOCK_FILE=/tmp/session_cleanup_last_run;
+      LOCK_DIR=/tmp/session_cleanup_lock;
       while true; do
         current_hour=\$(date -u +%H);
         current_minute=\$(date -u +%M);
         if [ \"\$current_hour\" = '03' ] && [ \"\$current_minute\" -lt '05' ]; then
-          echo '[Session Cleanup] Running cleanup at \$(date)';
-          python manage.py clearsessions;
-          echo '[Session Cleanup] Cleanup completed. Next run tomorrow at 03:00 UTC';
+          current_date=\$(date -u +%Y-%m-%d);
+          if mkdir \"\$LOCK_DIR\" 2>/dev/null; then
+            last_run=\$(cat \"\$LOCK_FILE\" 2>/dev/null || echo '');
+            if [ \"\$last_run\" != \"\$current_date\" ]; then
+              echo '[Session Cleanup] Running cleanup at \$(date)';
+              if python manage.py clearsessions; then
+                echo \"\$current_date\" > \"\$LOCK_FILE\";
+                echo '[Session Cleanup] Cleanup completed. Next run tomorrow at 03:00 UTC';
+              else
+                echo '[Session Cleanup] Cleanup failed, will retry on next window';
+              fi;
+            else
+              echo '[Session Cleanup] Cleanup already ran today, skipping';
+            fi;
+            rmdir \"\$LOCK_DIR\" 2>/dev/null || true;
+          else
+            echo '[Session Cleanup] Cleanup lock already held, skipping this run';
+          fi;
           sleep 3600;
         else
           sleep 300;
@@ -49,7 +66,7 @@ services:
       resources:
         limits:
           cpus: '0.25'
-          memory: 256M
+          memory: 512M
         reservations:
           cpus: '0.1'
           memory: 128M

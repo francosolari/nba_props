@@ -5,6 +5,7 @@ These tests verify that the session management settings work correctly
 and don't conflict with django-allauth authentication flows.
 """
 import time
+from unittest import mock
 from django.test import TestCase, Client, override_settings
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -107,6 +108,31 @@ class SessionBehaviorTest(TestCase):
         session.refresh_from_db()
         updated_expiry = session.expire_date
         self.assertGreaterEqual(updated_expiry, initial_expiry)
+
+    @override_settings(SESSION_ACTIVITY_UPDATE_INTERVAL=1)
+    def test_session_expiry_extends_after_throttle_interval(self):
+        """Verify sessions are extended once the throttle window has passed."""
+        self.client.login(username='testuser', password='testpass123')
+        session_key = self.client.session.session_key
+
+        with mock.patch('nba_predictions.middleware.time.time') as mocked_time:
+            mocked_time.return_value = 1000.0
+            self.client.get('/')
+            initial_activity = self.client.session['last_activity']
+
+            session = Session.objects.get(session_key=session_key)
+            initial_expiry = session.expire_date
+
+            # Advance mocked time beyond the throttle interval
+            mocked_time.return_value = 1002.0
+            self.client.get('/')
+
+        session.refresh_from_db()
+        updated_activity = self.client.session['last_activity']
+        updated_expiry = session.expire_date
+
+        self.assertGreater(updated_activity, initial_activity)
+        self.assertGreater(updated_expiry, initial_expiry)
 
     def test_session_cleanup_removes_expired_sessions(self):
         """Verify expired sessions can be cleaned up."""
