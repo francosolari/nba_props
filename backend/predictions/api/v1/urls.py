@@ -13,7 +13,7 @@ from predictions.views.api_views import (
     get_ist_leaderboard_api, get_user_answers_api
 )
 
-# app_name = 'api_v1'
+app_name = 'v1'
 
 urlpatterns = [
     # Core data endpoints

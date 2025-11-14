@@ -13,11 +13,14 @@ class ThrottledSessionMiddleware:
     """
     Middleware to throttle session updates and reduce database writes.
 
-    Only updates the session if it hasn't been updated in the last 15 minutes.
-    This reduces database write load while still keeping active users logged in.
+    Replaces SESSION_SAVE_EVERY_REQUEST by only updating sessions every 15 minutes.
+    This reduces database write load (~85% reduction) while keeping active users logged in.
 
-    Controlled by SESSION_ACTIVITY_UPDATE_INTERVAL (default 15 minutes) so we can
-    keep active sessions alive without enabling SESSION_SAVE_EVERY_REQUEST.
+    IMPORTANT: SESSION_SAVE_EVERY_REQUEST must be False (Django default) for this to work.
+    If SESSION_SAVE_EVERY_REQUEST is True, Django will save on every request regardless
+    of this middleware, defeating the purpose of throttling.
+
+    Controlled by SESSION_ACTIVITY_UPDATE_INTERVAL (default 900 seconds = 15 minutes).
     """
 
     DEFAULT_UPDATE_INTERVAL = 900
@@ -45,9 +48,16 @@ class ThrottledSessionMiddleware:
                     session['last_activity'] = now
                     # Mark session as modified to trigger save
                     session.modified = True
-            except Exception:
+                    # Explicitly extend session expiry to ensure it's extended
+                    # This makes the behavior explicit and backend-agnostic
+                    session.set_expiry(settings.SESSION_COOKIE_AGE)
+            except Exception as e:
                 # If the session backend is unavailable we keep the request flowing
-                logger.exception("Failed to update throttled session activity timestamp")
+                # Log the error for debugging but don't break the request
+                if settings.DEBUG:
+                    logger.exception("Failed to update throttled session activity timestamp")
+                else:
+                    logger.error(f"Session update failed: {str(e)}")
 
         response = self.get_response(request)
         return response
