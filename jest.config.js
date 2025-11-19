@@ -6,26 +6,6 @@ module.exports = {
   // Setup files - use the more comprehensive setupTests.js
   setupFilesAfterEnv: ['<rootDir>/frontend/src/setupTests.js'],
 
-  // Module paths
-  roots: ['<rootDir>/frontend/src'],
-
-  // Test match patterns
-  testMatch: [
-    '<rootDir>/frontend/src/**/__tests__/**/*.[jt]s?(x)',
-    '<rootDir>/frontend/src/**/*.(spec|test).[jt]s?(x)',
-  ],
-
-  // Transform files with babel
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', {
-      presets: [
-        '@babel/preset-env',
-        ['@babel/preset-react', { runtime: 'automatic' }],
-        '@babel/preset-typescript',
-      ],
-    }],
-  },
-
   // Module name mapper for static assets and styles
   moduleNameMapper: {
     // CSS modules
@@ -39,11 +19,6 @@ module.exports = {
     '^@components/(.*)$': '<rootDir>/frontend/src/components/$1',
     '^@hooks/(.*)$': '<rootDir>/frontend/src/hooks/$1',
     '^@pages/(.*)$': '<rootDir>/frontend/src/pages/$1',
-
-    // React packages (ensure correct resolution)
-    '^react$': '<rootDir>/node_modules/react',
-    '^react-dom$': '<rootDir>/node_modules/react-dom',
-    '^react-dom/client$': '<rootDir>/node_modules/react-dom/client',
   },
 
   // Coverage configuration
