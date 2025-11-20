@@ -1,5 +1,21 @@
 # Gemini Development Guide
 
+**🔄 DOCUMENTATION CONSOLIDATED**: This documentation has been consolidated into a modular structure. Please see:
+
+- **Main Index**: [`docs/ai-assistants/00-INDEX.md`](./docs/ai-assistants/00-INDEX.md)
+- **For Claude users**: See [`CLAUDE.md`](./CLAUDE.md)
+- **For general contributors**: See [`AGENTS.md`](./AGENTS.md)
+
+The new modular documentation provides:
+- ✅ Task-specific guides (only load what you need)
+- ✅ Comprehensive coverage (12 specialized files)
+- ✅ Better organization and maintainability
+- ✅ Reduced context consumption
+
+---
+
+## Quick Reference (Legacy Content Below)
+
 This document provides a guide for AI-powered development on the NBA Predictions Game project. It outlines the project's architecture, conventions, and key components to ensure that AI-generated code is consistent, maintainable, and aligned with the project's goals.
 
 ## Project Overview
