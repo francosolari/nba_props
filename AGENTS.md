@@ -1,5 +1,17 @@
 # Open Source Contributor's Guide
 
+**📚 ENHANCED DOCUMENTATION**: In addition to this guide, comprehensive modular documentation is available at [`docs/ai-assistants/00-INDEX.md`](./docs/ai-assistants/00-INDEX.md).
+
+The modular documentation includes:
+- Task-specific guides (Django, React, API, Testing, etc.)
+- On-demand loading to minimize context
+- Step-by-step instructions for common tasks
+- Architecture deep-dives
+
+**This file focuses on**: bd (beads) issue tracking workflow and basic project structure.
+
+---
+
 This document provides a guide for open-source contributors to the NBA Predictions Game project. It outlines the project's architecture, conventions, and key components to ensure that contributions are consistent, maintainable, and aligned with the project's goals.
 
 ## Issue Tracking with bd (beads)

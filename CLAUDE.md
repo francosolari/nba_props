@@ -1,8 +1,46 @@
 # CLAUDE.md
 
+**📚 MODULAR DOCUMENTATION AVAILABLE**: For comprehensive, task-specific documentation, see [`docs/ai-assistants/00-INDEX.md`](./docs/ai-assistants/00-INDEX.md). This file contains quick reference information. Load specialized docs on-demand to minimize context usage.
+
 **Note**: This project uses [bd (beads)](https://github.com/steveyegge/beads) for issue tracking. Use `bd` commands instead of markdown TODOs. See AGENTS.md for workflow details.
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+---
+
+## 📖 Documentation Structure
+
+### Quick Access
+
+- **Start Here**: [`docs/ai-assistants/00-INDEX.md`](./docs/ai-assistants/00-INDEX.md) - Navigation hub with task mapping
+- **Project Overview**: [`docs/ai-assistants/01-overview.md`](./docs/ai-assistants/01-overview.md)
+- **Development Setup**: [`docs/ai-assistants/02-development-setup.md`](./docs/ai-assistants/02-development-setup.md)
+- **Architecture**: [`docs/ai-assistants/03-architecture.md`](./docs/ai-assistants/03-architecture.md)
+
+### Specialized Documentation
+
+| Topic | File |
+|-------|------|
+| Django Backend | [`04-backend-django.md`](./docs/ai-assistants/04-backend-django.md) |
+| API Development | [`05-backend-api.md`](./docs/ai-assistants/05-backend-api.md) |
+| React Frontend | [`06-frontend-react.md`](./docs/ai-assistants/06-frontend-react.md) |
+| Database Models | [`07-database-models.md`](./docs/ai-assistants/07-database-models.md) |
+| Common Tasks | [`08-common-tasks.md`](./docs/ai-assistants/08-common-tasks.md) |
+| Git & bd Workflow | [`09-git-workflow.md`](./docs/ai-assistants/09-git-workflow.md) |
+| Deployment | [`10-deployment.md`](./docs/ai-assistants/10-deployment.md) |
+| Security | [`11-security-best-practices.md`](./docs/ai-assistants/11-security-best-practices.md) |
+| Testing | [`12-testing.md`](./docs/ai-assistants/12-testing.md) |
+
+### How to Use
+
+**Load documentation based on your task:**
+- **First time?** → Read 00-INDEX.md, then 01-overview.md
+- **Creating API endpoint?** → Load 05-backend-api.md
+- **Working with models?** → Load 04-backend-django.md
+- **Building React component?** → Load 06-frontend-react.md
+- **Deploying?** → Load 10-deployment.md
+
+---
 
 ## Project Overview
 
