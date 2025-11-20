@@ -15,8 +15,9 @@ import {
   useDeleteQuestion,
   useReorderQuestions,
   useCreateSeason,
-} from "../hooks/useAdminQuestions";
-import { useSeasons, useUserContext } from "../hooks/useSubmissions";
+  useSeasons,
+  useUserContext,
+} from "../hooks";
 import SelectComponent from "../components/SelectComponent";
 import QuestionBatchWizard from "../components/admin/QuestionBatchWizard";
 
@@ -411,575 +412,469 @@ const AdminPanel = ({ seasonSlug }) => {
   }
 
   return (
-      <div
-        className={`min-h-screen transition-colors duration-300 ${themeStyles.background}`}
-      >
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 md:py-14 space-y-12">
-          <header className="space-y-6">
-            <div className="space-y-3 text-center md:text-left">
-              <span
-                className={`inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.3em] uppercase ${themeStyles.subtle}`}
-              >
-                Control Center
-              </span>
-              <h1
-                className={`text-3xl sm:text-4xl md:text-5xl font-bold ${themeStyles.heading}`}
-              >
-                Predictions Admin Panel
-              </h1>
-              <p
-                className={`text-sm sm:text-base max-w-3xl ${themeStyles.subtle}`}
-              >
-                Craft, organise, and launch the season&apos;s prediction slate
-                with a flexible interface tuned for batch workflows.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center md:justify-between gap-3 text-sm">
-              <nav className="flex flex-wrap items-center justify-center gap-2">
-                {navLinks.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    className={
-                      link.href === "#season"
-                        ? "px-3 py-2 rounded-full border border-sky-200/80 bg-white/90 text-sky-600 font-semibold shadow-sm hover:bg-sky-50 transition-colors"
-                        : link.href === "#builders"
-                          ? "px-3 py-2 rounded-full border border-slate-200 bg-white/90 text-slate-600 font-semibold shadow-sm hover:bg-slate-50 transition-colors"
-                          : "px-3 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 font-semibold shadow-sm hover:bg-emerald-100 transition-colors"
-                    }
-                  >
-                    {link.label}
-                  </a>
-                ))}
-              </nav>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className={`${secondaryButtonClass} items-center gap-2`}
-              >
-                {theme === "dark" ? "Light mode" : "Dark mode"}
-              </button>
-            </div>
-          </header>
-
-          {feedback && (
-            <div
-              className={`rounded-2xl border px-6 py-4 text-sm shadow-sm transition ${feedback.type === "success" ? successBannerClass : errorBannerClass}`}
+    <div
+      className={`min-h-screen transition-colors duration-300 ${themeStyles.background}`}
+    >
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 md:py-14 space-y-12">
+        <header className="space-y-6">
+          <div className="space-y-3 text-center md:text-left">
+            <span
+              className={`inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.3em] uppercase ${themeStyles.subtle}`}
             >
-              {feedback.message}
-            </div>
-          )}
-
-          <section id="season" className="space-y-6">
-            <div className={`${themeCardClass} shadow-sm`}>
-              <p
-                className={`text-xs uppercase tracking-[0.3em] ${themeStyles.subtle}`}
-              >
-                Current season
-              </p>
-              <div className="mt-3">
-                <SelectComponent
-                  options={seasonOptions}
-                  value={
-                    seasonOptions.find(
-                      (option) => option.value === activeSeason,
-                    ) || null
+              Control Center
+            </span>
+            <h1
+              className={`text-3xl sm:text-4xl md:text-5xl font-bold ${themeStyles.heading}`}
+            >
+              Predictions Admin Panel
+            </h1>
+            <p
+              className={`text-sm sm:text-base max-w-3xl ${themeStyles.subtle}`}
+            >
+              Craft, organise, and launch the season&apos;s prediction slate
+              with a flexible interface tuned for batch workflows.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center md:justify-between gap-3 text-sm">
+            <nav className="flex flex-wrap items-center justify-center gap-2">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className={
+                    link.href === "#season"
+                      ? "px-3 py-2 rounded-full border border-sky-200/80 bg-white/90 text-sky-600 font-semibold shadow-sm hover:bg-sky-50 transition-colors"
+                      : link.href === "#builders"
+                        ? "px-3 py-2 rounded-full border border-slate-200 bg-white/90 text-slate-600 font-semibold shadow-sm hover:bg-slate-50 transition-colors"
+                        : "px-3 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 font-semibold shadow-sm hover:bg-emerald-100 transition-colors"
                   }
-                  onChange={(option) =>
-                    setActiveSeason(option ? option.value : "")
-                  }
-                  placeholder="Select season"
-                  mode={themeStyles.mode}
-                />
-              </div>
-              {seasonMeta && (
-                <div
-                  className={`mt-4 space-y-1 text-sm ${themeStyles.textSecondary}`}
                 >
-                  <p>{seasonMeta.year}</p>
-                  <p className={`text-sm ${themeStyles.muted}`}>
-                    {formatDate(seasonMeta.start_date)} →{" "}
-                    {formatDate(seasonMeta.end_date)}
-                  </p>
-                  <p className={`text-sm ${themeStyles.muted}`}>
-                    Submissions{" "}
-                    {formatDateTime(seasonMeta.submission_start_date)} →{" "}
-                    {formatDateTime(seasonMeta.submission_end_date)}
-                  </p>
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowSeasonForm((open) => !open)}
-                className={`${secondaryButtonClass} mt-6 w-full justify-center font-medium`}
-              >
-                {showSeasonForm ? "Close season creator" : "Create new season"}
-              </button>
-            </div>
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`${secondaryButtonClass} items-center gap-2`}
+            >
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </button>
+          </div>
+        </header>
 
-            {showSeasonForm && (
-              <div className={`${themeStyles.glassCard} p-6`}>
-                <h2
-                  className={`text-lg font-semibold tracking-wide ${themeStyles.heading}`}
-                >
-                  Create a new season
-                </h2>
-                <p className={`mt-1 text-sm ${themeStyles.subtle}`}>
-                  Define the dates and submission window. The slug is generated
-                  automatically.
+        {feedback && (
+          <div
+            className={`rounded-2xl border px-6 py-4 text-sm shadow-sm transition ${feedback.type === "success" ? successBannerClass : errorBannerClass}`}
+          >
+            {feedback.message}
+          </div>
+        )}
+
+        <section id="season" className="space-y-6">
+          <div className={`${themeCardClass} shadow-sm`}>
+            <p
+              className={`text-xs uppercase tracking-[0.3em] ${themeStyles.subtle}`}
+            >
+              Current season
+            </p>
+            <div className="mt-3">
+              <SelectComponent
+                options={seasonOptions}
+                value={
+                  seasonOptions.find(
+                    (option) => option.value === activeSeason,
+                  ) || null
+                }
+                onChange={(option) =>
+                  setActiveSeason(option ? option.value : "")
+                }
+                placeholder="Select season"
+                mode={themeStyles.mode}
+              />
+            </div>
+            {seasonMeta && (
+              <div
+                className={`mt-4 space-y-1 text-sm ${themeStyles.textSecondary}`}
+              >
+                <p>{seasonMeta.year}</p>
+                <p className={`text-sm ${themeStyles.muted}`}>
+                  {formatDate(seasonMeta.start_date)} →{" "}
+                  {formatDate(seasonMeta.end_date)}
                 </p>
-                <form
-                  onSubmit={handleSeasonCreate}
-                  className="mt-6 grid gap-6 lg:grid-cols-2"
-                >
-                  <TextInput
-                    label="Display year"
-                    value={seasonForm.year}
-                    onChange={(value) => handleSeasonField("year", value)}
-                    placeholder="2025-26"
+                <p className={`text-sm ${themeStyles.muted}`}>
+                  Submissions{" "}
+                  {formatDateTime(seasonMeta.submission_start_date)} →{" "}
+                  {formatDateTime(seasonMeta.submission_end_date)}
+                </p>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowSeasonForm((open) => !open)}
+              className={`${secondaryButtonClass} mt-6 w-full justify-center font-medium`}
+            >
+              {showSeasonForm ? "Close season creator" : "Create new season"}
+            </button>
+          </div>
+
+          {showSeasonForm && (
+            <div className={`${themeStyles.glassCard} p-6`}>
+              <h2
+                className={`text-lg font-semibold tracking-wide ${themeStyles.heading}`}
+              >
+                Create a new season
+              </h2>
+              <p className={`mt-1 text-sm ${themeStyles.subtle}`}>
+                Define the dates and submission window. The slug is generated
+                automatically.
+              </p>
+              <form
+                onSubmit={handleSeasonCreate}
+                className="mt-6 grid gap-6 lg:grid-cols-2"
+              >
+                <TextInput
+                  label="Display year"
+                  value={seasonForm.year}
+                  onChange={(value) => handleSeasonField("year", value)}
+                  placeholder="2025-26"
+                  required
+                  labelClass={labelClass}
+                  inputClass={inputClass}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <DateInput
+                    label="Season starts"
+                    value={seasonForm.start_date}
+                    onChange={(e) =>
+                      handleSeasonField("start_date", e.target.value)
+                    }
                     required
                     labelClass={labelClass}
                     inputClass={inputClass}
                   />
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <DateInput
-                      label="Season starts"
-                      value={seasonForm.start_date}
-                      onChange={(e) =>
-                        handleSeasonField("start_date", e.target.value)
-                      }
-                      required
-                      labelClass={labelClass}
-                      inputClass={inputClass}
-                    />
-                    <DateInput
-                      label="Season ends"
-                      value={seasonForm.end_date}
-                      onChange={(e) =>
-                        handleSeasonField("end_date", e.target.value)
-                      }
-                      required
-                      labelClass={labelClass}
-                      inputClass={inputClass}
-                    />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <DateInput
-                      label="Submissions open"
-                      value={seasonForm.submission_start_date}
-                      onChange={(e) =>
-                        handleSeasonField(
-                          "submission_start_date",
-                          e.target.value,
-                        )
-                      }
-                      required
-                      type="datetime-local"
-                      step="60"
-                      labelClass={labelClass}
-                      inputClass={inputClass}
-                    />
-                    <DateInput
-                      label="Submissions close"
-                      value={seasonForm.submission_end_date}
-                      onChange={(e) =>
-                        handleSeasonField("submission_end_date", e.target.value)
-                      }
-                      required
-                      type="datetime-local"
-                      step="60"
-                      labelClass={labelClass}
-                      inputClass={inputClass}
-                    />
-                  </div>
-                  <div className="flex items-center justify-end gap-3 lg:col-span-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSeasonForm(defaultSeasonForm);
-                        setShowSeasonForm(false);
-                      }}
-                      className={secondaryButtonClass}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={createSeason.isPending}
-                      className={primaryButtonClass}
-                    >
-                      {createSeason.isPending ? "Creating…" : "Save season"}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </section>
-
-          <section id="builders" className="space-y-8">
-            <div className={batchCardClass}>
-              <div>
-                <h2 className={headingClass}>Launch batch creator</h2>
-                <p className={subheadingClass}>
-                  Draft multiple questions with a guided flow. Perfect when
-                  seeding a new season.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleLaunchBatchWizard}
-                className={`${primaryButtonClass} md:w-auto`}
-              >
-                Batch create questions
-              </button>
+                  <DateInput
+                    label="Season ends"
+                    value={seasonForm.end_date}
+                    onChange={(e) =>
+                      handleSeasonField("end_date", e.target.value)
+                    }
+                    required
+                    labelClass={labelClass}
+                    inputClass={inputClass}
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <DateInput
+                    label="Submissions open"
+                    value={seasonForm.submission_start_date}
+                    onChange={(e) =>
+                      handleSeasonField(
+                        "submission_start_date",
+                        e.target.value,
+                      )
+                    }
+                    required
+                    type="datetime-local"
+                    step="60"
+                    labelClass={labelClass}
+                    inputClass={inputClass}
+                  />
+                  <DateInput
+                    label="Submissions close"
+                    value={seasonForm.submission_end_date}
+                    onChange={(e) =>
+                      handleSeasonField("submission_end_date", e.target.value)
+                    }
+                    required
+                    type="datetime-local"
+                    step="60"
+                    labelClass={labelClass}
+                    inputClass={inputClass}
+                  />
+                </div>
+                <div className="flex items-center justify-end gap-3 lg:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSeasonForm(defaultSeasonForm);
+                      setShowSeasonForm(false);
+                    }}
+                    className={secondaryButtonClass}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createSeason.isPending}
+                    className={primaryButtonClass}
+                  >
+                    {createSeason.isPending ? "Creating…" : "Save season"}
+                  </button>
+                </div>
+              </form>
             </div>
+          )}
+        </section>
 
-            <div className="grid gap-8 lg:grid-cols-2">
-              <GlassFormCard
-                title="Superlative"
-                subtitle="Award-style predictions"
-                isSubmitting={createSuperlative.isPending}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!ensureSeasonSelected()) return;
-                  if (!superForm.awardId) {
-                    setError("Select an award before creating this question.");
-                    return;
-                  }
-                  handleMutation(
-                    createSuperlative,
-                    {
-                      season_slug: activeSeason,
-                      text: superForm.text.trim(),
-                      point_value: Number(
-                        superForm.pointValue || defaultPointValue,
-                      ),
-                      award_id: Number(superForm.awardId),
-                    },
-                    "Superlative question created.",
-                  );
-                  setSuperForm({
-                    text: "",
-                    awardId: "",
-                    pointValue: defaultPointValue,
-                  });
-                }}
-                themeStyles={themeStyles}
-                primaryButtonClass={primaryButtonClass}
-              >
-                <Textarea
-                  label="Question"
-                  value={superForm.text}
-                  onChange={(value) =>
-                    setSuperForm((prev) => ({ ...prev, text: value }))
-                  }
-                  placeholder="Who wins Sixth Man of the Year?"
-                  required
-                  labelClass={labelClass}
-                  textareaClass={textareaClass}
-                />
+        <section id="builders" className="space-y-8">
+          <div className={batchCardClass}>
+            <div>
+              <h2 className={headingClass}>Launch batch creator</h2>
+              <p className={subheadingClass}>
+                Draft multiple questions with a guided flow. Perfect when
+                seeding a new season.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleLaunchBatchWizard}
+              className={`${primaryButtonClass} md:w-auto`}
+            >
+              Batch create questions
+            </button>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            <GlassFormCard
+              title="Superlative"
+              subtitle="Award-style predictions"
+              isSubmitting={createSuperlative.isPending}
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!ensureSeasonSelected()) return;
+                if (!superForm.awardId) {
+                  setError("Select an award before creating this question.");
+                  return;
+                }
+                handleMutation(
+                  createSuperlative,
+                  {
+                    season_slug: activeSeason,
+                    text: superForm.text.trim(),
+                    point_value: Number(
+                      superForm.pointValue || defaultPointValue,
+                    ),
+                    award_id: Number(superForm.awardId),
+                  },
+                  "Superlative question created.",
+                );
+                setSuperForm({
+                  text: "",
+                  awardId: "",
+                  pointValue: defaultPointValue,
+                });
+              }}
+              themeStyles={themeStyles}
+              primaryButtonClass={primaryButtonClass}
+            >
+              <Textarea
+                label="Question"
+                value={superForm.text}
+                onChange={(value) =>
+                  setSuperForm((prev) => ({ ...prev, text: value }))
+                }
+                placeholder="Who wins Sixth Man of the Year?"
+                required
+                labelClass={labelClass}
+                textareaClass={textareaClass}
+              />
+              <NumberInput
+                label="Point value"
+                value={superForm.pointValue}
+                onChange={(value) =>
+                  setSuperForm((prev) => ({ ...prev, pointValue: value }))
+                }
+                step="0.5"
+                min="0"
+                labelClass={labelClass}
+                inputClass={inputClass}
+              />
+              <SelectComponent
+                options={awardOptions}
+                value={
+                  awardOptions.find(
+                    (option) => option.value === superForm.awardId,
+                  ) || null
+                }
+                onChange={(option) =>
+                  setSuperForm((prev) => ({
+                    ...prev,
+                    awardId: option ? option.value : "",
+                  }))
+                }
+                placeholder="Select award"
+                isClearable
+                mode={themeStyles.mode}
+              />
+            </GlassFormCard>
+
+            <GlassFormCard
+              title="Prop"
+              subtitle="Binary & over/under"
+              isSubmitting={createProp.isPending}
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!ensureSeasonSelected()) return;
+                handleMutation(
+                  createProp,
+                  {
+                    season_slug: activeSeason,
+                    text: propForm.text.trim(),
+                    point_value: Number(
+                      propForm.pointValue || defaultPointValue,
+                    ),
+                    outcome_type: propForm.outcomeType,
+                    related_player_id: propForm.relatedPlayerId
+                      ? Number(propForm.relatedPlayerId)
+                      : undefined,
+                    line:
+                      propForm.outcomeType === "over_under" &&
+                        propForm.line !== ""
+                        ? Number(propForm.line)
+                        : undefined,
+                  },
+                  "Prop question created.",
+                );
+                setPropForm({
+                  text: "",
+                  pointValue: defaultPointValue,
+                  outcomeType: "over_under",
+                  line: "",
+                  relatedPlayerId: null,
+                });
+              }}
+              themeStyles={themeStyles}
+              primaryButtonClass={primaryButtonClass}
+            >
+              <Textarea
+                label="Question"
+                value={propForm.text}
+                onChange={(value) =>
+                  setPropForm((prev) => ({ ...prev, text: value }))
+                }
+                placeholder="Does Luka average 32.5 PPG?"
+                required
+                labelClass={labelClass}
+                textareaClass={textareaClass}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
                 <NumberInput
                   label="Point value"
-                  value={superForm.pointValue}
+                  value={propForm.pointValue}
                   onChange={(value) =>
-                    setSuperForm((prev) => ({ ...prev, pointValue: value }))
+                    setPropForm((prev) => ({ ...prev, pointValue: value }))
                   }
                   step="0.5"
                   min="0"
                   labelClass={labelClass}
                   inputClass={inputClass}
                 />
-                <SelectComponent
-                  options={awardOptions}
-                  value={
-                    awardOptions.find(
-                      (option) => option.value === superForm.awardId,
-                    ) || null
-                  }
-                  onChange={(option) =>
-                    setSuperForm((prev) => ({
-                      ...prev,
-                      awardId: option ? option.value : "",
-                    }))
-                  }
-                  placeholder="Select award"
-                  isClearable
-                  mode={themeStyles.mode}
-                />
-              </GlassFormCard>
-
-              <GlassFormCard
-                title="Prop"
-                subtitle="Binary & over/under"
-                isSubmitting={createProp.isPending}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!ensureSeasonSelected()) return;
-                  handleMutation(
-                    createProp,
-                    {
-                      season_slug: activeSeason,
-                      text: propForm.text.trim(),
-                      point_value: Number(
-                        propForm.pointValue || defaultPointValue,
-                      ),
-                      outcome_type: propForm.outcomeType,
-                      related_player_id: propForm.relatedPlayerId
-                        ? Number(propForm.relatedPlayerId)
-                        : undefined,
-                      line:
-                        propForm.outcomeType === "over_under" &&
-                        propForm.line !== ""
-                          ? Number(propForm.line)
-                          : undefined,
-                    },
-                    "Prop question created.",
-                  );
-                  setPropForm({
-                    text: "",
-                    pointValue: defaultPointValue,
-                    outcomeType: "over_under",
-                    line: "",
-                    relatedPlayerId: null,
-                  });
-                }}
-                themeStyles={themeStyles}
-                primaryButtonClass={primaryButtonClass}
-              >
-                <Textarea
-                  label="Question"
-                  value={propForm.text}
-                  onChange={(value) =>
-                    setPropForm((prev) => ({ ...prev, text: value }))
-                  }
-                  placeholder="Does Luka average 32.5 PPG?"
-                  required
-                  labelClass={labelClass}
-                  textareaClass={textareaClass}
-                />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <NumberInput
-                    label="Point value"
-                    value={propForm.pointValue}
-                    onChange={(value) =>
-                      setPropForm((prev) => ({ ...prev, pointValue: value }))
-                    }
-                    step="0.5"
-                    min="0"
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                  />
-                  <label className={labelClass}>
-                    Outcome type
-                    <select
-                      value={propForm.outcomeType}
-                      onChange={(e) =>
-                        setPropForm((prev) => ({
-                          ...prev,
-                          outcomeType: e.target.value,
-                        }))
-                      }
-                      className={selectClass}
-                    >
-                      <option value="over_under">Over / Under</option>
-                      <option value="yes_no">Yes / No</option>
-                    </select>
-                  </label>
-                </div>
-                {propForm.outcomeType === "over_under" && (
-                  <NumberInput
-                    label="Line"
-                    value={propForm.line}
-                    onChange={(value) =>
-                      setPropForm((prev) => ({ ...prev, line: value }))
-                    }
-                    step="0.1"
-                    required
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                  />
-                )}
-                <SelectComponent
-                  options={playerOptions}
-                  value={
-                    playerOptions.find(
-                      (option) => option.value === propForm.relatedPlayerId,
-                    ) || null
-                  }
-                  onChange={(option) =>
-                    setPropForm((prev) => ({
-                      ...prev,
-                      relatedPlayerId: option ? option.value : null,
-                    }))
-                  }
-                  placeholder="Search related player"
-                  isClearable
-                  mode={themeStyles.mode}
-                />
-              </GlassFormCard>
-
-              <GlassFormCard
-                title="Player Stat"
-                subtitle="Projection vs. stat benchmark"
-                isSubmitting={createPlayerStat.isPending}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!ensureSeasonSelected()) return;
-                  if (!playerStatForm.playerStatId) {
-                    setError("Provide the player stat ID for this question.");
-                    return;
-                  }
-                  handleMutation(
-                    createPlayerStat,
-                    {
-                      season_slug: activeSeason,
-                      text: playerStatForm.text.trim(),
-                      point_value: Number(
-                        playerStatForm.pointValue || defaultPointValue,
-                      ),
-                      player_stat_id: Number(playerStatForm.playerStatId),
-                      stat_type: playerStatForm.statType.trim(),
-                      fixed_value:
-                        playerStatForm.fixedValue !== ""
-                          ? Number(playerStatForm.fixedValue)
-                          : undefined,
-                    },
-                    "Player stat question created.",
-                  );
-                  setPlayerStatForm({
-                    text: "",
-                    pointValue: defaultPointValue,
-                    playerStatId: "",
-                    statType: "",
-                    fixedValue: "",
-                  });
-                }}
-                themeStyles={themeStyles}
-                primaryButtonClass={primaryButtonClass}
-              >
-                <Textarea
-                  label="Question"
-                  value={playerStatForm.text}
-                  onChange={(value) =>
-                    setPlayerStatForm((prev) => ({ ...prev, text: value }))
-                  }
-                  placeholder="Who leads the league in assists?"
-                  required
-                  labelClass={labelClass}
-                  textareaClass={textareaClass}
-                />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <NumberInput
-                    label="Point value"
-                    value={playerStatForm.pointValue}
-                    onChange={(value) =>
-                      setPlayerStatForm((prev) => ({
+                <label className={labelClass}>
+                  Outcome type
+                  <select
+                    value={propForm.outcomeType}
+                    onChange={(e) =>
+                      setPropForm((prev) => ({
                         ...prev,
-                        pointValue: value,
+                        outcomeType: e.target.value,
                       }))
                     }
-                    step="0.5"
-                    min="0"
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                  />
-                  <TextInput
-                    label="Stat type"
-                    value={playerStatForm.statType}
-                    onChange={(value) =>
-                      setPlayerStatForm((prev) => ({
-                        ...prev,
-                        statType: value,
-                      }))
-                    }
-                    placeholder="assists"
-                    required
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                  />
-                </div>
+                    className={selectClass}
+                  >
+                    <option value="over_under">Over / Under</option>
+                    <option value="yes_no">Yes / No</option>
+                  </select>
+                </label>
+              </div>
+              {propForm.outcomeType === "over_under" && (
                 <NumberInput
-                  label="Player stat ID"
-                  value={playerStatForm.playerStatId}
+                  label="Line"
+                  value={propForm.line}
                   onChange={(value) =>
-                    setPlayerStatForm((prev) => ({
-                      ...prev,
-                      playerStatId: value,
-                    }))
-                  }
-                  required
-                  labelClass={labelClass}
-                  inputClass={inputClass}
-                />
-                <NumberInput
-                  label="Fixed value (optional)"
-                  value={playerStatForm.fixedValue}
-                  onChange={(value) =>
-                    setPlayerStatForm((prev) => ({
-                      ...prev,
-                      fixedValue: value,
-                    }))
+                    setPropForm((prev) => ({ ...prev, line: value }))
                   }
                   step="0.1"
+                  required
                   labelClass={labelClass}
                   inputClass={inputClass}
                 />
-              </GlassFormCard>
+              )}
+              <SelectComponent
+                options={playerOptions}
+                value={
+                  playerOptions.find(
+                    (option) => option.value === propForm.relatedPlayerId,
+                  ) || null
+                }
+                onChange={(option) =>
+                  setPropForm((prev) => ({
+                    ...prev,
+                    relatedPlayerId: option ? option.value : null,
+                  }))
+                }
+                placeholder="Search related player"
+                isClearable
+                mode={themeStyles.mode}
+              />
+            </GlassFormCard>
 
-              <GlassFormCard
-                title="Head-to-Head"
-                subtitle="Pick between two teams"
-                isSubmitting={createHeadToHead.isPending}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!ensureSeasonSelected()) return;
-                  if (
-                    !headToHeadForm.team1Id ||
-                    !headToHeadForm.team2Id ||
-                    headToHeadForm.team1Id === headToHeadForm.team2Id
-                  ) {
-                    setError("Select two different teams for the matchup.");
-                    return;
-                  }
-                  handleMutation(
-                    createHeadToHead,
-                    {
-                      season_slug: activeSeason,
-                      text: headToHeadForm.text.trim(),
-                      point_value: Number(
-                        headToHeadForm.pointValue || defaultPointValue,
-                      ),
-                      team1_id: Number(headToHeadForm.team1Id),
-                      team2_id: Number(headToHeadForm.team2Id),
-                    },
-                    "Head-to-head question created.",
-                  );
-                  setHeadToHeadForm({
-                    text: "",
-                    pointValue: defaultPointValue,
-                    team1Id: null,
-                    team2Id: null,
-                  });
-                }}
-                themeStyles={themeStyles}
-                primaryButtonClass={primaryButtonClass}
-              >
-                <Textarea
-                  label="Question"
-                  value={headToHeadForm.text}
-                  onChange={(value) =>
-                    setHeadToHeadForm((prev) => ({ ...prev, text: value }))
-                  }
-                  placeholder="Who wins opening night?"
-                  required
-                  labelClass={labelClass}
-                  textareaClass={textareaClass}
-                />
+            <GlassFormCard
+              title="Player Stat"
+              subtitle="Projection vs. stat benchmark"
+              isSubmitting={createPlayerStat.isPending}
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!ensureSeasonSelected()) return;
+                if (!playerStatForm.playerStatId) {
+                  setError("Provide the player stat ID for this question.");
+                  return;
+                }
+                handleMutation(
+                  createPlayerStat,
+                  {
+                    season_slug: activeSeason,
+                    text: playerStatForm.text.trim(),
+                    point_value: Number(
+                      playerStatForm.pointValue || defaultPointValue,
+                    ),
+                    player_stat_id: Number(playerStatForm.playerStatId),
+                    stat_type: playerStatForm.statType.trim(),
+                    fixed_value:
+                      playerStatForm.fixedValue !== ""
+                        ? Number(playerStatForm.fixedValue)
+                        : undefined,
+                  },
+                  "Player stat question created.",
+                );
+                setPlayerStatForm({
+                  text: "",
+                  pointValue: defaultPointValue,
+                  playerStatId: "",
+                  statType: "",
+                  fixedValue: "",
+                });
+              }}
+              themeStyles={themeStyles}
+              primaryButtonClass={primaryButtonClass}
+            >
+              <Textarea
+                label="Question"
+                value={playerStatForm.text}
+                onChange={(value) =>
+                  setPlayerStatForm((prev) => ({ ...prev, text: value }))
+                }
+                placeholder="Who leads the league in assists?"
+                required
+                labelClass={labelClass}
+                textareaClass={textareaClass}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
                 <NumberInput
                   label="Point value"
-                  value={headToHeadForm.pointValue}
+                  value={playerStatForm.pointValue}
                   onChange={(value) =>
-                    setHeadToHeadForm((prev) => ({
+                    setPlayerStatForm((prev) => ({
                       ...prev,
                       pointValue: value,
                     }))
@@ -989,296 +884,402 @@ const AdminPanel = ({ seasonSlug }) => {
                   labelClass={labelClass}
                   inputClass={inputClass}
                 />
-                <SelectComponent
-                  options={teamOptions}
-                  value={
-                    teamOptions.find(
-                      (option) => option.value === headToHeadForm.team1Id,
-                    ) || null
-                  }
-                  onChange={(option) =>
-                    setHeadToHeadForm((prev) => ({
-                      ...prev,
-                      team1Id: option ? option.value : null,
-                    }))
-                  }
-                  placeholder="Select team"
-                  isClearable
-                  mode={themeStyles.mode}
-                />
-                <SelectComponent
-                  options={teamOptions}
-                  value={
-                    teamOptions.find(
-                      (option) => option.value === headToHeadForm.team2Id,
-                    ) || null
-                  }
-                  onChange={(option) =>
-                    setHeadToHeadForm((prev) => ({
-                      ...prev,
-                      team2Id: option ? option.value : null,
-                    }))
-                  }
-                  placeholder="Select opponent"
-                  isClearable
-                  mode={themeStyles.mode}
-                />
-              </GlassFormCard>
-
-              <GlassFormCard
-                title="In-Season Tournament"
-                subtitle="Group predictions & tiebreakers"
-                isSubmitting={createIST.isPending}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!ensureSeasonSelected()) return;
-                  handleMutation(
-                    createIST,
-                    {
-                      season_slug: activeSeason,
-                      text: istForm.text.trim(),
-                      point_value: Number(
-                        istForm.pointValue || defaultPointValue,
-                      ),
-                      prediction_type: istForm.predictionType,
-                      ist_group: istForm.istGroup || undefined,
-                      is_tiebreaker: Boolean(
-                        istForm.predictionType === "tiebreaker" ||
-                          istForm.isTiebreaker,
-                      ),
-                    },
-                    "IST question created.",
-                  );
-                  setIstForm({
-                    text: "",
-                    pointValue: defaultPointValue,
-                    predictionType: "group_winner",
-                    istGroup: "",
-                    isTiebreaker: false,
-                  });
-                }}
-                themeStyles={themeStyles}
-                primaryButtonClass={primaryButtonClass}
-              >
-                <Textarea
-                  label="Question"
-                  value={istForm.text}
-                  onChange={(value) =>
-                    setIstForm((prev) => ({ ...prev, text: value }))
-                  }
-                  placeholder="Who wins East Group A?"
-                  required
-                  labelClass={labelClass}
-                  textareaClass={textareaClass}
-                />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <NumberInput
-                    label="Point value"
-                    value={istForm.pointValue}
-                    onChange={(value) =>
-                      setIstForm((prev) => ({ ...prev, pointValue: value }))
-                    }
-                    step="0.5"
-                    min="0"
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                  />
-                  <label className={labelClass}>
-                    Prediction type
-                    <select
-                      value={istForm.predictionType}
-                      onChange={(e) =>
-                        setIstForm((prev) => ({
-                          ...prev,
-                          predictionType: e.target.value,
-                          isTiebreaker: e.target.value === "tiebreaker",
-                        }))
-                      }
-                      className={selectClass}
-                    >
-                      <option value="group_winner">Group Winner</option>
-                      <option value="wildcard">Wildcard</option>
-                      <option value="conference_winner">
-                        Conference Winner
-                      </option>
-                      <option value="tiebreaker">Tiebreaker</option>
-                    </select>
-                  </label>
-                </div>
                 <TextInput
-                  label="IST group (optional)"
-                  value={istForm.istGroup}
+                  label="Stat type"
+                  value={playerStatForm.statType}
                   onChange={(value) =>
-                    setIstForm((prev) => ({ ...prev, istGroup: value }))
+                    setPlayerStatForm((prev) => ({
+                      ...prev,
+                      statType: value,
+                    }))
                   }
-                  placeholder="East Group A"
+                  placeholder="assists"
+                  required
                   labelClass={labelClass}
                   inputClass={inputClass}
                 />
-                <label
-                  className={`mt-2 flex items-center gap-3 text-sm ${themeStyles.textSecondary}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={Boolean(istForm.isTiebreaker)}
+              </div>
+              <NumberInput
+                label="Player stat ID"
+                value={playerStatForm.playerStatId}
+                onChange={(value) =>
+                  setPlayerStatForm((prev) => ({
+                    ...prev,
+                    playerStatId: value,
+                  }))
+                }
+                required
+                labelClass={labelClass}
+                inputClass={inputClass}
+              />
+              <NumberInput
+                label="Fixed value (optional)"
+                value={playerStatForm.fixedValue}
+                onChange={(value) =>
+                  setPlayerStatForm((prev) => ({
+                    ...prev,
+                    fixedValue: value,
+                  }))
+                }
+                step="0.1"
+                labelClass={labelClass}
+                inputClass={inputClass}
+              />
+            </GlassFormCard>
+
+            <GlassFormCard
+              title="Head-to-Head"
+              subtitle="Pick between two teams"
+              isSubmitting={createHeadToHead.isPending}
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!ensureSeasonSelected()) return;
+                if (
+                  !headToHeadForm.team1Id ||
+                  !headToHeadForm.team2Id ||
+                  headToHeadForm.team1Id === headToHeadForm.team2Id
+                ) {
+                  setError("Select two different teams for the matchup.");
+                  return;
+                }
+                handleMutation(
+                  createHeadToHead,
+                  {
+                    season_slug: activeSeason,
+                    text: headToHeadForm.text.trim(),
+                    point_value: Number(
+                      headToHeadForm.pointValue || defaultPointValue,
+                    ),
+                    team1_id: Number(headToHeadForm.team1Id),
+                    team2_id: Number(headToHeadForm.team2Id),
+                  },
+                  "Head-to-head question created.",
+                );
+                setHeadToHeadForm({
+                  text: "",
+                  pointValue: defaultPointValue,
+                  team1Id: null,
+                  team2Id: null,
+                });
+              }}
+              themeStyles={themeStyles}
+              primaryButtonClass={primaryButtonClass}
+            >
+              <Textarea
+                label="Question"
+                value={headToHeadForm.text}
+                onChange={(value) =>
+                  setHeadToHeadForm((prev) => ({ ...prev, text: value }))
+                }
+                placeholder="Who wins opening night?"
+                required
+                labelClass={labelClass}
+                textareaClass={textareaClass}
+              />
+              <NumberInput
+                label="Point value"
+                value={headToHeadForm.pointValue}
+                onChange={(value) =>
+                  setHeadToHeadForm((prev) => ({
+                    ...prev,
+                    pointValue: value,
+                  }))
+                }
+                step="0.5"
+                min="0"
+                labelClass={labelClass}
+                inputClass={inputClass}
+              />
+              <SelectComponent
+                options={teamOptions}
+                value={
+                  teamOptions.find(
+                    (option) => option.value === headToHeadForm.team1Id,
+                  ) || null
+                }
+                onChange={(option) =>
+                  setHeadToHeadForm((prev) => ({
+                    ...prev,
+                    team1Id: option ? option.value : null,
+                  }))
+                }
+                placeholder="Select team"
+                isClearable
+                mode={themeStyles.mode}
+              />
+              <SelectComponent
+                options={teamOptions}
+                value={
+                  teamOptions.find(
+                    (option) => option.value === headToHeadForm.team2Id,
+                  ) || null
+                }
+                onChange={(option) =>
+                  setHeadToHeadForm((prev) => ({
+                    ...prev,
+                    team2Id: option ? option.value : null,
+                  }))
+                }
+                placeholder="Select opponent"
+                isClearable
+                mode={themeStyles.mode}
+              />
+            </GlassFormCard>
+
+            <GlassFormCard
+              title="In-Season Tournament"
+              subtitle="Group predictions & tiebreakers"
+              isSubmitting={createIST.isPending}
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!ensureSeasonSelected()) return;
+                handleMutation(
+                  createIST,
+                  {
+                    season_slug: activeSeason,
+                    text: istForm.text.trim(),
+                    point_value: Number(
+                      istForm.pointValue || defaultPointValue,
+                    ),
+                    prediction_type: istForm.predictionType,
+                    ist_group: istForm.istGroup || undefined,
+                    is_tiebreaker: Boolean(
+                      istForm.predictionType === "tiebreaker" ||
+                      istForm.isTiebreaker,
+                    ),
+                  },
+                  "IST question created.",
+                );
+                setIstForm({
+                  text: "",
+                  pointValue: defaultPointValue,
+                  predictionType: "group_winner",
+                  istGroup: "",
+                  isTiebreaker: false,
+                });
+              }}
+              themeStyles={themeStyles}
+              primaryButtonClass={primaryButtonClass}
+            >
+              <Textarea
+                label="Question"
+                value={istForm.text}
+                onChange={(value) =>
+                  setIstForm((prev) => ({ ...prev, text: value }))
+                }
+                placeholder="Who wins East Group A?"
+                required
+                labelClass={labelClass}
+                textareaClass={textareaClass}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <NumberInput
+                  label="Point value"
+                  value={istForm.pointValue}
+                  onChange={(value) =>
+                    setIstForm((prev) => ({ ...prev, pointValue: value }))
+                  }
+                  step="0.5"
+                  min="0"
+                  labelClass={labelClass}
+                  inputClass={inputClass}
+                />
+                <label className={labelClass}>
+                  Prediction type
+                  <select
+                    value={istForm.predictionType}
                     onChange={(e) =>
                       setIstForm((prev) => ({
                         ...prev,
-                        isTiebreaker: e.target.checked,
+                        predictionType: e.target.value,
+                        isTiebreaker: e.target.value === "tiebreaker",
                       }))
                     }
-                    className={checkboxClass}
-                  />
-                  Tiebreaker question
+                    className={selectClass}
+                  >
+                    <option value="group_winner">Group Winner</option>
+                    <option value="wildcard">Wildcard</option>
+                    <option value="conference_winner">
+                      Conference Winner
+                    </option>
+                    <option value="tiebreaker">Tiebreaker</option>
+                  </select>
                 </label>
-              </GlassFormCard>
-
-              <GlassFormCard
-                title="NBA Finals"
-                subtitle="Championship predictions"
-                isSubmitting={createNBAFinals.isPending}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!ensureSeasonSelected()) return;
-                  handleMutation(
-                    createNBAFinals,
-                    {
-                      season_slug: activeSeason,
-                      text: nbaFinalsForm.text.trim(),
-                      point_value: Number(
-                        nbaFinalsForm.pointValue || defaultPointValue,
-                      ),
-                      group_name: nbaFinalsForm.groupName || undefined,
-                    },
-                    "NBA Finals question created.",
-                  );
-                  setNbaFinalsForm({
-                    text: "",
-                    pointValue: defaultPointValue,
-                    groupName: "",
-                  });
-                }}
-                themeStyles={themeStyles}
-                primaryButtonClass={primaryButtonClass}
+              </div>
+              <TextInput
+                label="IST group (optional)"
+                value={istForm.istGroup}
+                onChange={(value) =>
+                  setIstForm((prev) => ({ ...prev, istGroup: value }))
+                }
+                placeholder="East Group A"
+                labelClass={labelClass}
+                inputClass={inputClass}
+              />
+              <label
+                className={`mt-2 flex items-center gap-3 text-sm ${themeStyles.textSecondary}`}
               >
-                <Textarea
-                  label="Question"
-                  value={nbaFinalsForm.text}
-                  onChange={(value) =>
-                    setNbaFinalsForm((prev) => ({ ...prev, text: value }))
+                <input
+                  type="checkbox"
+                  checked={Boolean(istForm.isTiebreaker)}
+                  onChange={(e) =>
+                    setIstForm((prev) => ({
+                      ...prev,
+                      isTiebreaker: e.target.checked,
+                    }))
                   }
-                  placeholder="Who wins the NBA Finals?"
-                  required
-                  labelClass={labelClass}
-                  textareaClass={textareaClass}
+                  className={checkboxClass}
                 />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <NumberInput
-                    label="Point value"
-                    value={nbaFinalsForm.pointValue}
-                    onChange={(value) =>
-                      setNbaFinalsForm((prev) => ({
-                        ...prev,
-                        pointValue: value,
-                      }))
-                    }
-                    step="0.5"
-                    min="0"
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                  />
-                  <TextInput
-                    label="Grouping (optional)"
-                    value={nbaFinalsForm.groupName}
-                    onChange={(value) =>
-                      setNbaFinalsForm((prev) => ({
-                        ...prev,
-                        groupName: value,
-                      }))
-                    }
-                    placeholder="Finals"
-                    labelClass={labelClass}
-                    inputClass={inputClass}
-                  />
-                </div>
-              </GlassFormCard>
-            </div>
-          </section>
+                Tiebreaker question
+              </label>
+            </GlassFormCard>
 
-          <section
-            id="questions"
-            className={`${themeStyles.glassCard} overflow-hidden`}
-          >
-            <div
-              className={`flex flex-col gap-4 border-b px-8 py-6 md:flex-row md:items-center md:justify-between ${theme === "dark" ? "border-slate-600/40" : "border-slate-200"}`}
+            <GlassFormCard
+              title="NBA Finals"
+              subtitle="Championship predictions"
+              isSubmitting={createNBAFinals.isPending}
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!ensureSeasonSelected()) return;
+                handleMutation(
+                  createNBAFinals,
+                  {
+                    season_slug: activeSeason,
+                    text: nbaFinalsForm.text.trim(),
+                    point_value: Number(
+                      nbaFinalsForm.pointValue || defaultPointValue,
+                    ),
+                    group_name: nbaFinalsForm.groupName || undefined,
+                  },
+                  "NBA Finals question created.",
+                );
+                setNbaFinalsForm({
+                  text: "",
+                  pointValue: defaultPointValue,
+                  groupName: "",
+                });
+              }}
+              themeStyles={themeStyles}
+              primaryButtonClass={primaryButtonClass}
             >
-              <div>
-                <h2 className={headingClass}>Existing questions</h2>
-                <p className={subheadingClass}>
-                  Review, edit, or prune questions for this season.
-                </p>
+              <Textarea
+                label="Question"
+                value={nbaFinalsForm.text}
+                onChange={(value) =>
+                  setNbaFinalsForm((prev) => ({ ...prev, text: value }))
+                }
+                placeholder="Who wins the NBA Finals?"
+                required
+                labelClass={labelClass}
+                textareaClass={textareaClass}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <NumberInput
+                  label="Point value"
+                  value={nbaFinalsForm.pointValue}
+                  onChange={(value) =>
+                    setNbaFinalsForm((prev) => ({
+                      ...prev,
+                      pointValue: value,
+                    }))
+                  }
+                  step="0.5"
+                  min="0"
+                  labelClass={labelClass}
+                  inputClass={inputClass}
+                />
+                <TextInput
+                  label="Grouping (optional)"
+                  value={nbaFinalsForm.groupName}
+                  onChange={(value) =>
+                    setNbaFinalsForm((prev) => ({
+                      ...prev,
+                      groupName: value,
+                    }))
+                  }
+                  placeholder="Finals"
+                  labelClass={labelClass}
+                  inputClass={inputClass}
+                />
               </div>
-              <button
-                type="button"
-                onClick={handleReorder}
-                className={`${accentButtonClass} px-4`}
-              >
-                Sync order
-              </button>
+            </GlassFormCard>
+          </div>
+        </section>
+
+        <section
+          id="questions"
+          className={`${themeStyles.glassCard} overflow-hidden`}
+        >
+          <div
+            className={`flex flex-col gap-4 border-b px-8 py-6 md:flex-row md:items-center md:justify-between ${theme === "dark" ? "border-slate-600/40" : "border-slate-200"}`}
+          >
+            <div>
+              <h2 className={headingClass}>Existing questions</h2>
+              <p className={subheadingClass}>
+                Review, edit, or prune questions for this season.
+              </p>
             </div>
-            {questionsLoading ? (
-              <div className={`px-8 py-12 text-center ${themeStyles.subtle}`}>
-                Loading questions…
-              </div>
-            ) : questions.length === 0 ? (
-              <div className={`px-8 py-12 text-center ${themeStyles.subtle}`}>
-                No questions added yet for this season.
-              </div>
-            ) : (
-              <div className={`divide-y ${themeStyles.divider}`}>
-                {questions.map((question) => (
-                  <QuestionRow
-                    key={question.id}
-                    question={question}
-                    onUpdate={async (updates) => {
-                      await handleMutation(
-                        updateQuestion,
-                        {
-                          questionId: question.id,
-                          updates,
-                          seasonSlug: activeSeason,
-                        },
-                        "Question updated.",
-                      );
-                    }}
-                    onDelete={async () => {
-                      if (!ensureSeasonSelected()) return;
-                      const confirmed = window.confirm("Delete this question?");
-                      if (!confirmed) return;
-                      await handleMutation(
-                        deleteQuestion,
-                        {
-                          questionId: question.id,
-                          seasonSlug: activeSeason,
-                        },
-                        "Question deleted.",
-                      );
-                    }}
-                    themeStyles={themeStyles}
-                    inputClass={inputClass}
-                    secondaryButtonClass={secondaryButtonClass}
-                    dangerButtonClass={dangerButtonClass}
-                    chipClass={chipClass}
-                    mutedTextClass={mutedTextClass}
-                    awardOptions={awardOptions}
-                    playerOptions={playerOptions}
-                    teamOptions={teamOptions}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
+            <button
+              type="button"
+              onClick={handleReorder}
+              className={`${accentButtonClass} px-4`}
+            >
+              Sync order
+            </button>
+          </div>
+          {questionsLoading ? (
+            <div className={`px-8 py-12 text-center ${themeStyles.subtle}`}>
+              Loading questions…
+            </div>
+          ) : questions.length === 0 ? (
+            <div className={`px-8 py-12 text-center ${themeStyles.subtle}`}>
+              No questions added yet for this season.
+            </div>
+          ) : (
+            <div className={`divide-y ${themeStyles.divider}`}>
+              {questions.map((question) => (
+                <QuestionRow
+                  key={question.id}
+                  question={question}
+                  onUpdate={async (updates) => {
+                    await handleMutation(
+                      updateQuestion,
+                      {
+                        questionId: question.id,
+                        updates,
+                        seasonSlug: activeSeason,
+                      },
+                      "Question updated.",
+                    );
+                  }}
+                  onDelete={async () => {
+                    if (!ensureSeasonSelected()) return;
+                    const confirmed = window.confirm("Delete this question?");
+                    if (!confirmed) return;
+                    await handleMutation(
+                      deleteQuestion,
+                      {
+                        questionId: question.id,
+                        seasonSlug: activeSeason,
+                      },
+                      "Question deleted.",
+                    );
+                  }}
+                  themeStyles={themeStyles}
+                  inputClass={inputClass}
+                  secondaryButtonClass={secondaryButtonClass}
+                  dangerButtonClass={dangerButtonClass}
+                  chipClass={chipClass}
+                  mutedTextClass={mutedTextClass}
+                  awardOptions={awardOptions}
+                  playerOptions={playerOptions}
+                  teamOptions={teamOptions}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
       <QuestionBatchWizard
         isOpen={showBatchWizard}
         onClose={() => setShowBatchWizard(false)}
@@ -1291,7 +1292,7 @@ const AdminPanel = ({ seasonSlug }) => {
         onCompleted={handleBatchCompleted}
         theme={themeStyles.mode}
       />
-      </div>
+    </div>
   );
 };
 

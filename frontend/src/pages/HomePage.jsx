@@ -15,8 +15,7 @@ import {
   Users,
   LineChart,
 } from 'lucide-react';
-import useLeaderboard from '../hooks/useLeaderboard';
-import useUserSubmissions from '../hooks/useUserSubmissions';
+import { useLeaderboard, useUserSubmissions } from '../hooks';
 import '../styles/palette.css';
 
 const DEFAULT_SEASON = 'current';
@@ -96,8 +95,8 @@ function formatDateRange(startIso, endIso) {
 }
 
 const PREVIEW_STANDINGS = {
-  east: [{team_name: 'Celtics'}, {team_name: 'Knicks'}, {team_name: 'Bucks'}, {team_name: '76ers'}],
-  west: [{team_name: 'Nuggets'}, {team_name: 'Thunder'}, {team_name: 'Timberwolves'}, {team_name: 'Mavericks'}],
+  east: [{ team_name: 'Celtics' }, { team_name: 'Knicks' }, { team_name: 'Bucks' }, { team_name: '76ers' }],
+  west: [{ team_name: 'Nuggets' }, { team_name: 'Thunder' }, { team_name: 'Timberwolves' }, { team_name: 'Mavericks' }],
 };
 
 const PREVIEW_SECTIONS = [
@@ -110,10 +109,10 @@ function StatCard({ icon: Icon, title, value, subtitle, highlightUrl, highlightT
   const Wrapper = highlightUrl ? 'a' : 'div';
   const wrapperProps = highlightUrl
     ? {
-        href: highlightUrl,
-        title: highlightTitle || title,
-        className: 'home-stat-card home-stat-card--link',
-      }
+      href: highlightUrl,
+      title: highlightTitle || title,
+      className: 'home-stat-card home-stat-card--link',
+    }
     : { className: 'home-stat-card' };
 
   return (
@@ -338,13 +337,13 @@ function SubmissionPreview({ submitUrl, hasSubmission, submissionOpen, isAuthent
     <div className="home-auth-wrapper">
       {!isAuthenticated && (
         <div className="home-auth-overlay">
-           <div className="home-auth-modal">
-              <p>Log-in or sign up to make your predictions</p>
-              <div className="home-auth-actions">
-                <a href={loginUrl || '#login'} className="home-cta primary">Log In</a>
-                <a href={signupUrl || '#signup'} className="home-cta secondary">Sign Up</a>
-              </div>
+          <div className="home-auth-modal">
+            <p>Log-in or sign up to make your predictions</p>
+            <div className="home-auth-actions">
+              <a href={loginUrl || '#login'} className="home-cta primary">Log In</a>
+              <a href={signupUrl || '#signup'} className="home-cta secondary">Sign Up</a>
             </div>
+          </div>
         </div>
       )}
       <div style={{ filter: !isAuthenticated ? 'blur(2px)' : 'none', height: '100%' }}>
@@ -438,8 +437,8 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
   }
 
   return (
-      <div className="home-shell">
-        <section className={`home-hero home-hero--${heroVariant}`}>
+    <div className="home-shell">
+      <section className={`home-hero home-hero--${heroVariant}`}>
         <div className="home-hero__background" />
         <div className="home-hero__content">
           <div className="home-hero__body">

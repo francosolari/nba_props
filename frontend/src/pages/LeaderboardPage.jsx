@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import useLeaderboard from '../hooks/useLeaderboard';
+import { useLeaderboard } from '../hooks';
 import ProgressBar from '../components/ProgressBar';
 import {
   ChevronDown,
@@ -72,7 +72,7 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
 
   if (isLoading) {
     return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-center">
         <div className="w-full max-w-3xl animate-pulse space-y-6">
           <div className="h-10 bg-slate-200/70 dark:bg-slate-800/70 rounded-xl" />
           {[...Array(6)].map((_, i) => (
@@ -456,7 +456,7 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
                 <ul className="space-y-1">
                   {rights.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
                   {rights.map((p, i) => (
-                    <li key={`r-${i}`} className="text-[11px] text-emerald-900 dark:text-emerald-100 bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Hard win • only ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
+                    <li key={`r-${i}`} className="text-[11px] text-emerald-900 dark:text-emerald-100 bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Hard win • only ${(p.global_correct_rate * 100).toFixed(0)}% got this right` : undefined}>
                       {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
                       <span className="ml-1 font-bold">+{p.points ?? 0}</span>
                     </li>
@@ -468,7 +468,7 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
                 <ul className="space-y-1">
                   {wrongs.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
                   {wrongs.map((p, i) => (
-                    <li key={`w-${i}`} className="text-[11px] text-rose-900 dark:text-rose-100 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Surprising miss • ${(p.global_correct_rate*100).toFixed(0)}% got this right` : undefined}>
+                    <li key={`w-${i}`} className="text-[11px] text-rose-900 dark:text-rose-100 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Surprising miss • ${(p.global_correct_rate * 100).toFixed(0)}% got this right` : undefined}>
                       {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
                       <span className="ml-1 font-bold">{p.points ? `+${p.points}` : '0'}</span>
                     </li>
@@ -489,8 +489,8 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   };
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6">
-        <div className="max-w-7xl mx-auto space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* ──────────────────────── Season Selector */}
         {seasonsData && seasonsData.length > 1 && (
           <div className="flex justify-end">
@@ -589,7 +589,7 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
                         <p className="font-semibold text-[15px] text-slate-900 dark:text-white">
                           {entry.user.display_name || entry.user.username}
                         </p>
-                        {Array.isArray(entry.user.badges) && entry.user.badges.slice(0,3).map((b, i) => (
+                        {Array.isArray(entry.user.badges) && entry.user.badges.slice(0, 3).map((b, i) => (
                           <span key={i} title={b.type === 'category_best' ? `Top in ${b.category}` : ''} className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
                             {b.category?.split(' ')[0] || 'Best'}
                           </span>
@@ -656,8 +656,8 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
             </button>
           </div>
         )}
-        </div>
       </div>
+    </div>
   );
 }
 

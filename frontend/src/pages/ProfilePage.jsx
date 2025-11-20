@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useCallback } from "react";
-import useLeaderboard from "../hooks/useLeaderboard";
-import useProfileData from "../hooks/useProfileData";
-import useProfileAnswers from "../hooks/useProfileAnswers";
-import useProfileStats from "../hooks/useProfileStats";
+import {
+  useLeaderboard,
+  useProfileData,
+  useProfileAnswers,
+  useProfileStats,
+} from "../hooks";
 
 import LogoutModal from "../components/profile/LogoutModal";
 import ProfileHero from "../components/profile/ProfileHero";
