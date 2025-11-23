@@ -89,6 +89,8 @@ class PredictionModelTests(TestCase):
 
     def test_unique_together_constraint(self):
         """Test that a user cannot create duplicate predictions for the same team and season."""
+        from django.db import transaction
+
         # Create a standing prediction
         StandingPrediction.objects.create(
             user=self.user,
@@ -96,16 +98,17 @@ class PredictionModelTests(TestCase):
             team=self.team_east,
             predicted_position=1
         )
-        
+
         # Try to create another standing prediction for the same user, season, and team
         with self.assertRaises(IntegrityError):
-            StandingPrediction.objects.create(
-                user=self.user,
-                season=self.season,
-                team=self.team_east,
-                predicted_position=2
-            )
-        
+            with transaction.atomic():
+                StandingPrediction.objects.create(
+                    user=self.user,
+                    season=self.season,
+                    team=self.team_east,
+                    predicted_position=2
+                )
+
         # Create a playoff prediction
         PlayoffPrediction.objects.create(
             user=self.user,
@@ -115,14 +118,15 @@ class PredictionModelTests(TestCase):
             losses=2,
             round=4
         )
-        
+
         # Try to create another playoff prediction for the same user, season, and team
         with self.assertRaises(IntegrityError):
-            PlayoffPrediction.objects.create(
-                user=self.user,
-                season=self.season,
-                team=self.team_west,
-                wins=3,
-                losses=4,
-                round=4
-            )
+            with transaction.atomic():
+                PlayoffPrediction.objects.create(
+                    user=self.user,
+                    season=self.season,
+                    team=self.team_west,
+                    wins=3,
+                    losses=4,
+                    round=4
+                )
