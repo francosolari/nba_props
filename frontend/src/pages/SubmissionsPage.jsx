@@ -1242,7 +1242,7 @@ const InSeasonTournamentSection = ({
     [questions],
   );
   const conferenceWinnerQuestions = useMemo(
-    () => questions.filter((q) => q.prediction_type === 'conference_winner'),
+    () => questions.filter((q) => q.prediction_type === 'conference_winner' || q.prediction_type === 'champion'),
     [questions],
   );
   const tiebreakerQuestions = useMemo(

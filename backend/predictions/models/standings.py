@@ -60,6 +60,8 @@ class InSeasonTournamentStandings(BaseStandings):
     ist_clinch_group = models.BooleanField(default=False)
     ist_clinch_knockout = models.BooleanField(default=False)
     ist_clinch_wildcard = models.BooleanField(default=False)
+    # NBA Cup Champion (manually set - not from API)
+    ist_champion = models.BooleanField(default=False)
 
 # If you look at the GAME_ID value if the first three digits will tell you what type of game it is. See below:
 # 001* - Preseason Game
