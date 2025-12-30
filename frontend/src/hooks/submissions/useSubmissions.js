@@ -27,32 +27,39 @@ export const useQuestions = (seasonSlug) => {
 /**
  * Fetch user's answers for a specific season
  */
-export const useUserAnswers = (seasonSlug) => {
+export const useUserAnswers = (seasonSlug, options = {}) => {
+  const { enabled = true, ...queryOptions } = options;
+
   return useQuery({
     queryKey: ['userAnswers', seasonSlug],
     queryFn: async () => {
       const { data } = await axios.get(`/api/v2/submissions/answers/${seasonSlug}`);
       return data;
     },
-    enabled: !!seasonSlug,
+    enabled: !!seasonSlug && enabled,
     staleTime: 1000 * 60, // 1 minute
     retry: false,
+    ...queryOptions,
   });
 };
 
 /**
  * Get submission window status
  */
-export const useSubmissionStatus = (seasonSlug) => {
+export const useSubmissionStatus = (seasonSlug, options = {}) => {
+  const { enabled = true, ...queryOptions } = options;
+
   return useQuery({
     queryKey: ['submissionStatus', seasonSlug],
     queryFn: async () => {
       const { data } = await axios.get(`/api/v2/submissions/submission-status/${seasonSlug}`);
       return data;
     },
-    enabled: !!seasonSlug,
+    enabled: !!seasonSlug && enabled,
+    staleTime: 1000 * 60 * 5, // 5 minutes
     refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
     retry: false,
+    ...queryOptions,
   });
 };
 

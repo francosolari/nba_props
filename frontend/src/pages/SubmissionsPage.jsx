@@ -219,7 +219,8 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
   const { data: userContext, isLoading: userContextLoading } = useUserContext();
   const username = userContext?.username || null;
-  const entryFeeEnabled = !!effectiveSeasonSlug && !!userContext?.is_authenticated;
+  const isAuthenticated = !!userContext?.is_authenticated;
+  const entryFeeEnabled = !!effectiveSeasonSlug && isAuthenticated;
 
   // Stripe payment status
   const {
@@ -298,13 +299,21 @@ const SubmissionsPage = ({ seasonSlug }) => {
   // Fetch data
   const {
     data: questionsData,
+    dataUpdatedAt: questionsUpdatedAt,
     isLoading: questionsLoading,
     isError: questionsError,
     error: questionsErrorObj,
     refetch: refetchQuestions,
   } = useQuestions(effectiveSeasonSlug);
-  const { data: userAnswersData } = useUserAnswers(effectiveSeasonSlug);
-  const { data: statusData } = useSubmissionStatus(effectiveSeasonSlug);
+  const { data: userAnswersData } = useUserAnswers(effectiveSeasonSlug, {
+    enabled: !!effectiveSeasonSlug && isAuthenticated,
+  });
+  const statusHydration = questionsData?.submission_status;
+  const { data: statusData } = useSubmissionStatus(effectiveSeasonSlug, {
+    enabled: !!effectiveSeasonSlug && !questionsLoading && !questionsError,
+    initialData: statusHydration || undefined,
+    initialDataUpdatedAt: statusHydration ? questionsUpdatedAt : undefined,
+  });
   const submitMutation = useSubmitAnswers();
   const {
     data: entryFeeData,
