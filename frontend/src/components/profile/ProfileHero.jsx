@@ -39,7 +39,7 @@ export default function ProfileHero({ me, seasons, selectedSeason, onSeasonChang
                                 <p className="text-xs sm:text-base text-slate-300 dark:text-slate-400 font-medium flex items-center justify-center md:justify-start gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
                                     @{me?.user?.username}
                                     <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600"></span>
-                                    <span className="text-teal-300 dark:text-teal-400">Pro Member</span>
+                                    <span className="text-teal-300 dark:text-teal-400">Member</span>
                                 </p>
                             </div>
                         </div>
