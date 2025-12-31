@@ -15,10 +15,10 @@ export const PlayerSelectionModal = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-[95%] md:w-full max-w-lg max-h-[85dvh] md:max-h-[75vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-[95%] md:w-full max-w-lg max-h-[92dvh] md:max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 my-auto shadow-sky-500/10">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase tracking-widest">Select Players</h3>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase tracking-[0.1em]">Select Players</h3>
             <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"><X className="w-4 h-4 text-slate-400" /></button>
           </div>
           <div className="flex gap-3">
@@ -52,8 +52,8 @@ export const PlayerSelectionModal = ({
               );
             })}
         </div>
-        <div className="p-6 border-t border-slate-100 dark:border-slate-800">
-           <button onClick={onClose} className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest transition-all">Done</button>
+        <div className="p-4 md:p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
+          <button onClick={onClose} className="w-full py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98] shadow-lg shadow-slate-900/10 dark:shadow-white/5">Done</button>
         </div>
       </div>
     </div>

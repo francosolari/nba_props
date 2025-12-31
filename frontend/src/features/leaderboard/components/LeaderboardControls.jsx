@@ -16,21 +16,21 @@ export const LeaderboardControls = ({
   setShowManagePlayers
 }) => {
   return (
-    <div className="bg-slate-50/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md sticky top-[105px] md:top-[61px] z-[55]">
+    <div className="bg-slate-50/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md relative md:sticky md:top-[61px] z-[40]">
       <div className="max-w-[1600px] mx-auto px-4 py-2 flex items-center gap-3 md:gap-4 overflow-x-auto no-scrollbar">
-        <div className="relative shrink-0 md:shrink w-48 md:w-auto">
+        <div className="relative shrink-0 md:shrink w-48 md:w-auto hidden md:block">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input 
-            value={query} 
-            onChange={(e) => setQuery(e.target.value)} 
-            placeholder="Search..." 
-            className="pl-10 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold outline-none w-full md:w-48 transition-all" 
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search..."
+            className="pl-10 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold outline-none w-full md:w-48 transition-all"
           />
         </div>
 
-        <select 
-          value={sortBy} 
-          onChange={(e) => setSortBy(e.target.value)} 
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
           className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs font-black text-slate-500 uppercase tracking-wider outline-none shrink-0"
         >
           <option value="standings">Sort: Standings</option>
