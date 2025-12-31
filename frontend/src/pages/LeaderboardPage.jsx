@@ -1,5 +1,5 @@
 /* LeaderboardPage.jsx */
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useLeaderboard } from '../hooks';
@@ -8,10 +8,8 @@ import {
   ChevronDown,
   ChevronUp,
   Trophy,
-  TrendingUp,
   Target,
   Award,
-  Users,
   Star,
   BarChart3,
   ListChecks,
@@ -20,37 +18,345 @@ import {
   ArrowRight,
   Lock,
   Calendar,
+  Medal,
+  Crown,
+  TrendingUp,
+  Users,
 } from 'lucide-react';
 
-/* Map category names ➜ an icon component. */
+/* ─────────────────────────────────────────────────────────────────────────────
+   CONSTANTS & HELPERS
+   ───────────────────────────────────────────────────────────────────────────── */
+
 const categoryIcons = {
   'Regular Season Standings': Trophy,
   'Player Awards': Award,
   'Props & Yes/No': Target,
 };
 
+const formatDate = (isoString) => {
+  if (!isoString) return '';
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  } catch {
+    return isoString;
+  }
+};
+
+const getInitials = (name) => {
+  if (!name) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SUB-COMPONENTS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+const RankBadge = ({ rank }) => {
+  if (rank === 1) {
+    return (
+      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 shadow-sm border border-yellow-200">
+        <Crown className="w-4 h-4 text-white drop-shadow-sm" fill="currentColor" />
+        <div className="absolute -bottom-1 -right-1 bg-white text-yellow-600 text-[8px] font-bold px-1 py-px rounded-full border border-yellow-100 shadow-sm leading-none">1st</div>
+      </div>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-b from-slate-300 to-slate-400 shadow-sm border border-slate-200">
+        <Medal className="w-4 h-4 text-white drop-shadow-sm" />
+        <div className="absolute -bottom-1 -right-1 bg-white text-slate-500 text-[8px] font-bold px-1 py-px rounded-full border border-slate-100 shadow-sm leading-none">2nd</div>
+      </div>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-b from-amber-600 to-amber-700 shadow-sm border border-amber-500">
+        <Medal className="w-4 h-4 text-white drop-shadow-sm" />
+        <div className="absolute -bottom-1 -right-1 bg-white text-amber-700 text-[8px] font-bold px-1 py-px rounded-full border border-amber-100 shadow-sm leading-none">3rd</div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold text-xs">
+      {rank}
+    </div>
+  );
+};
+
+const CategoryDetailCard = ({ icon: Icon, title, data, detailsHref, userId }) => {
+  const pts = data?.points || 0;
+  const max = data?.max_points || 0;
+  const pct = max > 0 ? Math.round((pts / max) * 100) : 0;
+  const isStandings = title === 'Regular Season Standings';
+  
+  const [expandedSections, setExpandedSections] = useState(new Set());
+  const toggleSection = (key) => {
+    const next = new Set(expandedSections);
+    next.has(key) ? next.delete(key) : next.add(key);
+    setExpandedSections(next);
+  };
+
+  const standingsStats = useMemo(() => {
+    if (!isStandings || !Array.isArray(data?.predictions)) return null;
+    const east = { exact: [], offByOne: [], wrong: [] };
+    const west = { exact: [], offByOne: [], wrong: [] };
+
+    data.predictions.forEach(p => {
+      const points = p.points ?? 0;
+      const conf = p.conference || p.team_conference;
+      const target = conf === 'East' ? east : west;
+      const name = p.team || p.team_name || 'Unknown';
+      if (points === 3) target.exact.push(name);
+      else if (points === 1) target.offByOne.push(name);
+      else target.wrong.push(name);
+    });
+    return { east, west };
+  }, [data?.predictions, isStandings]);
+
+  const { rights, wrongs } = useMemo(() => {
+    if (isStandings) return { rights: [], wrongs: [] };
+    
+    if (data?.interesting && (data.interesting.hard_wins?.length || data.interesting.easy_misses?.length)) {
+        return {
+          rights: (data.interesting.hard_wins || []).slice(0, 3),
+          wrongs: (data.interesting.easy_misses || []).slice(0, 3),
+        };
+    }
+
+    const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
+    const withFlags = predictions.map(p => ({
+      ...p,
+      _isRight: typeof p.correct === 'boolean' ? p.correct : (typeof p.points === 'number' && p.points > 0),
+    }));
+    
+    const seedStr = String(userId || '') + title;
+    let seed = 0; for(let i=0; i<seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+    const pickN = (arr, n) => {
+      if(!arr.length) return [];
+      let s = seed ^ (n * 2654435761 >>> 0);
+      const res = [];
+      for(let k=0; k<Math.min(n, arr.length); k++) {
+        s = (s * 1664525 + 1013904223) >>> 0;
+        res.push(arr[s % arr.length]);
+      }
+      return res;
+    };
+
+    return { 
+      rights: pickN(withFlags.filter(p => p._isRight), 3), 
+      wrongs: pickN(withFlags.filter(p => !p._isRight), 3) 
+    };
+  }, [data?.predictions, data?.interesting, isStandings, title, userId]);
+
+  return (
+    <div className={`relative overflow-hidden rounded-xl border transition-all duration-300 group
+      ${data?.is_best 
+        ? 'bg-indigo-50/30 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-500/30 ring-1 ring-indigo-100 dark:ring-indigo-500/20' 
+        : 'bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}
+    `}>
+      {data?.is_best && (
+        <div className="absolute top-0 right-0 px-2 py-1 bg-indigo-100 dark:bg-indigo-500/20 rounded-bl-xl border-l border-b border-indigo-200 dark:border-indigo-500/30">
+          <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide flex items-center gap-1">
+            <Crown className="w-3 h-3" /> Best
+          </span>
+        </div>
+      )}
+
+      <div className="p-4 space-y-4">
+        <a 
+          href={detailsHref} 
+          className="flex items-center gap-3 group/header transition-colors hover:opacity-80"
+        >
+          <div className={`p-2 rounded-lg ${
+            data?.is_best 
+              ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400' 
+              : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'
+          }`}>
+            <Icon className="w-4 h-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
+              {title}
+              <ArrowRight className="w-3 h-3 opacity-0 -translate-x-1 transition-all group-hover/header:opacity-100 group-hover/header:translate-x-0 text-slate-400" />
+            </h4>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{pts} <span className="text-slate-400 font-normal">/ {max} pts</span></span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${pct >= 50 ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
+                {pct}%
+              </span>
+            </div>
+          </div>
+        </a>
+
+        <ProgressBar 
+          value={pts} 
+          max={max || 1} 
+          size="sm" 
+          color={data?.is_best ? "bg-indigo-500" : "bg-teal-500"} 
+          bgColor="bg-slate-200 dark:bg-slate-700" 
+        />
+
+        <div className="pt-1">
+          {isStandings && standingsStats ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               {['east', 'west'].map(confKey => {
+                 const stats = standingsStats[confKey];
+                 const label = confKey === 'east' ? 'Eastern' : 'Western';
+                 return (
+                   <div key={confKey} className="space-y-1.5">
+                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 pb-1 mb-1 border-b border-slate-100 dark:border-slate-800">{label}</div>
+                     
+                     {/* Exact */}
+                     <div>
+                        <button 
+                          onClick={() => toggleSection(`${confKey}-exact`)} 
+                          className="w-full flex items-center justify-between text-[11px] p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-500/10 hover:bg-emerald-100/50 dark:hover:bg-emerald-500/20 transition-colors border border-emerald-100/50 dark:border-emerald-500/20"
+                        >
+                          <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold whitespace-nowrap">
+                            <Star className="w-3 h-3 flex-shrink-0" /> Exact <span className="font-normal opacity-70">(3 pts)</span>
+                          </span>
+                          <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                             <span className="bg-emerald-600 text-white px-1.5 py-0.5 rounded-md text-[9px] font-black">{stats.exact.length}</span>
+                             {expandedSections.has(`${confKey}-exact`) ? <ChevronUp className="w-3 h-3 text-emerald-400" /> : <ChevronDown className="w-3 h-3 text-emerald-400" />}
+                          </div>
+                        </button>
+                        {expandedSections.has(`${confKey}-exact`) && stats.exact.length > 0 && (
+                          <div className="mt-1 ml-2 pl-4 border-l-2 border-emerald-100 dark:border-emerald-900 text-[10px] text-slate-600 dark:text-slate-400 space-y-1 py-1 animate-in slide-in-from-top-1 duration-200">
+                            {stats.exact.map((t,i) => <div key={i} className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-emerald-400"></div>{t}</div>)}
+                          </div>
+                        )}
+                     </div>
+
+                     {/* Off By 1 */}
+                     <div>
+                        <button 
+                          onClick={() => toggleSection(`${confKey}-off`)} 
+                          className="w-full flex items-center justify-between text-[11px] p-2 rounded-lg bg-amber-50/50 dark:bg-amber-500/10 hover:bg-amber-100/50 dark:hover:bg-amber-500/20 transition-colors border border-amber-100/50 dark:border-amber-500/20"
+                        >
+                          <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold whitespace-nowrap">
+                            <TrendingUp className="w-3 h-3 flex-shrink-0" /> Off by 1 <span className="font-normal opacity-70">(1 pt)</span>
+                          </span>
+                          <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                             <span className="bg-amber-500 text-white px-1.5 py-0.5 rounded-md text-[9px] font-black">{stats.offByOne.length}</span>
+                             {expandedSections.has(`${confKey}-off`) ? <ChevronUp className="w-3 h-3 text-amber-400" /> : <ChevronDown className="w-3 h-3 text-amber-400" />}
+                          </div>
+                        </button>
+                        {expandedSections.has(`${confKey}-off`) && stats.offByOne.length > 0 && (
+                          <div className="mt-1 ml-2 pl-4 border-l-2 border-amber-100 dark:border-amber-900 text-[10px] text-slate-600 dark:text-slate-400 space-y-1 py-1 animate-in slide-in-from-top-1 duration-200">
+                            {stats.offByOne.map((t,i) => <div key={i} className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-amber-400"></div>{t}</div>)}
+                          </div>
+                        )}
+                     </div>
+
+                     {/* Missed */}
+                     <div>
+                        <button 
+                          onClick={() => toggleSection(`${confKey}-miss`)} 
+                          className="w-full flex items-center justify-between text-[11px] p-2 rounded-lg bg-rose-50/50 dark:bg-rose-500/10 hover:bg-rose-100/50 dark:hover:bg-rose-500/20 transition-colors border border-rose-100/50 dark:border-rose-500/20"
+                        >
+                          <span className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400 font-bold whitespace-nowrap">
+                            <CircleX className="w-3 h-3 flex-shrink-0" /> Missed <span className="font-normal opacity-70">(0 pts)</span>
+                          </span>
+                          <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                             <span className="bg-rose-500 text-white px-1.5 py-0.5 rounded-md text-[9px] font-black">{stats.wrong.length}</span>
+                             {expandedSections.has(`${confKey}-miss`) ? <ChevronUp className="w-3 h-3 text-rose-400" /> : <ChevronDown className="w-3 h-3 text-rose-400" />}
+                          </div>
+                        </button>
+                        {expandedSections.has(`${confKey}-miss`) && stats.wrong.length > 0 && (
+                          <div className="mt-1 ml-2 pl-4 border-l-2 border-rose-100 dark:border-rose-900 text-[10px] text-slate-600 dark:text-slate-400 space-y-1 py-1 animate-in slide-in-from-top-1 duration-200">
+                            {stats.wrong.map((t,i) => <div key={i} className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-rose-400"></div>{t}</div>)}
+                          </div>
+                        )}
+                     </div>
+                   </div>
+                 );
+               })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {rights.length > 0 && (
+                <div className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl p-3 border border-emerald-100 dark:border-emerald-500/10">
+                   <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
+                        <CircleCheck className="w-3.5 h-3.5" /> Hits
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 bg-emerald-100 dark:bg-emerald-500/20 px-1.5 py-0.5 rounded-full">{rights.length} counted</span>
+                   </div>
+                   <div className="space-y-1.5">
+                     {rights.map((p, i) => (
+                       <div key={i} className="flex justify-between items-start gap-2 text-[11px] leading-snug">
+                         <span className="text-slate-700 dark:text-slate-300 font-medium line-clamp-2">{p.question || p.team}</span>
+                         <span className="text-emerald-600 dark:text-emerald-400 font-black whitespace-nowrap">+{p.points}</span>
+                       </div>
+                     ))}
+                   </div>
+                </div>
+              )}
+              {wrongs.length > 0 && (
+                <div className="bg-rose-50/50 dark:bg-rose-900/10 rounded-xl p-3 border border-rose-100 dark:border-rose-500/10">
+                   <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400 text-[10px] font-black uppercase tracking-wider">
+                        <CircleX className="w-3.5 h-3.5" /> Misses
+                      </div>
+                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-500 bg-rose-100 dark:bg-rose-500/20 px-1.5 py-0.5 rounded-full">{wrongs.length} counted</span>
+                   </div>
+                   <div className="space-y-1.5">
+                     {wrongs.map((p, i) => (
+                       <div key={i} className="flex justify-between items-start gap-2 text-[11px] leading-snug">
+                         <span className="text-slate-600 dark:text-slate-400 line-clamp-2">{p.question || p.team}</span>
+                         <span className="text-rose-500 dark:text-rose-400 font-medium whitespace-nowrap">0</span>
+                       </div>
+                     ))}
+                   </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {detailsHref && (
+          <div className="flex justify-end mt-2">
+            <a href={detailsHref} className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-teal-600 dark:text-slate-400 dark:hover:text-teal-400 transition-colors group/link">
+              Detailed Breakdown <ArrowRight className="w-3 h-3 transition-transform group-hover/link:translate-x-0.5" />
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MAIN COMPONENT
+   ───────────────────────────────────────────────────────────────────────────── */
+
 function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
-  // State for selected season
   const [selectedSeason, setSelectedSeason] = useState(initialSeasonSlug);
 
-  // Fetch seasons where the user has participated (has submissions)
   const { data: seasonsData } = useQuery({
     queryKey: ['seasons', 'user-participated'],
     queryFn: async () => {
       const res = await axios.get('/api/v2/seasons/user-participated');
       return res.data;
     },
-    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    staleTime: 10 * 60 * 1000,
   });
 
-  // Use our custom hook to fetch and process leaderboard data
   const { data: leaderboardData, season: seasonInfo, error, isLoading, totals } = useLeaderboard(selectedSeason);
-
-  /* ‣ Set of expanded user-IDs to keep multiple rows open at once. */
   const [expandedUsers, setExpandedUsers] = useState(new Set());
-
-  /* ‣ Control how many players are visible (for client-side pagination) */
-  const [visibleCount, setVisibleCount] = useState(20); // Default to showing 20 players initially
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const toggleUserExpansion = (userId) => {
     const next = new Set(expandedUsers);
@@ -58,26 +364,19 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     setExpandedUsers(next);
   };
 
-  /* ‣ Render a little badge or icon for 1st-3rd place. */
-  const rankIcon = (rank) => {
-    if (rank === 1) return <Trophy className="w-5 h-5 text-yellow-400" />;
-    if (rank === 2) return <Star className="w-5 h-5 text-slate-300" />;
-    if (rank === 3) return <Award className="w-5 h-5 text-amber-500" />;
-    return (
-      <span className="w-5 h-5 flex items-center justify-center text-sm font-bold text-black dark:text-white">
-        {rank}
-      </span>
-    );
+  const getCategory = (entry, key) => {
+    const cats = entry?.user?.categories || entry?.categories || {};
+    return cats?.[key] || { points: 0, max_points: 0, predictions: [] };
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-center">
-        <div className="w-full max-w-3xl animate-pulse space-y-6">
-          <div className="h-10 bg-slate-200/70 dark:bg-slate-800/70 rounded-xl" />
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-16 bg-slate-200/60 dark:bg-slate-800/60 rounded-xl shadow-sm" />
-          ))}
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 flex flex-col items-center justify-center space-y-8">
+        <div className="w-full max-w-4xl space-y-6 animate-pulse">
+           <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-3xl w-full"></div>
+           <div className="space-y-3">
+             {[...Array(5)].map((_,i) => <div key={i} className="h-20 bg-slate-200 dark:bg-slate-800 rounded-xl w-full" />)}
+           </div>
         </div>
       </div>
     );
@@ -85,578 +384,262 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-center">
-        <div className="bg-white/80 dark:bg-slate-800/80 border border-rose-200 dark:border-rose-500/30 rounded-xl shadow-lg p-6">
-          <p className="text-lg text-rose-600 dark:text-rose-400 font-semibold">{String(error)}</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900 rounded-2xl p-8 shadow-xl text-center">
+          <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-500">
+             <CircleX className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Something went wrong</h3>
+          <p className="text-slate-600 dark:text-slate-400">{String(error)}</p>
         </div>
       </div>
     );
   }
 
-  // Check if submissions are still open
   const submissionsOpen = seasonInfo?.submissions_open ?? false;
   const submissionEndDate = seasonInfo?.submission_end_date;
 
-  // Format submission end date
-  const formatDate = (isoString) => {
-    if (!isoString) return '';
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZoneName: 'short'
-      });
-    } catch {
-      return isoString;
-    }
-  };
-
-  // If submissions are still open, show locked message
   if (submissionsOpen && submissionEndDate) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6">
-        <div className="max-w-4xl mx-auto space-y-4">
-          {/* Season Selector */}
-          {seasonsData && seasonsData.length > 1 && (
-            <div className="flex justify-end">
-              <select
-                value={selectedSeason}
-                onChange={(e) => setSelectedSeason(e.target.value)}
-                className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium shadow-sm hover:border-slate-400 dark:hover:border-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                {seasonsData.map((season) => (
-                  <option key={season.slug} value={season.slug}>
-                    {season.year}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 flex items-center justify-center">
+        <div className="max-w-xl w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-8 text-center relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-4 opacity-10">
+              <Lock className="w-24 h-24 text-slate-900 dark:text-white" />
+           </div>
+           
+           <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-full text-amber-500 mb-6">
+              <Lock className="w-8 h-8" />
+           </div>
+           
+           <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Leaderboard Locked</h1>
+           <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm mx-auto">
+             Rankings are hidden while predictions are open. Check back later!
+           </p>
 
-          {/* Locked Message */}
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-700/50 bg-gradient-to-br from-white via-white to-slate-50/30 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-900/50 shadow-lg backdrop-blur-sm">
-            <div className="relative px-6 py-12 md:px-12 md:py-16 text-center">
-              <div className="flex flex-col items-center gap-6">
-                <div className="p-4 rounded-full bg-gradient-to-br from-amber-50 to-amber-100/50 text-amber-600 border border-amber-200/60 dark:from-amber-400/10 dark:to-amber-500/5 dark:text-amber-300 dark:border-amber-500/30">
-                  <Lock className="w-12 h-12" />
+           <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300">
+              <Calendar className="w-4 h-4" />
+              <span>Reveals {formatDate(submissionEndDate)}</span>
+           </div>
+
+           {seasonsData && seasonsData.length > 1 && (
+              <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex justify-center items-center gap-2 text-sm">
+                  <span className="text-slate-500">Past seasons:</span>
+                  <select
+                    value={selectedSeason}
+                    onChange={(e) => setSelectedSeason(e.target.value)}
+                    className="font-semibold text-slate-900 dark:text-white bg-transparent outline-none cursor-pointer hover:text-teal-600"
+                  >
+                    {seasonsData.map((s) => (
+                      <option key={s.slug} value={s.slug}>{s.year}</option>
+                    ))}
+                  </select>
                 </div>
-
-                <div className="space-y-3">
-                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-                    Leaderboard Locked
-                  </h1>
-                  <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl">
-                    The leaderboard will open when submissions close to ensure fair play and prevent any competitive advantages.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900/40 backdrop-blur border border-slate-200/60 dark:border-slate-700/40 shadow-sm">
-                  <Calendar className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                  <div className="text-left">
-                    <div className="text-xs uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400">Opens on</div>
-                    <div className="text-sm font-bold text-slate-900 dark:text-white">{formatDate(submissionEndDate)}</div>
-                  </div>
-                </div>
-
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-4">
-                  Check back after the submission deadline to see the rankings!
-                </p>
               </div>
-            </div>
-          </div>
+           )}
         </div>
       </div>
     );
   }
 
-  // Helpers for expanded cards
-  const getCategory = (entry, key) => {
-    const cats = entry?.user?.categories || entry?.categories || {};
-    return cats?.[key] || { points: 0, max_points: 0, predictions: [] };
-  };
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-teal-500/30">
+      
+      {/* ─── 1. Compact Header ─── */}
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 pt-4 pb-4 md:pt-6 md:pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+           <div className="flex items-center justify-between gap-4 mb-4">
+              <div>
+                <h1 className="text-xl md:text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
+                  NBA Predictions Leaderboard
+                </h1>
+              </div>
 
-  const getSamples = (predictions = [], interesting) => {
-    // Prefer curated interesting picks from backend
-    if (interesting && (interesting.hard_wins?.length || interesting.easy_misses?.length)) {
-      const rights = interesting.hard_wins?.slice(0, 3) || [];
-      const wrongs = interesting.easy_misses?.slice(0, 3) || [];
-      return { rights, wrongs };
-    }
-    // Fallback to random sampling
-    if (!Array.isArray(predictions)) return { rights: [], wrongs: [] };
-    const withFlags = predictions.map(p => ({
-      ...p,
-      _isRight: typeof p.correct === 'boolean' ? p.correct : (typeof p.points === 'number' && p.points > 0),
-    }));
-    const rights = withFlags.filter(p => p._isRight);
-    const wrongs = withFlags.filter(p => p._isRight === false);
-    const pick = (arr, n) => arr.sort(() => Math.random() - 0.5).slice(0, n);
-    return { rights: pick(rights, 3), wrongs: pick(wrongs, 3) };
-  };
+              {seasonsData && seasonsData.length > 1 && (
+                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg px-2.5 py-1 border border-slate-200 dark:border-slate-700">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Season</span>
+                  <select
+                    value={selectedSeason}
+                    onChange={(e) => setSelectedSeason(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+                  >
+                    {seasonsData.map((s) => <option key={s.slug} value={s.slug}>{s.year}</option>)}
+                  </select>
+                </div>
+              )}
+           </div>
 
-  const CategoryCard = ({ icon: Icon, title, data, detailsHref, userId }) => {
-    const pts = data?.points || 0;
-    const max = data?.max_points || 0;
-    const pct = max > 0 ? Math.round((pts / max) * 100) : 0;
+           {/* Compact Stats Grid */}
+           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+             {[
+               { label: 'Players', value: totals.totalPlayers, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
+               { label: 'Predictions', value: totals.totalPredictions || '—', icon: Target, color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-900/20' },
+               { label: 'Accuracy', value: totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(0)}%` : '—', icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+               { label: 'Top Score', value: leaderboardData[0]?.user?.total_points || '—', icon: Crown, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+             ].map((stat, i) => (
+               <div key={i} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-xl p-2 flex items-center gap-3">
+                  <div className={`w-7 h-7 rounded flex items-center justify-center ${stat.bg} ${stat.color}`}>
+                    <stat.icon className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">{stat.label}</div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight mt-0.5">{stat.value.toLocaleString()}</div>
+                  </div>
+               </div>
+             ))}
+           </div>
+        </div>
+      </header>
 
-    // For Regular Season Standings, calculate stats based on points
-    const isStandings = title === 'Regular Season Standings';
-    const [expandedSections, setExpandedSections] = useState(new Set());
-
-    const toggleSection = (sectionKey) => {
-      const next = new Set(expandedSections);
-      next.has(sectionKey) ? next.delete(sectionKey) : next.add(sectionKey);
-      setExpandedSections(next);
-    };
-
-    const standingsStats = React.useMemo(() => {
-      if (!isStandings || !Array.isArray(data?.predictions)) {
-        return null;
-      }
-
-      const predictions = data.predictions;
-
-      // Breakdown by conference with team lists
-      const eastStats = { exact: [], offByOne: [], wrong: [] };
-      const westStats = { exact: [], offByOne: [], wrong: [] };
-
-      predictions.forEach(p => {
-        const points = p.points ?? 0;
-        const conference = p.conference || p.team_conference;
-        const stats = conference === 'East' ? eastStats : westStats;
-        const teamName = p.team || p.team_name || 'Unknown Team';
-
-        if (points === 3) stats.exact.push(teamName);
-        else if (points === 1) stats.offByOne.push(teamName);
-        else stats.wrong.push(teamName);
-      });
-
-      return { east: eastStats, west: westStats };
-    }, [data?.predictions, isStandings]);
-
-    // For non-standings categories, sample predictions
-    const { rights, wrongs } = React.useMemo(() => {
-      if (isStandings) return { rights: [], wrongs: [] }; // Not used for standings
-
-      if (data?.interesting && (data.interesting.hard_wins?.length || data.interesting.easy_misses?.length)) {
-        return {
-          rights: (data.interesting.hard_wins || []).slice(0, 3),
-          wrongs: (data.interesting.easy_misses || []).slice(0, 3),
-        };
-      }
-      const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
-      const withFlags = predictions.map(p => ({
-        ...p,
-        _isRight: typeof p.correct === 'boolean' ? p.correct : (typeof p.points === 'number' && p.points > 0),
-      }));
-      const r = withFlags.filter(p => p._isRight);
-      const w = withFlags.filter(p => p._isRight === false);
-      // Simple seeded pick based on userId + title
-      const seedStr = String(userId || '') + '|' + String(title || '');
-      let seed = 0; for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
-      const pickN = (arr, n) => {
-        const out = [];
-        if (!arr.length) return out;
-        let s = seed ^ (n * 2654435761 >>> 0);
-        for (let i = 0; i < Math.min(n, arr.length); i++) {
-          s = (s * 1664525 + 1013904223) >>> 0; // LCG
-          const idx = s % arr.length;
-          out.push(arr[idx]);
-        }
-        return out;
-      };
-      return { rights: pickN(r, 3), wrongs: pickN(w, 3) };
-    }, [data?.predictions, data?.interesting, userId, title, isStandings]);
-
-    return (
-      <div className={`group relative overflow-hidden rounded-xl border ${data?.is_best ? 'border-emerald-400/60 dark:border-emerald-500/50 shadow-emerald-100/50 dark:shadow-emerald-900/30' : 'border-slate-200/70 dark:border-slate-700/50'} bg-white/90 dark:bg-slate-800/70 shadow-md backdrop-blur-sm transition-shadow hover:shadow-lg`}>
-        <div className="p-4 space-y-3 relative">
-          {data?.is_best && (
-            <div className="absolute top-2 right-2 text-[9px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">Top</div>
-          )}
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-teal-50 to-teal-100/50 text-teal-600 border border-teal-200/60 dark:from-teal-400/10 dark:to-teal-500/5 dark:text-teal-300 dark:border-teal-500/30">
-              <Icon className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{title}</h3>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium mt-0.5">{pts} / {max} pts • {pct}%</p>
-            </div>
+      {/* ─── 2. Main List ─── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 md:py-6">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          
+          <div className="hidden md:grid grid-cols-[60px_200px_120px_1fr_40px] gap-4 px-6 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <div className="text-center">Rank</div>
+            <div>Player</div>
+            <div className="text-center">Total Points</div>
+            <div className="pl-6">Performance</div>
+            <div></div>
           </div>
-          <ProgressBar value={pts} max={max || 1} size="md" color="bg-gradient-to-r from-teal-500 to-teal-600 dark:from-teal-400 dark:to-teal-500" bgColor="bg-slate-200 dark:bg-slate-700" />
 
-          {/* Standings-specific stats */}
-          {isStandings && standingsStats ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              {/* Eastern Conference */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-1.5 text-slate-700 dark:text-slate-300 text-[11px] font-bold">Eastern</div>
-                <div className="space-y-1">
-                  {/* Exact */}
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSection('east-exact')}
-                      className="w-full flex items-center justify-between text-[11px] bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 hover:bg-emerald-100/80 dark:hover:bg-emerald-500/20 transition-colors"
-                    >
-                      <span className="text-emerald-700 dark:text-emerald-300 font-medium">Exact (3pts)</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-emerald-700 dark:text-emerald-300">{standingsStats.east.exact.length}</span>
-                        {standingsStats.east.exact.length > 0 && (
-                          expandedSections.has('east-exact') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {leaderboardData.slice(0, visibleCount).map((entry) => {
+              const isExpanded = expandedUsers.has(entry.user.id);
+              const displayName = entry.user.display_name || entry.user.username;
+              return (
+                <div key={entry.user.id} className={`group transition-colors duration-200 ${isExpanded ? 'bg-slate-50/80 dark:bg-slate-800/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+                  
+                  <button 
+                    type="button"
+                    onClick={() => toggleUserExpansion(entry.user.id)}
+                    className="w-full text-left cursor-pointer grid grid-cols-[auto_1fr_auto_auto] md:grid-cols-[60px_200px_120px_1fr_40px] gap-3 md:gap-4 items-center px-4 md:px-6 py-2.5 md:py-3.5 focus:outline-none"
+                  >
+                    <div className="flex justify-center md:justify-center">
+                       <RankBadge rank={entry.rank} />
+                    </div>
+
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="relative flex-shrink-0">
+                         {entry.user.avatar ? (
+                           <img src={entry.user.avatar} className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700" alt="" onError={(e)=>e.target.style.display='none'}/>
+                         ) : (
+                           <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 dark:text-slate-400 text-xs border border-slate-200 dark:border-slate-700">
+                             {getInitials(displayName)}
+                           </div>
+                         )}
+                      </div>
+                      
+                      <div className="min-w-0 flex flex-col justify-center">
+                        <h3 className="font-bold text-slate-800 dark:text-slate-100 truncate text-xs md:text-sm leading-tight">
+                          {displayName}
+                        </h3>
+                        {entry.user.badges && entry.user.badges.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {entry.user.badges.filter(b => b.type === 'category_best').slice(0, 2).map((b, i) => (
+                              <span key={i} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-500/30 whitespace-nowrap leading-none">
+                                <Crown className="w-2 h-2" /> 
+                                {b.category ? `Top ${b.category.split(' ')[0]}` : 'Leader'}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
-                    </button>
-                    {expandedSections.has('east-exact') && standingsStats.east.exact.length > 0 && (
-                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
-                        {standingsStats.east.exact.map((team, i) => (
-                          <div key={i} className="text-[10px] text-emerald-800 dark:text-emerald-200 text-right py-0.5 px-1.5 rounded bg-emerald-50/50 dark:bg-emerald-900/20">{team}</div>
-                        ))}
-                      </div>
-                    )}
+                    </div>
+
+                    {/* Points: Primary Metric - Now moved earlier in desktop grid */}
+                    <div className="text-center">
+                       <div className="text-base text-center md:text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
+                         {entry.user.total_points.toLocaleString()}
+                       </div>
+                       <div className="md:hidden text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Pts</div>
+                    </div>
+
+                    {/* Desktop: Category Previews - Now after points */}
+                    <div className="hidden md:flex items-center gap-4 pl-6">
+                      {['Regular Season Standings', 'Player Awards', 'Props & Yes/No'].map(catKey => {
+                        const catData = getCategory(entry, catKey);
+                        const pct = catData.max_points > 0 ? (catData.points / catData.max_points) * 100 : 0;
+                        return (
+                           <div key={catKey} className="flex-1 min-w-[80px]">
+                              <div className="flex justify-between items-end mb-1">
+                                <span className="text-[8px] text-slate-400 uppercase tracking-tight truncate max-w-[80px]">{catKey.replace('Regular Season ', 'Reg. Season Standings').split(' ')[0]}</span>
+                                <span className="text-[8px] font-medium text-slate-600 dark:text-slate-400">{catData.points}</span>
+                              </div>
+                              <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-teal-500 rounded-full" 
+                                  style={{ width: `${pct}%` }} 
+                                />
+                              </div>
+                           </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex justify-end">
+                       <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                         <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                       </div>
+                    </div>
+                  </button>
+
+                  <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0 invisible'}`}>
+                    <div className="px-2 md:px-6 pb-5 pt-1">
+                       <div className="p-3 md:p-5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                         <div className="flex items-center justify-between mb-4 px-1">
+                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                              <BarChart3 className="w-3 h-3" /> Detailed Breakdown
+                            </h4>
+                            <a href={`/leaderboard/${selectedSeason}/detailed/?user=${entry.user.id}`} className="text-[10px] font-bold text-teal-600 dark:text-teal-400 hover:underline uppercase tracking-wide">
+                              View Full Report &rarr;
+                            </a>
+                         </div>
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                           <CategoryDetailCard 
+                             icon={BarChart3} 
+                             title="Regular Season Standings" 
+                             userId={entry.user.id} 
+                             data={getCategory(entry, 'Regular Season Standings')} 
+                             detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=standings&user=${entry.user.id}`}
+                           />
+                           <CategoryDetailCard 
+                             icon={Award} 
+                             title="Player Awards" 
+                             userId={entry.user.id} 
+                             data={getCategory(entry, 'Player Awards')} 
+                             detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=awards&user=${entry.user.id}`}
+                           />
+                           <CategoryDetailCard 
+                             icon={ListChecks} 
+                             title="Props & Yes/No" 
+                             userId={entry.user.id} 
+                             data={getCategory(entry, 'Props & Yes/No')} 
+                             detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=props&user=${entry.user.id}`}
+                           />
+                         </div>
+                       </div>
+                    </div>
                   </div>
 
-                  {/* Off by 1 */}
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSection('east-offByOne')}
-                      className="w-full flex items-center justify-between text-[11px] bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-md px-2 py-1 hover:bg-amber-100/80 dark:hover:bg-amber-500/20 transition-colors"
-                    >
-                      <span className="text-amber-700 dark:text-amber-300 font-medium">Off by 1 (1pt)</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-amber-700 dark:text-amber-300">{standingsStats.east.offByOne.length}</span>
-                        {standingsStats.east.offByOne.length > 0 && (
-                          expandedSections.has('east-offByOne') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-                        )}
-                      </div>
-                    </button>
-                    {expandedSections.has('east-offByOne') && standingsStats.east.offByOne.length > 0 && (
-                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
-                        {standingsStats.east.offByOne.map((team, i) => (
-                          <div key={i} className="text-[10px] text-amber-800 dark:text-amber-200 text-right py-0.5 px-1.5 rounded bg-amber-50/50 dark:bg-amber-900/20">{team}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Missed */}
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSection('east-wrong')}
-                      className="w-full flex items-center justify-between text-[11px] bg-slate-100/80 dark:bg-slate-700/30 border border-slate-200/60 dark:border-slate-600/30 rounded-md px-2 py-1 hover:bg-slate-200/80 dark:hover:bg-slate-700/50 transition-colors"
-                    >
-                      <span className="text-slate-700 dark:text-slate-300 font-medium">Missed (0pts)</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-slate-700 dark:text-slate-300">{standingsStats.east.wrong.length}</span>
-                        {standingsStats.east.wrong.length > 0 && (
-                          expandedSections.has('east-wrong') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-                        )}
-                      </div>
-                    </button>
-                    {expandedSections.has('east-wrong') && standingsStats.east.wrong.length > 0 && (
-                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
-                        {standingsStats.east.wrong.map((team, i) => (
-                          <div key={i} className="text-[10px] text-slate-700 dark:text-slate-300 text-right py-0.5 px-1.5 rounded bg-slate-50/50 dark:bg-slate-800/30">{team}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </div>
-
-              {/* Western Conference */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-1.5 text-slate-700 dark:text-slate-300 text-[11px] font-bold">Western</div>
-                <div className="space-y-1">
-                  {/* Exact */}
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSection('west-exact')}
-                      className="w-full flex items-center justify-between text-[11px] bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 hover:bg-emerald-100/80 dark:hover:bg-emerald-500/20 transition-colors"
-                    >
-                      <span className="text-emerald-700 dark:text-emerald-300 font-medium">Exact (3pts)</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-emerald-700 dark:text-emerald-300">{standingsStats.west.exact.length}</span>
-                        {standingsStats.west.exact.length > 0 && (
-                          expandedSections.has('west-exact') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-                        )}
-                      </div>
-                    </button>
-                    {expandedSections.has('west-exact') && standingsStats.west.exact.length > 0 && (
-                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
-                        {standingsStats.west.exact.map((team, i) => (
-                          <div key={i} className="text-[10px] text-emerald-800 dark:text-emerald-200 text-right py-0.5 px-1.5 rounded bg-emerald-50/50 dark:bg-emerald-900/20">{team}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Off by 1 */}
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSection('west-offByOne')}
-                      className="w-full flex items-center justify-between text-[11px] bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-md px-2 py-1 hover:bg-amber-100/80 dark:hover:bg-amber-500/20 transition-colors"
-                    >
-                      <span className="text-amber-700 dark:text-amber-300 font-medium">Off by 1 (1pt)</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-amber-700 dark:text-amber-300">{standingsStats.west.offByOne.length}</span>
-                        {standingsStats.west.offByOne.length > 0 && (
-                          expandedSections.has('west-offByOne') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-                        )}
-                      </div>
-                    </button>
-                    {expandedSections.has('west-offByOne') && standingsStats.west.offByOne.length > 0 && (
-                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
-                        {standingsStats.west.offByOne.map((team, i) => (
-                          <div key={i} className="text-[10px] text-amber-800 dark:text-amber-200 text-right py-0.5 px-1.5 rounded bg-amber-50/50 dark:bg-amber-900/20">{team}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Missed */}
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSection('west-wrong')}
-                      className="w-full flex items-center justify-between text-[11px] bg-slate-100/80 dark:bg-slate-700/30 border border-slate-200/60 dark:border-slate-600/30 rounded-md px-2 py-1 hover:bg-slate-200/80 dark:hover:bg-slate-700/50 transition-colors"
-                    >
-                      <span className="text-slate-700 dark:text-slate-300 font-medium">Missed (0pts)</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-slate-700 dark:text-slate-300">{standingsStats.west.wrong.length}</span>
-                        {standingsStats.west.wrong.length > 0 && (
-                          expandedSections.has('west-wrong') ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-                        )}
-                      </div>
-                    </button>
-                    {expandedSections.has('west-wrong') && standingsStats.west.wrong.length > 0 && (
-                      <div className="mt-1.5 ml-2 mr-1 max-h-[80px] overflow-y-auto space-y-0.5 pr-1">
-                        {standingsStats.west.wrong.map((team, i) => (
-                          <div key={i} className="text-[10px] text-slate-700 dark:text-slate-300 text-right py-0.5 px-1.5 rounded bg-slate-50/50 dark:bg-slate-800/30">{team}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Non-standings categories: show sample predictions */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              <div>
-                <div className="flex items-center gap-1.5 mb-1.5 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold"><CircleCheck className="w-3.5 h-3.5" />Correct</div>
-                <ul className="space-y-1">
-                  {rights.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
-                  {rights.map((p, i) => (
-                    <li key={`r-${i}`} className="text-[11px] text-emerald-900 dark:text-emerald-100 bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Hard win • only ${(p.global_correct_rate * 100).toFixed(0)}% got this right` : undefined}>
-                      {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
-                      <span className="ml-1 font-bold">+{p.points ?? 0}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 mb-1.5 text-rose-600 dark:text-rose-400 text-[11px] font-bold"><CircleX className="w-3.5 h-3.5" />Missed</div>
-                <ul className="space-y-1">
-                  {wrongs.length === 0 && <li className="text-[11px] text-slate-500 dark:text-slate-400 italic">None yet</li>}
-                  {wrongs.map((p, i) => (
-                    <li key={`w-${i}`} className="text-[11px] text-rose-900 dark:text-rose-100 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/30 rounded-md px-2 py-1 leading-tight" title={p.global_correct_rate !== undefined ? `Surprising miss • ${(p.global_correct_rate * 100).toFixed(0)}% got this right` : undefined}>
-                      {(p.question || p.team || '').toString().slice(0, 60)}{(p.question || p.team || '').length > 60 ? '…' : ''}
-                      <span className="ml-1 font-bold">{p.points ? `+${p.points}` : '0'}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {detailsHref && (
-            <div className="flex items-center justify-end pt-1">
-              <a href={detailsHref} className="text-[11px] text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 underline underline-offset-2 font-medium transition-colors">View details</a>
+              );
+            })}
+          </div>
+          
+          {visibleCount < leaderboardData.length && (
+            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 text-center">
+              <button
+                onClick={() => setVisibleCount(c => c + 20)}
+                className="px-4 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-xs font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors uppercase tracking-wide"
+              >
+                Load More
+              </button>
             </div>
           )}
         </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 p-3 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-4">
-        {/* ──────────────────────── Season Selector */}
-        {seasonsData && seasonsData.length > 1 && (
-          <div className="flex justify-end">
-            <select
-              value={selectedSeason}
-              onChange={(e) => setSelectedSeason(e.target.value)}
-              className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium shadow-sm hover:border-slate-400 dark:hover:border-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              {seasonsData.map((season) => (
-                <option key={season.slug} value={season.slug}>
-                  {season.year}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* ──────────────────────── Header Section with Title and Metrics Grid */}
-        <section>
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-700/50 bg-gradient-to-br from-white via-white to-slate-50/30 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-900/50 shadow-lg backdrop-blur-sm mb-4">
-            <div className="relative px-4 py-6 md:px-8 md:py-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">NBA Predictions Leaderboard</h1>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Season {seasonInfo?.year || selectedSeason.replace('-', '–')} • Live rankings</p>
-                  <a
-                    href={`/leaderboard/${selectedSeason}/detailed/`}
-                    className="mt-2 inline-flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors"
-                  >
-                    See points breakdown
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-                </div>
-                <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900/40 backdrop-blur px-3 py-2.5 border border-slate-200/60 dark:border-slate-700/40 shadow-sm">
-                  <div className="px-2.5 text-center">
-                    <div className="text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400">Players</div>
-                    <div className="text-lg font-bold text-teal-600 dark:text-teal-400 mt-0.5">{totals.totalPlayers}</div>
-                  </div>
-                  <div className="px-2.5 text-center">
-                    <div className="text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400">Predictions</div>
-                    <div className="text-lg font-bold text-teal-600 dark:text-teal-400 mt-0.5">{totals.totalPredictions || '—'}</div>
-                  </div>
-                  <div className="px-2.5 text-center">
-                    <div className="text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400">Accuracy</div>
-                    <div className="text-lg font-bold text-teal-600 dark:text-teal-400 mt-0.5">{totals.avgAccuracy ? `${(totals.avgAccuracy * 100).toFixed(0)}%` : '—'}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ──────────────────────── Leaderboard Table Section */}
-        <section className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/50 rounded-xl shadow-lg">
-          {/* Title */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200/80 dark:border-slate-700/60">
-            <Trophy className="w-5 h-5 text-amber-500" />
-            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Rankings</h2>
-          </div>
-
-          {/* Rows */}
-          <div className="divide-y divide-slate-100 dark:divide-slate-700/40">
-            {leaderboardData.slice(0, visibleCount).map((entry) => (
-              <div key={entry.user.id} className="bg-white/60 dark:bg-slate-800/40 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/30">
-                {/* ─── Row (click to expand/collapse) */}
-                <button
-                  type="button"
-                  onClick={() => toggleUserExpansion(entry.user.id)}
-                  className="w-full px-3 py-3 md:px-4 md:py-3.5 flex items-center justify-between transition-colors"
-                >
-                  {/* Left side (rank, avatar, name) */}
-                  <div className="flex items-center gap-3">
-                    {rankIcon(entry.rank)}
-
-                    <div className="relative w-9 h-9">
-                      {entry.user.avatar ? (
-                        <img
-                          src={entry.user.avatar}
-                          alt={`${entry.user.display_name || entry.user.username} avatar`}
-                          className="w-full h-full rounded-full object-cover border-2 border-slate-200 dark:border-slate-600"
-                          onError={(e) => (e.currentTarget.style.display = 'none')}
-                        />
-                      ) : (
-                        <div className="w-full h-full rounded-full border-2 border-slate-200 dark:border-slate-600 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
-                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                            {(entry.user.display_name || entry.user.username)
-                              .slice(0, 2)
-                              .toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <p className="font-semibold text-[15px] text-slate-900 dark:text-white">
-                          {entry.user.display_name || entry.user.username}
-                        </p>
-                        {Array.isArray(entry.user.badges) && entry.user.badges.slice(0, 3).map((b, i) => (
-                          <span key={i} title={b.type === 'category_best' ? `Top in ${b.category}` : ''} className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
-                            {b.category?.split(' ')[0] || 'Best'}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right side (totals, category bars, chevron) */}
-                  <div className="flex items-center gap-4 md:gap-6">
-                    {/* Points */}
-                    <div className="text-right">
-                      <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
-                        {entry.user.total_points.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">pts</p>
-                    </div>
-
-                    {/* Small progress bars for each category */}
-                    <div className="hidden md:flex items-center gap-3">
-                      {Object.entries(entry.user.categories).map(([category, data]) => (
-                        <div key={category} className="text-center min-w-[80px]">
-                          <p className="mb-1 text-[9px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">
-                            {category.replace('Regular Season ', 'Reg. ')}
-                          </p>
-                          <ProgressBar value={data.points} max={data.max_points} size="sm" color="bg-teal-500" bgColor="bg-slate-200 dark:bg-slate-700" />
-                          <p className="mt-1 text-[10px] text-slate-600 dark:text-slate-300 font-medium">{data.points}/{data.max_points}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Expand / collapse icon */}
-                    {expandedUsers.has(entry.user.id) ? (
-                      <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                    )}
-                  </div>
-                </button>
-
-                {/* ─── Expanded details */}
-                {expandedUsers.has(entry.user.id) && (
-                  <div className="px-3 pb-4 md:px-4 md:pb-5 bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-800/30 dark:to-slate-900/20">
-                    <div className="grid gap-3 lg:grid-cols-3">
-                      <CategoryCard icon={BarChart3} title="Regular Season Standings" userId={entry.user.id} data={getCategory(entry, 'Regular Season Standings')} detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=standings&user=${entry.user.id}`} />
-                      <CategoryCard icon={Award} title="Player Awards" userId={entry.user.id} data={getCategory(entry, 'Player Awards')} detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=awards&user=${entry.user.id}`} />
-                      <CategoryCard icon={ListChecks} title="Props & Yes/No" userId={entry.user.id} data={getCategory(entry, 'Props & Yes/No')} detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=props&user=${entry.user.id}`} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ──────────────────────── Load More */}
-        {visibleCount < leaderboardData.length && (
-          <div className="text-center mt-4 mb-6">
-            <button
-              className="px-5 py-2 border rounded-lg bg-white text-slate-700 border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-all text-sm font-medium shadow-sm hover:shadow"
-              onClick={() => setVisibleCount((prevCount) => prevCount + 20)}
-            >
-              Load More ({visibleCount} of {leaderboardData.length})
-            </button>
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   );
 }
