@@ -189,8 +189,12 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
 
   const addUser = (id) => setSelectedUserIds(prev => Array.from(new Set([...prev, String(id)])));
   const togglePin = (id) => {
-    setPinnedUserIds(prev => prev.includes(String(id)) ? prev.filter(x => String(x) !== String(id)) : [...prev, String(id)]);
-    setPinPulseId(String(id)); window.setTimeout(() => setPinPulseId(null), 350);
+    const update = () => {
+      setPinnedUserIds(prev => prev.includes(String(id)) ? prev.filter(x => String(x) !== String(id)) : [...prev, String(id)]);
+      setPinPulseId(String(id)); window.setTimeout(() => setPinPulseId(null), 350);
+    };
+    if (document.startViewTransition) document.startViewTransition(update);
+    else update();
   };
 
   useEffect(() => {
@@ -252,6 +256,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               section={section}
               displayedUsers={displayedUsers}
               pinnedUserIds={pinnedUserIds}
+              pinPulseId={pinPulseId}
               togglePin={togglePin}
               westOrder={westOrder}
               eastOrder={eastOrder}
@@ -267,6 +272,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               section={section}
               displayedUsers={displayedUsers}
               pinnedUserIds={pinnedUserIds}
+              pinPulseId={pinPulseId}
               togglePin={togglePin}
               westOrder={westOrder}
               eastOrder={eastOrder}

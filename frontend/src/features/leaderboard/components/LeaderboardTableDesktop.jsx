@@ -7,6 +7,7 @@ export const LeaderboardTableDesktop = ({
   section,
   displayedUsers,
   pinnedUserIds,
+  pinPulseId,
   togglePin,
   westOrder,
   eastOrder,
@@ -80,13 +81,14 @@ export const LeaderboardTableDesktop = ({
             <div className="flex h-full">
               {displayedUsers.map((e) => {
                 const isPinned = pinnedUserIds.includes(String(e.user.id));
+                const isPulse = String(e.user.id) === String(pinPulseId);
                 return (
                   <div
                     key={e.user.id}
-                    className={`flex-shrink-0 px-2 flex items-center justify-center group transition-colors ${
+                    className={`flex-shrink-0 px-2 flex items-center justify-center group transition-all duration-300 ${
                       isPinned ? 'bg-sky-50 dark:bg-sky-900/30' : ''
-                    }`}
-                    style={{ width: userColWidth }}
+                    } ${isPulse ? 'scale-110 bg-sky-100 dark:bg-sky-800/50 shadow-sm z-10' : ''}`}
+                    style={{ width: userColWidth, viewTransitionName: `user-desktop-${e.user.id}` }}
                   >
                     <div className="flex flex-col items-center">
                       <div className="flex items-center gap-1 mb-0.5">

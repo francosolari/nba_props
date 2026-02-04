@@ -7,6 +7,7 @@ export const LeaderboardTableMobile = ({
   section,
   displayedUsers,
   pinnedUserIds,
+  pinPulseId,
   togglePin,
   westOrder,
   eastOrder,
@@ -152,10 +153,11 @@ export const LeaderboardTableMobile = ({
                             <div className="min-w-max">
                               {displayedUsers.map(e => {
                                 const catPts = e.user.categories?.[catKey]?.points || 0;
+                                const isPulse = String(e.user.id) === String(pinPulseId);
                                 return (
-                                  <div key={e.user.id} className="flex border-b border-slate-100 dark:border-slate-800">
+                                  <div key={e.user.id} className="flex border-b border-slate-100 dark:border-slate-800" style={{ viewTransitionName: `user-mobile-${conf}-${e.user.id}` }}>
                                     {/* Sticky player name + pin */}
-                                    <div className="flex-shrink-0 sticky left-0 z-10 w-[100px] bg-white dark:bg-slate-950 px-2 py-3 border-r border-slate-100 dark:border-slate-800 flex items-center gap-1">
+                                    <div className={`flex-shrink-0 sticky left-0 z-10 w-[100px] px-2 py-3 border-r border-slate-100 dark:border-slate-800 flex items-center gap-1 transition-colors duration-300 ${isPulse ? 'bg-sky-100 dark:bg-sky-800/60' : 'bg-white dark:bg-slate-950'}`}>
                                       <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
                                       <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-colors ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500' : 'text-slate-200 dark:text-slate-700'}`}>
                                         <Pin className="w-3 h-3" />
@@ -237,7 +239,7 @@ export const LeaderboardTableMobile = ({
                     {displayedUsers.map(e => {
                       const catPts = e.user.categories?.[catKey]?.points || 0;
                       return (
-                        <tr key={e.user.id}>
+                        <tr key={e.user.id} style={{ viewTransitionName: `user-mobile-${e.user.id}` }}>
                           <td className="sticky left-0 z-10 bg-white dark:bg-slate-950 px-2 py-3.5 border-r border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-1">
                               <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
