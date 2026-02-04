@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useLeaderboard } from '../hooks';
-import { standingPoints } from '../features/leaderboard/utils/helpers';
+import { standingPoints, fromSectionKey } from '../features/leaderboard/utils/helpers';
 
 // Components
 import { LeaderboardHeader } from '../features/leaderboard/components/LeaderboardHeader';
@@ -73,6 +73,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   }, [leaderboardData, loggedInUsername]);
   const loggedInUserId = loggedInEntry?.user?.id ? String(loggedInEntry.user.id) : null;
 
+  // Add logged-in user to pinned and selected
   useEffect(() => {
     if (!loggedInUserId) return;
     setPinnedUserIds(prev => prev.includes(loggedInUserId) ? prev : [...prev, loggedInUserId]);
@@ -81,6 +82,23 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
       setSelectedUserIds(prev => prev.map(String).includes(loggedInUserId) ? prev : [loggedInUserId, ...prev]);
     }
   }, [loggedInUserId]);
+
+  // Populate initial selection with top users when data first loads
+  const [initialPopulated, setInitialPopulated] = useState(false);
+  useEffect(() => {
+    if (initialPopulated || !leaderboardData?.length) return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('users')) {
+      setInitialPopulated(true);
+      return; // URL has explicit users, don't override
+    }
+    const top4 = leaderboardData.slice(0, 4).map(e => String(e.user.id));
+    setSelectedUserIds(prev => {
+      const combined = new Set([...prev.map(String), ...top4]);
+      return Array.from(combined);
+    });
+    setInitialPopulated(true);
+  }, [leaderboardData, initialPopulated]);
 
   const standingsTeams = useMemo(() => {
     const catKey = 'Regular Season Standings';
@@ -150,8 +168,15 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const displayedUsers = useMemo(() => {
     const base = showAll ? withSimTotals : selectedUserIds.map(id => withSimTotals.find(e => String(e.user.id) === String(id))).filter(Boolean);
     let arr = base.slice();
+    const sortCategoryKey = fromSectionKey(section);
     if (sortBy === 'total') arr.sort((a, b) => (b.user.total_points || 0) - (a.user.total_points || 0));
-    if (sortBy === 'standings') arr.sort((a, b) => (b.user.categories?.['Regular Season Standings']?.points || 0) - (a.user.categories?.['Regular Season Standings']?.points || 0));
+    if (sortBy === 'standings') {
+      arr.sort((a, b) => {
+        const aCategoryPoints = a.user.categories?.[sortCategoryKey]?.points || 0;
+        const bCategoryPoints = b.user.categories?.[sortCategoryKey]?.points || 0;
+        return (bCategoryPoints - aCategoryPoints) || ((b.user.total_points || 0) - (a.user.total_points || 0));
+      });
+    }
     if (sortBy === 'name') arr.sort((a, b) => (a.user.display_name || a.user.username).localeCompare(b.user.display_name || b.user.username));
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -184,8 +209,8 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   if (error) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 flex items-center justify-center text-rose-500 font-bold">{String(error)}</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-sky-500/30 text-sm">
-      
+    <div className="h-screen md:min-h-screen md:h-auto overflow-hidden md:overflow-visible bg-slate-50 dark:bg-slate-950 font-sans selection:bg-sky-500/30 text-sm flex flex-col">
+
       <LeaderboardHeader
         selectedSeason={selectedSeason}
         seasonsData={seasonsData}
@@ -212,8 +237,8 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
       />
 
       {/* ─── 3. Main Content ─── */}
-      <main className="max-w-[1600px] mx-auto px-0 md:px-4 py-0 md:py-6 pb-20">
-        
+      <main className="flex-1 min-h-0 w-full px-0 md:px-4 py-0 md:pb-20 overflow-hidden md:overflow-visible">
+
         {/* Showcase Mode */}
         {mode === 'showcase' && (
           <LeaderboardShowcase primaryUser={primaryUser} />
@@ -221,7 +246,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
 
         {/* Compare Mode */}
         {mode === 'compare' && (
-          <div className="bg-white dark:bg-slate-900 border-y md:border border-slate-200 dark:border-slate-800 md:rounded-2xl shadow-sm overflow-hidden flex flex-col">
+          <div className="h-full md:h-auto bg-white dark:bg-slate-900 border-y md:border border-slate-200 dark:border-slate-800 md:rounded-2xl shadow-sm overflow-hidden md:overflow-visible flex flex-col">
             
             <LeaderboardTableDesktop
               section={section}
@@ -241,6 +266,8 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
             <LeaderboardTableMobile
               section={section}
               displayedUsers={displayedUsers}
+              pinnedUserIds={pinnedUserIds}
+              togglePin={togglePin}
               westOrder={westOrder}
               eastOrder={eastOrder}
               setWestOrder={setWestOrder}
