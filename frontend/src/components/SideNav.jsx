@@ -80,7 +80,7 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, href: '/' },
     { id: 'submissions', label: 'My Submissions', icon: FileText, href: `/submit/${currentSeasonSlug}/` },
-    { id: 'ist-center', label: 'IST Center', icon: Medal, href: `/ist/${currentSeasonSlug}/`, special: true },
+    { id: 'ist-center', label: 'IST Center', icon: Medal, href: `/ist/${currentSeasonSlug}/`},
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, href: `/leaderboard/${currentSeasonSlug}/` },
     { id: 'breakdown', label: 'Points Breakdown', icon: BarChart3, href: `/leaderboard/${currentSeasonSlug}/detailed/` },
     { id: 'profile', label: 'Profile', icon: User, href: `/user/profile/` },
@@ -187,17 +187,17 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
         </button>
 
         {/* Mobile Overlay */}
-        {isMobileOpen && (
-          <>
-            <div
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-              onClick={() => setIsMobileOpen(false)}
-            />
-            <div className="fixed inset-y-0 left-0 z-[60] w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
-              <NavContent />
-            </div>
-          </>
-        )}
+        <div
+          className={`fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          onClick={() => setIsMobileOpen(false)}
+          aria-hidden={!isMobileOpen}
+        />
+        <div
+          className={`fixed inset-y-0 left-0 z-[60] w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 flex flex-col transform transition-transform duration-300 ease-out ${isMobileOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'}`}
+          aria-hidden={!isMobileOpen}
+        >
+          <NavContent />
+        </div>
       </>
     );
   }
@@ -205,7 +205,7 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   // Desktop: Sidebar
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-40 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 shadow-lg flex flex-col transition-all duration-300 ${isExpanded ? 'w-64' : 'w-16'
+      className={`fixed inset-y-0 left-0 z-40 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ${isExpanded ? 'w-64' : 'w-16'
         }`}
     >
       <NavContent />
