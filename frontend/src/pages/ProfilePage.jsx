@@ -1,141 +1,47 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import axios from "axios";
-import EditablePredictionBoard from "../components/EditablePredictionBoard";
+import React, { useState, useMemo, useCallback } from "react";
 import {
-  Trophy,
-  Target,
-  Award,
-  ChevronRight,
-  ChevronDown,
-  Lock,
-  Unlock,
-  User as UserIcon,
-  Mail,
-  Key,
-  LogOut,
-  ExternalLink,
-  TrendingUp,
-  BarChart3,
-  CheckCircle2,
-  XCircle,
-  Hourglass,
-  X,
-  Edit2,
-  Save,
-  AlertCircle,
-} from "lucide-react";
-import useLeaderboard from "../hooks/useLeaderboard";
-import UserExpandedView from "../components/UserExpandedView";
-import QuestionForm from "../components/QuestionForm";
-import DisplayPredictionsBoard from "../components/DisplayPredictions";
+  useLeaderboard,
+  useProfileData,
+  useProfileAnswers,
+  useProfileStats,
+} from "../hooks";
 
-function getRootProps() {
-  const el = document.getElementById("profile-root");
-  return {
-    userId: el?.getAttribute("data-user-id") || "",
-    username: el?.getAttribute("data-username") || "",
-    displayName: el?.getAttribute("data-display-name") || "",
-    seasonSlug: el?.getAttribute("data-season-slug") || "current",
-    seasonsCsv: el?.getAttribute("data-seasons") || "",
-  };
-}
-
-function avatarUrl(name) {
-  const n = (name || "User").trim();
-  return `https://avatar-placeholder.iran.liara.run/username/${encodeURIComponent(n)}?width=160&height=160&fontSize=64`;
-}
-
-// Modal Component for Logout Confirmation
-function LogoutModal({ isOpen, onClose, onConfirm }) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-slate-200 dark:border-slate-700">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center">
-              <LogOut className="w-6 h-6 text-rose-600 dark:text-rose-400" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-              Sign Out
-            </h3>
-          </div>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">
-            Are you sure you want to sign out? You'll need to sign in again to
-            access your predictions.
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700 font-medium transition-colors"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import LogoutModal from "../components/profile/LogoutModal";
+import ProfileHero from "../components/profile/ProfileHero";
+import ProfileStats from "../components/profile/ProfileStats";
+import ProfileTabs from "../components/profile/ProfileTabs";
+import DashboardTab from "../components/profile/DashboardTab";
+import StandingsTab from "../components/profile/StandingsTab";
+import QuestionsTab from "../components/profile/QuestionsTab";
+import SubmissionsTab from "../components/profile/SubmissionsTab";
+import SettingsTab from "../components/profile/SettingsTab";
 
 const pageShellClasses =
-  "min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 py-6 pb-20";
-const containerClasses = "container mx-auto px-4 space-y-5";
-const panelClasses =
-  "rounded-md border border-slate-200/60 dark:border-slate-700/50 bg-white dark:bg-slate-800 shadow-sm";
-const mutedPanelClasses =
-  "rounded-md border border-slate-200/70 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/60";
+  "min-h-screen bg-[#F8FAFC] dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 font-sans selection:bg-teal-500/30";
 
 export default function ProfilePage({
   seasonSlug: seasonFromProp = "current",
 }) {
-  const { userId, username, displayName, seasonSlug, seasonsCsv } =
-    getRootProps();
-  const initialSeason = seasonFromProp || seasonSlug || "current";
-  const [selectedSeason, setSelectedSeason] = useState(initialSeason);
-  const [seasons, setSeasons] = useState(() =>
-    seasonsCsv
-      ? seasonsCsv
-          .split(",")
-          .filter(Boolean)
-          .map((slug) => ({ slug }))
-      : [{ slug: initialSeason }],
-  );
+  const {
+    userId,
+    username,
+    displayName,
+    selectedSeason,
+    setSelectedSeason,
+    seasons,
+    selectedSeasonObj,
+    canEdit
+  } = useProfileData(seasonFromProp);
+
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await axios.get("/api/v2/seasons/");
-        if (mounted && Array.isArray(res.data) && res.data.length) {
-          setSeasons(res.data);
-          if (!res.data.find((s) => s.slug === selectedSeason)) {
-            setSelectedSeason(res.data[0].slug);
-          }
-        }
-      } catch (_) {
-        // Fallback silently to server-provided CSV
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const { data, isLoading, error } = useLeaderboard(selectedSeason);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [answers, setAnswers] = useState([]);
-  const [categories, setCategories] = useState(null);
-  const [interestingStats, setInterestingStats] = useState(null);
-  const [statsLoading, setStatsLoading] = useState(false);
+
+  const { data } = useLeaderboard(selectedSeason);
+  const { answers, categories } = useProfileAnswers(activeTab, selectedSeason, username, null); // meUsername handled inside hook logic if needed, but here we pass username or null. Wait, the hook expects (activeTab, selectedSeason, username, meUsername).
+  // Let's check how I implemented useProfileAnswers.
+  // It uses: username || meUsername || ""
+  // In ProfilePage original: username || me?.user?.username || ""
+  // So I need 'me'.
 
   const me = useMemo(() => {
     if (!Array.isArray(data)) return null;
@@ -167,180 +73,60 @@ export default function ProfilePage({
     };
   }, [data, userId, username, displayName]);
 
-  // Use categories from API if available, otherwise fall back to leaderboard data
+  // Re-calling hooks with correct params now that 'me' is defined
+  // Actually hooks can't be conditional or depend on variable defined after.
+  // But 'me' depends on 'data' which comes from useLeaderboard.
+  // So I can pass me?.user?.username to the hooks.
+
+  // However, I can't call hooks conditionally.
+  // I'll pass the values to the hooks.
+
+  const { answers: fetchedAnswers, categories: fetchedCategories } = useProfileAnswers(activeTab, selectedSeason, username, me?.user?.username);
+  const { interestingStats, statsLoading } = useProfileStats(selectedSeason, username, me?.user?.username);
+
   const cats = me?.user?.categories || {};
-  const standings = categories?.regular_season_standings
+
+  // We need to merge fetched categories with 'me' categories or use one of them.
+  // Original code:
+  // const standings = categories?.regular_season_standings ? ... : cats["Regular Season Standings"] ...
+
+  const standings = fetchedCategories?.regular_season_standings
     ? {
-        points: categories.regular_season_standings.points || 0,
-        max_points: categories.regular_season_standings.max_points || 0,
-        predictions: cats["Regular Season Standings"]?.predictions || [],
-      }
+      points: fetchedCategories.regular_season_standings.points || 0,
+      max_points: fetchedCategories.regular_season_standings.max_points || 0,
+      predictions: cats["Regular Season Standings"]?.predictions || [],
+    }
     : cats["Regular Season Standings"] || {
-        points: 0,
-        max_points: 0,
-        predictions: [],
-      };
-  const awards = categories?.player_awards
+      points: 0,
+      max_points: 0,
+      predictions: [],
+    };
+
+  const awards = fetchedCategories?.player_awards
     ? {
-        points: categories.player_awards.points || 0,
-        max_points: categories.player_awards.max_points || 0,
-        predictions: cats["Player Awards"]?.predictions || [],
-      }
+      points: fetchedCategories.player_awards.points || 0,
+      max_points: fetchedCategories.player_awards.max_points || 0,
+      predictions: cats["Player Awards"]?.predictions || [],
+    }
     : cats["Player Awards"] || {
-        points: 0,
-        max_points: 0,
-        predictions: [],
-      };
-  const props = categories?.props_and_yes_no
+      points: 0,
+      max_points: 0,
+      predictions: [],
+    };
+
+  const props = fetchedCategories?.props_and_yes_no
     ? {
-        points: categories.props_and_yes_no.points || 0,
-        max_points: categories.props_and_yes_no.max_points || 0,
-        predictions: cats["Props & Yes/No"]?.predictions || [],
-      }
+      points: fetchedCategories.props_and_yes_no.points || 0,
+      max_points: fetchedCategories.props_and_yes_no.max_points || 0,
+      predictions: cats["Props & Yes/No"]?.predictions || [],
+    }
     : cats["Props & Yes/No"] || {
-        points: 0,
-        max_points: 0,
-        predictions: [],
-      };
-
-  const expandedCategories = useMemo(() => {
-    const toItems = (preds, isStandings) =>
-      (preds || []).map((p, idx) => ({
-        id: p.question_id || `${p.team}-${idx}`,
-        question: p.question || (isStandings ? p.team : ""),
-        answer: p.answer,
-        correct: typeof p.correct === "boolean" ? p.correct : undefined,
-        points: p.points || 0,
-        team_name: isStandings ? p.team : undefined,
-        predicted_position: isStandings ? p.predicted_position : undefined,
-        actual_position: isStandings ? p.actual_position : undefined,
-      }));
-    return [
-      {
-        id: "regular",
-        type: "Regular",
-        icon: "grid",
-        title: "Regular Season Standings",
-        points: standings.points || 0,
-        maxPoints: standings.max_points || 0,
-        predictions: toItems(standings.predictions, true),
-      },
-      {
-        id: "awards",
-        type: "Awards",
-        icon: "award",
-        title: "Player Awards",
-        points: awards.points || 0,
-        maxPoints: awards.max_points || 0,
-        predictions: toItems(awards.predictions, false),
-      },
-      {
-        id: "props",
-        type: "Props",
-        icon: "target",
-        title: "Props & Yes/No",
-        points: props.points || 0,
-        maxPoints: props.max_points || 0,
-        predictions: toItems(props.predictions, false),
-      },
-    ];
-  }, [standings, awards, props]);
-
-  const confLists = useMemo(() => {
-    const preds = (standings?.predictions || []).slice();
-    const west = [];
-    const east = [];
-    preds.forEach((p) => {
-      const isWest = String(p?.conference || "")
-        .toLowerCase()
-        .startsWith("w");
-      (isWest ? west : east).push(p);
-    });
-    const order = (arr) =>
-      arr.sort((a, b) => (a.predicted_position || 999) - (b.predicted_position || 999));
-    return { west: order(west), east: order(east) };
-  }, [standings]);
-
-  const teamSlug = useCallback((name = '') =>
-    name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-'), []);
+      points: 0,
+      max_points: 0,
+      predictions: [],
+    };
 
   const compareHref = `/leaderboard/${encodeURIComponent(selectedSeason)}/detailed/?user=${encodeURIComponent(me?.user?.id || "")}&section=standings`;
-  const selectedSeasonObj =
-    seasons.find((s) => s.slug === selectedSeason) || {};
-  const canEdit = useMemo(() => {
-    try {
-      const now = new Date();
-      const start = selectedSeasonObj.submission_start_date
-        ? new Date(selectedSeasonObj.submission_start_date)
-        : null;
-      const end = selectedSeasonObj.submission_end_date
-        ? new Date(selectedSeasonObj.submission_end_date)
-        : null;
-      if (!end) return false;
-      if (start && now < start) return false;
-      return now <= end;
-    } catch (_) {
-      return false;
-    }
-  }, [selectedSeasonObj]);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        if (activeTab !== "questions" && activeTab !== "dashboard") return;
-        const res = await axios.get(
-          `/api/v2/answers/user/${encodeURIComponent(username || me?.user?.username || "")}`,
-          {
-            params: { season_slug: selectedSeason, resolve_names: true },
-          },
-        );
-        if (mounted) {
-          setAnswers(Array.isArray(res.data?.answers) ? res.data.answers : []);
-          setCategories(res.data?.categories || null);
-        }
-      } catch (_) {
-        if (mounted) {
-          setAnswers([]);
-          setCategories(null);
-        }
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [activeTab, selectedSeason, username, me?.user?.username]);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        if (activeTab !== "dashboard") return;
-        if (!username && !me?.user?.username) return;
-
-        setStatsLoading(true);
-        const res = await axios.get(
-          `/api/v2/homepage/interesting-stats/${encodeURIComponent(username || me?.user?.username || "")}`,
-          {
-            params: { season_slug: selectedSeason },
-          },
-        );
-        if (mounted) setInterestingStats(res.data);
-      } catch (err) {
-        if (mounted) setInterestingStats(null);
-        console.error("Failed to fetch interesting stats:", err);
-      } finally {
-        if (mounted) setStatsLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [activeTab, selectedSeason, username, me?.user?.username]);
 
   const handleLogout = useCallback(() => {
     setShowLogoutModal(true);
@@ -351,1103 +137,73 @@ export default function ProfilePage({
   }, []);
 
   return (
-      <div className={pageShellClasses}>
-        <LogoutModal
-          isOpen={showLogoutModal}
-          onClose={() => setShowLogoutModal(false)}
-          onConfirm={confirmLogout}
+    <div className={pageShellClasses}>
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+      />
+
+      <ProfileHero
+        me={me}
+        seasons={seasons}
+        selectedSeason={selectedSeason}
+        onSeasonChange={setSelectedSeason}
+      />
+
+      {/* Main Content */}
+      <div className="container mx-auto px-2 sm:px-4 max-w-6xl -mt-6 sm:-mt-10 md:-mt-12 relative z-20">
+        <ProfileStats
+          me={me}
+          data={data}
+          standings={standings}
+          awards={awards}
+          props={props}
         />
 
-        <div className={containerClasses}>
-          <section className={`${panelClasses} p-4 md:p-6`}>
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="h-14 w-14 md:h-16 md:w-16 rounded-full overflow-hidden border-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 flex-shrink-0">
-                  <img
-                    alt="Avatar"
-                    className="h-full w-full object-cover"
-                    src={avatarUrl(
-                      me?.user?.display_name || me?.user?.username,
-                    )}
-                  />
-                </div>
-                <div>
-                  <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
-                    {me?.user?.display_name || me?.user?.username}
-                  </h1>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
-                    @{me?.user?.username}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">
-                  Season
-                </span>
-                <div className="relative">
-                  <select
-                    value={selectedSeason}
-                    onChange={(e) => setSelectedSeason(e.target.value)}
-                    className="appearance-none border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm font-medium px-3 py-2 pr-9 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-500"
-                  >
-                    {seasons.map((s) => (
-                      <option key={s.slug} value={s.slug}>
-                        {s.slug}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
-                </div>
-              </div>
-            </div>
-          </section>
+        <ProfileTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          canEdit={canEdit}
+        />
 
-          {/* Stats Overview - Always visible */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className={`${mutedPanelClasses} p-4`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Trophy className="w-4 h-4 text-amber-600 dark:text-amber-500" />
-                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                  Rank
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {me?.rank ? `#${me.rank}` : "—"}
-              </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {data?.length || 0} players
-              </div>
-            </div>
-
-            <div className={`${mutedPanelClasses} p-4`}>
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-teal-600 dark:text-teal-500" />
-                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                  Total Points
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {me?.user?.total_points?.toLocaleString() || "0"}
-              </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                across all categories
-              </div>
-            </div>
-
-            <div className={`${mutedPanelClasses} p-4`}>
-              <div className="flex items-center gap-2 mb-2">
-                <BarChart3 className="w-4 h-4 text-sky-600 dark:text-sky-500" />
-                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                  Standings
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {standings.points || 0}
-              </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                of {standings.max_points || 0} pts
-              </div>
-            </div>
-
-            <div className={`${mutedPanelClasses} p-4`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="w-4 h-4 text-rose-600 dark:text-rose-500" />
-                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                  Props &amp; Awards
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {(awards.points || 0) + (props.points || 0)}
-              </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                of {(awards.max_points || 0) + (props.max_points || 0)} pts
-              </div>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className={`${panelClasses} p-1 overflow-hidden`}>
-            <div className="flex gap-1 overflow-x-auto overflow-y-hidden hide-scrollbar snap-x snap-mandatory">
-              {[
-                { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-                { id: "standings", label: "Standings", icon: Trophy },
-                { id: "questions", label: "Questions", icon: Target },
-                ...(canEdit ? [{ id: "submissions", label: "Submissions", icon: Edit2 }] : []),
-                { id: "settings", label: "Settings", icon: UserIcon },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
-                  className={`flex-1 min-w-[110px] px-2.5 md:px-3 py-2 rounded-md text-xs font-semibold transition-all duration-200 inline-flex items-center justify-center gap-1.5 whitespace-nowrap snap-start ${
-                    activeTab === t.id
-                      ? "bg-gradient-to-br from-teal-500 to-teal-600 dark:from-teal-600 dark:to-teal-700 text-white shadow-md shadow-teal-500/30"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/50"
-                  }`}
-                >
-                  <t.icon className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="hidden sm:inline">{t.label}</span>
-                  <span className="sm:hidden">{t.label.split(' ')[0]}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab Panels */}
+        {/* Content Area */}
+        <div className="min-h-[400px]">
           {activeTab === "dashboard" && (
-            <div className="space-y-4">
-              {/* Performance Summary */}
-              <div className={`${panelClasses} p-5`}>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-500" />
-                  Performance Summary
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    {
-                      title: "Regular Season Standings",
-                      icon: BarChart3,
-                      data: standings,
-                      color: "teal",
-                      href: `/leaderboard/${encodeURIComponent(selectedSeason)}/detailed/?user=${encodeURIComponent(me?.user?.id || "")}&section=standings`,
-                    },
-                    {
-                      title: "Player Awards",
-                      icon: Award,
-                      data: awards,
-                      color: "amber",
-                      href: null,
-                    },
-                    {
-                      title: "Props & Predictions",
-                      icon: Target,
-                      data: props,
-                      color: "rose",
-                      href: null,
-                    },
-                  ].map(({ title, icon: Icon, data, color, href }) => {
-                    const percentage =
-                      data.max_points > 0
-                        ? Math.round((data.points / data.max_points) * 100)
-                        : 0;
-                    const colorClasses = {
-                      teal: {
-                        bg: "bg-teal-500/80 dark:bg-teal-500/90",
-                        icon: "text-teal-600 dark:text-teal-500",
-                        border: "border-teal-200 dark:border-teal-700",
-                      },
-                      amber: {
-                        bg: "bg-amber-500/80 dark:bg-amber-500/90",
-                        icon: "text-amber-600 dark:text-amber-500",
-                        border: "border-amber-200 dark:border-amber-700",
-                      },
-                      rose: {
-                        bg: "bg-rose-500/80 dark:bg-rose-500/90",
-                        icon: "text-rose-600 dark:text-rose-500",
-                        border: "border-rose-200 dark:border-rose-700",
-                      },
-                    };
-                    const styles = colorClasses[color];
-
-                    const card = (
-                      <div
-                        className={`${panelClasses} p-4 hover:shadow-lg transition-all duration-200 ${href ? "cursor-pointer" : ""}`}
-                      >
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className={`p-2 rounded-lg ${styles.border} border bg-white dark:bg-slate-800`}>
-                            <Icon className={`w-5 h-5 ${styles.icon}`} />
-                          </div>
-                          <h4 className="text-sm font-bold text-slate-900 dark:text-white flex-1">
-                            {title}
-                          </h4>
-                          {href && <ExternalLink className="w-4 h-4 text-slate-400" />}
-                        </div>
-                        <div className="mb-3">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-bold text-slate-900 dark:text-white">
-                              {data.points || 0}
-                            </span>
-                            <span className="text-lg text-slate-500 dark:text-slate-400">
-                              / {data.max_points || 0}
-                            </span>
-                            <span className="text-sm text-slate-600 dark:text-slate-400 ml-auto font-medium">
-                              {percentage}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                          <div
-                            className={`h-full ${styles.bg} transition-all duration-500`}
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                        <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                          {data.predictions?.length || 0} predictions made
-                        </div>
-                      </div>
-                    );
-
-                    return href ? (
-                      <a key={title} href={href} className="block">
-                        {card}
-                      </a>
-                    ) : (
-                      <div key={title}>{card}</div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Recent Activity */}
-                <div className={`${panelClasses} p-5`}>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
-                    Recent Predictions
-                  </h3>
-                  {answers.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
-                      No predictions submitted yet
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {answers.slice(0, 5).map((a, idx) => {
-                        const isCorrect = a.is_correct === true;
-                        const isIncorrect = a.is_correct === false;
-                        const isPending = a.is_correct === null || typeof a.is_correct === "undefined";
-
-                        return (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />}
-                              {isIncorrect && <XCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />}
-                              {isPending && <Hourglass className="w-4 h-4 text-slate-400 flex-shrink-0" />}
-                              <div className="min-w-0">
-                                <div className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                                  {a.question_text}
-                                </div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                                  {String(a.answer)}
-                                </div>
-                              </div>
-                            </div>
-                            {typeof a.points_earned === "number" && (
-                              <span
-                                className={`text-xs font-bold ml-2 flex-shrink-0 ${
-                                  a.points_earned > 0
-                                    ? "text-emerald-600 dark:text-emerald-500"
-                                    : "text-slate-400 dark:text-slate-500"
-                                }`}
-                              >
-                                +{a.points_earned}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                      {answers.length > 5 && (
-                        <button
-                          onClick={() => setActiveTab("questions")}
-                          className="w-full text-center text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium py-2"
-                        >
-                          View all {answers.length} predictions →
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Standings Preview */}
-                <div className={`${panelClasses} p-5`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Trophy className="w-5 h-5 text-teal-600 dark:text-teal-500" />
-                      Top Standings Picks
-                    </h3>
-                    <button
-                      onClick={() => setActiveTab("standings")}
-                      className="text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium"
-                    >
-                      View All →
-                    </button>
-                  </div>
-                  {standings.predictions?.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
-                      No standings predictions yet
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {(standings.predictions || [])
-                        .filter((p) => (p.points || 0) > 0)
-                        .sort((a, b) => (b.points || 0) - (a.points || 0))
-                        .slice(0, 5)
-                        .map((p, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span
-                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                                  (p.points || 0) === 3
-                                    ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-                                    : (p.points || 0) === 1
-                                      ? "bg-amber-500/20 text-amber-700 dark:text-amber-400"
-                                      : "bg-slate-300 dark:bg-slate-600 text-slate-700 dark:text-slate-400"
-                                }`}
-                              >
-                                {p.predicted_position}
-                              </span>
-                              <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">
-                                {p.team}
-                              </span>
-                            </div>
-                            <span
-                              className={`text-xs font-bold ${
-                                (p.points || 0) > 0
-                                  ? "text-emerald-600 dark:text-emerald-500"
-                                  : "text-slate-400 dark:text-slate-500"
-                              }`}
-                            >
-                              +{p.points || 0}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Interesting Stats Section */}
-              {!statsLoading && interestingStats && (
-                <div className="space-y-4">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-teal-600 dark:text-teal-500" />
-                    Interesting Insights
-                  </h3>
-
-                  {/* Unique Wins */}
-                  {interestingStats.unique_wins?.length > 0 && (
-                    <div className={`${panelClasses} p-5`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Trophy className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                          Unique Wins - Only You Got These Right!
-                        </h4>
-                      </div>
-                      <div className="space-y-2">
-                        {interestingStats.unique_wins.map((stat, idx) => (
-                          <div
-                            key={idx}
-                            className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <div className="text-sm font-semibold text-slate-900 dark:text-white mb-1">
-                                  {stat.question}
-                                </div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400">
-                                  Your answer: <span className="font-bold text-amber-700 dark:text-amber-400">{stat.answer}</span>
-                                </div>
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                <div className="text-lg font-bold text-emerald-600 dark:text-emerald-500">
-                                  +{stat.points_earned}
-                                </div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400">
-                                  1/{stat.total_answers} correct
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Rare Wins */}
-                  {interestingStats.rare_wins?.length > 0 && (
-                    <div className={`${panelClasses} p-5`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Award className="w-5 h-5 text-purple-600 dark:text-purple-500" />
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                          Rare Wins - You're Among The Few!
-                        </h4>
-                      </div>
-                      <div className="space-y-2">
-                        {interestingStats.rare_wins.map((stat, idx) => (
-                          <div
-                            key={idx}
-                            className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-300 dark:border-purple-700/50"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <div className="text-sm font-semibold text-slate-900 dark:text-white mb-1">
-                                  {stat.question}
-                                </div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400">
-                                  Your answer: <span className="font-bold text-purple-700 dark:text-purple-400">{stat.answer}</span>
-                                </div>
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                <div className="text-lg font-bold text-emerald-600 dark:text-emerald-500">
-                                  +{stat.points_earned}
-                                </div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400">
-                                  {stat.correct_percentage}% got it
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Close Calls */}
-                  {interestingStats.close_calls?.length > 0 && (
-                    <div className={`${panelClasses} p-5`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Target className="w-5 h-5 text-blue-600 dark:text-blue-500" />
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                          Close Calls - Tough Decisions
-                        </h4>
-                      </div>
-                      <div className="space-y-2">
-                        {interestingStats.close_calls.map((stat, idx) => (
-                          <div
-                            key={idx}
-                            className={`p-3 rounded-lg border ${
-                              stat.is_correct
-                                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700/50"
-                                : stat.is_correct === false
-                                  ? "bg-rose-50 dark:bg-rose-900/20 border-rose-300 dark:border-rose-700/50"
-                                  : "bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700/50"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <div className="text-sm font-semibold text-slate-900 dark:text-white mb-1">
-                                  {stat.question}
-                                </div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400 mb-2">
-                                  Your answer: <span className="font-bold">{stat.user_answer}</span>
-                                </div>
-                                <div className="flex gap-2 text-xs">
-                                  {Object.entries(stat.distribution).map(([answer, count]) => (
-                                    <div
-                                      key={answer}
-                                      className="px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                                    >
-                                      <span className="font-semibold">{answer}:</span> {count}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                {stat.is_correct === true && (
-                                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
-                                )}
-                                {stat.is_correct === false && (
-                                  <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-500" />
-                                )}
-                                {stat.is_correct === null && (
-                                  <Hourglass className="w-5 h-5 text-slate-400" />
-                                )}
-                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                  {stat.split_percentage}% split
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {!interestingStats.unique_wins?.length &&
-                    !interestingStats.rare_wins?.length &&
-                    !interestingStats.close_calls?.length && (
-                      <div className={`${panelClasses} p-6 text-center text-sm text-slate-500 dark:text-slate-400`}>
-                        No interesting insights available yet. Keep making predictions!
-                      </div>
-                    )}
-                </div>
-              )}
-            </div>
+            <DashboardTab
+              standings={standings}
+              awards={awards}
+              props={props}
+              answers={fetchedAnswers}
+              interestingStats={interestingStats}
+              statsLoading={statsLoading}
+              setActiveTab={setActiveTab}
+              compareHref={compareHref}
+            />
           )}
 
           {activeTab === "standings" && (
-            <div className="space-y-4">
-              {/* Standings Overview */}
-              <div className={`${panelClasses} p-5`}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-teal-600 dark:text-teal-500" />
-                    Regular Season Standings Predictions
-                  </h3>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 text-xs">
-                      <div className="flex items-center gap-1">
-                        <span className="w-4 h-4 rounded-full bg-emerald-500/20" />
-                        <span className="text-slate-600 dark:text-slate-400">3 pts</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-4 h-4 rounded-full bg-amber-500/20" />
-                        <span className="text-slate-600 dark:text-slate-400">1 pt</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-4 h-4 rounded-full bg-slate-300 dark:bg-slate-600" />
-                        <span className="text-slate-600 dark:text-slate-400">0 pts</span>
-                      </div>
-                    </div>
-                    <a
-                      href={compareHref}
-                      className="text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium inline-flex items-center gap-1"
-                    >
-                      Full comparison <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-
-                {/* Points Summary */}
-                <div className="mb-5 p-4 rounded-lg bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 border border-teal-200 dark:border-teal-800">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-1">
-                        Total Standings Points
-                      </div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-teal-900 dark:text-teal-100">
-                          {standings.points || 0}
-                        </span>
-                        <span className="text-lg text-teal-700 dark:text-teal-400">
-                          / {standings.max_points || 0}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-1">
-                        Accuracy
-                      </div>
-                      <div className="text-3xl font-bold text-teal-900 dark:text-teal-100">
-                        {standings.max_points > 0
-                          ? Math.round((standings.points / standings.max_points) * 100)
-                          : 0}
-                        %
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Conference Breakdowns */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  {[
-                    { title: "Eastern Conference", list: confLists.east, color: "blue" },
-                    { title: "Western Conference", list: confLists.west, color: "rose" },
-                  ].map(({ title, list, color }) => {
-                    const colorClasses = {
-                      rose: {
-                        header: "bg-rose-500/10 dark:bg-rose-500/20 border-rose-300 dark:border-rose-700",
-                        text: "text-rose-900 dark:text-rose-100",
-                      },
-                      blue: {
-                        header: "bg-blue-500/10 dark:bg-blue-500/20 border-blue-300 dark:border-blue-700",
-                        text: "text-blue-900 dark:text-blue-100",
-                      },
-                    };
-                    const styles = colorClasses[color];
-
-                    return (
-                      <div key={title}>
-                        <div className={`px-4 py-2.5 rounded-t-lg border ${styles.header} mb-2`}>
-                          <h4 className={`text-sm font-bold ${styles.text}`}>{title}</h4>
-                        </div>
-                        {list.length === 0 ? (
-                          <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400 italic">
-                            No predictions yet
-                          </div>
-                        ) : (
-                          <div className="space-y-1">
-                            {list.map((p) => {
-                              const points = p.points || 0;
-                              const cardBg =
-                                points === 3
-                                  ? "bg-emerald-50/80 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700/50"
-                                  : points === 1
-                                    ? "bg-amber-50/80 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700/50"
-                                    : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700";
-
-                              const pointBadge =
-                                points === 3
-                                  ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-                                  : points === 1
-                                    ? "bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30"
-                                    : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600";
-
-                              return (
-                                <div
-                                  key={`${p.team}-${p.predicted_position}`}
-                                  className={`flex items-center gap-2.5 p-2 rounded-lg border ${cardBg} transition-all hover:shadow-md`}
-                                >
-                                  <span
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border flex-shrink-0 ${pointBadge}`}
-                                  >
-                                    {p.predicted_position}
-                                  </span>
-                                  <img
-                                    className="w-7 h-7 object-contain flex-shrink-0"
-                                    src={`/static/img/teams/${teamSlug(p.team)}.png`}
-                                    alt={p.team}
-                                    onError={(e) => {
-                                      const img = e.currentTarget;
-                                      const slug = teamSlug(p.team);
-                                      const step = parseInt(img.dataset.step || '0', 10);
-                                      if (step === 0) {
-                                        img.dataset.step = '1';
-                                        img.src = `/static/img/teams/${slug}.svg`;
-                                        return;
-                                      }
-                                      if (step === 1) {
-                                        img.dataset.step = '2';
-                                        img.src = `/static/img/teams/${slug}.PNG`;
-                                        return;
-                                      }
-                                      if (step === 2) {
-                                        img.dataset.step = '3';
-                                        img.src = `/static/img/teams/${slug}.SVG`;
-                                        return;
-                                      }
-                                      img.onerror = null;
-                                      img.src = '/static/img/teams/unknown.svg';
-                                    }}
-                                  />
-                                  <div className="min-w-0 flex-1">
-                                    <div className="font-semibold text-sm text-slate-900 dark:text-white truncate">
-                                      {p.team}
-                                    </div>
-                                    <div className="text-xs text-slate-600 dark:text-slate-400">
-                                      Actual: #{p.actual_position ?? "TBD"}
-                                    </div>
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <div
-                                      className={`text-base font-bold ${
-                                        points > 0
-                                          ? "text-emerald-600 dark:text-emerald-500"
-                                          : "text-slate-400 dark:text-slate-500"
-                                      }`}
-                                    >
-                                      +{points}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <StandingsTab standings={standings} />
           )}
 
           {activeTab === "questions" && (
-            <div className="space-y-4">
-              <div className={`${panelClasses} p-5`}>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Target className="w-5 h-5 text-teal-600 dark:text-teal-500" />
-                  Question Predictions
-                </h3>
-
-                {answers.length === 0 ? (
-                  <div className="text-center py-12 text-sm text-slate-500 dark:text-slate-400">
-                    No questions answered for {selectedSeason}
-                  </div>
-                ) : (
-                  <div className="space-y-5">
-                    {(() => {
-                      // Group answers by question type
-                      const grouped = {};
-                      answers.forEach((a) => {
-                        const type = (a.question_type || "Other").toUpperCase();
-                        if (!grouped[type]) grouped[type] = [];
-                        grouped[type].push(a);
-                      });
-
-                      // Color scheme for question types
-                      const typeInfo = {
-                        PROPQUESTION: {
-                          badge: "bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300",
-                          label: "Props",
-                          icon: Target,
-                        },
-                        SUPERLATIVEQUESTION: {
-                          badge: "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300",
-                          label: "Superlatives",
-                          icon: Award,
-                        },
-                        NBAFINALSPREDICTIONQUESTION: {
-                          badge: "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300",
-                          label: "Finals",
-                          icon: Trophy,
-                        },
-                        default: {
-                          badge: "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300",
-                          label: "Other",
-                          icon: AlertCircle,
-                        },
-                      };
-
-                      const getTypeInfo = (type) => typeInfo[type] || typeInfo["default"];
-
-                      return Object.entries(grouped).map(([type, items]) => {
-                        const info = getTypeInfo(type);
-                        const Icon = info.icon;
-                        const totalPoints = items.reduce((sum, a) => sum + (a.points_earned || 0), 0);
-                        const maxPoints = items.reduce((sum, a) => sum + (a.max_points || 0), 0);
-                        const percentage = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
-
-                        return (
-                          <div key={type}>
-                            {/* Type Header */}
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border ${info.badge}`}>
-                                  <Icon className="w-4 h-4" />
-                                  <span className="text-sm font-bold uppercase tracking-wider">{info.label}</span>
-                                </div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                  {items.length} {items.length === 1 ? "question" : "questions"}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="text-right">
-                                  <div className="text-sm font-bold text-slate-900 dark:text-slate-200">
-                                    {totalPoints} / {maxPoints} pts
-                                  </div>
-                                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                                    {percentage}% accuracy
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Questions Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                              {items.map((a, idx) => {
-                                const isCorrect = a.is_correct === true;
-                                const isIncorrect = a.is_correct === false;
-                                const isPending = a.is_correct === null || typeof a.is_correct === "undefined";
-
-                                const baseCard = "rounded-lg border p-4 transition-all hover:shadow-md";
-                                const cardClasses = `${baseCard} ${
-                                  isCorrect
-                                    ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700/50"
-                                    : isIncorrect
-                                      ? "bg-rose-50 dark:bg-rose-900/20 border-rose-300 dark:border-rose-700/50"
-                                      : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
-                                }`;
-
-                                return (
-                                  <div key={idx} className={cardClasses}>
-                                    <div className="text-sm font-semibold text-slate-900 dark:text-white mb-2 leading-snug">
-                                      {a.question_text}
-                                    </div>
-                                    <div className="space-y-1.5 mb-3">
-                                      <div className="text-sm text-slate-800 dark:text-slate-300 p-2 rounded bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-700">
-                                        <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                                          Your answer:
-                                        </span>{" "}
-                                        <span className="font-bold">{String(a.answer)}</span>
-                                      </div>
-                                      {!isPending && a.correct_answer && (
-                                        <div className="text-xs text-slate-500 dark:text-slate-400 px-2 flex items-center gap-1.5">
-                                          <CheckCircle2 className="w-3 h-3 opacity-60" />
-                                          <span className="opacity-75">Correct answer:</span>
-                                          <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                            {String(a.correct_answer)}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        {isCorrect && (
-                                          <>
-                                            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
-                                            <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm">
-                                              Correct
-                                            </span>
-                                          </>
-                                        )}
-                                        {isIncorrect && (
-                                          <>
-                                            <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-500" />
-                                            <span className="font-bold text-rose-700 dark:text-rose-400 text-sm">
-                                              Incorrect
-                                            </span>
-                                          </>
-                                        )}
-                                        {isPending && (
-                                          <>
-                                            <Hourglass className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                                            <span className="font-semibold text-slate-500 dark:text-slate-400 text-sm">
-                                              Pending
-                                            </span>
-                                          </>
-                                        )}
-                                      </div>
-                                      {typeof a.points_earned === "number" && (
-                                        <span
-                                          className={`font-bold text-base ${
-                                            a.points_earned > 0
-                                              ? "text-emerald-700 dark:text-emerald-400"
-                                              : "text-slate-500 dark:text-slate-400"
-                                          }`}
-                                        >
-                                          +{a.points_earned}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                )}
-              </div>
-            </div>
+            <QuestionsTab answers={fetchedAnswers} />
           )}
 
           {activeTab === "submissions" && (
-            <div className="space-y-4">
-              {/* Info Banner */}
-              <div className={`${panelClasses} p-4 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 border-teal-200 dark:border-teal-800`}>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-teal-300 dark:border-teal-700">
-                    {canEdit ? (
-                      <Unlock className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
-                    ) : (
-                      <Lock className="w-5 h-5 text-rose-600 dark:text-rose-500" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                      {canEdit ? "Submissions Open" : "Submissions Locked"}
-                    </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                      {canEdit
-                        ? `Make or update your predictions for ${selectedSeason} below. Changes are saved automatically.`
-                        : `The submission period for ${selectedSeason} has ended. View your submitted predictions in the Dashboard, Standings, and Questions tabs.`}
-                    </p>
-                    {canEdit && selectedSeasonObj?.submission_end_date && (
-                      <p className="text-xs text-teal-700 dark:text-teal-400 font-medium mt-2">
-                        Deadline: {new Date(selectedSeasonObj.submission_end_date).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Standings Submission */}
-              <div className={`${panelClasses} p-5`}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-500" />
-                    Regular Season Predictions
-                  </h3>
-                  {!canEdit && (
-                    <button
-                      onClick={() => setActiveTab("standings")}
-                      className="text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium"
-                    >
-                      View results →
-                    </button>
-                  )}
-                </div>
-                <EditablePredictionBoard
-                  seasonSlug={selectedSeason}
-                  canEdit={!!canEdit}
-                  username={username}
-                />
-              </div>
-
-              {/* Question Submissions */}
-              <div className={`${panelClasses} p-5`}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Target className="w-5 h-5 text-teal-600 dark:text-teal-500" />
-                    Question Submissions
-                  </h3>
-                  {!canEdit && (
-                    <button
-                      onClick={() => setActiveTab("questions")}
-                      className="text-xs text-teal-600 dark:text-teal-500 hover:text-teal-700 dark:hover:text-teal-400 font-medium"
-                    >
-                      View results →
-                    </button>
-                  )}
-                </div>
-                <QuestionForm
-                  seasonSlug={selectedSeason}
-                  canEdit={!!canEdit}
-                  submissionEndDate={selectedSeasonObj?.submission_end_date || null}
-                />
-              </div>
-            </div>
+            <SubmissionsTab
+              canEdit={canEdit}
+              selectedSeason={selectedSeason}
+              username={username}
+              selectedSeasonObj={selectedSeasonObj}
+            />
           )}
 
           {activeTab === "settings" && (
-            <div className="space-y-4">
-              {/* Account Information */}
-              <div className={`${panelClasses} p-4`}>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  <UserIcon className="w-4 h-4" />
-                  Account Information
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700/50">
-                    <div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        Email Address
-                      </div>
-                      <div className="text-sm text-slate-900 dark:text-white font-semibold mt-0.5">
-                        {/* Email would come from user data */}
-                        Your registered email
-                      </div>
-                    </div>
-                    <a
-                      href="/accounts/email/"
-                      className="text-xs text-teal-700 dark:text-teal-500 hover:text-teal-800 dark:hover:text-teal-400 font-medium inline-flex items-center gap-1"
-                    >
-                      <Mail className="w-3.5 h-3.5" />
-                      Change
-                    </a>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700/50">
-                    <div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        Password
-                      </div>
-                      <div className="text-sm text-slate-900 dark:text-white font-semibold mt-0.5">
-                        ••••••••
-                      </div>
-                    </div>
-                    <a
-                      href="/accounts/password/change/"
-                      className="text-xs text-teal-700 dark:text-teal-500 hover:text-teal-800 dark:hover:text-teal-400 font-medium inline-flex items-center gap-1"
-                    >
-                      <Key className="w-3.5 h-3.5" />
-                      Change
-                    </a>
-                  </div>
-                  <div className="flex items-center justify-between py-2">
-                    <div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        Connected Accounts
-                      </div>
-                      <div className="text-sm text-slate-900 dark:text-white mt-0.5">
-                        Manage third-party connections
-                      </div>
-                    </div>
-                    <a
-                      href="/accounts/social/connections/"
-                      className="text-xs text-teal-700 dark:text-teal-500 hover:text-teal-800 dark:hover:text-teal-400 font-medium inline-flex items-center gap-1"
-                    >
-                      Manage
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Profile Picture */}
-              <div className={`${panelClasses} p-4`}>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
-                  Profile Avatar
-                </h3>
-                <div className="flex items-center gap-4">
-                  <img
-                    className="h-16 w-16 rounded-full ring-2 ring-slate-200 dark:ring-slate-700"
-                    alt="Avatar preview"
-                    src={avatarUrl(
-                      me?.user?.display_name || me?.user?.username,
-                    )}
-                  />
-                  <div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
-                      Your avatar uses a privacy-friendly placeholder generated
-                      from your display name.
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                      Custom avatar uploads coming soon!
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Security */}
-              <div className={`${panelClasses} p-4`}>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
-                  Security
-                </h3>
-                <a
-                  href="/accounts/sessions/"
-                  className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center">
-                      <UserIcon className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900 dark:text-white">
-                        Active Sessions
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        View and manage your login sessions
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                </a>
-              </div>
-
-              {/* Sign Out */}
-              <div className={`${panelClasses} p-4`}>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 rounded-md hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors font-semibold text-sm"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          )}
-
-          {isLoading && (
-            <div
-              className={`${panelClasses} p-8 text-center text-sm text-slate-600 dark:text-slate-400`}
-            >
-              <div className="animate-pulse">Loading your profile data…</div>
-            </div>
-          )}
-          {error && (
-            <div className="rounded-md border border-rose-200 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10 p-6 text-center text-sm text-rose-700 dark:text-rose-400">
-              We couldn't load your profile details. Please try again later.
-            </div>
+            <SettingsTab handleLogout={handleLogout} />
           )}
         </div>
       </div>
+    </div>
   );
 }

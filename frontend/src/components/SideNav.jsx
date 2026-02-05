@@ -18,7 +18,13 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [currentSeasonSlug, setCurrentSeasonSlug] = useState(propSeasonSlug);
-  const [isAdmin, setIsAdmin] = useState(false);
+  // Initialize isAdmin from localStorage to prevent flickering
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('isAdmin') === 'true';
+    }
+    return false;
+  });
 
   useEffect(() => {
     const fetchLatestSeason = async () => {
@@ -45,8 +51,10 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
     const fetchUserContext = async () => {
       try {
         const response = await axios.get('/api/v2/user/context');
-        if (response.data && response.data.is_admin) {
-          setIsAdmin(true);
+        if (response.data) {
+          const adminStatus = !!response.data.is_admin;
+          setIsAdmin(adminStatus);
+          localStorage.setItem('isAdmin', adminStatus.toString());
         }
       } catch (error) {
         console.error('Error fetching user context:', error);
@@ -72,7 +80,7 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   const navItems = [
     { id: 'home', label: 'Home', icon: Home, href: '/' },
     { id: 'submissions', label: 'My Submissions', icon: FileText, href: `/submit/${currentSeasonSlug}/` },
-    { id: 'ist-center', label: 'IST Center', icon: Medal, href: `/ist/${currentSeasonSlug}/`, special: true },
+    { id: 'ist-center', label: 'IST Center', icon: Medal, href: `/ist/${currentSeasonSlug}/`},
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, href: `/leaderboard/${currentSeasonSlug}/` },
     { id: 'breakdown', label: 'Points Breakdown', icon: BarChart3, href: `/leaderboard/${currentSeasonSlug}/detailed/` },
     { id: 'profile', label: 'Profile', icon: User, href: `/user/profile/` },
@@ -114,21 +122,19 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
             <div key={item.id} className="relative group">
               <a
                 href={item.href}
-                className={`flex items-center ${gapClasses} ${paddingClasses} rounded-lg transition-all duration-200 ${
-                  isActive
-                    ? isSpecial
-                      ? 'bg-amber-100/80 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200 shadow-md border border-amber-200 dark:border-amber-500/30'
-                      : 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 shadow-sm'
-                    : isSpecial
+                className={`flex items-center ${gapClasses} ${paddingClasses} rounded-lg transition-all duration-200 ${isActive
+                  ? isSpecial
+                    ? 'bg-amber-100/80 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200 shadow-md border border-amber-200 dark:border-amber-500/30'
+                    : 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 shadow-sm'
+                  : isSpecial
                     ? 'bg-amber-50/70 text-amber-700 dark:bg-amber-900/15 dark:text-amber-300 hover:bg-amber-100/80 dark:hover:bg-amber-900/25 border border-amber-200/40 dark:border-amber-500/20'
                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                  }`}
               >
-                <Icon className={`w-5 h-5 shrink-0 ${
-                  isActive
-                    ? isSpecial ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-orange-600 dark:text-orange-400'
-                    : iconPulseClass
-                }`} />
+                <Icon className={`w-5 h-5 shrink-0 ${isActive
+                  ? isSpecial ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-orange-600 dark:text-orange-400'
+                  : iconPulseClass
+                  }`} />
                 {(isExpanded || isMobileOpen) && (
                   <span className={`text-sm font-medium truncate ${isSpecial ? 'font-semibold' : ''}`}>
                     {item.label}
@@ -181,17 +187,17 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
         </button>
 
         {/* Mobile Overlay */}
-        {isMobileOpen && (
-          <>
-            <div
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-              onClick={() => setIsMobileOpen(false)}
-            />
-            <div className="fixed inset-y-0 left-0 z-[60] w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
-              <NavContent />
-            </div>
-          </>
-        )}
+        <div
+          className={`fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          onClick={() => setIsMobileOpen(false)}
+          aria-hidden={!isMobileOpen}
+        />
+        <div
+          className={`fixed inset-y-0 left-0 z-[60] w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 flex flex-col transform transition-transform duration-300 ease-out ${isMobileOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'}`}
+          aria-hidden={!isMobileOpen}
+        >
+          <NavContent />
+        </div>
       </>
     );
   }
@@ -199,9 +205,8 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   // Desktop: Sidebar
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-40 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 shadow-lg flex flex-col transition-all duration-300 ${
-        isExpanded ? 'w-64' : 'w-16'
-      }`}
+      className={`fixed inset-y-0 left-0 z-40 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ${isExpanded ? 'w-64' : 'w-16'
+        }`}
     >
       <NavContent />
     </div>

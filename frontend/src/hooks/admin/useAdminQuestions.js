@@ -6,7 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { getCSRFToken } from '../utils/csrf';
+import { getCSRFToken } from '../../utils/csrf';
 
 /**
  * Fetch questions for admin view

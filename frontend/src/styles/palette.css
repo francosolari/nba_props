@@ -1635,3 +1635,79 @@
 .hide-scrollbar::-webkit-scrollbar {
   display: none;  /* Chrome, Safari, Opera */
 }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --standings-card-bg: #151e32;
+    --standings-card-border: rgba(255, 255, 255, 0.08);
+    --standings-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    --nba-slate-50: #0f172a;
+    --nba-slate-100: #1e293b;
+    --nba-slate-200: #334155;
+    --nba-slate-300: #475569;
+    --nba-slate-400: #94a3b8;
+    --nba-slate-500: #cbd5e1;
+    --nba-slate-600: #e2e8f0;
+    --nba-slate-900: #f8fafc;
+  }
+
+  .standings-shell {
+    background: var(--standings-card-bg);
+    border-color: var(--standings-card-border);
+  }
+
+  .conference-list {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .conference-team {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+  }
+
+  .conference-team .position {
+    background: rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+  }
+
+  .conference-team .name {
+    color: #f8fafc;
+  }
+  
+  .standings-button.ghost {
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+  }
+  
+  .standings-button.ghost:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .overunder-scale {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.45), rgba(15, 23, 42, 0.92));
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .overunder-choice {
+    color: #94a3b8;
+  }
+  
+  .overunder-choice:not(.is-disabled):hover {
+    color: #f8fafc;
+  }
+  
+  .overunder-divider {
+    background: rgba(15, 23, 42, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .overunder-divider::before,
+  .overunder-divider::after {
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.2), transparent);
+  }
+  
+  .overunder-divider-value {
+    color: #f8fafc;
+  }
+}

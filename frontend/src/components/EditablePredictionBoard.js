@@ -11,13 +11,8 @@ import React, {
 import axios from 'axios';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import '../styles/palette.css';
+import TeamLogo from './TeamLogo';
 
-const teamSlug = (name = '') =>
-  name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-');
 
 const StandingsList = memo(({ conference, teams, isEditable }) => (
   <div className="standings-column">
@@ -64,32 +59,9 @@ const StandingsList = memo(({ conference, teams, isEditable }) => (
                         style={itemStyle}
                       >
                         <span className="position">{index + 1}</span>
-                        <img
+                        <TeamLogo
                           className="logo"
-                          src={`/static/img/teams/${teamSlug(team.team_name)}.png`}
-                          alt={team.team_name}
-                          onError={(e) => {
-                            const img = e.currentTarget;
-                            const slug = teamSlug(team.team_name);
-                            const step = parseInt(img.dataset.step || '0', 10);
-                            if (step === 0) {
-                              img.dataset.step = '1';
-                              img.src = `/static/img/teams/${slug}.svg`;
-                              return;
-                            }
-                            if (step === 1) {
-                              img.dataset.step = '2';
-                              img.src = `/static/img/teams/${slug}.PNG`;
-                              return;
-                            }
-                            if (step === 2) {
-                              img.dataset.step = '3';
-                              img.src = `/static/img/teams/${slug}.SVG`;
-                              return;
-                            }
-                            img.onerror = null;
-                            img.src = '/static/img/teams/unknown.svg';
-                          }}
+                          teamName={team.team_name}
                         />
                         <span className="name" title={team.team_name}>
                           {team.team_name}

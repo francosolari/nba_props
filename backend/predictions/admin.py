@@ -66,13 +66,66 @@ class PostSeasonStandingsAdmin(admin.ModelAdmin):
         return queryset.select_related('team', 'opponent_team')
 
 class InSeasonTournamentStandingsAdmin(admin.ModelAdmin):
-    list_display = ('season', 'team','ist_group','wins', 'losses', 'ist_group_rank',
-                    'ist_group_gb', 'ist_wildcard_rank', 'ist_knockout_rank',
-                    'ist_wildcard_gb'
-                    )
-    list_filter = (LatestSeasonFilter,)
+    list_display = ('season', 'team', 'ist_group', 'wins', 'losses', 'ist_group_rank',
+                    'ist_knockout_rank', 'ist_champion_display')
+    list_editable = ()  # ist_champion managed via actions for safety
+    list_filter = (LatestSeasonFilter, 'ist_champion', 'ist_group')
     search_fields = ('team__name',)
-    ordering = ('-season',)
+    ordering = ('-season', '-ist_knockout_rank', '-ist_champion')
+    actions = ['set_as_champion', 'clear_champion']
+
+    fieldsets = (
+        ('Team & Season', {
+            'fields': ('team', 'season', 'season_type')
+        }),
+        ('IST Group Stage', {
+            'fields': ('ist_group', 'wins', 'losses', 'ist_group_rank', 'ist_group_gb',
+                      'ist_differential', 'ist_points')
+        }),
+        ('IST Knockout Stage', {
+            'fields': ('ist_wildcard_rank', 'ist_wildcard_gb', 'ist_knockout_rank'),
+            'description': 'Knockout rank 1 = Conference Winner (made finals)'
+        }),
+        ('NBA Cup Champion (Manual)', {
+            'fields': ('ist_champion',),
+            'description': 'Set this manually - only ONE team should be champion per season',
+            'classes': ('wide',)
+        }),
+        ('Clinching Status', {
+            'fields': ('ist_clinch_group', 'ist_clinch_knockout', 'ist_clinch_wildcard'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def ist_champion_display(self, obj):
+        if obj.ist_champion:
+            return '🏆 CHAMPION'
+        return '-'
+    ist_champion_display.short_description = 'Champion'
+    ist_champion_display.admin_order_field = 'ist_champion'
+
+    @admin.action(description='Set selected team as NBA Cup Champion (clears others)')
+    def set_as_champion(self, request, queryset):
+        if queryset.count() != 1:
+            self.message_user(request, 'Please select exactly ONE team to set as champion.', level='error')
+            return
+
+        team_standing = queryset.first()
+        season = team_standing.season
+
+        # Clear all champions for this season
+        InSeasonTournamentStandings.objects.filter(season=season).update(ist_champion=False)
+
+        # Set the selected team as champion
+        team_standing.ist_champion = True
+        team_standing.save()
+
+        self.message_user(request, f'🏆 {team_standing.team.name} set as NBA Cup Champion for {season.slug}')
+
+    @admin.action(description='Clear champion status for selected teams')
+    def clear_champion(self, request, queryset):
+        count = queryset.filter(ist_champion=True).update(ist_champion=False)
+        self.message_user(request, f'Cleared champion status from {count} team(s)')
 
 class PlayoffPredictionAdmin(admin.ModelAdmin):
     list_display = ('user', 'season', 'round', 'team', 'conference', 'wins', 'losses')
