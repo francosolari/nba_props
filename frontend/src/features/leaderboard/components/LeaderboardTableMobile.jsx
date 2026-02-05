@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { ChevronDown, ChevronRight, Pin } from 'lucide-react';
-import { teamSlug, standingPoints, fromSectionKey } from '../utils/helpers';
+import { standingPoints, fromSectionKey } from '../utils/helpers';
+import TeamLogo from '../../../components/TeamLogo';
 
 export const LeaderboardTableMobile = ({
   section,
@@ -124,7 +125,7 @@ export const LeaderboardTableMobile = ({
                                         >
                                           <div className="flex flex-col items-center gap-1">
                                             <div className="w-6 h-6 flex items-center justify-center bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-100 dark:border-slate-800">
-                                              <img src={`/static/img/teams/${teamSlug(row.team)}.png`} className="w-5 h-5 object-contain" alt="" />
+                                              <TeamLogo className="w-5 h-5 object-contain" teamName={row.team} />
                                             </div>
                                             <span className="text-[9px] font-black text-slate-400 leading-none">
                                               {whatIfEnabled ? (simActualMap.get(row.team) || row.actual_position) : (row.actual_position || '—')}

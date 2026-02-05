@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback } from "react";
 import { Trophy } from "lucide-react";
+import TeamLogo from "../TeamLogo";
 
 const cardBase =
     "bg-white dark:bg-[#151e32] border border-slate-200/60 dark:border-slate-700/50 shadow-sm rounded-2xl overflow-hidden";
@@ -20,12 +21,6 @@ export default function StandingsTab({ standings }) {
         return { west: order(west), east: order(east) };
     }, [standings]);
 
-    const teamSlug = useCallback((name = '') =>
-        name
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, '')
-            .trim()
-            .replace(/\s+/g, '-'), []);
 
     return (
         <div className="space-y-6">
@@ -80,11 +75,9 @@ export default function StandingsTab({ standings }) {
                                                     {p.predicted_position}
                                                 </div>
 
-                                                <img
+                                                <TeamLogo
                                                     className="w-8 h-8 object-contain"
-                                                    src={`/static/img/teams/${teamSlug(p.team)}.png`}
-                                                    alt={p.team}
-                                                    onError={(e) => { e.currentTarget.src = '/static/img/teams/unknown.svg'; }}
+                                                    teamName={p.team}
                                                 />
 
                                                 <div className="flex-1 min-w-0">

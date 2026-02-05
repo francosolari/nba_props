@@ -20,6 +20,7 @@ import {
 import SelectComponent from '../components/SelectComponent';
 import EditablePredictionBoard from '../components/EditablePredictionBoard';
 import StripePaymentModal from '../components/StripePaymentModal';
+import TeamLogo from '../components/TeamLogo';
 import '../styles/SubmissionsPage.css';
 
 const QUESTION_GROUP_META = {
@@ -1155,12 +1156,9 @@ const NBAFinalsSection = ({
         <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-700/70 p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-600 shadow-inner">
-              <img
-                src={logoSrc}
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = UNKNOWN_TEAM_LOGO;
-                }}
+              <TeamLogo
+                teamName={selectedOption?.label}
+                slug={!selectedOption ? 'unknown' : undefined}
                 alt={`${selectedTeamName} logo`}
                 className="h-10 w-10 object-contain"
               />
@@ -1502,12 +1500,8 @@ const InSeasonTournamentSection = ({
         aria-pressed={isSelected}
       >
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-inner">
-          <img
-            src={logoSrc}
-            onError={(event) => {
-              event.currentTarget.onerror = null;
-              event.currentTarget.src = UNKNOWN_TEAM_LOGO;
-            }}
+          <TeamLogo
+            teamName={team.name}
             alt={`${team.name} logo`}
             className="h-10 w-10 object-contain"
           />
@@ -1593,12 +1587,8 @@ const InSeasonTournamentSection = ({
       >
         <div className="flex flex-1 items-center gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-inner">
-            <img
-              src={logoSrc}
-              onError={(event) => {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = UNKNOWN_TEAM_LOGO;
-              }}
+            <TeamLogo
+              teamName={team.name}
               alt={`${team.name} logo`}
               className="h-8 w-8 object-contain"
             />
@@ -1826,12 +1816,9 @@ const InSeasonTournamentSection = ({
         <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-700/70 p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-600 shadow-inner">
-              <img
-                src={logoSrc}
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = UNKNOWN_TEAM_LOGO;
-                }}
+              <TeamLogo
+                teamName={selectedOption?.label}
+                slug={!selectedOption ? 'unknown' : undefined}
                 alt={`${selectedTeamName} logo`}
                 className="h-10 w-10 object-contain"
               />

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Lock, Pin, GripVertical } from 'lucide-react';
-import { teamSlug, standingPoints, fromSectionKey } from '../utils/helpers';
+import { standingPoints, fromSectionKey } from '../utils/helpers';
+import TeamLogo from '../../../components/TeamLogo';
 
 export const LeaderboardTableDesktop = ({
   section,
@@ -182,7 +183,7 @@ export const LeaderboardTableDesktop = ({
                                 </div>
                               )}
                               <div className={`${whatIfEnabled ? 'w-[194px]' : 'w-[220px]'} px-4 flex items-center gap-3`}>
-                                <img src={`/static/img/teams/${teamSlug(row.team)}.png`} className="w-5 h-5 object-contain" alt="" />
+                                <TeamLogo className="w-5 h-5 object-contain" teamName={row.team} />
                                 <span className="text-[13px] font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">{row.team}</span>
                               </div>
                               <div className="w-[55px] flex items-center justify-center text-sm font-bold text-slate-400">
