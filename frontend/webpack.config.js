@@ -18,7 +18,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "static/js"), // Output to frontend/static/js
     filename: "bundle.js", // Name of the output JS file
-    publicPath: "/static/js/", // Served by Django's static at /static/js/
+    publicPath: isDevelopment ? "http://localhost:8080/static/js/" : "/static/js/", // Served by Django's static at /static/js/
   },
   module: {
     rules: [
@@ -64,6 +64,9 @@ module.exports = {
     static: {
       directory: path.resolve(__dirname, "static"), // Serve static files
     },
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+    },
     hot: true, // Enable Hot Module Replacement
     liveReload: true, // Enable live reload
     port: 8080, // Port for Webpack Dev Server
@@ -80,6 +83,10 @@ module.exports = {
       },
     },
     client: {
+      webSocketURL: {
+        hostname: 'localhost',
+        port: 8080,
+      },
       overlay: {
         errors: true,
         warnings: false,
