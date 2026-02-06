@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaderboard animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 300ms ease-out both;
+}
+
 /* Base typography tweaks for modern, Apple-like rendering */
 @layer base {
   html {

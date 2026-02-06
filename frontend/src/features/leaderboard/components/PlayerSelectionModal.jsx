@@ -11,11 +11,22 @@ export const PlayerSelectionModal = ({
   setSelectedUserIds,
   addUser
 }) => {
+  const [isReady, setIsReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!show) {
+      setIsReady(false);
+      return undefined;
+    }
+    const frame = window.requestAnimationFrame(() => setIsReady(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [show]);
+
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-[95%] md:w-full max-w-lg max-h-[92dvh] md:max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 my-auto shadow-sky-500/10">
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 transition-opacity duration-200 ${isReady ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-[95%] md:w-full max-w-lg max-h-[92dvh] md:max-h-[85vh] flex flex-col overflow-hidden my-auto shadow-sky-500/10 transition-all duration-200 ${isReady ? 'translate-y-0 scale-100' : 'translate-y-2 scale-[0.98]'}`}>
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase tracking-[0.1em]">Select Players</h3>
