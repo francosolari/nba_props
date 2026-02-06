@@ -6,6 +6,7 @@ import TeamLogo from '../../../components/TeamLogo';
 
 export const LeaderboardTableDesktop = ({
   section,
+  sortBy,
   displayedUsers,
   pinnedUserIds,
   togglePin,
@@ -83,6 +84,7 @@ export const LeaderboardTableDesktop = ({
     () => (isStandingsSection ? null : fromSectionKey(section)),
     [isStandingsSection, section]
   );
+  const headerCategoryKey = React.useMemo(() => fromSectionKey(section), [section]);
   const nonStandingsQuestions = React.useMemo(() => {
     if (isStandingsSection) return [];
     const qMap = new Map();
@@ -128,6 +130,10 @@ export const LeaderboardTableDesktop = ({
             <div className="flex h-full" style={{ minWidth: displayedUsers.length * userColWidth }}>
               {displayedUsers.map((e) => {
                 const isPinned = pinnedUserIds.includes(String(e.user.id));
+                const isTotalSort = sortBy === 'total';
+                const pointsDisplay = isTotalSort
+                  ? (e.user.total_points || 0)
+                  : (e.user.categories?.[headerCategoryKey]?.points || 0);
                 return (
                   <div
                     key={e.user.id}
@@ -151,10 +157,12 @@ export const LeaderboardTableDesktop = ({
                         </button>
                       </div>
                       {(() => {
-                        const delta = whatIfEnabled && e.__orig_total_points != null ? (e.user.total_points - e.__orig_total_points) : 0;
+                        const delta = isTotalSort && whatIfEnabled && e.__orig_total_points != null
+                          ? (e.user.total_points - e.__orig_total_points)
+                          : 0;
                         return (
                           <div className="flex items-center gap-1">
-                            <span className="text-sm font-black text-sky-600 dark:text-sky-400">{e.user.total_points}</span>
+                            <span className="text-sm font-black text-sky-600 dark:text-sky-400">{pointsDisplay}</span>
                             {delta !== 0 && (
                               <span className={`text-[9px] font-black ${delta > 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
                                 {delta > 0 ? '▲' : '▼'}{Math.abs(delta)}
@@ -308,74 +316,88 @@ export const LeaderboardTableDesktop = ({
         })
       ) : (
         // Non-standings sections (awards, props) - no drag-drop
-        <div className="flex w-full">
-          {/* Fixed left columns */}
-          <div className="flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10" style={{ width: fixedColWidth }}>
-            {nonStandingsQuestions.map((q) => (
-              <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50" style={{ height: ROW_HEIGHT }}>
-                <div className="px-6 flex items-center" style={{ width: fixedColWidth }}>
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight line-clamp-2">
-                    {q.text}
-                    {q.is_finalized && <Lock className="w-3 h-3 text-amber-500 inline ml-1" />}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Scrollable data columns */}
-          <div
-            ref={nonStandingsScrollRef}
-            onScroll={handleBodyScroll}
-            className="flex-1 overflow-x-auto no-scrollbar"
-          >
-            <div style={{ minWidth: displayedUsers.length * userColWidth }}>
+        <div>
+          {whatIfEnabled && (
+            <div className="flex items-center justify-end px-4 py-1.5 border-b border-amber-100/70 dark:border-amber-800/30 bg-amber-50/60 dark:bg-amber-900/10">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700/80 dark:text-amber-300/80">
+                Scenario Mode: Click any answer to simulate outcomes
+              </span>
+            </div>
+          )}
+          <div className="flex w-full">
+            {/* Fixed left columns */}
+            <div className="flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10" style={{ width: fixedColWidth }}>
               {nonStandingsQuestions.map((q) => (
                 <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50" style={{ height: ROW_HEIGHT }}>
-                  {displayedUsers.map(e => {
-                    const p = e.user.categories?.[nonStandingsCategoryKey]?.predictions?.find(x => x.question_id === q.id);
-                    const ans = p?.answer || '—';
-                    const isCorrect = p?.correct === true;
-                    const isWrong = p?.correct === false;
-                    const pts = p?.points || 0;
-
-                    let color = "text-slate-400 dark:text-slate-500";
-                    if (isCorrect) color = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30";
-                    if (isWrong) color = "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
-                    const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
-                    const simulatedState = p?.__what_if_state;
-
-                    return (
-                      <div key={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative px-2" style={{ width: userColWidth }}>
-                        <button
-                          type="button"
-                          onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
-                          className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color} ${
-                            isInteractive ? 'cursor-pointer hover:brightness-95 active:scale-[0.98]' : 'cursor-default'
-                          } ${
-                            simulatedState === 'correct'
-                              ? 'ring-2 ring-emerald-400/50'
-                              : simulatedState === 'incorrect'
-                              ? 'ring-2 ring-rose-400/40'
-                              : ''
-                          }`}
-                        >
-                          {ans}
-                        </button>
-                        {p && (
-                          <div className="absolute -top-0.5 right-1 opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-20">
-                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm ${
-                              pts > 0 ? 'bg-emerald-500 text-white' : 'bg-slate-400 text-white'
-                            }`}>
-                              {pts > 0 ? `+${pts}` : '0'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  <div className="px-6 flex items-center" style={{ width: fixedColWidth }}>
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight line-clamp-2">
+                      {q.text}
+                      {q.is_finalized && <Lock className="w-3 h-3 text-amber-500 inline ml-1" />}
+                    </span>
+                  </div>
                 </div>
               ))}
+            </div>
+
+            {/* Scrollable data columns */}
+            <div
+              ref={nonStandingsScrollRef}
+              onScroll={handleBodyScroll}
+              className="flex-1 overflow-x-auto no-scrollbar"
+            >
+              <div style={{ minWidth: displayedUsers.length * userColWidth }}>
+                {nonStandingsQuestions.map((q) => (
+                  <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50" style={{ height: ROW_HEIGHT }}>
+                    {displayedUsers.map(e => {
+                      const p = e.user.categories?.[nonStandingsCategoryKey]?.predictions?.find(x => x.question_id === q.id);
+                      const ans = p?.answer || '—';
+                      const isCorrect = p?.correct === true;
+                      const isWrong = p?.correct === false;
+                      const pts = p?.points || 0;
+
+                      let color = "text-slate-400 dark:text-slate-500";
+                      if (isCorrect) color = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30";
+                      if (isWrong) color = "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
+                      const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
+                      const simulatedState = p?.__what_if_state;
+
+                      return (
+                        <div key={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative px-2" style={{ width: userColWidth }}>
+                          <button
+                            type="button"
+                            onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
+                            className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color} ${
+                              isInteractive ? 'cursor-pointer hover:brightness-95 active:scale-[0.98] ring-1 ring-amber-300/50' : 'cursor-default'
+                            } ${
+                              simulatedState === 'correct'
+                                ? 'ring-2 ring-emerald-400/50'
+                                : simulatedState === 'incorrect'
+                                ? 'ring-2 ring-rose-400/40'
+                                : ''
+                            }`}
+                          >
+                            {ans}
+                          </button>
+                          {p && (
+                            <div className="absolute -top-0.5 right-1 opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-20">
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm ${
+                                pts > 0 ? 'bg-emerald-500 text-white' : 'bg-slate-400 text-white'
+                              }`}>
+                                {pts > 0 ? `+${pts}` : '0'}
+                              </span>
+                            </div>
+                          )}
+                          {isInteractive && (
+                            <span className="absolute -bottom-0.5 text-[8px] font-semibold uppercase tracking-wide text-amber-500/80 pointer-events-none opacity-70">
+                              click
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

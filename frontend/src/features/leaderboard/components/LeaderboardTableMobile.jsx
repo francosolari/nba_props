@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { ChevronDown, ChevronRight, Pin } from 'lucide-react';
+import { ChevronDown, ChevronRight, FlaskConical, Pin } from 'lucide-react';
 import { standingPoints, fromSectionKey } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 
@@ -16,9 +16,11 @@ export const LeaderboardTableMobile = ({
   whatIfEnabled,
   simActualMap,
   requestEnableWhatIf,
-  toggleWhatIfAnswer
+  toggleWhatIfAnswer,
+  sortBy
 }) => {
   const catKey = fromSectionKey(section);
+  const isTotalSort = sortBy === 'total';
   const [collapsedSections, setCollapsedSections] = useState(new Set());
   const scrollRefs = useRef({ West: { header: null, data: null }, East: { header: null, data: null } });
 
@@ -89,7 +91,7 @@ export const LeaderboardTableMobile = ({
                                 </div>
                                 <div className="w-[42px] bg-slate-50/95 dark:bg-slate-900/95 px-1 py-3 text-center backdrop-blur-sm shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
                                   <div className="flex flex-col items-center">
-                                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Pts</span>
+                                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">{isTotalSort ? 'Tot' : 'Pts'}</span>
                                     <div className="h-[14px]" />
                                   </div>
                                 </div>
@@ -154,19 +156,19 @@ export const LeaderboardTableMobile = ({
                           >
                             <div className="min-w-max">
                               {displayedUsers.map(e => {
-                                const catPts = e.user.categories?.[catKey]?.points || 0;
+                                const pointsDisplay = isTotalSort ? (e.user.total_points || 0) : (e.user.categories?.[catKey]?.points || 0);
                                 return (
                                   <div key={e.user.id} className="flex border-b border-slate-100 dark:border-slate-800">
                                     {/* Sticky player name + pin */}
-                                    <div className="flex-shrink-0 sticky left-0 z-10 w-[100px] px-2 py-3 border-r border-slate-100 dark:border-slate-800 flex items-center gap-1 bg-white dark:bg-slate-950">
+                                    <div className="flex-shrink-0 sticky left-0 z-10 w-[100px] px-2 py-2 border-r border-slate-100 dark:border-slate-800 flex items-center gap-1 bg-white dark:bg-slate-950">
                                       <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
                                       <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-colors ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500' : 'text-slate-200 dark:text-slate-700'}`}>
                                         <Pin className="w-3 h-3" />
                                       </button>
                                     </div>
                                     {/* Sticky category points */}
-                                    <div className="flex-shrink-0 sticky left-[100px] z-10 w-[42px] bg-slate-50/95 dark:bg-slate-900/95 text-center px-1 py-3 border-r border-slate-100 dark:border-slate-800 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] flex items-center justify-center">
-                                      <span className="text-[11px] font-black text-sky-600 dark:text-sky-400">{catPts}</span>
+                                    <div className="flex-shrink-0 sticky left-[100px] z-10 w-[42px] bg-slate-50/95 dark:bg-slate-900/95 text-center px-1 py-2 border-r border-slate-100 dark:border-slate-800 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] flex items-center justify-center">
+                                      <span className="text-[11px] font-black text-sky-600 dark:text-sky-400">{pointsDisplay}</span>
                                     </div>
                                     {/* Prediction cells */}
                                     {teams.map(row => {
@@ -181,7 +183,7 @@ export const LeaderboardTableMobile = ({
                                       if (pts === 0 && p) colorClass = "bg-rose-500/5 text-rose-500/70 dark:text-rose-400/70 ring-1 ring-inset ring-rose-500/10";
 
                                       return (
-                                        <div key={row.id} className={`flex-shrink-0 w-14 px-1 py-2 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0 flex items-center justify-center ${isMoved ? 'bg-amber-50 dark:bg-amber-900/15' : ''}`}>
+                                        <div key={row.id} className={`flex-shrink-0 w-14 px-1 py-1.5 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0 flex items-center justify-center ${isMoved ? 'bg-amber-50 dark:bg-amber-900/15' : ''}`}>
                                           <div className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[10px] font-black transition-all ${colorClass}`}>
                                             {predPos}
                                           </div>
@@ -205,6 +207,12 @@ export const LeaderboardTableMobile = ({
       ) : (
         /* Awards / Props Transposed Mobile View */
         <div className="overflow-x-auto no-scrollbar">
+          {whatIfEnabled && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700/80 dark:text-amber-300/80 bg-amber-50/70 dark:bg-amber-900/10 border-b border-amber-100/70 dark:border-amber-800/40">
+              <FlaskConical className="w-3 h-3" />
+              <span>Scenario Mode: Tap an answer to simulate it</span>
+            </div>
+          )}
           <div className="min-w-max px-0">
             {(() => {
               const qMap = new Map();
@@ -219,18 +227,18 @@ export const LeaderboardTableMobile = ({
                 <table className="border-separate border-spacing-0">
                   <thead className="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
                     <tr>
-                      <th className="sticky left-0 z-40 bg-white/95 dark:bg-slate-950/95 px-3 py-4 text-left border-b border-slate-200 dark:border-slate-800 w-[100px] backdrop-blur-sm">
+                      <th className="sticky left-0 z-40 bg-white/95 dark:bg-slate-950/95 px-3 py-3 text-left border-b border-slate-200 dark:border-slate-800 w-[100px] backdrop-blur-sm">
                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Player</span>
                         <div className="absolute right-0 top-1/4 bottom-1/4 w-[1px] bg-slate-100 dark:bg-slate-800" />
                       </th>
-                      <th className="sticky left-[100px] z-30 bg-slate-50/95 dark:bg-slate-900/95 px-1 py-4 border-b border-slate-200 dark:border-slate-800 w-[42px] text-center shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] backdrop-blur-sm">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Pts</span>
+                      <th className="sticky left-[100px] z-30 bg-slate-50/95 dark:bg-slate-900/95 px-1 py-3 border-b border-slate-200 dark:border-slate-800 w-[42px] text-center shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] backdrop-blur-sm">
+                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">{isTotalSort ? 'Tot' : 'Pts'}</span>
                       </th>
                       {questions.map((q, idx) => (
-                        <th key={q.id} className="z-30 bg-white/95 dark:bg-slate-950/95 px-3 py-4 border-b border-slate-200 dark:border-slate-800 w-[140px] text-center backdrop-blur-sm">
+                        <th key={q.id} className="z-30 bg-white/95 dark:bg-slate-950/95 px-2 py-3 border-b border-slate-200 dark:border-slate-800 w-[160px] text-center backdrop-blur-sm">
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[8px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 rounded px-1.5 py-0.5 uppercase">Q{idx + 1}</span>
-                            <span className="text-[9px] font-black text-slate-400 line-clamp-2 h-[24px] leading-tight uppercase tracking-tight">{q.text}</span>
+                            <span className="text-[9px] font-black text-slate-400 line-clamp-2 h-[26px] leading-tight uppercase tracking-tight">{q.text}</span>
                           </div>
                         </th>
                       ))}
@@ -238,10 +246,10 @@ export const LeaderboardTableMobile = ({
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {displayedUsers.map(e => {
-                      const catPts = e.user.categories?.[catKey]?.points || 0;
+                      const pointsDisplay = isTotalSort ? (e.user.total_points || 0) : (e.user.categories?.[catKey]?.points || 0);
                       return (
                         <tr key={e.user.id}>
-                          <td className="sticky left-0 z-10 bg-white dark:bg-slate-950 px-2 py-3.5 border-r border-slate-100 dark:border-slate-800">
+                          <td className="sticky left-0 z-10 bg-white dark:bg-slate-950 px-2 py-2 border-r border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-1">
                               <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
                               <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-colors ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500' : 'text-slate-200 dark:text-slate-700'}`}>
@@ -249,8 +257,8 @@ export const LeaderboardTableMobile = ({
                               </button>
                             </div>
                           </td>
-                          <td className="sticky left-[100px] z-10 bg-slate-50/95 dark:bg-slate-900/95 text-center px-1 py-3.5 border-r border-slate-100 dark:border-slate-800 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
-                            <span className="text-[11px] font-black text-sky-600 dark:text-sky-400">{catPts}</span>
+                          <td className="sticky left-[100px] z-10 bg-slate-50/95 dark:bg-slate-900/95 text-center px-1 py-2 border-r border-slate-100 dark:border-slate-800 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                            <span className="text-[11px] font-black text-sky-600 dark:text-sky-400">{pointsDisplay}</span>
                           </td>
                           {questions.map(q => {
                             const p = e.user.categories?.[catKey]?.predictions?.find(x => x.question_id === q.id);
@@ -265,12 +273,12 @@ export const LeaderboardTableMobile = ({
                             if (isWrong) color = "bg-rose-500/5 text-rose-500/70 dark:text-rose-400/70 ring-1 ring-inset ring-rose-500/10";
 
                             return (
-                              <td key={q.id} className="px-1 py-2.5 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0">
+                              <td key={q.id} className="px-1 py-1.5 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0">
                                 <button
                                   type="button"
                                   onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
-                                  className={`inline-flex items-center justify-center px-2 py-1.5 rounded-md text-[10px] font-black transition-all ${color} truncate max-w-[100px] ${
-                                    isInteractive ? 'cursor-pointer hover:brightness-95 active:scale-[0.98]' : 'cursor-default'
+                                  className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-[10px] font-black transition-all ${color} whitespace-normal break-words line-clamp-2 max-w-[130px] ${
+                                    isInteractive ? 'cursor-pointer hover:brightness-95 active:scale-[0.98] ring-1 ring-amber-300/50' : 'cursor-default'
                                   } ${
                                     simulatedState === 'correct'
                                       ? 'ring-2 ring-emerald-400/50'

@@ -14,6 +14,7 @@ import { LeaderboardTableMobile } from '../features/leaderboard/components/Leade
 import { LeaderboardPodium } from '../features/leaderboard/components/LeaderboardPodium';
 import { SimulationModal } from '../features/leaderboard/components/SimulationModal';
 import { PlayerSelectionModal } from '../features/leaderboard/components/PlayerSelectionModal';
+import { resolveTeamLogoSlug } from '../components/TeamLogo';
 
 const WHAT_IF_INTRO_SESSION_KEY = 'leaderboard-what-if-intro-seen';
 
@@ -49,7 +50,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     const top = leaderboardData?.slice(0, 4).map(e => String(e.user.id)) || [];
     return Array.from(new Set([initialUserId, ...top])).filter(Boolean);
   });
-  const [sortBy, setSortBy] = useState('standings');
+  const [sortBy, setSortBy] = useState('total');
   const [query, setQuery] = useState('');
   const [whatIfEnabled, setWhatIfEnabled] = useState(false);
   const [showWhatIfConfirm, setShowWhatIfConfirm] = useState(false);
@@ -77,11 +78,12 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     return (leaderboardData || []).find(e => String(e.user.username) === String(loggedInUsername));
   }, [leaderboardData, loggedInUsername]);
   const loggedInUserId = loggedInEntry?.user?.id ? String(loggedInEntry.user.id) : null;
+  const pinTargetUserId = loggedInUserId || String(initialUserId || '');
+  const canPinLoggedInUser = Boolean(pinTargetUserId);
 
-  // Add logged-in user to pinned and selected
+  // Add logged-in user to selected set when URL doesn't explicitly define users.
   useEffect(() => {
     if (!loggedInUserId) return;
-    setPinnedUserIds(prev => prev.includes(loggedInUserId) ? prev : [...prev, loggedInUserId]);
     const sp = new URLSearchParams(window.location.search);
     if (!sp.get('users')) {
       setSelectedUserIds(prev => prev.map(String).includes(loggedInUserId) ? prev : [loggedInUserId, ...prev]);
@@ -127,6 +129,22 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     });
     return list;
   }, [leaderboardData]);
+
+  useEffect(() => {
+    const seen = new Set();
+    standingsTeams.forEach(({ team }) => {
+      const slug = resolveTeamLogoSlug(team);
+      if (!slug || seen.has(slug)) return;
+      seen.add(slug);
+
+      const svgImage = new Image();
+      svgImage.src = `/static/img/teams/${slug}.svg`;
+      svgImage.onerror = () => {
+        const pngImage = new Image();
+        pngImage.src = `/static/img/teams/${slug}.png`;
+      };
+    });
+  }, [standingsTeams]);
 
   const [westOrder, setWestOrder] = useState([]);
   const [eastOrder, setEastOrder] = useState([]);
@@ -318,7 +336,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     let arr = base.slice();
     const sortCategoryKey = fromSectionKey(section);
     if (sortBy === 'total') arr.sort((a, b) => (b.user.total_points || 0) - (a.user.total_points || 0));
-    if (sortBy === 'standings') {
+    if (sortBy === 'section' || sortBy === 'standings') {
       arr.sort((a, b) => {
         const aCategoryPoints = a.user.categories?.[sortCategoryKey]?.points || 0;
         const bCategoryPoints = b.user.categories?.[sortCategoryKey]?.points || 0;
@@ -333,12 +351,17 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     const pinSet = new Set(pinnedUserIds.map(String));
     arr.sort((a, b) => (pinSet.has(String(b.user.id)) ? 1 : 0) - (pinSet.has(String(a.user.id)) ? 1 : 0));
     return arr;
-  }, [withSimTotals, selectedUserIds, showAll, sortBy, query, pinnedUserIds]);
+  }, [withSimTotals, selectedUserIds, showAll, sortBy, query, pinnedUserIds, section]);
 
   const addUser = (id) => setSelectedUserIds(prev => Array.from(new Set([...prev, String(id)])));
   const togglePin = (id) => {
     setPinnedUserIds(prev => prev.includes(String(id)) ? prev.filter(x => String(x) !== String(id)) : [...prev, String(id)]);
   };
+  const handlePinMe = useCallback(() => {
+    if (!pinTargetUserId) return;
+    setPinnedUserIds(prev => (prev.includes(pinTargetUserId) ? prev : [pinTargetUserId, ...prev]));
+    setSelectedUserIds(prev => (prev.map(String).includes(pinTargetUserId) ? prev : [pinTargetUserId, ...prev]));
+  }, [pinTargetUserId]);
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
@@ -380,6 +403,8 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         whatIfEnabled={whatIfEnabled}
         onToggleWhatIf={handleWhatIfToggle}
         setShowManagePlayers={setShowManagePlayers}
+        loggedInUserId={canPinLoggedInUser ? pinTargetUserId : null}
+        onPinMe={handlePinMe}
       />
 
       {/* ─── 3. Main Content ─── */}
@@ -396,6 +421,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
             
             <LeaderboardTableDesktop
               section={section}
+              sortBy={sortBy}
               displayedUsers={displayedUsers}
               pinnedUserIds={pinnedUserIds}
               togglePin={togglePin}
@@ -423,6 +449,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               simActualMap={simActualMap}
               requestEnableWhatIf={requestEnableWhatIf}
               toggleWhatIfAnswer={toggleWhatIfAnswer}
+              sortBy={sortBy}
             />
           </div>
         )}

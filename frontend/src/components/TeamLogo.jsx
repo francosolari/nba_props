@@ -4,7 +4,7 @@ const TEAM_LOGO_SLUG_OVERRIDES = {
   'los-angeles-clippers': 'la-clippers',
 };
 
-const teamSlug = (name = '') => {
+export const resolveTeamLogoSlug = (name = '') => {
   if (!name) return '';
   const baseSlug = name
     .toLowerCase()
@@ -16,28 +16,43 @@ const teamSlug = (name = '') => {
   return TEAM_LOGO_SLUG_OVERRIDES[baseSlug] || baseSlug;
 };
 
+const resolvedLogoSrcBySlug = new Map();
+
+const getSvgPath = (slug) => `/static/img/teams/${slug}.svg`;
+const getPngPath = (slug) => `/static/img/teams/${slug}.png`;
+const UNKNOWN_LOGO_PATH = '/static/img/teams/unknown.svg';
+
 const TeamLogo = ({ teamName, slug, className, alt, ...props }) => {
-  const calculatedSlug = slug || teamSlug(teamName || '');
-  
-  // Start with SVG
-  const [src, setSrc] = useState(`/static/img/teams/${calculatedSlug}.svg`);
+  const calculatedSlug = slug || resolveTeamLogoSlug(teamName || '');
+  const [src, setSrc] = useState(
+    () => (calculatedSlug ? (resolvedLogoSrcBySlug.get(calculatedSlug) || getSvgPath(calculatedSlug)) : UNKNOWN_LOGO_PATH)
+  );
   const [errorCount, setErrorCount] = useState(0);
 
   useEffect(() => {
-    // Reset when slug changes
-    setSrc(`/static/img/teams/${calculatedSlug}.svg`);
+    setSrc(calculatedSlug ? (resolvedLogoSrcBySlug.get(calculatedSlug) || getSvgPath(calculatedSlug)) : UNKNOWN_LOGO_PATH);
     setErrorCount(0);
   }, [calculatedSlug]);
 
+  const handleLoad = () => {
+    if (!calculatedSlug || !src) return;
+    resolvedLogoSrcBySlug.set(calculatedSlug, src);
+  };
+
   const handleError = () => {
+    if (!calculatedSlug) {
+      setSrc(UNKNOWN_LOGO_PATH);
+      setErrorCount(2);
+      return;
+    }
     if (errorCount === 0) {
-      // First error: try PNG
-      setSrc(`/static/img/teams/${calculatedSlug}.png`);
+      setSrc(getPngPath(calculatedSlug));
       setErrorCount(1);
     } else if (errorCount === 1) {
-      // Second error: fallback to unknown
-      setSrc('/static/img/teams/unknown.svg');
+      setSrc(UNKNOWN_LOGO_PATH);
       setErrorCount(2);
+    } else if (calculatedSlug) {
+      resolvedLogoSrcBySlug.set(calculatedSlug, UNKNOWN_LOGO_PATH);
     }
   };
 
@@ -46,6 +61,7 @@ const TeamLogo = ({ teamName, slug, className, alt, ...props }) => {
       src={src}
       alt={alt || teamName || 'Team Logo'}
       className={className}
+      onLoad={handleLoad}
       onError={handleError}
       {...props}
     />
