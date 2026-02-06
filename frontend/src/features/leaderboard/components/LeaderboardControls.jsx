@@ -28,6 +28,7 @@ export const LeaderboardControls = ({
   ]), [sortLabel]);
 
   const selectedSort = sortOptions.find((opt) => opt.value === sortBy) || sortOptions[0];
+  const mobileSortLabel = selectedSort.value === 'section' ? sortLabel : selectedSort.label;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -47,7 +48,7 @@ export const LeaderboardControls = ({
 
   return (
     <div className="shrink-0 bg-slate-50/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md relative md:sticky md:top-[61px] z-[40]">
-      <div className="w-full px-2 md:px-4 py-1.5 md:py-2 flex items-center gap-2 md:gap-4">
+      <div className="w-full px-2 md:px-4 py-1.5 md:py-2 flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-4">
         <div className="relative shrink-0 md:shrink w-48 md:w-auto hidden md:block">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -58,7 +59,7 @@ export const LeaderboardControls = ({
           />
         </div>
 
-        <div ref={sortMenuRef} className="relative shrink-0">
+        <div ref={sortMenuRef} className="relative shrink-0 order-1 md:order-none">
           <button
             type="button"
             onClick={() => setSortMenuOpen(prev => !prev)}
@@ -66,11 +67,12 @@ export const LeaderboardControls = ({
             aria-haspopup="menu"
             aria-expanded={sortMenuOpen}
           >
-            <span>Sort: {selectedSort.label}</span>
+            <span className="md:hidden">Sort: {mobileSortLabel}</span>
+            <span className="hidden md:inline">Sort: {selectedSort.label}</span>
             <ChevronDown className={`w-3 h-3 transition-transform ${sortMenuOpen ? 'rotate-180' : ''}`} />
           </button>
           {sortMenuOpen && (
-            <div className="absolute left-0 mt-1 min-w-[170px] z-50 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg py-1">
+            <div className="absolute left-0 mt-1 min-w-[150px] md:min-w-[170px] z-50 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg py-1">
               {sortOptions.map((option) => {
                 const isActive = selectedSort.value === option.value;
                 return (
@@ -92,12 +94,12 @@ export const LeaderboardControls = ({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 md:gap-2 ml-auto shrink-0">
+        <div className="order-2 md:order-none w-full md:w-auto flex items-center gap-1.5 md:gap-2 md:ml-auto shrink-0 overflow-x-auto no-scrollbar pb-0.5 md:pb-0">
           {mode === 'compare' && (
             <>
               <button
                 onClick={() => setShowManagePlayers(true)}
-                className="inline-flex items-center gap-1 px-2.5 md:px-3.5 py-1 md:py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] md:text-xs font-black text-slate-500 uppercase hover:text-slate-900 dark:hover:text-white transition-all"
+                className="inline-flex items-center gap-1 px-2.5 md:px-3.5 py-1 md:py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] md:text-xs font-black text-slate-500 uppercase hover:text-slate-900 dark:hover:text-white transition-all active:scale-[0.97]"
               >
                 <Users className="w-3 h-3" />
                 <span>Players</span>
@@ -105,7 +107,7 @@ export const LeaderboardControls = ({
               {loggedInUserId && (
                 <button
                   onClick={onTogglePinMe}
-                  className={`inline-flex items-center gap-1 px-2.5 md:px-3.5 py-1 md:py-1.5 border rounded-lg text-[10px] md:text-xs font-black uppercase transition-all duration-200 active:scale-[0.96] ${
+                  className={`hidden md:inline-flex items-center gap-1 px-2.5 md:px-3.5 py-1 md:py-1.5 border rounded-lg text-[10px] md:text-xs font-black uppercase transition-all duration-200 active:scale-[0.96] ${
                     isPinMePinned
                       ? 'bg-sky-600 border-sky-600 text-white shadow-sm shadow-sky-600/30'
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -118,7 +120,7 @@ export const LeaderboardControls = ({
               <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <button
                   onClick={() => setShowAll(false)}
-                  className={`px-2.5 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-black uppercase transition-all ${
+                  className={`px-2 md:px-3 py-1 md:py-1.5 text-[9px] md:text-xs font-black uppercase transition-all ${
                     !showAll
                       ? 'bg-sky-600 text-white'
                       : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -128,7 +130,7 @@ export const LeaderboardControls = ({
                 </button>
                 <button
                   onClick={() => setShowAll(true)}
-                  className={`px-2.5 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-black uppercase transition-all border-l border-slate-200 dark:border-slate-800 ${
+                  className={`px-2 md:px-3 py-1 md:py-1.5 text-[9px] md:text-xs font-black uppercase transition-all border-l border-slate-200 dark:border-slate-800 ${
                     showAll
                       ? 'bg-sky-600 text-white'
                       : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -141,8 +143,8 @@ export const LeaderboardControls = ({
           )}
 
           {mode === 'compare' && (
-            <button onClick={onToggleWhatIf} className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all border ${whatIfEnabled ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}>
-              <FlaskConical className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">What-If</span>
+            <button onClick={onToggleWhatIf} className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all border active:scale-[0.97] ${whatIfEnabled ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}>
+              <FlaskConical className="w-3 h-3 md:w-4 md:h-4" /> <span>What-If</span>
             </button>
           )}
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useLayoutEffect, useState, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { ChevronDown, ChevronRight, Pin } from 'lucide-react';
 import { standingPoints, fromSectionKey } from '../utils/helpers';
@@ -23,6 +23,8 @@ export const LeaderboardTableMobile = ({
   const isTotalSort = sortBy === 'total';
   const [collapsedSections, setCollapsedSections] = useState(new Set());
   const scrollRefs = useRef({ West: { header: null, data: null }, East: { header: null, data: null } });
+  const rowRefs = useRef(new Map());
+  const previousRowPositions = useRef(new Map());
   const extractLineValue = (prediction, questionText = '') => {
     const direct = prediction?.line ?? prediction?.line_value ?? prediction?.prop_line ?? prediction?.threshold ?? prediction?.target_line;
     if (direct != null && direct !== '') return String(direct);
@@ -39,6 +41,31 @@ export const LeaderboardTableMobile = ({
     else next.add(conf);
     setCollapsedSections(next);
   };
+
+  const setRowRef = (rowKey) => (el) => {
+    if (el) rowRefs.current.set(rowKey, el);
+    else rowRefs.current.delete(rowKey);
+  };
+
+  useLayoutEffect(() => {
+    const nextPositions = new Map();
+    rowRefs.current.forEach((node, key) => {
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      nextPositions.set(key, rect);
+      const prev = previousRowPositions.current.get(key);
+      if (!prev) return;
+      const deltaY = prev.top - rect.top;
+      if (Math.abs(deltaY) < 0.5) return;
+      node.style.transition = 'none';
+      node.style.transform = `translateY(${deltaY}px)`;
+      window.requestAnimationFrame(() => {
+        node.style.transition = 'transform 240ms cubic-bezier(0.22, 1, 0.36, 1)';
+        node.style.transform = 'translateY(0)';
+      });
+    });
+    previousRowPositions.current = nextPositions;
+  }, [displayedUsers, pinnedUserIds, section]);
 
   const handleDragEnd = (res, conf) => {
     if (!res.destination) return;
@@ -167,7 +194,11 @@ export const LeaderboardTableMobile = ({
                               {displayedUsers.map(e => {
                                 const pointsDisplay = isTotalSort ? (e.user.total_points || 0) : (e.user.categories?.[catKey]?.points || 0);
                                 return (
-                                  <div key={e.user.id} className="flex border-b border-slate-100 dark:border-slate-800">
+                                  <div
+                                    key={e.user.id}
+                                    ref={setRowRef(`${conf}-${e.user.id}`)}
+                                    className="flex border-b border-slate-100 dark:border-slate-800 will-change-transform"
+                                  >
                                     {/* Sticky player name + pin */}
                                     <div className="flex-shrink-0 sticky left-0 z-10 w-[100px] px-2 py-2 border-r border-slate-100 dark:border-slate-800 flex items-center gap-1 bg-white dark:bg-slate-950">
                                       <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
@@ -256,7 +287,7 @@ export const LeaderboardTableMobile = ({
                     {displayedUsers.map(e => {
                       const pointsDisplay = isTotalSort ? (e.user.total_points || 0) : (e.user.categories?.[catKey]?.points || 0);
                       return (
-                        <tr key={e.user.id}>
+                        <tr key={e.user.id} ref={setRowRef(`non-${e.user.id}`)} className="will-change-transform">
                           <td className="sticky left-0 z-10 bg-white dark:bg-slate-950 px-2 py-2 border-r border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-1">
                               <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>

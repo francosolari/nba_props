@@ -85,6 +85,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   // Add logged-in user to selected set when URL doesn't explicitly define users.
   useEffect(() => {
     if (!loggedInUserId) return;
+    setPinnedUserIds((prev) => (prev.includes(loggedInUserId) ? prev : [loggedInUserId, ...prev]));
     const sp = new URLSearchParams(window.location.search);
     if (!sp.get('users')) {
       setSelectedUserIds(prev => prev.map(String).includes(loggedInUserId) ? prev : [loggedInUserId, ...prev]);
