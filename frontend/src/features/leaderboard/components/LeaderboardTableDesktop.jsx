@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { Lock, Pin, GripVertical } from 'lucide-react';
+import { FlaskConical, Lock, Pin, GripVertical } from 'lucide-react';
 import { standingPoints, fromSectionKey } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 
@@ -317,22 +317,16 @@ export const LeaderboardTableDesktop = ({
       ) : (
         // Non-standings sections (awards, props) - no drag-drop
         <div>
-          {whatIfEnabled && (
-            <div className="flex items-center justify-end px-4 py-1.5 border-b border-amber-100/70 dark:border-amber-800/30 bg-amber-50/60 dark:bg-amber-900/10">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700/80 dark:text-amber-300/80">
-                Scenario Mode: Click any answer to simulate outcomes
-              </span>
-            </div>
-          )}
           <div className="flex w-full">
             {/* Fixed left columns */}
             <div className="flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10" style={{ width: fixedColWidth }}>
               {nonStandingsQuestions.map((q) => (
                 <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50" style={{ height: ROW_HEIGHT }}>
                   <div className="px-6 flex items-center" style={{ width: fixedColWidth }}>
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight line-clamp-2">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight line-clamp-2 inline-flex items-center gap-1">
                       {q.text}
                       {q.is_finalized && <Lock className="w-3 h-3 text-amber-500 inline ml-1" />}
+                      {whatIfEnabled && !q.is_finalized && <FlaskConical className="w-3 h-3 text-slate-300 dark:text-slate-600" />}
                     </span>
                   </div>
                 </div>
@@ -367,7 +361,7 @@ export const LeaderboardTableDesktop = ({
                             type="button"
                             onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
                             className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color} ${
-                              isInteractive ? 'cursor-pointer hover:brightness-95 active:scale-[0.98] ring-1 ring-amber-300/50' : 'cursor-default'
+                              isInteractive ? 'cursor-pointer hover:brightness-95 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.35)] active:scale-[0.98]' : 'cursor-default'
                             } ${
                               simulatedState === 'correct'
                                 ? 'ring-2 ring-emerald-400/50'
@@ -375,6 +369,7 @@ export const LeaderboardTableDesktop = ({
                                 ? 'ring-2 ring-rose-400/40'
                                 : ''
                             }`}
+                            title={isInteractive ? 'Click to simulate outcome' : undefined}
                           >
                             {ans}
                           </button>
@@ -386,11 +381,6 @@ export const LeaderboardTableDesktop = ({
                                 {pts > 0 ? `+${pts}` : '0'}
                               </span>
                             </div>
-                          )}
-                          {isInteractive && (
-                            <span className="absolute -bottom-0.5 text-[8px] font-semibold uppercase tracking-wide text-amber-500/80 pointer-events-none opacity-70">
-                              click
-                            </span>
                           )}
                         </div>
                       );

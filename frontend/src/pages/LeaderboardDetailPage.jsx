@@ -80,6 +80,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const loggedInUserId = loggedInEntry?.user?.id ? String(loggedInEntry.user.id) : null;
   const pinTargetUserId = loggedInUserId || String(initialUserId || '');
   const canPinLoggedInUser = Boolean(pinTargetUserId);
+  const isPinMePinned = canPinLoggedInUser && pinnedUserIds.includes(pinTargetUserId);
 
   // Add logged-in user to selected set when URL doesn't explicitly define users.
   useEffect(() => {
@@ -357,10 +358,16 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const togglePin = (id) => {
     setPinnedUserIds(prev => prev.includes(String(id)) ? prev.filter(x => String(x) !== String(id)) : [...prev, String(id)]);
   };
-  const handlePinMe = useCallback(() => {
+  const handleTogglePinMe = useCallback(() => {
     if (!pinTargetUserId) return;
-    setPinnedUserIds(prev => (prev.includes(pinTargetUserId) ? prev : [pinTargetUserId, ...prev]));
-    setSelectedUserIds(prev => (prev.map(String).includes(pinTargetUserId) ? prev : [pinTargetUserId, ...prev]));
+    setPinnedUserIds((prev) => {
+      const wasPinned = prev.includes(pinTargetUserId);
+      if (!wasPinned) {
+        setSelectedUserIds((current) => (current.map(String).includes(pinTargetUserId) ? current : [pinTargetUserId, ...current]));
+        return [pinTargetUserId, ...prev];
+      }
+      return prev.filter((id) => String(id) !== String(pinTargetUserId));
+    });
   }, [pinTargetUserId]);
 
   useEffect(() => {
@@ -404,7 +411,8 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         onToggleWhatIf={handleWhatIfToggle}
         setShowManagePlayers={setShowManagePlayers}
         loggedInUserId={canPinLoggedInUser ? pinTargetUserId : null}
-        onPinMe={handlePinMe}
+        isPinMePinned={isPinMePinned}
+        onTogglePinMe={handleTogglePinMe}
       />
 
       {/* ─── 3. Main Content ─── */}

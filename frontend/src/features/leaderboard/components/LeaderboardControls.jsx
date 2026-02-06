@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, FlaskConical, Search } from 'lucide-react';
+import { ChevronDown, FlaskConical, Pin, Search, Users } from 'lucide-react';
 
 export const LeaderboardControls = ({
   query,
@@ -14,7 +14,8 @@ export const LeaderboardControls = ({
   onToggleWhatIf,
   setShowManagePlayers,
   loggedInUserId,
-  onPinMe
+  isPinMePinned,
+  onTogglePinMe
 }) => {
   const sortLabel = section === 'standings' ? 'Standings' : section === 'awards' ? 'Awards' : 'Props';
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -94,13 +95,48 @@ export const LeaderboardControls = ({
         <div className="flex items-center gap-1.5 md:gap-2 ml-auto shrink-0">
           {mode === 'compare' && (
             <>
-              <button onClick={() => setShowManagePlayers(true)} className="px-2 md:px-4 py-1 md:py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] md:text-xs font-black text-slate-500 uppercase hover:text-slate-900 dark:hover:text-white transition-all">Players</button>
-              {loggedInUserId && (
-                <button onClick={onPinMe} className="px-2 md:px-4 py-1 md:py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] md:text-xs font-black text-slate-500 uppercase hover:text-slate-900 dark:hover:text-white transition-all">Pin Me</button>
-              )}
-              <button onClick={() => setShowAll(!showAll)} className={`px-2 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all border ${showAll ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}>
-                {showAll ? 'Selected' : 'All'}
+              <button
+                onClick={() => setShowManagePlayers(true)}
+                className="inline-flex items-center gap-1 px-2.5 md:px-3.5 py-1 md:py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] md:text-xs font-black text-slate-500 uppercase hover:text-slate-900 dark:hover:text-white transition-all"
+              >
+                <Users className="w-3 h-3" />
+                <span>Players</span>
               </button>
+              {loggedInUserId && (
+                <button
+                  onClick={onTogglePinMe}
+                  className={`inline-flex items-center gap-1 px-2.5 md:px-3.5 py-1 md:py-1.5 border rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${
+                    isPinMePinned
+                      ? 'bg-sky-600 border-sky-600 text-white'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Pin className="w-3 h-3" />
+                  <span>Pin Me</span>
+                </button>
+              )}
+              <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <button
+                  onClick={() => setShowAll(false)}
+                  className={`px-2.5 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-black uppercase transition-all ${
+                    !showAll
+                      ? 'bg-sky-600 text-white'
+                      : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Selected
+                </button>
+                <button
+                  onClick={() => setShowAll(true)}
+                  className={`px-2.5 md:px-3 py-1 md:py-1.5 text-[10px] md:text-xs font-black uppercase transition-all border-l border-slate-200 dark:border-slate-800 ${
+                    showAll
+                      ? 'bg-sky-600 text-white'
+                      : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  All
+                </button>
+              </div>
             </>
           )}
 

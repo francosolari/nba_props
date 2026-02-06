@@ -207,12 +207,6 @@ export const LeaderboardTableMobile = ({
       ) : (
         /* Awards / Props Transposed Mobile View */
         <div className="overflow-x-auto no-scrollbar">
-          {whatIfEnabled && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700/80 dark:text-amber-300/80 bg-amber-50/70 dark:bg-amber-900/10 border-b border-amber-100/70 dark:border-amber-800/40">
-              <FlaskConical className="w-3 h-3" />
-              <span>Scenario Mode: Tap an answer to simulate it</span>
-            </div>
-          )}
           <div className="min-w-max px-0">
             {(() => {
               const qMap = new Map();
@@ -228,7 +222,15 @@ export const LeaderboardTableMobile = ({
                   <thead className="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
                     <tr>
                       <th className="sticky left-0 z-40 bg-white/95 dark:bg-slate-950/95 px-3 py-3 text-left border-b border-slate-200 dark:border-slate-800 w-[100px] backdrop-blur-sm">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Player</span>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Player</span>
+                          {whatIfEnabled && (
+                            <span className="mt-0.5 inline-flex items-center gap-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-slate-400/90 dark:text-slate-500">
+                              <FlaskConical className="w-2.5 h-2.5" />
+                              Sim
+                            </span>
+                          )}
+                        </div>
                         <div className="absolute right-0 top-1/4 bottom-1/4 w-[1px] bg-slate-100 dark:bg-slate-800" />
                       </th>
                       <th className="sticky left-[100px] z-30 bg-slate-50/95 dark:bg-slate-900/95 px-1 py-3 border-b border-slate-200 dark:border-slate-800 w-[42px] text-center shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] backdrop-blur-sm">
@@ -278,7 +280,7 @@ export const LeaderboardTableMobile = ({
                                   type="button"
                                   onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
                                   className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-[10px] font-black transition-all ${color} whitespace-normal break-words line-clamp-2 max-w-[130px] ${
-                                    isInteractive ? 'cursor-pointer hover:brightness-95 active:scale-[0.98] ring-1 ring-amber-300/50' : 'cursor-default'
+                                    isInteractive ? 'cursor-pointer hover:brightness-95 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.35)] active:scale-[0.98]' : 'cursor-default'
                                   } ${
                                     simulatedState === 'correct'
                                       ? 'ring-2 ring-emerald-400/50'
@@ -286,6 +288,7 @@ export const LeaderboardTableMobile = ({
                                       ? 'ring-2 ring-rose-400/40'
                                       : ''
                                   }`}
+                                  title={isInteractive ? 'Tap to simulate outcome' : undefined}
                                 >
                                   {ans}
                                 </button>
