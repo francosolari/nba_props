@@ -48,18 +48,18 @@ export const LeaderboardControls = ({
 
   return (
     <div className="shrink-0 bg-slate-50/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md relative md:sticky md:top-[61px] z-[40]">
-      <div className="w-full px-2 md:px-4 py-1.5 md:py-2 flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-4">
-        <div className="relative shrink-0 md:shrink w-48 md:w-auto hidden md:block">
+      <div className="w-full px-2 md:px-4 py-1.5 md:py-2 flex items-center gap-1.5 md:gap-4 overflow-x-auto no-scrollbar">
+        <div className="relative shrink-0 hidden md:block">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search..."
-            className="pl-10 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold outline-none w-full md:w-48 transition-all"
+            className="pl-10 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold outline-none w-48 transition-all"
           />
         </div>
 
-        <div ref={sortMenuRef} className="relative shrink-0 order-1 md:order-none">
+        <div ref={sortMenuRef} className="relative shrink-0">
           <button
             type="button"
             onClick={() => setSortMenuOpen(prev => !prev)}
@@ -94,7 +94,7 @@ export const LeaderboardControls = ({
           )}
         </div>
 
-        <div className="order-2 md:order-none w-full md:w-auto flex items-center gap-1.5 md:gap-2 md:ml-auto shrink-0 overflow-x-auto no-scrollbar pb-0.5 md:pb-0">
+        <div className="flex items-center gap-1.5 md:gap-2 md:ml-auto shrink-0">
           {mode === 'compare' && (
             <>
               <button
@@ -146,6 +146,12 @@ export const LeaderboardControls = ({
             <button onClick={onToggleWhatIf} className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all border active:scale-[0.97] ${whatIfEnabled ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}>
               <FlaskConical className="w-3 h-3 md:w-4 md:h-4" /> <span>What-If</span>
             </button>
+          )}
+
+          {whatIfEnabled && section !== 'standings' && (
+            <span className="hidden md:inline-flex items-center text-[10px] font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap pl-1">
+              Click answers to toggle correct / incorrect
+            </span>
           )}
         </div>
       </div>

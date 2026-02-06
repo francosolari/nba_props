@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useState, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { ChevronDown, ChevronRight, Pin } from 'lucide-react';
+import { ChevronDown, Pin } from 'lucide-react';
 import { standingPoints, fromSectionKey } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 
@@ -98,7 +98,7 @@ export const LeaderboardTableMobile = ({
                   className="sticky left-0 top-0 z-30 h-[44px] px-4 py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between min-w-full shadow-sm w-full transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 >
                   <div className="flex items-center gap-2.5">
-                    {isCollapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`} />
                     <div className="flex items-center gap-2.5">
                       <div className={`w-1 h-3.5 rounded-full ${conf === 'West' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' : 'bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.4)]'}`} />
                       <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${conf === 'West' ? 'text-rose-600 dark:text-rose-400' : 'text-sky-600 dark:text-sky-400'}`}>{conf}ern Conference</span>
@@ -224,7 +224,7 @@ export const LeaderboardTableMobile = ({
 
                                       return (
                                         <div key={row.id} className={`flex-shrink-0 w-14 px-1 py-1.5 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0 flex items-center justify-center ${isMoved ? 'bg-amber-50 dark:bg-amber-900/15' : ''}`}>
-                                          <div className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[10px] font-black transition-all ${colorClass}`}>
+                                          <div className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[10px] font-black transition-all duration-200 ${colorClass}`}>
                                             {predPos}
                                           </div>
                                         </div>
@@ -248,8 +248,8 @@ export const LeaderboardTableMobile = ({
         /* Awards / Props Transposed Mobile View */
         <div className="overflow-x-auto no-scrollbar relative">
           {whatIfEnabled && (
-            <div className="pointer-events-none absolute top-2 right-2 z-40 rounded-full bg-white/85 dark:bg-slate-900/85 border border-slate-200/80 dark:border-slate-700/80 px-2 py-0.5 text-[8px] font-semibold tracking-wide text-slate-500 dark:text-slate-400 shadow-sm backdrop-blur-sm">
-              What-If: tap answer to toggle correct/incorrect
+            <div className="pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-full bg-slate-800/90 dark:bg-slate-200/90 px-3.5 py-1.5 text-[9px] font-semibold tracking-wide text-white dark:text-slate-900 shadow-lg backdrop-blur-sm animate-fade-in-up">
+              Tap any answer to toggle correct / incorrect / reset
             </div>
           )}
           <div className="min-w-max px-0">
@@ -257,7 +257,7 @@ export const LeaderboardTableMobile = ({
               const qMap = new Map();
               displayedUsers.forEach(e => {
                 e.user.categories?.[catKey]?.predictions?.forEach(p => {
-                  if (p.question_id) qMap.set(p.question_id, { id: p.question_id, text: p.question, is_finalized: p.is_finalized });
+                  if (p.question_id) qMap.set(p.question_id, { id: p.question_id, text: p.question, is_finalized: p.is_finalized, line: p.line, outcome_type: p.outcome_type });
                 });
               });
               const questions = Array.from(qMap.values()).sort((a, b) => a.text.localeCompare(b.text));

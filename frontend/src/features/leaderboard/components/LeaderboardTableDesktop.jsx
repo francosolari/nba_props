@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Lock, Pin, GripVertical } from 'lucide-react';
 import { standingPoints, fromSectionKey } from '../utils/helpers';
@@ -25,6 +25,56 @@ export const LeaderboardTableDesktop = ({
   const eastScrollRef = React.useRef(null);
   const nonStandingsScrollRef = React.useRef(null);
   const [draggingId, setDraggingId] = useState(null);
+
+  // FLIP animation: track header column positions, animate entire column (header + body cells)
+  const tableRef = useRef(null);
+  const colRefs = useRef(new Map());
+  const prevColPositions = useRef(new Map());
+
+  const setColRef = (userId) => (el) => {
+    if (el) colRefs.current.set(String(userId), el);
+    else colRefs.current.delete(String(userId));
+  };
+
+  useLayoutEffect(() => {
+    const container = tableRef.current;
+    if (!container) return;
+    const nextPositions = new Map();
+    const deltas = new Map();
+
+    // 1. Compute deltaX from header refs
+    colRefs.current.forEach((node, key) => {
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      nextPositions.set(key, rect);
+      const prev = prevColPositions.current.get(key);
+      if (!prev) return;
+      const deltaX = prev.left - rect.left;
+      if (Math.abs(deltaX) >= 0.5) deltas.set(key, deltaX);
+    });
+    prevColPositions.current = nextPositions;
+
+    if (deltas.size === 0) return;
+
+    // 2. For each user with a delta, animate header + all body cells
+    deltas.forEach((deltaX, userId) => {
+      const headerNode = colRefs.current.get(userId);
+      const bodyCells = container.querySelectorAll(`[data-col-user="${userId}"]`);
+      const allNodes = headerNode ? [headerNode, ...bodyCells] : [...bodyCells];
+
+      allNodes.forEach((node) => {
+        node.style.transition = 'none';
+        node.style.transform = `translateX(${deltaX}px)`;
+      });
+
+      requestAnimationFrame(() => {
+        allNodes.forEach((node) => {
+          node.style.transition = 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1)';
+          node.style.transform = 'translateX(0)';
+        });
+      });
+    });
+  }, [displayedUsers, pinnedUserIds, section]);
 
   const isStandingsSection = section === 'standings';
 
@@ -94,7 +144,9 @@ export const LeaderboardTableDesktop = ({
           qMap.set(p.question_id, {
             id: p.question_id,
             text: p.question,
-            is_finalized: p.is_finalized
+            is_finalized: p.is_finalized,
+            line: p.line,
+            outcome_type: p.outcome_type,
           });
         }
       });
@@ -113,7 +165,7 @@ export const LeaderboardTableDesktop = ({
   }, []);
 
   return (
-    <div className="hidden md:block w-full">
+    <div ref={tableRef} className="hidden md:block w-full">
       {/* Sticky Header Row */}
       <div className="sticky top-[109px] z-[35] bg-white dark:bg-slate-900 shadow-sm">
         <div className="flex" style={{ height: HEADER_HEIGHT }}>
@@ -147,7 +199,8 @@ export const LeaderboardTableDesktop = ({
                 return (
                   <div
                     key={e.user.id}
-                    className="flex-shrink-0 px-2 flex items-center justify-center group overflow-hidden"
+                    ref={setColRef(e.user.id)}
+                    className="flex-shrink-0 px-2 flex items-center justify-center group overflow-hidden will-change-transform"
                     style={{ width: userColWidth }}
                   >
                     <div className="flex flex-col items-center">
@@ -299,8 +352,8 @@ export const LeaderboardTableDesktop = ({
                           if (pts === 0 && p) colorClass = "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
 
                           return (
-                            <div key={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative" style={{ width: userColWidth }}>
-                              <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition-all ${colorClass}`}>
+                            <div key={e.user.id} data-col-user={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative will-change-transform" style={{ width: userColWidth }}>
+                              <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200 ${colorClass}`}>
                                 {predPos}
                               </div>
                               {p && (
@@ -327,16 +380,11 @@ export const LeaderboardTableDesktop = ({
       ) : (
         // Non-standings sections (awards, props) - no drag-drop
         <div className="relative">
-          {whatIfEnabled && (
-            <div className="pointer-events-none absolute top-2 right-3 z-20 rounded-full bg-white/85 dark:bg-slate-900/85 border border-slate-200/80 dark:border-slate-700/80 px-2.5 py-1 text-[9px] font-semibold tracking-wide text-slate-500 dark:text-slate-400 shadow-sm backdrop-blur-sm">
-              What-If: click answer to toggle correct/incorrect
-            </div>
-          )}
           <div className="flex w-full">
             {/* Fixed left columns */}
             <div className="flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10" style={{ width: fixedColWidth }}>
               {nonStandingsQuestions.map((q) => (
-                <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50" style={{ height: ROW_HEIGHT }}>
+                <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50 transition-colors duration-150" style={{ height: ROW_HEIGHT }}>
                   <div className="px-6 flex items-center" style={{ width: fixedColWidth }}>
                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight line-clamp-2">
                       {q.text}
@@ -355,7 +403,7 @@ export const LeaderboardTableDesktop = ({
             >
               <div style={{ minWidth: displayedUsers.length * userColWidth }}>
                 {nonStandingsQuestions.map((q) => (
-                  <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50" style={{ height: ROW_HEIGHT }}>
+                  <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors duration-150" style={{ height: ROW_HEIGHT }}>
                     {displayedUsers.map(e => {
                       const p = e.user.categories?.[nonStandingsCategoryKey]?.predictions?.find(x => x.question_id === q.id);
                       const ans = p?.answer || '—';
@@ -376,7 +424,7 @@ export const LeaderboardTableDesktop = ({
                       const simulatedState = p?.__what_if_state;
 
                       return (
-                        <div key={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative px-2" style={{ width: userColWidth }}>
+                        <div key={e.user.id} data-col-user={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative px-2 will-change-transform" style={{ width: userColWidth }}>
                           <button
                             type="button"
                             onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
