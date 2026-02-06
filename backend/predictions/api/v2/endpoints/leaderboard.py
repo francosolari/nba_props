@@ -170,6 +170,7 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
             "answer": resolved_answer_values_map.get(ans.id, str(ans.answer)),  # Human-readable value
             "correct": ans.is_correct,
             "points": score,
+            "point_value": ans.question.point_value,
         })
         u_rec["total_points"] += score
 

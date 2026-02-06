@@ -1,5 +1,5 @@
 /* LeaderboardDetailPage.jsx */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useLeaderboard } from '../hooks';
@@ -14,6 +14,10 @@ import { LeaderboardTableMobile } from '../features/leaderboard/components/Leade
 import { LeaderboardPodium } from '../features/leaderboard/components/LeaderboardPodium';
 import { SimulationModal } from '../features/leaderboard/components/SimulationModal';
 import { PlayerSelectionModal } from '../features/leaderboard/components/PlayerSelectionModal';
+
+const WHAT_IF_INTRO_SESSION_KEY = 'leaderboard-what-if-intro-seen';
+
+const toAnswerKey = (answer) => String(answer ?? '').trim().toLowerCase();
 
 /* ─────────────────────────────────────────────────────────────────────────────
    MAIN COMPONENT
@@ -36,7 +40,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: leaderboardData, season: seasonInfo, isLoading, error } = useLeaderboard(selectedSeason);
+  const { data: leaderboardData, isLoading, error } = useLeaderboard(selectedSeason);
 
   const [section, setSection] = useState(initialSection);
   const [mode, setMode] = useState('compare'); 
@@ -49,8 +53,9 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const [query, setQuery] = useState('');
   const [whatIfEnabled, setWhatIfEnabled] = useState(false);
   const [showWhatIfConfirm, setShowWhatIfConfirm] = useState(false);
+  const [hasSeenWhatIfIntro, setHasSeenWhatIfIntro] = useState(false);
+  const [whatIfAnswerOverrides, setWhatIfAnswerOverrides] = useState({});
   const [pinnedUserIds, setPinnedUserIds] = useState([]);
-  const [pinPulseId, setPinPulseId] = useState(null);
   const [showManagePlayers, setShowManagePlayers] = useState(false);
   const [manageQuery, setManageQuery] = useState('');
 
@@ -126,15 +131,20 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const [westOrder, setWestOrder] = useState([]);
   const [eastOrder, setEastOrder] = useState([]);
 
-  useEffect(() => {
-    if (whatIfEnabled || westOrder.length > 0 || !standingsTeams.length) return;
-    const west = standingsTeams.filter(r => (r.conference || '').toLowerCase().startsWith('w'))
+  const defaultStandingsOrders = useMemo(() => {
+    const west = standingsTeams
+      .filter(r => (r.conference || '').toLowerCase().startsWith('w'))
       .map(r => ({ id: `W-${r.team}`, team: r.team, conference: 'West', actual_position: r.actual_position }));
-    const east = standingsTeams.filter(r => (r.conference || '').toLowerCase().startsWith('e'))
+    const east = standingsTeams
+      .filter(r => (r.conference || '').toLowerCase().startsWith('e'))
       .map(r => ({ id: `E-${r.team}`, team: r.team, conference: 'East', actual_position: r.actual_position }));
-    setWestOrder(west);
-    setEastOrder(east);
-  }, [standingsTeams, whatIfEnabled]);
+    return { west, east };
+  }, [standingsTeams]);
+
+  useEffect(() => {
+    if (westOrder.length === 0 && defaultStandingsOrders.west.length > 0) setWestOrder(defaultStandingsOrders.west);
+    if (eastOrder.length === 0 && defaultStandingsOrders.east.length > 0) setEastOrder(defaultStandingsOrders.east);
+  }, [defaultStandingsOrders, westOrder.length, eastOrder.length]);
 
   const simActualMap = useMemo(() => {
     const map = new Map();
@@ -143,27 +153,165 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     return map;
   }, [westOrder, eastOrder]);
 
+  const questionPointValues = useMemo(() => {
+    const pointByQuestion = new Map();
+    (leaderboardData || []).forEach((entry) => {
+      ['Player Awards', 'Props & Yes/No'].forEach((catKey) => {
+        entry.user.categories?.[catKey]?.predictions?.forEach((prediction) => {
+          if (!prediction?.question_id) return;
+          const key = String(prediction.question_id);
+          const candidate = Number(prediction.point_value ?? prediction.points ?? 0);
+          if (!Number.isFinite(candidate)) return;
+          pointByQuestion.set(key, Math.max(pointByQuestion.get(key) || 0, candidate));
+        });
+      });
+    });
+    return pointByQuestion;
+  }, [leaderboardData]);
+
+  useEffect(() => {
+    try {
+      setHasSeenWhatIfIntro(window.sessionStorage.getItem(WHAT_IF_INTRO_SESSION_KEY) === '1');
+    } catch {
+      setHasSeenWhatIfIntro(false);
+    }
+  }, []);
+
+  const resetWhatIfState = useCallback(() => {
+    setWhatIfAnswerOverrides({});
+    setWestOrder(defaultStandingsOrders.west);
+    setEastOrder(defaultStandingsOrders.east);
+  }, [defaultStandingsOrders]);
+
+  const disableWhatIf = useCallback(() => {
+    setWhatIfEnabled(false);
+    resetWhatIfState();
+  }, [resetWhatIfState]);
+
+  const requestEnableWhatIf = useCallback(() => {
+    if (hasSeenWhatIfIntro) {
+      setWhatIfEnabled(true);
+      return;
+    }
+    setShowWhatIfConfirm(true);
+  }, [hasSeenWhatIfIntro]);
+
+  const handleEnableWhatIf = useCallback(() => {
+    setWhatIfEnabled(true);
+    setShowWhatIfConfirm(false);
+    setHasSeenWhatIfIntro(true);
+    try {
+      window.sessionStorage.setItem(WHAT_IF_INTRO_SESSION_KEY, '1');
+    } catch {
+      // Ignore session storage failures.
+    }
+  }, []);
+
+  const handleWhatIfToggle = useCallback(() => {
+    if (whatIfEnabled) {
+      disableWhatIf();
+      return;
+    }
+    requestEnableWhatIf();
+  }, [whatIfEnabled, disableWhatIf, requestEnableWhatIf]);
+
+  const toggleWhatIfAnswer = useCallback((questionId, answerValue) => {
+    if (!questionId) return;
+    if (!whatIfEnabled) {
+      requestEnableWhatIf();
+      return;
+    }
+    const answerKey = toAnswerKey(answerValue);
+    if (!answerKey || answerKey === '—') return;
+
+    setWhatIfAnswerOverrides((prev) => {
+      const qid = String(questionId);
+      const next = { ...prev };
+      const perQuestion = { ...(next[qid] || {}) };
+      const current = perQuestion[answerKey];
+      const nextState = current === 'correct' ? 'incorrect' : current === 'incorrect' ? undefined : 'correct';
+
+      if (nextState) perQuestion[answerKey] = nextState;
+      else delete perQuestion[answerKey];
+
+      if (Object.keys(perQuestion).length === 0) delete next[qid];
+      else next[qid] = perQuestion;
+
+      return next;
+    });
+  }, [whatIfEnabled, requestEnableWhatIf]);
+
   const withSimTotals = useMemo(() => {
     if (!leaderboardData) return [];
     if (!whatIfEnabled) return leaderboardData;
-    return leaderboardData.map(e => {
-      const cat = e.user.categories?.['Regular Season Standings'];
-      let simStandPts = 0;
-      if (cat?.predictions) {
-        simStandPts = cat.predictions.reduce((sum, p) => sum + standingPoints(p.predicted_position, simActualMap.get(p.team)), 0);
-      }
-      const otherPts = (e.user.total_points || 0) - (cat?.points || 0);
-      return {
-        ...e,
-        __orig_total_points: e.user.total_points,
-        user: {
-          ...e.user,
-          total_points: otherPts + simStandPts,
-          categories: { ...e.user.categories, 'Regular Season Standings': { ...cat, points: simStandPts } }
+
+    const applyAnswerOverrides = (category) => {
+      if (!category?.predictions) return category;
+
+      let categoryPoints = 0;
+      const predictions = category.predictions.map((prediction) => {
+        const qid = prediction?.question_id ? String(prediction.question_id) : null;
+        const override = qid ? whatIfAnswerOverrides[qid]?.[toAnswerKey(prediction.answer)] : undefined;
+        const pointValue = Number(prediction.point_value ?? questionPointValues.get(qid) ?? prediction.points ?? 0) || 0;
+        let points = Number(prediction.points || 0);
+        let correct = prediction.correct;
+
+        if (override === 'correct') {
+          points = pointValue;
+          correct = true;
+        } else if (override === 'incorrect') {
+          points = 0;
+          correct = false;
         }
+
+        categoryPoints += points;
+        return { ...prediction, points, correct, __what_if_state: override || 'unchanged' };
+      });
+
+      return { ...category, points: categoryPoints, predictions };
+    };
+
+    return leaderboardData.map((entry) => {
+      const originalCategories = entry.user.categories || {};
+      const standingsCat = originalCategories['Regular Season Standings'];
+      const awardsCat = originalCategories['Player Awards'];
+      const propsCat = originalCategories['Props & Yes/No'];
+
+      let simStandPts = Number(standingsCat?.points || 0);
+      let simStandings = standingsCat;
+      if (standingsCat?.predictions) {
+        simStandings = {
+          ...standingsCat,
+          predictions: standingsCat.predictions.map((prediction) => {
+            const points = standingPoints(prediction.predicted_position, simActualMap.get(prediction.team));
+            return { ...prediction, points };
+          }),
+        };
+        simStandPts = simStandings.predictions.reduce((sum, prediction) => sum + Number(prediction.points || 0), 0);
+        simStandings.points = simStandPts;
+      }
+
+      const simAwards = applyAnswerOverrides(awardsCat);
+      const simProps = applyAnswerOverrides(propsCat);
+
+      const categories = { ...originalCategories };
+      if (simStandings) categories['Regular Season Standings'] = simStandings;
+      if (simAwards) categories['Player Awards'] = simAwards;
+      if (simProps) categories['Props & Yes/No'] = simProps;
+
+      const simTotalPoints = Object.values(categories).reduce((sum, category) => sum + Number(category?.points || 0), 0);
+
+      return {
+        ...entry,
+        __orig_total_points: entry.user.total_points,
+        user: {
+          ...entry.user,
+          total_points: simTotalPoints,
+          categories
+        },
       };
     }).sort((a, b) => (b.user.total_points || 0) - (a.user.total_points || 0));
-  }, [leaderboardData, whatIfEnabled, simActualMap]);
+  }, [leaderboardData, whatIfEnabled, simActualMap, whatIfAnswerOverrides, questionPointValues]);
 
   const displayedUsers = useMemo(() => {
     const base = showAll ? withSimTotals : selectedUserIds.map(id => withSimTotals.find(e => String(e.user.id) === String(id))).filter(Boolean);
@@ -189,12 +337,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
 
   const addUser = (id) => setSelectedUserIds(prev => Array.from(new Set([...prev, String(id)])));
   const togglePin = (id) => {
-    const update = () => {
-      setPinnedUserIds(prev => prev.includes(String(id)) ? prev.filter(x => String(x) !== String(id)) : [...prev, String(id)]);
-      setPinPulseId(String(id)); window.setTimeout(() => setPinPulseId(null), 350);
-    };
-    if (document.startViewTransition) document.startViewTransition(update);
-    else update();
+    setPinnedUserIds(prev => prev.includes(String(id)) ? prev.filter(x => String(x) !== String(id)) : [...prev, String(id)]);
   };
 
   useEffect(() => {
@@ -235,8 +378,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         setShowAll={setShowAll}
         section={section}
         whatIfEnabled={whatIfEnabled}
-        setWhatIfEnabled={setWhatIfEnabled}
-        setShowWhatIfConfirm={setShowWhatIfConfirm}
+        onToggleWhatIf={handleWhatIfToggle}
         setShowManagePlayers={setShowManagePlayers}
       />
 
@@ -256,14 +398,14 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               section={section}
               displayedUsers={displayedUsers}
               pinnedUserIds={pinnedUserIds}
-              pinPulseId={pinPulseId}
               togglePin={togglePin}
               westOrder={westOrder}
               eastOrder={eastOrder}
               setWestOrder={setWestOrder}
               setEastOrder={setEastOrder}
               whatIfEnabled={whatIfEnabled}
-              setShowWhatIfConfirm={setShowWhatIfConfirm}
+              requestEnableWhatIf={requestEnableWhatIf}
+              toggleWhatIfAnswer={toggleWhatIfAnswer}
               simActualMap={simActualMap}
               leaderboardData={leaderboardData}
             />
@@ -272,7 +414,6 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               section={section}
               displayedUsers={displayedUsers}
               pinnedUserIds={pinnedUserIds}
-              pinPulseId={pinPulseId}
               togglePin={togglePin}
               westOrder={westOrder}
               eastOrder={eastOrder}
@@ -280,7 +421,8 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               setEastOrder={setEastOrder}
               whatIfEnabled={whatIfEnabled}
               simActualMap={simActualMap}
-              setShowWhatIfConfirm={setShowWhatIfConfirm}
+              requestEnableWhatIf={requestEnableWhatIf}
+              toggleWhatIfAnswer={toggleWhatIfAnswer}
             />
           </div>
         )}
@@ -291,7 +433,8 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
       <SimulationModal 
         show={showWhatIfConfirm} 
         onClose={() => setShowWhatIfConfirm(false)} 
-        onEnable={() => { setWhatIfEnabled(true); setShowWhatIfConfirm(false); }} 
+        onEnable={handleEnableWhatIf}
+        section={section}
       />
 
       <PlayerSelectionModal

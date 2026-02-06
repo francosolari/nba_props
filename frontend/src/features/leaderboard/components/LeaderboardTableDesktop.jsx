@@ -8,14 +8,14 @@ export const LeaderboardTableDesktop = ({
   section,
   displayedUsers,
   pinnedUserIds,
-  pinPulseId,
   togglePin,
   westOrder,
   eastOrder,
   setWestOrder,
   setEastOrder,
   whatIfEnabled,
-  setShowWhatIfConfirm,
+  requestEnableWhatIf,
+  toggleWhatIfAnswer,
   simActualMap,
   leaderboardData
 }) => {
@@ -33,8 +33,9 @@ export const LeaderboardTableDesktop = ({
 
   const handleDragEnd = (result, conf) => {
     setDraggingId(null);
-    if (!result.destination || !whatIfEnabled) {
-      if (!whatIfEnabled) setShowWhatIfConfirm(true);
+    if (!result.destination) return;
+    if (!whatIfEnabled) {
+      requestEnableWhatIf();
       return;
     }
     const reorder = (list, from, to) => {
@@ -127,14 +128,11 @@ export const LeaderboardTableDesktop = ({
             <div className="flex h-full" style={{ minWidth: displayedUsers.length * userColWidth }}>
               {displayedUsers.map((e) => {
                 const isPinned = pinnedUserIds.includes(String(e.user.id));
-                const isPulse = String(e.user.id) === String(pinPulseId);
                 return (
                   <div
                     key={e.user.id}
-                    className={`flex-shrink-0 px-2 flex items-center justify-center group transition-all duration-300 ${
-                      isPinned ? 'bg-sky-50 dark:bg-sky-900/30' : ''
-                    } ${isPulse ? 'scale-110 bg-sky-100 dark:bg-sky-800/50 shadow-sm z-10' : ''}`}
-                    style={{ width: userColWidth, viewTransitionName: `user-desktop-${e.user.id}` }}
+                    className="flex-shrink-0 px-2 flex items-center justify-center group overflow-hidden"
+                    style={{ width: userColWidth }}
                   >
                     <div className="flex flex-col items-center">
                       <div className="flex items-center gap-1 mb-0.5">
@@ -152,7 +150,19 @@ export const LeaderboardTableDesktop = ({
                           <Pin className="w-3 h-3" />
                         </button>
                       </div>
-                      <div className="text-sm font-black text-sky-600 dark:text-sky-400">{e.user.total_points}</div>
+                      {(() => {
+                        const delta = whatIfEnabled && e.__orig_total_points != null ? (e.user.total_points - e.__orig_total_points) : 0;
+                        return (
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-black text-sky-600 dark:text-sky-400">{e.user.total_points}</span>
+                            {delta !== 0 && (
+                              <span className={`text-[9px] font-black ${delta > 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
+                                {delta > 0 ? '▲' : '▼'}{Math.abs(delta)}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 );
@@ -215,16 +225,16 @@ export const LeaderboardTableDesktop = ({
                                   : draggingId === row.id
                                   ? 'bg-sky-50 dark:bg-sky-900/20'
                                   : isMoved
-                                  ? 'bg-amber-100 dark:bg-amber-900/30 border-l-[3px] border-amber-400 cursor-grab'
+                                  ? 'bg-amber-50 dark:bg-amber-900/15 border-l-[3px] border-amber-300 cursor-grab'
                                   : whatIfEnabled
-                                  ? 'hover:bg-amber-50/50 dark:hover:bg-amber-900/10 cursor-grab'
+                                  ? 'hover:bg-amber-50/40 dark:hover:bg-amber-900/10 cursor-grab'
                                   : ''
                               }`}
                               style={{ height: ROW_HEIGHT, ...prov.draggableProps.style }}
                             >
                               {whatIfEnabled && (
                                 <div className="w-6 flex items-center justify-center ml-1">
-                                  <GripVertical className={`w-4 h-4 ${snap.isDragging ? 'text-sky-500' : isMoved ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600'}`} />
+                                  <GripVertical className={`w-4 h-4 ${snap.isDragging ? 'text-sky-500' : isMoved ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600'}`} />
                                 </div>
                               )}
                               <div className={`${whatIfEnabled ? 'w-[194px]' : 'w-[220px]'} px-4 flex items-center gap-3`}>
@@ -256,7 +266,7 @@ export const LeaderboardTableDesktop = ({
                       <div
                         key={row.id}
                         className={`flex border-b border-slate-100 dark:border-slate-800/50 transition-colors ${
-                          draggingId === row.id ? 'bg-sky-50 dark:bg-sky-900/20' : isMoved ? 'bg-amber-100 dark:bg-amber-900/30' : ''
+                          draggingId === row.id ? 'bg-sky-50 dark:bg-sky-900/20' : isMoved ? 'bg-amber-50 dark:bg-amber-900/15' : ''
                         }`}
                         style={{ height: ROW_HEIGHT }}
                       >
@@ -276,7 +286,7 @@ export const LeaderboardTableDesktop = ({
                                 {predPos}
                               </div>
                               {p && (
-                                <div className={`absolute -top-1 right-2 transition-opacity pointer-events-none z-20 ${whatIfEnabled ? 'opacity-100' : 'opacity-0 group-hover/cell:opacity-100'}`}>
+                                <div className="absolute -top-0.5 right-1 transition-opacity pointer-events-none z-20 opacity-0 group-hover/cell:opacity-100">
                                   <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm ${
                                     pts >= 3 ? 'bg-emerald-500 text-white' : pts >= 1 ? 'bg-amber-500 text-white' : 'bg-slate-400 text-white'
                                   }`}>
@@ -332,14 +342,28 @@ export const LeaderboardTableDesktop = ({
                     let color = "text-slate-400 dark:text-slate-500";
                     if (isCorrect) color = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30";
                     if (isWrong) color = "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
+                    const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
+                    const simulatedState = p?.__what_if_state;
 
                     return (
                       <div key={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative px-2" style={{ width: userColWidth }}>
-                        <div className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color}`}>
+                        <button
+                          type="button"
+                          onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
+                          className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color} ${
+                            isInteractive ? 'cursor-pointer hover:brightness-95 active:scale-[0.98]' : 'cursor-default'
+                          } ${
+                            simulatedState === 'correct'
+                              ? 'ring-2 ring-emerald-400/50'
+                              : simulatedState === 'incorrect'
+                              ? 'ring-2 ring-rose-400/40'
+                              : ''
+                          }`}
+                        >
                           {ans}
-                        </div>
+                        </button>
                         {p && (
-                          <div className="absolute -top-1 right-2 opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-20">
+                          <div className="absolute -top-0.5 right-1 opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-20">
                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm ${
                               pts > 0 ? 'bg-emerald-500 text-white' : 'bg-slate-400 text-white'
                             }`}>

@@ -8,7 +8,6 @@ export const LeaderboardTableMobile = ({
   section,
   displayedUsers,
   pinnedUserIds,
-  pinPulseId,
   togglePin,
   westOrder,
   eastOrder,
@@ -16,7 +15,8 @@ export const LeaderboardTableMobile = ({
   setEastOrder,
   whatIfEnabled,
   simActualMap,
-  setShowWhatIfConfirm
+  requestEnableWhatIf,
+  toggleWhatIfAnswer
 }) => {
   const catKey = fromSectionKey(section);
   const [collapsedSections, setCollapsedSections] = useState(new Set());
@@ -30,8 +30,9 @@ export const LeaderboardTableMobile = ({
   };
 
   const handleDragEnd = (res, conf) => {
-    if (!res.destination || !whatIfEnabled) {
-      if (!whatIfEnabled) setShowWhatIfConfirm(true);
+    if (!res.destination) return;
+    if (!whatIfEnabled) {
+      requestEnableWhatIf();
       return;
     }
     const reorder = (list, from, to) => {
@@ -119,7 +120,7 @@ export const LeaderboardTableMobile = ({
                                             snap.isDragging
                                               ? 'bg-sky-50 dark:bg-sky-900/40 shadow-xl z-[60] scale-105 rounded-lg border-2 border-sky-400'
                                               : isMoved
-                                              ? 'bg-amber-100 dark:bg-amber-900/30'
+                                              ? 'bg-amber-50 dark:bg-amber-900/15'
                                               : 'bg-white/95 dark:bg-slate-950/95'
                                           }`}
                                         >
@@ -154,11 +155,10 @@ export const LeaderboardTableMobile = ({
                             <div className="min-w-max">
                               {displayedUsers.map(e => {
                                 const catPts = e.user.categories?.[catKey]?.points || 0;
-                                const isPulse = String(e.user.id) === String(pinPulseId);
                                 return (
-                                  <div key={e.user.id} className="flex border-b border-slate-100 dark:border-slate-800" style={{ viewTransitionName: `user-mobile-${conf}-${e.user.id}` }}>
+                                  <div key={e.user.id} className="flex border-b border-slate-100 dark:border-slate-800">
                                     {/* Sticky player name + pin */}
-                                    <div className={`flex-shrink-0 sticky left-0 z-10 w-[100px] px-2 py-3 border-r border-slate-100 dark:border-slate-800 flex items-center gap-1 transition-colors duration-300 ${isPulse ? 'bg-sky-100 dark:bg-sky-800/60' : 'bg-white dark:bg-slate-950'}`}>
+                                    <div className="flex-shrink-0 sticky left-0 z-10 w-[100px] px-2 py-3 border-r border-slate-100 dark:border-slate-800 flex items-center gap-1 bg-white dark:bg-slate-950">
                                       <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
                                       <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-colors ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500' : 'text-slate-200 dark:text-slate-700'}`}>
                                         <Pin className="w-3 h-3" />
@@ -181,7 +181,7 @@ export const LeaderboardTableMobile = ({
                                       if (pts === 0 && p) colorClass = "bg-rose-500/5 text-rose-500/70 dark:text-rose-400/70 ring-1 ring-inset ring-rose-500/10";
 
                                       return (
-                                        <div key={row.id} className={`flex-shrink-0 w-14 px-1 py-2 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0 flex items-center justify-center ${isMoved ? 'bg-amber-100 dark:bg-amber-900/30' : ''}`}>
+                                        <div key={row.id} className={`flex-shrink-0 w-14 px-1 py-2 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0 flex items-center justify-center ${isMoved ? 'bg-amber-50 dark:bg-amber-900/15' : ''}`}>
                                           <div className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[10px] font-black transition-all ${colorClass}`}>
                                             {predPos}
                                           </div>
@@ -240,7 +240,7 @@ export const LeaderboardTableMobile = ({
                     {displayedUsers.map(e => {
                       const catPts = e.user.categories?.[catKey]?.points || 0;
                       return (
-                        <tr key={e.user.id} style={{ viewTransitionName: `user-mobile-${e.user.id}` }}>
+                        <tr key={e.user.id}>
                           <td className="sticky left-0 z-10 bg-white dark:bg-slate-950 px-2 py-3.5 border-r border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-1">
                               <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
@@ -257,6 +257,8 @@ export const LeaderboardTableMobile = ({
                             const ans = p?.answer || '—';
                             const isCorrect = p?.correct === true;
                             const isWrong = p?.correct === false;
+                            const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
+                            const simulatedState = p?.__what_if_state;
 
                             let color = "text-slate-400 dark:text-slate-600";
                             if (isCorrect) color = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20";
@@ -264,9 +266,21 @@ export const LeaderboardTableMobile = ({
 
                             return (
                               <td key={q.id} className="px-1 py-2.5 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0">
-                                <div className={`inline-flex items-center justify-center px-2 py-1.5 rounded-md text-[10px] font-black transition-all ${color} truncate max-w-[100px]`}>
+                                <button
+                                  type="button"
+                                  onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
+                                  className={`inline-flex items-center justify-center px-2 py-1.5 rounded-md text-[10px] font-black transition-all ${color} truncate max-w-[100px] ${
+                                    isInteractive ? 'cursor-pointer hover:brightness-95 active:scale-[0.98]' : 'cursor-default'
+                                  } ${
+                                    simulatedState === 'correct'
+                                      ? 'ring-2 ring-emerald-400/50'
+                                      : simulatedState === 'incorrect'
+                                      ? 'ring-2 ring-rose-400/40'
+                                      : ''
+                                  }`}
+                                >
                                   {ans}
-                                </div>
+                                </button>
                               </td>
                             );
                           })}

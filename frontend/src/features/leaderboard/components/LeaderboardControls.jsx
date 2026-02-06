@@ -11,8 +11,7 @@ export const LeaderboardControls = ({
   setShowAll,
   section,
   whatIfEnabled,
-  setWhatIfEnabled,
-  setShowWhatIfConfirm,
+  onToggleWhatIf,
   setShowManagePlayers
 }) => {
   const sortLabel = section === 'standings' ? 'Standings' : section === 'awards' ? 'Awards' : 'Props';
@@ -50,8 +49,8 @@ export const LeaderboardControls = ({
             </>
           )}
 
-          {section === 'standings' && (
-            <button onClick={() => whatIfEnabled ? setWhatIfEnabled(false) : setShowWhatIfConfirm(true)} className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all border ${whatIfEnabled ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}>
+          {mode === 'compare' && (
+            <button onClick={onToggleWhatIf} className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all border ${whatIfEnabled ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}>
               <TrendingUp className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">What-If</span>
             </button>
           )}
