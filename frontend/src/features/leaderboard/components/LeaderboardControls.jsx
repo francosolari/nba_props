@@ -105,13 +105,13 @@ export const LeaderboardControls = ({
               {loggedInUserId && (
                 <button
                   onClick={onTogglePinMe}
-                  className={`inline-flex items-center gap-1 px-2.5 md:px-3.5 py-1 md:py-1.5 border rounded-lg text-[10px] md:text-xs font-black uppercase transition-all ${
+                  className={`inline-flex items-center gap-1 px-2.5 md:px-3.5 py-1 md:py-1.5 border rounded-lg text-[10px] md:text-xs font-black uppercase transition-all duration-200 active:scale-[0.96] ${
                     isPinMePinned
-                      ? 'bg-sky-600 border-sky-600 text-white'
+                      ? 'bg-sky-600 border-sky-600 text-white shadow-sm shadow-sky-600/30'
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <Pin className="w-3 h-3" />
+                  <Pin className={`w-3 h-3 transition-transform duration-200 ${isPinMePinned ? 'scale-110' : ''}`} />
                   <span>Pin Me</span>
                 </button>
               )}
@@ -142,7 +142,7 @@ export const LeaderboardControls = ({
 
           {mode === 'compare' && (
             <button onClick={onToggleWhatIf} className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all border ${whatIfEnabled ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}>
-              <FlaskConical className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">Scenario</span>
+              <FlaskConical className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">What-If</span>
             </button>
           )}
         </div>

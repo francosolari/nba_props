@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { ChevronDown, ChevronRight, FlaskConical, Pin } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pin } from 'lucide-react';
 import { standingPoints, fromSectionKey } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 
@@ -23,6 +23,15 @@ export const LeaderboardTableMobile = ({
   const isTotalSort = sortBy === 'total';
   const [collapsedSections, setCollapsedSections] = useState(new Set());
   const scrollRefs = useRef({ West: { header: null, data: null }, East: { header: null, data: null } });
+  const extractLineValue = (prediction, questionText = '') => {
+    const direct = prediction?.line ?? prediction?.line_value ?? prediction?.prop_line ?? prediction?.threshold ?? prediction?.target_line;
+    if (direct != null && direct !== '') return String(direct);
+
+    const text = String(questionText || '');
+    const overUnderMatch = text.match(/(?:over\/under|o\/u|over under)\s*[:\-]?\s*(\d+(?:\.\d+)?)/i);
+    if (overUnderMatch?.[1]) return overUnderMatch[1];
+    return null;
+  };
 
   const toggleSection = (conf) => {
     const next = new Set(collapsedSections);
@@ -162,7 +171,7 @@ export const LeaderboardTableMobile = ({
                                     {/* Sticky player name + pin */}
                                     <div className="flex-shrink-0 sticky left-0 z-10 w-[100px] px-2 py-2 border-r border-slate-100 dark:border-slate-800 flex items-center gap-1 bg-white dark:bg-slate-950">
                                       <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
-                                      <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-colors ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500' : 'text-slate-200 dark:text-slate-700'}`}>
+                                      <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-all duration-200 ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500 scale-110' : 'text-slate-200 dark:text-slate-700 active:scale-95'}`}>
                                         <Pin className="w-3 h-3" />
                                       </button>
                                     </div>
@@ -206,7 +215,12 @@ export const LeaderboardTableMobile = ({
         </div>
       ) : (
         /* Awards / Props Transposed Mobile View */
-        <div className="overflow-x-auto no-scrollbar">
+        <div className="overflow-x-auto no-scrollbar relative">
+          {whatIfEnabled && (
+            <div className="pointer-events-none absolute top-2 right-2 z-40 rounded-full bg-white/85 dark:bg-slate-900/85 border border-slate-200/80 dark:border-slate-700/80 px-2 py-0.5 text-[8px] font-semibold tracking-wide text-slate-500 dark:text-slate-400 shadow-sm backdrop-blur-sm">
+              What-If: tap answer to toggle correct/incorrect
+            </div>
+          )}
           <div className="min-w-max px-0">
             {(() => {
               const qMap = new Map();
@@ -222,15 +236,7 @@ export const LeaderboardTableMobile = ({
                   <thead className="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm">
                     <tr>
                       <th className="sticky left-0 z-40 bg-white/95 dark:bg-slate-950/95 px-3 py-3 text-left border-b border-slate-200 dark:border-slate-800 w-[100px] backdrop-blur-sm">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Player</span>
-                          {whatIfEnabled && (
-                            <span className="mt-0.5 inline-flex items-center gap-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-slate-400/90 dark:text-slate-500">
-                              <FlaskConical className="w-2.5 h-2.5" />
-                              Sim
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Player</span>
                         <div className="absolute right-0 top-1/4 bottom-1/4 w-[1px] bg-slate-100 dark:bg-slate-800" />
                       </th>
                       <th className="sticky left-[100px] z-30 bg-slate-50/95 dark:bg-slate-900/95 px-1 py-3 border-b border-slate-200 dark:border-slate-800 w-[42px] text-center shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] backdrop-blur-sm">
@@ -254,7 +260,7 @@ export const LeaderboardTableMobile = ({
                           <td className="sticky left-0 z-10 bg-white dark:bg-slate-950 px-2 py-2 border-r border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-1">
                               <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
-                              <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-colors ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500' : 'text-slate-200 dark:text-slate-700'}`}>
+                              <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-all duration-200 ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500 scale-110' : 'text-slate-200 dark:text-slate-700 active:scale-95'}`}>
                                 <Pin className="w-3 h-3" />
                               </button>
                             </div>
@@ -269,6 +275,12 @@ export const LeaderboardTableMobile = ({
                             const isWrong = p?.correct === false;
                             const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
                             const simulatedState = p?.__what_if_state;
+                            const lineValue = extractLineValue(p, q.text);
+                            const answerDisplay = lineValue && ans !== '—'
+                              ? (String(ans).toLowerCase() === 'over' || String(ans).toLowerCase() === 'under'
+                                ? `${ans} ${lineValue}`
+                                : `${ans} (${lineValue})`)
+                              : ans;
 
                             let color = "text-slate-400 dark:text-slate-600";
                             if (isCorrect) color = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20";
@@ -288,9 +300,9 @@ export const LeaderboardTableMobile = ({
                                       ? 'ring-2 ring-rose-400/40'
                                       : ''
                                   }`}
-                                  title={isInteractive ? 'Tap to simulate outcome' : undefined}
+                                  title={isInteractive ? 'What-If: tap to toggle correct / incorrect / reset' : undefined}
                                 >
-                                  {ans}
+                                  {answerDisplay}
                                 </button>
                               </td>
                             );

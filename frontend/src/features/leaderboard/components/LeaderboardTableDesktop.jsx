@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { FlaskConical, Lock, Pin, GripVertical } from 'lucide-react';
+import { Lock, Pin, GripVertical } from 'lucide-react';
 import { standingPoints, fromSectionKey } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 
@@ -102,6 +102,16 @@ export const LeaderboardTableDesktop = ({
     return Array.from(qMap.values()).sort((a, b) => a.text.localeCompare(b.text));
   }, [isStandingsSection, leaderboardData, nonStandingsCategoryKey]);
 
+  const extractLineValue = React.useCallback((prediction, questionText = '') => {
+    const direct = prediction?.line ?? prediction?.line_value ?? prediction?.prop_line ?? prediction?.threshold ?? prediction?.target_line;
+    if (direct != null && direct !== '') return String(direct);
+
+    const text = String(questionText || '');
+    const overUnderMatch = text.match(/(?:over\/under|o\/u|over under)\s*[:\-]?\s*(\d+(?:\.\d+)?)/i);
+    if (overUnderMatch?.[1]) return overUnderMatch[1];
+    return null;
+  }, []);
+
   return (
     <div className="hidden md:block w-full">
       {/* Sticky Header Row */}
@@ -151,7 +161,7 @@ export const LeaderboardTableDesktop = ({
                         </span>
                         <button
                           onClick={() => togglePin(e.user.id)}
-                          className={`transition-all ${isPinned ? 'text-sky-500' : 'text-slate-300 opacity-0 group-hover:opacity-100 hover:text-sky-400'}`}
+                          className={`transition-all duration-200 ${isPinned ? 'text-sky-500 scale-110' : 'text-slate-300 opacity-0 group-hover:opacity-100 hover:text-sky-400 hover:scale-110 active:scale-95'}`}
                         >
                           <Pin className="w-3 h-3" />
                         </button>
@@ -316,17 +326,21 @@ export const LeaderboardTableDesktop = ({
         })
       ) : (
         // Non-standings sections (awards, props) - no drag-drop
-        <div>
+        <div className="relative">
+          {whatIfEnabled && (
+            <div className="pointer-events-none absolute top-2 right-3 z-20 rounded-full bg-white/85 dark:bg-slate-900/85 border border-slate-200/80 dark:border-slate-700/80 px-2.5 py-1 text-[9px] font-semibold tracking-wide text-slate-500 dark:text-slate-400 shadow-sm backdrop-blur-sm">
+              What-If: click answer to toggle correct/incorrect
+            </div>
+          )}
           <div className="flex w-full">
             {/* Fixed left columns */}
             <div className="flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10" style={{ width: fixedColWidth }}>
               {nonStandingsQuestions.map((q) => (
                 <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50" style={{ height: ROW_HEIGHT }}>
                   <div className="px-6 flex items-center" style={{ width: fixedColWidth }}>
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight line-clamp-2 inline-flex items-center gap-1">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight line-clamp-2">
                       {q.text}
                       {q.is_finalized && <Lock className="w-3 h-3 text-amber-500 inline ml-1" />}
-                      {whatIfEnabled && !q.is_finalized && <FlaskConical className="w-3 h-3 text-slate-300 dark:text-slate-600" />}
                     </span>
                   </div>
                 </div>
@@ -348,6 +362,12 @@ export const LeaderboardTableDesktop = ({
                       const isCorrect = p?.correct === true;
                       const isWrong = p?.correct === false;
                       const pts = p?.points || 0;
+                      const lineValue = extractLineValue(p, q.text);
+                      const answerDisplay = lineValue && ans !== '—'
+                        ? (String(ans).toLowerCase() === 'over' || String(ans).toLowerCase() === 'under'
+                          ? `${ans} ${lineValue}`
+                          : `${ans} (${lineValue})`)
+                        : ans;
 
                       let color = "text-slate-400 dark:text-slate-500";
                       if (isCorrect) color = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30";
@@ -369,9 +389,9 @@ export const LeaderboardTableDesktop = ({
                                 ? 'ring-2 ring-rose-400/40'
                                 : ''
                             }`}
-                            title={isInteractive ? 'Click to simulate outcome' : undefined}
+                            title={isInteractive ? 'What-If: click to toggle correct / incorrect / reset' : undefined}
                           >
-                            {ans}
+                            {answerDisplay}
                           </button>
                           {p && (
                             <div className="absolute -top-0.5 right-1 opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-20">
