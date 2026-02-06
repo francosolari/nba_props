@@ -16,7 +16,16 @@ export const resolveTeamLogoSlug = (name = '') => {
   return TEAM_LOGO_SLUG_OVERRIDES[baseSlug] || baseSlug;
 };
 
+const MAX_LOGO_CACHE_SIZE = 64;
 const resolvedLogoSrcBySlug = new Map();
+
+const cacheLogoSrc = (slug, src) => {
+  if (resolvedLogoSrcBySlug.size >= MAX_LOGO_CACHE_SIZE) {
+    const oldest = resolvedLogoSrcBySlug.keys().next().value;
+    resolvedLogoSrcBySlug.delete(oldest);
+  }
+  resolvedLogoSrcBySlug.set(slug, src);
+};
 
 const getSvgPath = (slug) => `/static/img/teams/${slug}.svg`;
 const getPngPath = (slug) => `/static/img/teams/${slug}.png`;
@@ -40,7 +49,7 @@ const TeamLogo = memo(({ teamName, slug, className, alt, ...props }) => {
 
   const handleLoad = useCallback(() => {
     if (!calculatedSlug || !src) return;
-    resolvedLogoSrcBySlug.set(calculatedSlug, src);
+    cacheLogoSrc(calculatedSlug, src);
     setLoaded(true);
   }, [calculatedSlug, src]);
 
@@ -59,7 +68,7 @@ const TeamLogo = memo(({ teamName, slug, className, alt, ...props }) => {
       setErrorCount(2);
       setLoaded(true);
     } else if (calculatedSlug) {
-      resolvedLogoSrcBySlug.set(calculatedSlug, UNKNOWN_LOGO_PATH);
+      cacheLogoSrc(calculatedSlug, UNKNOWN_LOGO_PATH);
       setLoaded(true);
     }
   }, [calculatedSlug, errorCount]);

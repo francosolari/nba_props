@@ -56,11 +56,21 @@ export const LeaderboardTableDesktop = ({
 
     if (deltas.size === 0) return;
 
-    // 2. For each user with a delta, animate header + all body cells
+    // 2. Bulk-query all body cells once, then group by userId
+    const cellsByUser = new Map();
+    container.querySelectorAll('[data-col-user]').forEach((node) => {
+      const uid = node.getAttribute('data-col-user');
+      if (deltas.has(uid)) {
+        if (!cellsByUser.has(uid)) cellsByUser.set(uid, []);
+        cellsByUser.get(uid).push(node);
+      }
+    });
+
+    // 3. For each user with a delta, animate header + all body cells
     deltas.forEach((deltaX, userId) => {
       const headerNode = colRefs.current.get(userId);
-      const bodyCells = container.querySelectorAll(`[data-col-user="${userId}"]`);
-      const allNodes = headerNode ? [headerNode, ...bodyCells] : [...bodyCells];
+      const bodyCells = cellsByUser.get(userId) || [];
+      const allNodes = headerNode ? [headerNode, ...bodyCells] : bodyCells;
 
       allNodes.forEach((node) => {
         node.style.transition = 'none';

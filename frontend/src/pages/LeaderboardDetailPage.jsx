@@ -1,5 +1,5 @@
 /* LeaderboardDetailPage.jsx */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useLeaderboard } from '../hooks';
@@ -82,9 +82,11 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const canPinLoggedInUser = Boolean(pinTargetUserId);
   const isPinMePinned = canPinLoggedInUser && pinnedUserIds.includes(pinTargetUserId);
 
-  // Add logged-in user to selected set when URL doesn't explicitly define users.
+  // Add logged-in user to selected set once when URL doesn't explicitly define users.
+  const autoPinDone = useRef(false);
   useEffect(() => {
-    if (!loggedInUserId) return;
+    if (!loggedInUserId || autoPinDone.current) return;
+    autoPinDone.current = true;
     setPinnedUserIds((prev) => (prev.includes(loggedInUserId) ? prev : [loggedInUserId, ...prev]));
     const sp = new URLSearchParams(window.location.search);
     if (!sp.get('users')) {
