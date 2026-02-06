@@ -148,13 +148,13 @@ export const LeaderboardControls = ({
             </button>
           )}
 
-          {whatIfEnabled && section !== 'standings' && (
-            <span className="hidden md:inline-flex items-center text-[10px] font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap pl-1">
-              Click answers to toggle correct / incorrect
-            </span>
-          )}
         </div>
       </div>
+      {whatIfEnabled && section !== 'standings' && (
+        <span className="pointer-events-none hidden md:inline-flex absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 items-center text-[10px] font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
+          Click answers to toggle correct / incorrect
+        </span>
+      )}
     </div>
   );
 };
