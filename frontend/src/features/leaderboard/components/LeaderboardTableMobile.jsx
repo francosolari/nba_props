@@ -84,7 +84,7 @@ export const LeaderboardTableMobile = ({
   };
 
   return (
-    <div className="md:hidden flex-1 min-h-0 overflow-y-auto">
+    <div className="md:hidden flex-1 min-h-0 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
       {section === 'standings' ? (
         <div className="space-y-6">
           {['West', 'East'].map(conf => {
@@ -135,7 +135,7 @@ export const LeaderboardTableMobile = ({
                               {/* Scrollable team logos — spacers keep teams aligned past the overlay */}
                               <div
                                 ref={(el) => { scrollRefs.current[conf].header = el; }}
-                                className="overflow-x-auto no-scrollbar"
+                                className="overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain [-webkit-overflow-scrolling:touch]"
                                 onScroll={(e) => {
                                   const data = scrollRefs.current[conf].data;
                                   if (data && data.scrollLeft !== e.target.scrollLeft) data.scrollLeft = e.target.scrollLeft;
@@ -184,7 +184,7 @@ export const LeaderboardTableMobile = ({
                           {/* Scrollable player rows — syncs scrollLeft with the header above */}
                           <div
                             ref={(el) => { scrollRefs.current[conf].data = el; }}
-                            className="overflow-x-auto no-scrollbar"
+                            className="overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain [-webkit-overflow-scrolling:touch]"
                             onScroll={(e) => {
                               const header = scrollRefs.current[conf].header;
                               if (header && header.scrollLeft !== e.target.scrollLeft) header.scrollLeft = e.target.scrollLeft;
