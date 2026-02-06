@@ -375,6 +375,30 @@ class TestMainLeaderboard:
         assert 'Player Awards' in categories
         assert 'Props & Yes/No' in categories
 
+    def test_leaderboard_answer_predictions_include_point_value(self, api_client, users_with_predictions):
+        """Test answer predictions include original question point values."""
+        season = users_with_predictions['season']
+        response = api_client.get(f'/api/v2/leaderboards/{season.slug}')
+
+        data = response.json()
+        leaderboard = data['leaderboard']
+
+        topscorer = next(u for u in leaderboard if u['username'] == 'topscorer')
+        top_awards_preds = topscorer['categories']['Player Awards']['predictions']
+        top_props_preds = topscorer['categories']['Props & Yes/No']['predictions']
+
+        assert len(top_awards_preds) > 0
+        assert len(top_props_preds) > 0
+        assert top_awards_preds[0]['point_value'] == 5
+        assert top_props_preds[0]['point_value'] == 3
+
+        # Wrong answers should still expose the question point value.
+        midscorer = next(u for u in leaderboard if u['username'] == 'midscorer')
+        mid_awards_preds = midscorer['categories']['Player Awards']['predictions']
+        assert len(mid_awards_preds) > 0
+        assert mid_awards_preds[0]['points'] == 0
+        assert mid_awards_preds[0]['point_value'] == 5
+
     def test_leaderboard_standing_predictions_sorted_correctly(self, api_client, users_with_predictions):
         """Test that standing predictions are sorted West 1-15, then East 1-15."""
         season = users_with_predictions['season']
