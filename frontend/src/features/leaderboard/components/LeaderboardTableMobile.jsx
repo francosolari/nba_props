@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState, useRef } from 'react';
+import React, { useLayoutEffect, useState, useRef, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { ChevronDown, Pin } from 'lucide-react';
 import { standingPoints, fromSectionKey } from '../utils/helpers';
@@ -23,6 +23,10 @@ export const LeaderboardTableMobile = ({
   const isTotalSort = sortBy === 'total';
   const [collapsedSections, setCollapsedSections] = useState(new Set());
   const scrollRefs = useRef({ West: { header: null, data: null }, East: { header: null, data: null } });
+  const scrollSyncRef = useRef({
+    West: { lockedTarget: null, rafId: 0, pending: null },
+    East: { lockedTarget: null, rafId: 0, pending: null },
+  });
   const rowRefs = useRef(new Map());
   const previousRowPositions = useRef(new Map());
   const extractLineValue = (prediction, questionText = '') => {
@@ -45,6 +49,41 @@ export const LeaderboardTableMobile = ({
   const setRowRef = (rowKey) => (el) => {
     if (el) rowRefs.current.set(rowKey, el);
     else rowRefs.current.delete(rowKey);
+  };
+
+  useEffect(() => () => {
+    ['West', 'East'].forEach((conf) => {
+      const state = scrollSyncRef.current[conf];
+      if (state?.rafId) window.cancelAnimationFrame(state.rafId);
+    });
+  }, []);
+
+  const syncConferenceScroll = (conf, source, scrollLeft) => {
+    const state = scrollSyncRef.current[conf];
+    if (!state) return;
+
+    // Ignore the mirrored scroll event we triggered ourselves.
+    if (state.lockedTarget === source) {
+      state.lockedTarget = null;
+      return;
+    }
+
+    state.pending = { source, scrollLeft };
+    if (state.rafId) return;
+
+    state.rafId = window.requestAnimationFrame(() => {
+      state.rafId = 0;
+      const pending = state.pending;
+      if (!pending) return;
+
+      const targetKey = pending.source === 'header' ? 'data' : 'header';
+      const target = scrollRefs.current?.[conf]?.[targetKey];
+      if (!target) return;
+      if (Math.abs(target.scrollLeft - pending.scrollLeft) < 0.5) return;
+
+      state.lockedTarget = targetKey;
+      target.scrollLeft = pending.scrollLeft;
+    });
   };
 
   useLayoutEffect(() => {
@@ -135,10 +174,9 @@ export const LeaderboardTableMobile = ({
                               {/* Scrollable team logos — spacers keep teams aligned past the overlay */}
                               <div
                                 ref={(el) => { scrollRefs.current[conf].header = el; }}
-                                className="overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain [-webkit-overflow-scrolling:touch]"
+                                className="overflow-x-auto no-scrollbar overscroll-x-contain [-webkit-overflow-scrolling:touch]"
                                 onScroll={(e) => {
-                                  const data = scrollRefs.current[conf].data;
-                                  if (data && data.scrollLeft !== e.target.scrollLeft) data.scrollLeft = e.target.scrollLeft;
+                                  syncConferenceScroll(conf, 'header', e.currentTarget.scrollLeft);
                                 }}
                               >
                                 <div className="flex">
@@ -184,10 +222,9 @@ export const LeaderboardTableMobile = ({
                           {/* Scrollable player rows — syncs scrollLeft with the header above */}
                           <div
                             ref={(el) => { scrollRefs.current[conf].data = el; }}
-                            className="overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain [-webkit-overflow-scrolling:touch]"
+                            className="overflow-x-auto no-scrollbar overscroll-x-contain [-webkit-overflow-scrolling:touch]"
                             onScroll={(e) => {
-                              const header = scrollRefs.current[conf].header;
-                              if (header && header.scrollLeft !== e.target.scrollLeft) header.scrollLeft = e.target.scrollLeft;
+                              syncConferenceScroll(conf, 'data', e.currentTarget.scrollLeft);
                             }}
                           >
                             <div className="min-w-max">
