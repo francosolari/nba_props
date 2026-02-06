@@ -374,77 +374,73 @@ export const LeaderboardTableMobile = ({
               syncNonStandingsScroll('data', e.currentTarget.scrollLeft);
             }}
           >
-            <table className="border-separate border-spacing-0 min-w-max">
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {displayedUsers.map(e => {
-                  const totalPoints = Number(e.user.total_points || 0);
-                  const sectionPoints = Number(e.user.categories?.[catKey]?.points || 0);
-                  const pointsDisplay = showTotalInPointsCell ? totalPoints : sectionPoints;
-                  const totalDelta = whatIfEnabled && e.__orig_total_points != null
-                    ? totalPoints - Number(e.__orig_total_points || 0)
-                    : 0;
-                  return (
-                    <tr key={e.user.id} ref={setRowRef(`non-${e.user.id}`)} className="will-change-transform">
-                      <td className="sticky left-0 z-10 bg-white dark:bg-slate-950 px-2 py-2 border-r border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center gap-1">
-                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
-                          <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-all duration-200 ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500 scale-110' : 'text-slate-200 dark:text-slate-700 active:scale-95'}`}>
-                            <Pin className="w-3 h-3" />
+            <div className="min-w-max">
+              {displayedUsers.map(e => {
+                const totalPoints = Number(e.user.total_points || 0);
+                const sectionPoints = Number(e.user.categories?.[catKey]?.points || 0);
+                const pointsDisplay = showTotalInPointsCell ? totalPoints : sectionPoints;
+                const totalDelta = whatIfEnabled && e.__orig_total_points != null
+                  ? totalPoints - Number(e.__orig_total_points || 0)
+                  : 0;
+                return (
+                  <div key={e.user.id} ref={setRowRef(`non-${e.user.id}`)} className="flex border-b border-slate-100 dark:border-slate-800 will-change-transform">
+                    <div className="flex-shrink-0 sticky left-0 z-10 w-[100px] bg-white dark:bg-slate-950 px-2 py-2 border-r border-slate-100 dark:border-slate-800 flex items-center gap-1">
+                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1 min-w-0">{e.user.display_name || e.user.username}</span>
+                      <button onClick={() => togglePin(e.user.id)} className={`flex-shrink-0 transition-all duration-200 ${pinnedUserIds.includes(String(e.user.id)) ? 'text-sky-500 scale-110' : 'text-slate-200 dark:text-slate-700 active:scale-95'}`}>
+                        <Pin className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="flex-shrink-0 sticky left-[100px] z-10 w-[42px] bg-slate-50/95 dark:bg-slate-900/95 text-center px-1 py-2 border-r border-slate-100 dark:border-slate-800 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] flex items-center justify-center relative">
+                      <span className="text-[11px] font-black text-sky-600 dark:text-sky-400">{formatPoints(pointsDisplay)}</span>
+                      {whatIfEnabled && totalDelta !== 0 && (
+                        <span className={`absolute top-[2px] right-[2px] leading-none text-[8px] font-black ${totalDelta > 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
+                          {totalDelta > 0 ? '▲' : '▼'}{formatPoints(Math.abs(totalDelta))}
+                        </span>
+                      )}
+                    </div>
+                    {nonStandingsQuestions.map(q => {
+                      const p = e.user.categories?.[catKey]?.predictions?.find(x => x.question_id === q.id);
+                      const ans = p?.answer || '—';
+                      const isCorrect = p?.correct === true;
+                      const isWrong = p?.correct === false;
+                      const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
+                      const simulatedState = p?.__what_if_state;
+                      const lineValue = extractLineValue(p, q.text);
+                      const answerDisplay = lineValue && ans !== '—'
+                        ? (String(ans).toLowerCase() === 'over' || String(ans).toLowerCase() === 'under'
+                          ? `${ans} ${lineValue}`
+                          : `${ans} (${lineValue})`)
+                        : ans;
+
+                      let color = "text-slate-400 dark:text-slate-600";
+                      if (isCorrect) color = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20";
+                      if (isWrong) color = "bg-rose-500/5 text-rose-500/70 dark:text-rose-400/70 ring-1 ring-inset ring-rose-500/10";
+
+                      return (
+                        <div key={q.id} className="flex-shrink-0 w-[160px] px-1 py-1.5 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0 flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
+                            className={`inline-flex items-center justify-center w-full px-2 py-1 rounded-md text-[10px] font-black transition-all ${color} whitespace-normal break-words line-clamp-2 max-h-[34px] ${
+                              isInteractive ? 'cursor-pointer hover:brightness-95 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.35)] active:scale-[0.98]' : 'cursor-default'
+                            } ${
+                              simulatedState === 'correct'
+                                ? 'ring-2 ring-emerald-400/50'
+                                : simulatedState === 'incorrect'
+                                ? 'ring-2 ring-rose-400/40'
+                                : ''
+                            }`}
+                            title={isInteractive ? 'What-If: tap to toggle correct / incorrect / reset' : undefined}
+                          >
+                            {answerDisplay}
                           </button>
                         </div>
-                      </td>
-                      <td className="sticky left-[100px] z-10 bg-slate-50/95 dark:bg-slate-900/95 text-center px-1 py-2 border-r border-slate-100 dark:border-slate-800 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] relative">
-                        <span className="text-[11px] font-black text-sky-600 dark:text-sky-400">{formatPoints(pointsDisplay)}</span>
-                        {whatIfEnabled && totalDelta !== 0 && (
-                          <span className={`absolute top-[2px] right-[2px] leading-none text-[8px] font-black ${totalDelta > 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
-                            {totalDelta > 0 ? '▲' : '▼'}{formatPoints(Math.abs(totalDelta))}
-                          </span>
-                        )}
-                      </td>
-                      {nonStandingsQuestions.map(q => {
-                        const p = e.user.categories?.[catKey]?.predictions?.find(x => x.question_id === q.id);
-                        const ans = p?.answer || '—';
-                        const isCorrect = p?.correct === true;
-                        const isWrong = p?.correct === false;
-                        const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
-                        const simulatedState = p?.__what_if_state;
-                        const lineValue = extractLineValue(p, q.text);
-                        const answerDisplay = lineValue && ans !== '—'
-                          ? (String(ans).toLowerCase() === 'over' || String(ans).toLowerCase() === 'under'
-                            ? `${ans} ${lineValue}`
-                            : `${ans} (${lineValue})`)
-                          : ans;
-
-                        let color = "text-slate-400 dark:text-slate-600";
-                        if (isCorrect) color = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20";
-                        if (isWrong) color = "bg-rose-500/5 text-rose-500/70 dark:text-rose-400/70 ring-1 ring-inset ring-rose-500/10";
-
-                        return (
-                          <td key={q.id} className="w-[160px] min-w-[160px] max-w-[160px] px-1 py-1.5 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0">
-                            <button
-                              type="button"
-                              onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
-                              className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-[10px] font-black transition-all ${color} whitespace-normal break-words line-clamp-2 max-w-[130px] ${
-                                isInteractive ? 'cursor-pointer hover:brightness-95 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.35)] active:scale-[0.98]' : 'cursor-default'
-                              } ${
-                                simulatedState === 'correct'
-                                  ? 'ring-2 ring-emerald-400/50'
-                                  : simulatedState === 'incorrect'
-                                  ? 'ring-2 ring-rose-400/40'
-                                  : ''
-                              }`}
-                              title={isInteractive ? 'What-If: tap to toggle correct / incorrect / reset' : undefined}
-                            >
-                              {answerDisplay}
-                            </button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
