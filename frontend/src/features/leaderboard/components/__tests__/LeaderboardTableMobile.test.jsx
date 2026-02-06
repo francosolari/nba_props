@@ -95,4 +95,30 @@ describe('LeaderboardTableMobile', () => {
     expect(button).toBeInTheDocument();
     expect(button.textContent).toBe('Over 9.5');
   });
+
+  test('renders mobile-optimized flex layout with explicit column widths', () => {
+    // FAANG-standard: Verify the structural fix for alignment/glitchiness (the "Why" of the change).
+    // We expect explicit width classes that match the header to prevent misalignment.
+    const props = buildProps();
+    const { container } = render(<LeaderboardTableMobile {...props} />);
+
+    // Verify migration away from table to avoid layout engine inconsistencies
+    const table = container.querySelector('table');
+    expect(table).not.toBeInTheDocument();
+
+    // Verify Sticky Player Column (100px)
+    const playerCell = screen.getByText('Alpha').closest('div');
+    expect(playerCell).toHaveClass('sticky', 'left-0', 'w-[100px]');
+
+    // Verify Sticky Points Column (42px)
+    // The points cell is the next sibling or close by. We can find it by value '120' (Total) or '45' (Pts)
+    // In default buildProps, sortBy is 'total', so it shows 120.
+    const pointsCell = screen.getByText('120').closest('div');
+    expect(pointsCell).toHaveClass('sticky', 'left-[100px]', 'w-[42px]');
+
+    // Verify Data/Question Column (160px)
+    const answerButton = screen.getByRole('button', { name: /over 9\.5/i });
+    const answerCell = answerButton.closest('div');
+    expect(answerCell).toHaveClass('w-[160px]');
+  });
 });
