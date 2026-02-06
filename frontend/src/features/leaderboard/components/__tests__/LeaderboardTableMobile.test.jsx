@@ -79,12 +79,20 @@ describe('LeaderboardTableMobile', () => {
       />
     );
 
-    expect(screen.getByText(/What-If: tap answer to toggle correct\/incorrect/i)).toBeInTheDocument();
+    expect(screen.getByText(/tap any answer to toggle correct \/ incorrect \/ reset/i)).toBeInTheDocument();
 
     const answerButton = screen.getByRole('button', { name: /over 9\.5/i });
     expect(answerButton).toHaveAttribute('title', 'What-If: tap to toggle correct / incorrect / reset');
 
     fireEvent.click(answerButton);
     expect(toggleWhatIfAnswer).toHaveBeenCalledWith('q1', 'Over');
+  });
+
+  test('displays answer with line value appended for over/under predictions', () => {
+    render(<LeaderboardTableMobile {...buildProps()} />);
+
+    const button = screen.getByRole('button', { name: /over 9\.5/i });
+    expect(button).toBeInTheDocument();
+    expect(button.textContent).toBe('Over 9.5');
   });
 });

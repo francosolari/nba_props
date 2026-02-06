@@ -73,11 +73,30 @@ describe('LeaderboardTableDesktop', () => {
 
     rerender(<LeaderboardTableDesktop {...buildProps({ toggleWhatIfAnswer, whatIfEnabled: true, sortBy: 'section' })} />);
 
-    expect(screen.getByText(/What-If: click answer to toggle correct\/incorrect/i)).toBeInTheDocument();
     const button = screen.getByRole('button', { name: /over 9\.5/i });
     expect(button).toHaveAttribute('title', 'What-If: click to toggle correct / incorrect / reset');
 
     fireEvent.click(button);
     expect(toggleWhatIfAnswer).toHaveBeenCalledWith('q1', 'Over');
+  });
+
+  test('body cells have data-col-user attributes for FLIP column animation', () => {
+    const { container } = render(<LeaderboardTableDesktop {...buildProps()} />);
+
+    const colCells = container.querySelectorAll('[data-col-user="1"]');
+    expect(colCells.length).toBeGreaterThan(0);
+
+    colCells.forEach((cell) => {
+      expect(cell).toHaveAttribute('data-col-user', '1');
+    });
+  });
+
+  test('displays answer with line value appended for over/under predictions', () => {
+    render(<LeaderboardTableDesktop {...buildProps()} />);
+
+    // "Over" answer with line 9.5 should render as "Over 9.5"
+    const button = screen.getByRole('button', { name: /over 9\.5/i });
+    expect(button).toBeInTheDocument();
+    expect(button.textContent).toBe('Over 9.5');
   });
 });

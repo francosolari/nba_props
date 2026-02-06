@@ -52,4 +52,19 @@ describe('LeaderboardControls', () => {
     rerender(<LeaderboardControls {...buildProps({ loggedInUserId: null })} />);
     expect(screen.queryByRole('button', { name: /pin me/i })).not.toBeInTheDocument();
   });
+
+  test('shows desktop what-if hint when what-if is enabled on non-standings section', () => {
+    render(<LeaderboardControls {...buildProps({ whatIfEnabled: true, section: 'awards' })} />);
+    expect(screen.getByText(/click answers to toggle correct \/ incorrect/i)).toBeInTheDocument();
+  });
+
+  test('hides what-if hint when disabled or on standings section', () => {
+    const { rerender } = render(
+      <LeaderboardControls {...buildProps({ whatIfEnabled: false, section: 'awards' })} />
+    );
+    expect(screen.queryByText(/click answers to toggle correct \/ incorrect/i)).not.toBeInTheDocument();
+
+    rerender(<LeaderboardControls {...buildProps({ whatIfEnabled: true, section: 'standings' })} />);
+    expect(screen.queryByText(/click answers to toggle correct \/ incorrect/i)).not.toBeInTheDocument();
+  });
 });
