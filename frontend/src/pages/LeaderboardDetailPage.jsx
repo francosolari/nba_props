@@ -54,7 +54,10 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const [query, setQuery] = useState('');
   const [whatIfEnabled, setWhatIfEnabled] = useState(false);
   const [showWhatIfConfirm, setShowWhatIfConfirm] = useState(false);
-  const [hasSeenWhatIfIntro, setHasSeenWhatIfIntro] = useState(false);
+  const [hasSeenWhatIfIntro, setHasSeenWhatIfIntro] = useState(() => {
+    try { return window.sessionStorage.getItem(WHAT_IF_INTRO_SESSION_KEY) === '1'; }
+    catch { return false; }
+  });
   const [whatIfAnswerOverrides, setWhatIfAnswerOverrides] = useState({});
   const [pinnedUserIds, setPinnedUserIds] = useState([]);
   const [showManagePlayers, setShowManagePlayers] = useState(false);
@@ -182,7 +185,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         entry.user.categories?.[catKey]?.predictions?.forEach((prediction) => {
           if (!prediction?.question_id) return;
           const key = String(prediction.question_id);
-          const candidate = Number(prediction.point_value ?? prediction.points ?? 0);
+          const candidate = Number(prediction.point_value || prediction.points || 0);
           if (!Number.isFinite(candidate)) return;
           pointByQuestion.set(key, Math.max(pointByQuestion.get(key) || 0, candidate));
         });
@@ -190,14 +193,6 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     });
     return pointByQuestion;
   }, [leaderboardData]);
-
-  useEffect(() => {
-    try {
-      setHasSeenWhatIfIntro(window.sessionStorage.getItem(WHAT_IF_INTRO_SESSION_KEY) === '1');
-    } catch {
-      setHasSeenWhatIfIntro(false);
-    }
-  }, []);
 
   const resetWhatIfState = useCallback(() => {
     setWhatIfAnswerOverrides({});
@@ -241,7 +236,6 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     if (!questionId) return;
     if (!whatIfEnabled) {
       requestEnableWhatIf();
-      return;
     }
     const answerKey = toAnswerKey(answerValue);
     if (!answerKey || answerKey === '—') return;
@@ -274,7 +268,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
       const predictions = category.predictions.map((prediction) => {
         const qid = prediction?.question_id ? String(prediction.question_id) : null;
         const override = qid ? whatIfAnswerOverrides[qid]?.[toAnswerKey(prediction.answer)] : undefined;
-        const pointValue = Number(prediction.point_value ?? questionPointValues.get(qid) ?? prediction.points ?? 0) || 0;
+        const pointValue = Number(prediction.point_value || questionPointValues.get(qid) || prediction.points || 0) || 0;
         let points = Number(prediction.points || 0);
         let correct = prediction.correct;
 
