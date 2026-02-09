@@ -13,5 +13,4 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 # Start webpack-dev-server for HMR and live reload
-./frontend/node_modules/.bin/webpack serve --config frontend/webpack.config.js
-
+./node_modules/.bin/webpack serve --config frontend/webpack.config.js
