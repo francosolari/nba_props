@@ -56,7 +56,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const [showWhatIfConfirm, setShowWhatIfConfirm] = useState(false);
   const [hasSeenWhatIfIntro, setHasSeenWhatIfIntro] = useState(() => {
     try { return window.sessionStorage.getItem(WHAT_IF_INTRO_SESSION_KEY) === '1'; }
-    catch { return false; }
+    catch (err) { console.warn('Failed to read what-if intro state:', err); return false; }
   });
   const [whatIfAnswerOverrides, setWhatIfAnswerOverrides] = useState({});
   const [pinnedUserIds, setPinnedUserIds] = useState([]);
@@ -219,8 +219,8 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     setHasSeenWhatIfIntro(true);
     try {
       window.sessionStorage.setItem(WHAT_IF_INTRO_SESSION_KEY, '1');
-    } catch {
-      // Ignore session storage failures.
+    } catch (err) {
+      console.warn('Failed to save what-if intro state:', err);
     }
   }, []);
 

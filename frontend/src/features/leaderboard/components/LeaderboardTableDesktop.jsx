@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Lock, Pin, GripVertical } from 'lucide-react';
-import { standingPoints, fromSectionKey } from '../utils/helpers';
+import { standingPoints, fromSectionKey, extractLineValue } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 
 export const LeaderboardTableDesktop = ({
@@ -163,16 +163,6 @@ export const LeaderboardTableDesktop = ({
     });
     return Array.from(qMap.values()).sort((a, b) => a.text.localeCompare(b.text));
   }, [isStandingsSection, leaderboardData, nonStandingsCategoryKey]);
-
-  const extractLineValue = React.useCallback((prediction, questionText = '') => {
-    const direct = prediction?.line ?? prediction?.line_value ?? prediction?.prop_line ?? prediction?.threshold ?? prediction?.target_line;
-    if (direct != null && direct !== '') return String(direct);
-
-    const text = String(questionText || '');
-    const overUnderMatch = text.match(/(?:over\/under|o\/u|over under)\s*[:\-]?\s*(\d+(?:\.\d+)?)/i);
-    if (overUnderMatch?.[1]) return overUnderMatch[1];
-    return null;
-  }, []);
 
   return (
     <div ref={tableRef} className="hidden md:block w-full">

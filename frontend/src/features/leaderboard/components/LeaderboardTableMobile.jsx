@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useState, useRef, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { ChevronDown, Pin } from 'lucide-react';
-import { standingPoints, fromSectionKey } from '../utils/helpers';
+import { standingPoints, fromSectionKey, extractLineValue } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 
 export const LeaderboardTableMobile = ({
@@ -49,16 +49,6 @@ export const LeaderboardTableMobile = ({
     });
     return Array.from(qMap.values()).sort((a, b) => a.text.localeCompare(b.text));
   }, [displayedUsers, catKey]);
-  const extractLineValue = (prediction, questionText = '') => {
-    const direct = prediction?.line ?? prediction?.line_value ?? prediction?.prop_line ?? prediction?.threshold ?? prediction?.target_line;
-    if (direct != null && direct !== '') return String(direct);
-
-    const text = String(questionText || '');
-    const overUnderMatch = text.match(/(?:over\/under|o\/u|over under)\s*[:\-]?\s*(\d+(?:\.\d+)?)/i);
-    if (overUnderMatch?.[1]) return overUnderMatch[1];
-    return null;
-  };
-
   const formatPoints = (value) => {
     const n = Number(value || 0);
     if (!Number.isFinite(n)) return '0';
