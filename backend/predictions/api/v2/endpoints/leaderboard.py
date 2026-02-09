@@ -185,11 +185,11 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
             "points": score,
             "point_value": ans.question.point_value,
         }
-        pq_info = prop_question_data.get(ans.question_id)
-        if pq_info:
+        if ans.question_id in prop_question_data:
+            pq_info = prop_question_data[ans.question_id]
             if pq_info["line"] is not None:
                 pred["line"] = pq_info["line"]
-            if pq_info["outcome_type"]:
+            if pq_info["outcome_type"] is not None:
                 pred["outcome_type"] = pq_info["outcome_type"]
         c["predictions"].append(pred)
         u_rec["total_points"] += score
