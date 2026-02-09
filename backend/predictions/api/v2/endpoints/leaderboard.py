@@ -11,6 +11,7 @@ from predictions.models.question import (
     Question,
     SuperlativeQuestion,
     InSeasonTournamentQuestion,
+    PropQuestion,
 )
 from predictions.api.common.utils import resolve_answers_optimized
 from predictions.api.common.services.leaderboard_insights import apply_leaderboard_insights
@@ -150,6 +151,18 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
         })
         u_rec["total_points"] += sp.points
 
+    # Prefetch prop question line data for over/under display
+    prop_question_data: Dict[int, Dict] = {}
+    for pq in (
+        PropQuestion.objects
+        .filter(season__slug=season_slug)
+        .only("id", "line", "outcome_type")
+    ):
+        prop_question_data[pq.id] = {
+            "line": pq.line,
+            "outcome_type": pq.outcome_type,
+        }
+
     # Answer rows with resolved values
     for ans in answer_list:
         cat = _resolve_category(ans)
@@ -164,13 +177,21 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
         c = u_rec["categories"][cat]
         c["points"] += score
         c["max_points"] += ans.question.point_value
-        c["predictions"].append({
+        pred = {
             "question_id": ans.question_id,
             "question": ans.question.text,
             "answer": resolved_answer_values_map.get(ans.id, str(ans.answer)),  # Human-readable value
             "correct": ans.is_correct,
             "points": score,
-        })
+            "point_value": ans.question.point_value,
+        }
+        if ans.question_id in prop_question_data:
+            pq_info = prop_question_data[ans.question_id]
+            if pq_info["line"] is not None:
+                pred["line"] = pq_info["line"]
+            if pq_info["outcome_type"] is not None:
+                pred["outcome_type"] = pq_info["outcome_type"]
+        c["predictions"].append(pred)
         u_rec["total_points"] += score
 
     # ─── Sort the standings predictions: West 1‑15, then East 1‑15 ───

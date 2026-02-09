@@ -17,6 +17,16 @@ export const formatDate = (isoString) => {
   } catch { return isoString; }
 };
 
+export const extractLineValue = (prediction, questionText = '') => {
+  const direct = prediction?.line ?? prediction?.line_value ?? prediction?.prop_line ?? prediction?.threshold ?? prediction?.target_line;
+  if (direct != null && direct !== '') return String(direct);
+
+  const text = String(questionText || '');
+  const overUnderMatch = text.match(/(?:over\/under|o\/u|over under)\s*[:\-]?\s*(\d+(?:\.\d+)?)/i);
+  if (overUnderMatch?.[1]) return overUnderMatch[1];
+  return null;
+};
+
 export const getInitials = (name) => {
   if (!name) return '??';
   const parts = name.trim().split(/\s+/);
