@@ -13,5 +13,14 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 # Start webpack-dev-server for HMR and live reload
-./frontend/node_modules/.bin/webpack serve --config frontend/webpack.config.js
+if [[ -x "./node_modules/.bin/webpack" ]]; then
+  WEBPACK_BIN="./node_modules/.bin/webpack"
+elif [[ -x "./frontend/node_modules/.bin/webpack" ]]; then
+  WEBPACK_BIN="./frontend/node_modules/.bin/webpack"
+else
+  echo "Webpack binary not found."
+  echo "Run 'npm ci' from the repository root (nba_predictions)."
+  exit 1
+fi
 
+"$WEBPACK_BIN" serve --config frontend/webpack.config.js
