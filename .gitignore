@@ -48,3 +48,4 @@ __pycache__/
 *$py.class
 *.so
 .Python
+.test_db.sqlite3

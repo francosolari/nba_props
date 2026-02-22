@@ -95,12 +95,13 @@ jobs:
           SECRET_KEY: test-secret-key-for-ci-testing
         run: |
           cd backend
-          pytest predictions/tests/ -v \
+          pytest predictions/tests/ accounts/tests/ -v \
             --cov=predictions \
+            --cov=accounts \
             --cov-report=term-missing \
             --cov-report=xml \
             --cov-report=html \
-            --cov-fail-under=0 \
+            --cov-fail-under=60 \
             --tb=short
 
       - name: Upload coverage reports to Codecov (optional)
@@ -153,9 +154,8 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Run frontend tests (if any)
-        run: npm test -- --passWithNoTests --coverage
-        continue-on-error: true
+      - name: Run frontend tests
+        run: npm test -- --passWithNoTests --coverage --ci
 
       - name: Build frontend
         run: npm run build
@@ -181,6 +181,10 @@ jobs:
           echo ""
           if [ "${{ needs.backend-tests.result }}" != "success" ]; then
             echo "❌ Backend tests failed - check logs above"
+            exit 1
+          fi
+          if [ "${{ needs.frontend-tests.result }}" != "success" ]; then
+            echo "❌ Frontend tests failed - check logs above"
             exit 1
           fi
           echo "✅ All required tests passed"

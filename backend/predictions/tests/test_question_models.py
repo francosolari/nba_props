@@ -34,6 +34,7 @@ from predictions.tests.factories import (
 )
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestPropQuestion:
     """Tests for PropQuestion model."""
@@ -77,6 +78,7 @@ class TestPropQuestion:
         assert real_instance.__class__.__name__ == 'PropQuestion'
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestSuperlativeQuestion:
     """Tests for SuperlativeQuestion model (MVP, ROY, etc.)."""
@@ -172,6 +174,7 @@ class TestSuperlativeQuestion:
         assert real_instance.__class__.__name__ == 'SuperlativeQuestion'
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestHeadToHeadQuestion:
     """Tests for HeadToHeadQuestion model."""
@@ -213,6 +216,7 @@ class TestHeadToHeadQuestion:
         assert isinstance(real_instance, HeadToHeadQuestion)
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestInSeasonTournamentQuestion:
     """Tests for InSeasonTournamentQuestion model."""
@@ -288,6 +292,7 @@ class TestInSeasonTournamentQuestion:
         assert isinstance(real_instance, InSeasonTournamentQuestion)
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestPlayerStatPredictionQuestion:
     """Tests for PlayerStatPredictionQuestion model."""
@@ -325,6 +330,7 @@ class TestPlayerStatPredictionQuestion:
         assert isinstance(real_instance, PlayerStatPredictionQuestion)
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestNBAFinalsPredictionQuestion:
     """Tests for NBAFinalsPredictionQuestion model."""
@@ -347,6 +353,7 @@ class TestNBAFinalsPredictionQuestion:
         assert isinstance(real_instance, NBAFinalsPredictionQuestion)
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestPolymorphicQueries:
     """Tests for polymorphic query behavior across all Question types."""
@@ -431,6 +438,7 @@ class TestPolymorphicQueries:
             assert question.correct_answer is not None
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestPolymorphicQueryEdgeCases:
     """Tests for edge cases in polymorphic query behavior."""

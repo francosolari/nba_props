@@ -150,7 +150,10 @@ def get_homepage_data(request):
 
         mini_leaderboard = []
         for i, user_stat in enumerate(top_users, 1):
-            display_name = getattr(user_stat.user.userprofile, 'display_name', user_stat.user.username)
+            try:
+                display_name = user_stat.user.userprofile.display_name or user_stat.user.username
+            except Exception:
+                display_name = user_stat.user.username
             mini_leaderboard.append({
                 'rank': i,
                 'user': {

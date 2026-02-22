@@ -66,8 +66,8 @@ def sample_seasons():
     current = CurrentSeasonFactory(
         slug='24-25',
         year='24-25',
-        start_date=date.today() - timedelta(days=30),
-        end_date=date.today() + timedelta(days=150)
+        start_date=date(2099, 1, 1),
+        end_date=date(2099, 6, 1)
     )
 
     past1 = PastSeasonFactory(
@@ -120,7 +120,8 @@ def sample_players():
 # Seasons Endpoint Tests
 # ============================================================================
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.api_v2
+@pytest.mark.django_db
 class TestSeasonsEndpoint:
     """Test suite for /api/v2/seasons endpoints."""
 
@@ -283,6 +284,7 @@ class TestSeasonsEndpoint:
 # Teams Endpoint Tests
 # ============================================================================
 
+@pytest.mark.api_v2
 @pytest.mark.django_db
 class TestTeamsEndpoint:
     """Test suite for /api/v2/teams endpoint."""
@@ -365,6 +367,7 @@ class TestTeamsEndpoint:
 # Players Endpoint Tests
 # ============================================================================
 
+@pytest.mark.api_v2
 @pytest.mark.django_db
 class TestPlayersEndpoint:
     """Test suite for /api/v2/players endpoint."""
@@ -474,16 +477,18 @@ class TestPlayersEndpoint:
 # Homepage Endpoint Tests
 # ============================================================================
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.api_v2
+@pytest.mark.django_db
 class TestHomepageEndpoints:
-    """Test suite for /api/v2/homepage/* endpoints."""
+    """Test suite for /api/v2/homepage/* endpoints.
+
+    Uses far-future start_date to ensure test seasons are resolved as "current"
+    (latest by start_date), regardless of residual DB data.
+    """
 
     def test_homepage_data_structure(self, api_client):
         """Test homepage data endpoint returns correct structure."""
-        Season.objects.all().delete()
-
-        # Create current season data
-        current = CurrentSeasonFactory()
+        current = CurrentSeasonFactory(start_date=date(2099, 1, 1), end_date=date(2099, 6, 1))
 
         response = api_client.get('/api/v2/homepage/data')
 
@@ -495,9 +500,7 @@ class TestHomepageEndpoints:
 
     def test_homepage_data_mini_leaderboard_empty(self, api_client):
         """Test mini leaderboard when no user stats exist."""
-        Season.objects.all().delete()
-
-        current = CurrentSeasonFactory()
+        current = CurrentSeasonFactory(start_date=date(2099, 1, 1), end_date=date(2099, 6, 1))
 
         response = api_client.get('/api/v2/homepage/data')
 
@@ -508,9 +511,7 @@ class TestHomepageEndpoints:
 
     def test_homepage_data_mini_leaderboard_with_users(self, api_client):
         """Test mini leaderboard returns top 5 users."""
-        Season.objects.all().delete()
-
-        current = CurrentSeasonFactory()
+        current = CurrentSeasonFactory(start_date=date(2099, 1, 1), end_date=date(2099, 6, 1))
 
         # Create 7 users with different point totals
         for i in range(7):
@@ -518,7 +519,7 @@ class TestHomepageEndpoints:
             UserStatsFactory(
                 user=user,
                 season=current,
-                points=100 - (i * 10)  # Descending points (use 'points' not 'total_points')
+                points=100 - (i * 10)
             )
 
         response = api_client.get('/api/v2/homepage/data')
@@ -535,10 +536,7 @@ class TestHomepageEndpoints:
 
     def test_homepage_data_mini_standings_structure(self, api_client):
         """Test mini standings returns correct structure."""
-        Season.objects.all().delete()
-        Team.objects.all().delete()
-
-        current = CurrentSeasonFactory()
+        current = CurrentSeasonFactory(start_date=date(2099, 1, 1), end_date=date(2099, 6, 1))
 
         east_teams = EasternTeamFactory.create_batch(3)
         west_teams = WesternTeamFactory.create_batch(3)
@@ -575,17 +573,18 @@ class TestHomepageEndpoints:
 
     def test_homepage_data_unauthenticated_access(self, api_client):
         """Test that unauthenticated users can access homepage data."""
-        Season.objects.all().delete()
-
-        current = CurrentSeasonFactory()
+        current = CurrentSeasonFactory(start_date=date(2099, 1, 1), end_date=date(2099, 6, 1))
 
         response = api_client.get('/api/v2/homepage/data')
 
         assert response.status_code == 200
 
-    def test_homepage_data_no_current_season(self, api_client):
+    def test_homepage_data_no_current_season(self, api_client, mocker):
         """Test homepage data when no current season exists."""
-        Season.objects.all().delete()
+        mocker.patch(
+            'predictions.api.v2.endpoints.homepage.Season.objects.order_by',
+            return_value=Season.objects.none()
+        )
 
         response = api_client.get('/api/v2/homepage/data')
 
@@ -600,7 +599,8 @@ class TestHomepageEndpoints:
 # Edge Cases and Performance Tests
 # ============================================================================
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.api_v2
+@pytest.mark.django_db
 class TestPublicEndpointsEdgeCases:
     """Test edge cases and error scenarios for public endpoints."""
 

@@ -12,8 +12,10 @@ from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.utils import timezone
 from datetime import timedelta
+import pytest
 
 
+@pytest.mark.unit
 class SessionConfigTest(TestCase):
     """Test session configuration settings."""
 
@@ -48,6 +50,7 @@ class SessionConfigTest(TestCase):
         self.assertEqual(settings.SESSION_COOKIE_SECURE, expected_secure)
 
 
+@pytest.mark.unit
 class SessionBehaviorTest(TestCase):
     """Test actual session behavior with configured settings."""
 
@@ -166,6 +169,7 @@ class SessionBehaviorTest(TestCase):
         self.assertEqual(total_after, total_before - expired_count)
 
 
+@pytest.mark.unit
 class ThrottledSessionMiddlewareTest(TestCase):
     """Test the ThrottledSessionMiddleware."""
 
@@ -208,6 +212,7 @@ class ThrottledSessionMiddlewareTest(TestCase):
         self.assertEqual(first_activity, second_activity)
 
 
+@pytest.mark.unit
 class DjangoAllauthCompatibilityTest(TestCase):
     """Test session configuration compatibility with django-allauth."""
 

@@ -47,7 +47,7 @@ from predictions.tests.factories import (
 )
 
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = [pytest.mark.django_db, pytest.mark.api_v2, pytest.mark.admin]
 
 
 @pytest.fixture
@@ -76,6 +76,8 @@ def regular_user_client(api_client):
 # List Questions Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestAdminListQuestions:
     """Tests for GET /api/v2/admin/seasons/{season_slug}/questions."""
 
@@ -130,6 +132,8 @@ class TestAdminListQuestions:
 # Create Superlative Question Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestCreateSuperlativeQuestion:
     """Tests for POST /api/v2/admin/questions/superlative."""
 
@@ -209,6 +213,8 @@ class TestCreateSuperlativeQuestion:
 # Create Prop Question Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestCreatePropQuestion:
     """Tests for POST /api/v2/admin/questions/prop."""
 
@@ -274,6 +280,8 @@ class TestCreatePropQuestion:
 # Create Player Stat Question Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestCreatePlayerStatQuestion:
     """Tests for POST /api/v2/admin/questions/player-stat."""
 
@@ -311,6 +319,8 @@ class TestCreatePlayerStatQuestion:
 # Create Head-to-Head Question Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestCreateHeadToHeadQuestion:
     """Tests for POST /api/v2/admin/questions/head-to-head."""
 
@@ -347,6 +357,8 @@ class TestCreateHeadToHeadQuestion:
 # Create IST Question Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestCreateISTQuestion:
     """Tests for POST /api/v2/admin/questions/ist."""
 
@@ -383,6 +395,8 @@ class TestCreateISTQuestion:
 # Create NBA Finals Question Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestCreateNBAFinalsQuestion:
     """Tests for POST /api/v2/admin/questions/nba-finals."""
 
@@ -416,6 +430,8 @@ class TestCreateNBAFinalsQuestion:
 # Update Question Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestUpdateQuestion:
     """Tests for PUT /api/v2/admin/questions/{question_id}."""
 
@@ -521,6 +537,8 @@ class TestUpdateQuestion:
 # Delete Question Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestDeleteQuestion:
     """Tests for DELETE /api/v2/admin/questions/{question_id}."""
 
@@ -585,6 +603,8 @@ class TestDeleteQuestion:
 # Reference Data Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.admin
 class TestGetAwards:
     """Tests for GET /api/v2/admin/reference-data/awards."""
 

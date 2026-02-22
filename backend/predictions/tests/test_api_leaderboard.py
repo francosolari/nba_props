@@ -290,6 +290,7 @@ def users_with_ist_predictions(season_with_ist):
 # Main Leaderboard Tests
 # ============================================================================
 
+@pytest.mark.api_v2
 @pytest.mark.django_db
 class TestMainLeaderboard:
     """Test main leaderboard endpoint: /api/v2/leaderboard/{season_slug}"""
@@ -597,6 +598,7 @@ class TestMainLeaderboard:
 # IST Leaderboard Tests
 # ============================================================================
 
+@pytest.mark.api_v2
 @pytest.mark.django_db
 class TestISTLeaderboard:
     """Test IST leaderboard endpoint: /api/v2/ist-leaderboard/{season_slug}"""

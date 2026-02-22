@@ -30,7 +30,7 @@ from predictions.tests.factories import (
 )
 
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = [pytest.mark.django_db, pytest.mark.api_v2]
 
 
 @pytest.fixture
@@ -84,6 +84,7 @@ def _create_ist_standing(
     )
 
 
+@pytest.mark.api_v2
 class TestRegularSeasonStandingsEndpoint:
     """Tests for GET /api/v2/standings/{season_slug}."""
 
@@ -218,6 +219,7 @@ class TestRegularSeasonStandingsEndpoint:
         assert "database offline" in data["details"]
 
 
+@pytest.mark.api_v2
 class TestInSeasonTournamentStandingsEndpoint:
     """Tests for GET /api/v2/standings/ist/{season_slug}."""
 

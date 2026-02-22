@@ -31,7 +31,7 @@ from predictions.tests.factories import (
 )
 
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = [pytest.mark.django_db, pytest.mark.api_v2]
 
 
 @pytest.fixture
@@ -67,6 +67,7 @@ def create_odds(player, award, season, odds_value="+500", rank=1, scraped_at=Non
 # Current Odds Tests
 # ============================================================================
 
+@pytest.mark.api_v2
 class TestGetCurrentOdds:
     """Tests for GET /api/v2/odds/current/{season_slug}."""
 
@@ -128,7 +129,7 @@ class TestGetCurrentOdds:
 
     def test_get_current_odds_with_current_slug(self, api_client):
         """Test retrieving odds using 'current' season slug."""
-        season = SeasonFactory(slug='24-25')
+        season = SeasonFactory(slug='24-25', start_date=datetime(2099, 1, 1).date())
         award = AwardFactory(name="MVP")
         player = PlayerFactory(name="Nikola Jokic")
         create_odds(player, award, season, "+250", 1)
@@ -180,6 +181,7 @@ class TestGetCurrentOdds:
 # Scoring Positions Tests
 # ============================================================================
 
+@pytest.mark.api_v2
 class TestGetScoringPositions:
     """Tests for GET /api/v2/odds/scoring-positions/{season_slug}."""
 
@@ -235,7 +237,7 @@ class TestGetScoringPositions:
 
     def test_get_scoring_positions_with_current_slug(self, api_client):
         """Test scoring positions using 'current' season slug."""
-        season = SeasonFactory(slug='24-25')
+        season = SeasonFactory(slug='24-25', start_date=datetime(2099, 1, 1).date())
         award = AwardFactory(name="MVP")
         leader = PlayerFactory(name="Nikola Jokic")
         question = SuperlativeQuestionFactory(
@@ -273,6 +275,7 @@ class TestGetScoringPositions:
 # Odds History Tests
 # ============================================================================
 
+@pytest.mark.api_v2
 class TestGetOddsHistory:
     """Tests for GET /api/v2/odds/history/{award_id}."""
 
@@ -348,6 +351,7 @@ class TestGetOddsHistory:
 # Player Award Odds Tests
 # ============================================================================
 
+@pytest.mark.api_v2
 class TestGetPlayerAwardOdds:
     """Tests for GET /api/v2/odds/player/{player_id}/awards."""
 
@@ -392,7 +396,7 @@ class TestGetPlayerAwardOdds:
 
     def test_get_player_award_odds_with_current_slug(self, api_client):
         """Test player award odds using 'current' season slug."""
-        season = SeasonFactory(slug='24-25')
+        season = SeasonFactory(slug='24-25', start_date=datetime(2099, 1, 1).date())
         player = PlayerFactory(name="Nikola Jokic")
         award = AwardFactory(name="MVP")
         create_odds(player, award, season, "+250", 1)

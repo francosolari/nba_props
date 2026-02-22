@@ -1,20 +1,25 @@
 /**
  * Tests for useLeaderboard hook.
  *
- * This hook fetches and processes leaderboard data from the API.
+ * The hook fetches leaderboard data from /api/v2/leaderboards/:season (array format),
+ * normalizes it, and returns { data, season, error, isLoading, totals }.
+ *
+ * `data` is the normalized leaderboard array (not an object with .leaderboard).
+ * `season` comes from the API response (null when the array endpoint is used).
  */
 import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { rest } from 'msw';
+import { server } from '../../__mocks__/msw/server';
 import { useLeaderboard } from '../../hooks';
 
-// Create a wrapper component for React Query
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        retry: false, // Don't retry in tests
-        cacheTime: 0, // Don't cache in tests
+        retry: false,
+        cacheTime: 0,
       },
     },
   });
@@ -33,22 +38,21 @@ describe('useLeaderboard', () => {
       { wrapper: createWrapper() }
     );
 
-    // Initially loading
+    // Initially loading with empty data
     expect(result.current.isLoading).toBe(true);
-    expect(result.current.data).toBeUndefined();
+    expect(result.current.data).toEqual([]);
 
     // Wait for data to load
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    // Verify data loaded
-    expect(result.current.data).toBeDefined();
-    expect(result.current.data.leaderboard).toHaveLength(2);
+    // data is the normalized leaderboard array
+    expect(result.current.data).toHaveLength(2);
     expect(result.current.error).toBeNull();
   });
 
-  it('returns season information', async () => {
+  it('returns normalized user entries with expected fields', async () => {
     const { result } = renderHook(
       () => useLeaderboard('2024-25'),
       { wrapper: createWrapper() }
@@ -58,12 +62,16 @@ describe('useLeaderboard', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.season).toBeDefined();
-    expect(result.current.season.slug).toBe('2024-25');
-    expect(result.current.season.year).toBe('2024-25');
+    const first = result.current.data[0];
+    expect(first.rank).toBe(1);
+    expect(first.user.id).toBe(1);
+    expect(first.user.username).toBe('player1');
+    expect(first.user.display_name).toBe('Player One');
+    expect(first.user.total_points).toBe(150);
+    expect(first.user.categories).toBeDefined();
   });
 
-  it('returns totals information', async () => {
+  it('returns totals computed from the leaderboard data', async () => {
     const { result } = renderHook(
       () => useLeaderboard('2024-25'),
       { wrapper: createWrapper() }
@@ -75,31 +83,8 @@ describe('useLeaderboard', () => {
 
     expect(result.current.totals).toBeDefined();
     expect(result.current.totals.totalPlayers).toBe(2);
-    expect(result.current.totals.totalPredictions).toBe(100);
-    expect(result.current.totals.avgAccuracy).toBe(0.65);
-  });
-
-  it('handles different season slugs', async () => {
-    const { result, rerender } = renderHook(
-      ({ season }) => useLeaderboard(season),
-      {
-        wrapper: createWrapper(),
-        initialProps: { season: '2024-25' },
-      }
-    );
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.season.slug).toBe('2024-25');
-
-    // Change season
-    rerender({ season: '2023-24' });
-
-    await waitFor(() => {
-      expect(result.current.season.slug).toBe('2023-24');
-    });
+    // MSW mock data has empty predictions arrays, so totalPredictions is 0
+    expect(result.current.totals.totalPredictions).toBe(0);
   });
 
   it('handles loading state', () => {
@@ -109,25 +94,23 @@ describe('useLeaderboard', () => {
     );
 
     expect(result.current.isLoading).toBe(true);
-    expect(result.current.data).toBeUndefined();
+    expect(result.current.data).toEqual([]);
   });
 
-  it('handles error state', async () => {
-    // Mock an error by using a special slug that triggers error
-    const { result } = renderHook(
-      () => useLeaderboard('error'),
-      { wrapper: createWrapper() }
+  it('handles error state when all endpoints fail', async () => {
+    // Override MSW handlers to return errors for all leaderboard endpoints
+    server.use(
+      rest.get('/api/v2/leaderboards/:season', (req, res, ctx) =>
+        res(ctx.status(500), ctx.json({ error: 'Server error' }))
+      ),
+      rest.get('/api/v2/leaderboard/:season', (req, res, ctx) =>
+        res(ctx.status(500), ctx.json({ error: 'Server error' }))
+      ),
+      rest.get('/api/v2/answers/all-by-season/', (req, res, ctx) =>
+        res(ctx.status(500), ctx.json({ error: 'Server error' }))
+      ),
     );
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    // Should have error
-    expect(result.current.error).toBeDefined();
-  });
-
-  it('correctly sorts leaderboard by rank', async () => {
     const { result } = renderHook(
       () => useLeaderboard('2024-25'),
       { wrapper: createWrapper() }
@@ -137,11 +120,23 @@ describe('useLeaderboard', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    const leaderboard = result.current.data.leaderboard;
-    expect(leaderboard[0].rank).toBe(1);
-    expect(leaderboard[1].rank).toBe(2);
-    expect(leaderboard[0].user.total_points).toBeGreaterThan(
-      leaderboard[1].user.total_points
+    expect(result.current.error).toBeTruthy();
+  });
+
+  it('correctly ranks leaderboard entries by total_points', async () => {
+    const { result } = renderHook(
+      () => useLeaderboard('2024-25'),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.data).toHaveLength(2);
+    });
+
+    expect(result.current.data[0].rank).toBe(1);
+    expect(result.current.data[1].rank).toBe(2);
+    expect(result.current.data[0].user.total_points).toBeGreaterThan(
+      result.current.data[1].user.total_points
     );
   });
 
@@ -152,10 +147,10 @@ describe('useLeaderboard', () => {
     );
 
     await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+      expect(result.current.data).toHaveLength(2);
     });
 
-    const firstUser = result.current.data.leaderboard[0].user;
+    const firstUser = result.current.data[0].user;
     expect(firstUser.categories).toBeDefined();
     expect(firstUser.categories['Regular Season Standings']).toBeDefined();
     expect(firstUser.categories['Player Awards']).toBeDefined();

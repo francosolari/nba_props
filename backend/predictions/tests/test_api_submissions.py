@@ -79,12 +79,16 @@ def admin_client(api_client):
 
 @pytest.fixture
 def open_season():
-    """Create a season with open submission window."""
+    """Create a season with open submission window.
+
+    Uses a far-future start_date to ensure this season is always resolved
+    as "current" (latest by start_date), regardless of residual DB data.
+    """
     return CurrentSeasonFactory(
         slug='24-25',
         year='24-25',
-        start_date=date.today() - timedelta(days=30),
-        end_date=date.today() + timedelta(days=150),
+        start_date=date(2099, 1, 1),
+        end_date=date(2099, 6, 1),
         submission_start_date=date.today() - timedelta(days=10),
         submission_end_date=date.today() + timedelta(days=7)
     )
@@ -156,6 +160,8 @@ def sample_questions(open_season):
 # Tests: GET /submissions/questions/{season_slug}
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.submissions
 @pytest.mark.django_db
 class TestGetQuestionsEndpoint:
     """Test suite for GET /api/v2/submissions/questions/{season_slug}"""
@@ -239,6 +245,8 @@ class TestGetQuestionsEndpoint:
 # Tests: GET /submissions/answers/{season_slug}
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.submissions
 @pytest.mark.django_db
 class TestGetAnswersEndpoint:
     """Test suite for GET /api/v2/submissions/answers/{season_slug}"""
@@ -313,6 +321,8 @@ class TestGetAnswersEndpoint:
 # Tests: POST /submissions/answers/{season_slug}
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.submissions
 @pytest.mark.django_db
 class TestSubmitAnswersEndpoint:
     """Test suite for POST /api/v2/submissions/answers/{season_slug}"""
@@ -514,6 +524,8 @@ class TestSubmitAnswersEndpoint:
 # Tests: GET /submissions/standings/{season_slug}
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.submissions
 @pytest.mark.django_db
 class TestGetStandingsEndpoint:
     """Test suite for GET /api/v2/submissions/standings/{season_slug}"""
@@ -617,6 +629,8 @@ class TestGetStandingsEndpoint:
 # Tests: POST /submissions/standings/{season_slug}
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.submissions
 @pytest.mark.django_db
 class TestSubmitStandingsEndpoint:
     """Test suite for POST /api/v2/submissions/standings/{season_slug}"""
@@ -813,6 +827,8 @@ class TestSubmitStandingsEndpoint:
 # Tests: Entry Fee Endpoints
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.submissions
 @pytest.mark.django_db
 class TestEntryFeeEndpoints:
     """Test suite for entry fee status endpoints"""
@@ -918,6 +934,8 @@ class TestEntryFeeEndpoints:
 # Tests: Submission Status Endpoint
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.submissions
 @pytest.mark.django_db
 class TestSubmissionStatusEndpoint:
     """Test suite for GET /api/v2/submissions/submission-status/{season_slug}"""

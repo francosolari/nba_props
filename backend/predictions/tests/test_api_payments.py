@@ -39,7 +39,7 @@ from predictions.tests.factories import (
 )
 
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = [pytest.mark.django_db, pytest.mark.api_v2, pytest.mark.payments]
 
 
 @pytest.fixture
@@ -88,6 +88,8 @@ def mock_stripe_session_retrieved():
 # Create Checkout Session Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.payments
 class TestCreateCheckoutSession:
     """Tests for POST /api/v2/payments/create-checkout-session."""
 
@@ -161,7 +163,7 @@ class TestCreateCheckoutSession:
     def test_create_checkout_session_with_current_slug(self, mock_create, authenticated_client, mock_stripe_session):
         """Test checkout creation using 'current' season slug."""
         api_client, user = authenticated_client
-        season = SeasonFactory(slug='24-25')
+        season = SeasonFactory(slug='24-25', start_date=datetime(2099, 1, 1).date())
         mock_create.return_value = mock_stripe_session
 
         response = api_client.post(
@@ -213,6 +215,8 @@ class TestCreateCheckoutSession:
 # Verify Payment Status Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.payments
 class TestVerifyPaymentStatus:
     """Tests for GET /api/v2/payments/verify-payment/{season_slug}."""
 
@@ -320,6 +324,8 @@ class TestVerifyPaymentStatus:
 # Get Payment Status Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.payments
 class TestGetPaymentStatus:
     """Tests for GET /api/v2/payments/payment-status/{season_slug}."""
 
@@ -368,6 +374,8 @@ class TestGetPaymentStatus:
 # Submission Status with Payment Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.payments
 class TestSubmissionStatusWithPayment:
     """Tests for GET /api/v2/payments/submission-status/{season_slug}."""
 
@@ -427,6 +435,8 @@ class TestSubmissionStatusWithPayment:
 # Webhook Handler Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.payments
 class TestStripeWebhook:
     """Tests for POST /stripe/webhook/."""
 
@@ -529,6 +539,8 @@ class TestStripeWebhook:
 # Entry Fee Validation Tests
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.payments
 class TestEntryFeeValidation:
     """Tests for entry fee amount validation and handling."""
 

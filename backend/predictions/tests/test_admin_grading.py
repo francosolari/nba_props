@@ -34,7 +34,7 @@ from predictions.tests.factories import (
 )
 
 User = get_user_model()
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.api_v2, pytest.mark.grading]
 
 # ============================================================================
 # Fixtures
@@ -202,6 +202,8 @@ def comprehensive_question_set(current_season):
 # Test Class 1: Grading Audit Endpoint (6 tests)
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.grading
 class TestGradingAuditEndpoint:
     """Tests for GET /api/v2/admin/grading/audit/{season_slug}"""
 
@@ -277,6 +279,8 @@ class TestGradingAuditEndpoint:
 # Test Class 2: Manual Grading (5 tests)
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.grading
 class TestManualGradingEndpoint:
     """Tests for POST /api/v2/admin/grading/manual-grade"""
 
@@ -287,7 +291,7 @@ class TestManualGradingEndpoint:
 
         response = admin_client.post(
             '/api/v2/admin/grading/grade-manual',
-            data={'answer_id': answer.id, 'is_correct': True, 'points_awarded': 3},
+            data={'answer_id': answer.id, 'is_correct': True, 'points_override': 3},
             content_type='application/json'
         )
 
@@ -303,7 +307,7 @@ class TestManualGradingEndpoint:
 
         response = admin_client.post(
             '/api/v2/admin/grading/grade-manual',
-            data={'answer_id': answer.id, 'is_correct': False, 'points_awarded': 0},
+            data={'answer_id': answer.id, 'is_correct': False, 'points_override': 0},
             content_type='application/json'
         )
 
@@ -320,12 +324,12 @@ class TestManualGradingEndpoint:
 
         admin_client.post(
             '/api/v2/admin/grading/grade-manual',
-            data={'answer_id': answer.id, 'is_correct': True, 'points_awarded': 5},
+            data={'answer_id': answer.id, 'is_correct': True, 'points_override': 5},
             content_type='application/json'
         )
 
         user_stats = UserStats.objects.get(user=user, season=current_season)
-        assert user_stats.points >= 0  # Updated
+        assert user_stats.points == 5  # Verify recalculation uses override value
 
     def test_non_admin_cannot_grade(self, user_client, current_season, sample_questions):
         """Non-admin gets 403."""
@@ -334,7 +338,7 @@ class TestManualGradingEndpoint:
 
         response = user_client.post(
             '/api/v2/admin/grading/grade-manual',
-            data={'answer_id': answer.id, 'is_correct': True, 'points_awarded': 3},
+            data={'answer_id': answer.id, 'is_correct': True, 'points_override': 3},
             content_type='application/json'
         )
 
@@ -344,7 +348,7 @@ class TestManualGradingEndpoint:
         """Invalid answer ID returns error."""
         response = admin_client.post(
             '/api/v2/admin/grading/grade-manual',
-            data={'answer_id': 99999, 'is_correct': True, 'points_awarded': 3},
+            data={'answer_id': 99999, 'is_correct': True, 'points_override': 3},
             content_type='application/json'
         )
 
@@ -381,6 +385,8 @@ class TestManualGradingEndpoint:
 # Test Class 3: Grading Commands (3 tests)
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.grading
 class TestGradeCommandExecution:
     """Tests for POST /api/v2/admin/grading/run-command"""
 
@@ -441,6 +447,8 @@ class TestGradeCommandExecution:
 # Test Class 4: Answers for Review (4 tests)
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.grading
 class TestAnswersForReviewEndpoint:
     """Tests for GET /api/v2/admin/grading/answers-for-review"""
 
@@ -518,6 +526,8 @@ class TestAnswersForReviewEndpoint:
 # Test Class 5: Questions for Grading (3 tests)
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.grading
 class TestQuestionsForGradingEndpoint:
     """Tests for GET /api/v2/admin/grading/questions/{season_slug}"""
 
@@ -586,6 +596,8 @@ class TestQuestionsForGradingEndpoint:
 # Test Class 6: Update Question Answer (3 tests)
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.grading
 class TestUpdateQuestionAnswerEndpoint:
     """Tests for POST /api/v2/admin/grading/update-question"""
 
@@ -648,6 +660,8 @@ class TestUpdateQuestionAnswerEndpoint:
 # Test Class 7: Finalize Question (2 tests)
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.grading
 class TestFinalizeQuestionEndpoint:
     """Tests for POST /api/v2/admin/grading/finalize-question"""
 
@@ -709,6 +723,8 @@ class TestFinalizeQuestionEndpoint:
 # Integration Test (1 test)
 # ============================================================================
 
+@pytest.mark.api_v2
+@pytest.mark.grading
 class TestGradingIntegration:
     """Full workflow integration test."""
 
@@ -725,7 +741,7 @@ class TestGradingIntegration:
         # Grade answer
         response = admin_client.post(
             '/api/v2/admin/grading/grade-manual',
-            data={'answer_id': answer.id, 'is_correct': True, 'points_awarded': 5},
+            data={'answer_id': answer.id, 'is_correct': True, 'points_override': 5},
             content_type='application/json'
         )
 
@@ -738,4 +754,4 @@ class TestGradingIntegration:
 
         # Verify user stats updated
         user_stats = UserStats.objects.get(user=user, season=current_season)
-        assert user_stats.points >= 0
+        assert user_stats.points == 5  # Verify actual recalculation matches points_override

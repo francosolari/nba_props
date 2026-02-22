@@ -249,18 +249,30 @@ def mock_stripe(mocker):
 def pytest_configure(config):
     """
     Configure Django settings for tests before Django initializes.
-    This runs once before all tests.
+
+    In CI (DATABASE_HOST is set to localhost by the workflow), we keep the
+    PostgreSQL config from settings.py so tests run fast on a real database.
+    Locally, we override to file-based SQLite so --reuse-db can skip migrations.
     """
+    import os
     from django.conf import settings
 
-    # Override database to use SQLite in-memory for all tests
-    settings.DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
-            'ATOMIC_REQUESTS': True,
+    ci_db_host = os.environ.get('DATABASE_HOST', '')
+
+    if ci_db_host in ('localhost', '127.0.0.1'):
+        # CI environment — keep PostgreSQL from settings, just ensure test DB name
+        settings.DATABASES['default']['TEST'] = {'NAME': 'test_nba_predictions'}
+    else:
+        # Local development — use file-based SQLite for fast iteration
+        db_path = os.path.join(os.path.dirname(__file__), '.test_db.sqlite3')
+        settings.DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': db_path,
+                'TEST': {'NAME': db_path},
+                'ATOMIC_REQUESTS': True,
+            }
         }
-    }
 
 
 @pytest.fixture(autouse=True)

@@ -178,6 +178,7 @@ def _build_team_standings(season: Season):
 # ============================================================================
 
 
+@pytest.mark.integration
 class TestUserJourneyIntegration:
     def test_user_flow_payment_submission_grading_leaderboard(
         self,
@@ -451,6 +452,7 @@ class TestUserJourneyIntegration:
 # ============================================================================
 
 
+@pytest.mark.integration
 class TestSeasonLifecycleIntegration:
     def test_admin_can_create_season_via_api(self, admin_client):
         now = timezone.now()
@@ -592,6 +594,7 @@ class TestSeasonLifecycleIntegration:
 # ============================================================================
 
 
+@pytest.mark.integration
 class TestQuestionWorkflowIntegration:
     def test_admin_creates_superlative_question_and_updates_odds(
         self,

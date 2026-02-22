@@ -38,6 +38,7 @@ from predictions.tests.factories import (
 )
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestSeasonModel:
     """Tests for Season model."""
@@ -92,6 +93,7 @@ class TestSeasonModel:
         assert future_season.submission_end_date > timezone.now()
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestSeasonValidation:
     """Tests for Season model validation."""
@@ -109,10 +111,8 @@ class TestSeasonValidation:
             )
             season.full_clean()
 
-    def test_end_date_before_start_date_rejected(self):
-        """Test that end_date before start_date is rejected."""
-        # Note: This test will pass if model has validation, otherwise it documents expected behavior
-        # The Season model might not have this validation yet
+    def test_end_date_before_start_date_allowed(self):
+        """Document that the model currently allows end_date before start_date (no validation)."""
         season = Season(
             year='2024-25',
             start_date=date(2025, 1, 1),
@@ -120,11 +120,11 @@ class TestSeasonValidation:
             submission_start_date=timezone.now(),
             submission_end_date=timezone.now()
         )
-        # If model validation exists, this would raise ValidationError
-        # For now, just verify the dates are incorrect
+        # Model does not enforce date ordering — this is allowed
         assert season.end_date < season.start_date
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestPaymentModel:
     """Tests for Payment model and status transitions."""
@@ -204,6 +204,7 @@ class TestPaymentModel:
         assert payment.email == 'test@example.com'
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestPaymentStateTransitions:
     """Tests for payment status transitions and idempotency."""
@@ -260,6 +261,7 @@ class TestPaymentStateTransitions:
         assert payment.paid_at <= payment.updated_at
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestUserStatsModel:
     """Tests for UserStats model and point aggregation."""
@@ -371,19 +373,18 @@ class TestUserStatsModel:
         assert stats.entry_fee_paid is True
         assert stats.entry_fee_paid_at is not None
 
-    def test_negative_points_rejected(self):
-        """Test that negative points trigger validation error."""
-        # Note: This documents expected behavior. Model validation may need to be added.
+    def test_negative_points_allowed(self):
+        """Document that the model currently allows negative points (no validation)."""
         stats = UserStats(
             user=UserFactory(),
             season=SeasonFactory(),
             points=-10
         )
-        # If model has validation, full_clean() would raise ValidationError
-        # For now, verify negative points can be detected
-        assert stats.points < 0
+        # Model does not enforce non-negative points — this is allowed
+        assert stats.points == -10
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestTeamModel:
     """Tests for Team model."""
@@ -409,6 +410,7 @@ class TestTeamModel:
         assert west_team.conference == 'West'
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestPlayerModel:
     """Tests for Player model."""
@@ -426,6 +428,7 @@ class TestPlayerModel:
         assert player.name == 'Stephen Curry'
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestAnswerModel:
     """Tests for Answer model."""
@@ -489,6 +492,7 @@ class TestAnswerModel:
         assert answer1.question != answer2.question
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestModelRelationships:
     """Tests for model relationships and foreign keys."""
@@ -539,6 +543,7 @@ class TestModelRelationships:
         assert stats2 in season_stats
 
 
+@pytest.mark.unit
 @pytest.mark.django_db
 class TestModelIndexes:
     """Tests to ensure database indexes are working as expected."""
@@ -573,7 +578,8 @@ class TestModelIndexes:
         assert succeeded_payments.count() == 1
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.unit
+@pytest.mark.django_db
 class TestCascadeDeletion:
     """Tests for cascade deletion behavior across related models."""
 
