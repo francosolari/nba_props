@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import ISTCenterPage from '../ISTCenterPage';
-import useISTData from '../../../hooks/useISTData';
+import { useISTData } from '../../../hooks';
 
-jest.mock('../../../hooks/useISTData');
+jest.mock('../../../hooks');
 
 const createISTData = (overrides = {}) => ({
   standings: { East: {}, West: {} },

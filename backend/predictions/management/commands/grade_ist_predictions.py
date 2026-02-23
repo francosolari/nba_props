@@ -77,6 +77,12 @@ class Command(BaseCommand):
             for standing in ist_standings
         }
 
+        # Mapping for NBA Cup champion: {team_id: is_champion}
+        champion_map = {
+            standing.team_id: standing.ist_champion
+            for standing in ist_standings
+        }
+
         # Fetch all answers for IST questions with related question and user data
         answers = Answer.objects.select_related('question', 'user').filter(question__in=ist_questions)
 
@@ -123,6 +129,13 @@ class Command(BaseCommand):
                     if allow_knockout:
                         is_conference_winner = conference_winners_map.get(team_id, False)
                         points = 1 if is_conference_winner else 0
+                    else:
+                        points = 0
+
+                elif question.prediction_type == 'champion':
+                    if allow_knockout:
+                        is_champion = champion_map.get(team_id, False)
+                        points = 1 if is_champion else 0
                     else:
                         points = 0
 

@@ -81,6 +81,13 @@ const buildBreakdown = (predictions = []) => {
         };
         break;
       }
+      case 'champion': {
+        breakdown.conferenceTitles['Champion'] = {
+          ...baseEntry,
+          label: 'NBA Cup Champion',
+        };
+        break;
+      }
       case 'tiebreaker': {
         breakdown.tiebreakers.push({
           ...baseEntry,

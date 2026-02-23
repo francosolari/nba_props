@@ -14,14 +14,13 @@ import {
   useEntryFeeStatus,
   useUpdateEntryFeeStatus,
   useUserContext,
-} from '../hooks/useSubmissions';
-import {
   usePaymentStatus,
   usePaymentRedirectHandler,
-} from '../hooks/usePaymentStatus';
+} from '../hooks';
 import SelectComponent from '../components/SelectComponent';
 import EditablePredictionBoard from '../components/EditablePredictionBoard';
 import StripePaymentModal from '../components/StripePaymentModal';
+import TeamLogo from '../components/TeamLogo';
 import '../styles/SubmissionsPage.css';
 
 const QUESTION_GROUP_META = {
@@ -221,7 +220,8 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const effectiveSeasonSlug = seasonSlug || activeSeasonSlug;
   const { data: userContext, isLoading: userContextLoading } = useUserContext();
   const username = userContext?.username || null;
-  const entryFeeEnabled = !!effectiveSeasonSlug && !!userContext?.is_authenticated;
+  const isAuthenticated = !!userContext?.is_authenticated;
+  const entryFeeEnabled = !!effectiveSeasonSlug && isAuthenticated;
 
   // Stripe payment status
   const {
@@ -300,13 +300,21 @@ const SubmissionsPage = ({ seasonSlug }) => {
   // Fetch data
   const {
     data: questionsData,
+    dataUpdatedAt: questionsUpdatedAt,
     isLoading: questionsLoading,
     isError: questionsError,
     error: questionsErrorObj,
     refetch: refetchQuestions,
   } = useQuestions(effectiveSeasonSlug);
-  const { data: userAnswersData } = useUserAnswers(effectiveSeasonSlug);
-  const { data: statusData } = useSubmissionStatus(effectiveSeasonSlug);
+  const { data: userAnswersData } = useUserAnswers(effectiveSeasonSlug, {
+    enabled: !!effectiveSeasonSlug && isAuthenticated,
+  });
+  const statusHydration = questionsData?.submission_status;
+  const { data: statusData } = useSubmissionStatus(effectiveSeasonSlug, {
+    enabled: !!effectiveSeasonSlug && !questionsLoading && !questionsError,
+    initialData: statusHydration || undefined,
+    initialDataUpdatedAt: statusHydration ? questionsUpdatedAt : undefined,
+  });
   const submitMutation = useSubmitAnswers();
   const {
     data: entryFeeData,
@@ -498,15 +506,15 @@ const SubmissionsPage = ({ seasonSlug }) => {
   }, [entryFeeStatus]);
   const entryFeeErrorMessage = entryFeeError
     ? getAxiosErrorMessage(
-        entryFeeErrorObj,
-        'We could not load your entry fee status. Payments will still be tracked once the connection returns.'
-      )
+      entryFeeErrorObj,
+      'We could not load your entry fee status. Payments will still be tracked once the connection returns.'
+    )
     : null;
   const questionsErrorMessage = questionsError
     ? getAxiosErrorMessage(
-        questionsErrorObj,
-        'We could not load the latest prediction questions. Please try again in a moment.'
-      )
+      questionsErrorObj,
+      'We could not load the latest prediction questions. Please try again in a moment.'
+    )
     : null;
 
   const handleSubmit = async (action = 'submit') => {
@@ -711,321 +719,317 @@ const SubmissionsPage = ({ seasonSlug }) => {
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 py-8 md:py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
-          <div className="flex flex-col gap-2 text-center md:text-left">
-            <span className="inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.2em] uppercase text-sky-600 dark:text-sky-400">
-              {displaySeasonSlug} Season
-            </span>
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-tight">
-              Submit Your Predictions
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">
-              Lock in your regular season standings and answer every question before the window closes.
-            </p>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+            <div className="flex flex-col gap-2 text-center md:text-left">
+              <span className="inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.2em] uppercase text-sky-600 dark:text-sky-400">
+                {displaySeasonSlug} Season
+              </span>
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-tight">
+                Submit Your Predictions
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">
+                Lock in your regular season standings and answer every question before the window closes.
+              </p>
+            </div>
+            <nav className="flex flex-wrap items-center justify-center md:justify-end gap-2 text-sm">
+              <a
+                href="#standings"
+                className="px-3 py-2 rounded-full border border-sky-200/80 dark:border-sky-700 bg-white/60 dark:bg-slate-800/60 text-sky-600 dark:text-sky-400 font-semibold shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                Standings
+              </a>
+              <a
+                href="#questions"
+                className="px-3 py-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                Questions
+              </a>
+              <a
+                href="#submit"
+                className="px-3 py-2 rounded-full border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-semibold shadow-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
+              >
+                Submit
+              </a>
+            </nav>
           </div>
-          <nav className="flex flex-wrap items-center justify-center md:justify-end gap-2 text-sm">
-            <a
-              href="#standings"
-              className="px-3 py-2 rounded-full border border-sky-200/80 dark:border-sky-700 bg-white/60 dark:bg-slate-800/60 text-sky-600 dark:text-sky-400 font-semibold shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors"
-            >
-              Standings
-            </a>
-            <a
-              href="#questions"
-              className="px-3 py-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-            >
-              Questions
-            </a>
-            <a
-              href="#submit"
-              className="px-3 py-2 rounded-full border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-semibold shadow-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
-            >
-              Submit
-            </a>
-          </nav>
-        </div>
 
-        {feedback && (
-          <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm">
-            <div
-              className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lg backdrop-blur ${
-                feedback.type === 'error'
+          {feedback && (
+            <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm">
+              <div
+                className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lg backdrop-blur ${feedback.type === 'error'
                   ? 'border-rose-200 dark:border-rose-700 bg-rose-50/95 dark:bg-rose-900/95 text-rose-700 dark:text-rose-300'
                   : 'border-emerald-200 dark:border-emerald-700 bg-emerald-50/95 dark:bg-emerald-900/95 text-emerald-700 dark:text-emerald-300'
-              }`}
-              role={feedback.type === 'error' ? 'alert' : 'status'}
-            >
-              <span>{feedback.message}</span>
-              <button
-                type="button"
-                onClick={() => setFeedback(null)}
-                className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                  }`}
+                role={feedback.type === 'error' ? 'alert' : 'status'}
               >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        )}
-
-        {entryFeeEnabled && entryFeeError && (
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-4 py-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm">
-            <div className="space-y-1">
-              <p className="font-semibold text-amber-900 dark:text-amber-200">Entry fee status unavailable</p>
-              <p>{entryFeeErrorMessage}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => refetchEntryFee()}
-              className="inline-flex items-center justify-center rounded-full border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 transition hover:bg-amber-100 dark:hover:bg-slate-600"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Payment Status Banner */}
-        {entryFeeEnabled && !paymentStatusLoading && paymentStatus && (
-          paymentStatus.is_paid ? (
-            <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
-              <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-semibold">Payment Confirmed ✓</span>
-                  {paymentStatus.paid_at && (
-                    <span className="text-emerald-700/80 dark:text-emerald-400/80 text-xs">
-                      Paid on {new Date(paymentStatus.paid_at).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <span className="text-xs font-medium px-3 py-1 bg-emerald-100 dark:bg-emerald-800 rounded-full">
-                Submission Valid
-              </span>
-            </div>
-          ) : (
-            <div className="mb-8 rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-4 py-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <svg className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <div className="space-y-1">
-                    <p className="font-semibold text-amber-900 dark:text-amber-200">Payment Required</p>
-                    <p>
-                      Your predictions are saved as a draft. Complete the <span className="font-semibold">$25.00 entry fee</span> to finalize your submission.
-                    </p>
-                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
-                      After payment, you can still edit your predictions until the deadline.
-                    </p>
-                  </div>
-                </div>
+                <span>{feedback.message}</span>
                 <button
                   type="button"
-                  onClick={() => setShowPaymentModal(true)}
-                  className="inline-flex items-center justify-center rounded-full bg-amber-500 dark:bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 dark:hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 whitespace-nowrap"
+                  onClick={() => setFeedback(null)}
+                  className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                 >
-                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                  Pay Now
+                  Dismiss
                 </button>
               </div>
             </div>
-          )
-        )}
+          )}
 
-        {/* Payment verification in progress */}
-        {isVerifying && (
-          <div className="mb-8 flex items-center gap-3 rounded-2xl border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/30 px-4 py-3 text-sm text-sky-700 dark:text-sky-300">
-            <svg className="animate-spin h-5 w-5 text-sky-600 dark:text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Verifying your payment...</span>
-          </div>
-        )}
-
-        {/* Deadline Banner */}
-        {submissionStatus && (
-          <div
-            className={`p-4 rounded-lg border mb-6 ${
-              submissionStatus.is_open ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700' : 'bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-700'
-            }`}
-          >
-            <p className={`font-semibold ${submissionStatus.is_open ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'}`}>
-              {submissionStatus.message}
-            </p>
-            {submissionStatus.days_until_close !== null &&
-              submissionStatus.days_until_close !== undefined && (
-                <p
-                  className={`text-sm mt-1 ${
-                    submissionStatus.is_open ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
-                  }`}
-                >
-                  {submissionStatus.days_until_close} day(s) remaining
-                </p>
-              )}
-            {submissionStatus.days_until_open !== null &&
-              submissionStatus.days_until_open !== undefined &&
-              !submissionStatus.is_open && (
-                <p className="text-sm mt-1 text-rose-700 dark:text-rose-400">
-                  Opens in {submissionStatus.days_until_open} day(s)
-                </p>
-              )}
-          </div>
-        )}
-
-        {/* Regular Season Standings */}
-        <section id="standings" className="mb-10">
-          <header className="mb-4">
-            <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">Regular Season Standings</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Drag and drop teams in each conference to set your projected final standings.
-            </p>
-          </header>
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
-            {userContextLoading ? (
-              <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">Loading standings...</div>
-            ) : userContext ? (
-              <EditablePredictionBoard
-                ref={standingsBoardRef}
-                seasonSlug={effectiveSeasonSlug}
-                canEdit={!isReadOnly}
-                username={username}
-              />
-            ) : (
-              <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                Sign in to manage your regular season standings predictions.
+          {entryFeeEnabled && entryFeeError && (
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-4 py-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm">
+              <div className="space-y-1">
+                <p className="font-semibold text-amber-900 dark:text-amber-200">Entry fee status unavailable</p>
+                <p>{entryFeeErrorMessage}</p>
               </div>
-            )}
-          </div>
-        </section>
+              <button
+                type="button"
+                onClick={() => refetchEntryFee()}
+                className="inline-flex items-center justify-center rounded-full border border-amber-300 dark:border-amber-600 bg-white dark:bg-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 transition hover:bg-amber-100 dark:hover:bg-slate-600"
+              >
+                Retry
+              </button>
+            </div>
+          )}
 
-        {/* Progress Bar */}
-        {!isReadOnly && questions.length > 0 && (
-          <>
-            <div ref={progressSentinelRef} aria-hidden="true" className="h-1" />
-            <div
-              className={`mb-6 ${
-                isProgressSticky
-                  ? 'sticky top-4 z-30 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 px-4 py-3 shadow-md'
-                  : ''
-              }`}
-            >
-              <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                <span>Progress</span>
-                <span>
-                  {completedCount} / {questions.length}
+          {/* Payment Status Banner */}
+          {entryFeeEnabled && !paymentStatusLoading && paymentStatus && (
+            paymentStatus.is_paid ? (
+              <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold">Payment Confirmed ✓</span>
+                    {paymentStatus.paid_at && (
+                      <span className="text-emerald-700/80 dark:text-emerald-400/80 text-xs">
+                        Paid on {new Date(paymentStatus.paid_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span className="text-xs font-medium px-3 py-1 bg-emerald-100 dark:bg-emerald-800 rounded-full">
+                  Submission Valid
                 </span>
               </div>
-              <div className="mt-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 h-2">
-                <div
-                  className="bg-sky-500 dark:bg-sky-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
+            ) : (
+              <div className="mb-8 rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-4 py-4 text-sm text-amber-800 dark:text-amber-300 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-amber-900 dark:text-amber-200">Payment Required</p>
+                      <p>
+                        Your predictions are saved as a draft. Complete the <span className="font-semibold">$25.00 entry fee</span> to finalize your submission.
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
+                        After payment, you can still edit your predictions until the deadline.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentModal(true)}
+                    className="inline-flex items-center justify-center rounded-full bg-amber-500 dark:bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 dark:hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 whitespace-nowrap"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    Pay Now
+                  </button>
+                </div>
               </div>
-              <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
-                You can save progress and finish later—unanswered questions are totally fine.
-              </p>
-            </div>
-          </>
-        )}
+            )
+          )}
 
-        {/* Questions */}
-        <div id="questions" className="space-y-10">
-          {groupedQuestions.map((group) => (
-            <section key={group.type}>
-              <header className="mb-4">
-                <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">{group.title}</h2>
-                {group.description && <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{group.description}</p>}
-              </header>
-              {group.type === 'ist' ? (
-                <InSeasonTournamentSection
-                  questions={group.questions}
-                  answers={answers}
-                  onAnswerChange={handleAnswerChange}
-                  isReadOnly={isReadOnly}
-                  teamOptions={teamOptions}
-                  loadingAuxData={loadingAuxData}
-                  istStandings={istStandings}
-                  loadingIstStandings={loadingIstStandings}
-                  istStandingsError={istStandingsError}
-                />
-              ) : group.type === 'nba_finals' ? (
-                <NBAFinalsSection
-                  questions={group.questions}
-                  answers={answers}
-                  onAnswerChange={handleAnswerChange}
-                  isReadOnly={isReadOnly}
-                  teamOptions={teamOptions}
-                  loadingAuxData={loadingAuxData}
+          {/* Payment verification in progress */}
+          {isVerifying && (
+            <div className="mb-8 flex items-center gap-3 rounded-2xl border border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/30 px-4 py-3 text-sm text-sky-700 dark:text-sky-300">
+              <svg className="animate-spin h-5 w-5 text-sky-600 dark:text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Verifying your payment...</span>
+            </div>
+          )}
+
+          {/* Deadline Banner */}
+          {submissionStatus && (
+            <div
+              className={`p-4 rounded-lg border mb-6 ${submissionStatus.is_open ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700' : 'bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-700'
+                }`}
+            >
+              <p className={`font-semibold ${submissionStatus.is_open ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'}`}>
+                {submissionStatus.message}
+              </p>
+              {submissionStatus.days_until_close !== null &&
+                submissionStatus.days_until_close !== undefined && (
+                  <p
+                    className={`text-sm mt-1 ${submissionStatus.is_open ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+                      }`}
+                  >
+                    {submissionStatus.days_until_close} day(s) remaining
+                  </p>
+                )}
+              {submissionStatus.days_until_open !== null &&
+                submissionStatus.days_until_open !== undefined &&
+                !submissionStatus.is_open && (
+                  <p className="text-sm mt-1 text-rose-700 dark:text-rose-400">
+                    Opens in {submissionStatus.days_until_open} day(s)
+                  </p>
+                )}
+            </div>
+          )}
+
+          {/* Regular Season Standings */}
+          <section id="standings" className="mb-10">
+            <header className="mb-4">
+              <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">Regular Season Standings</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Drag and drop teams in each conference to set your projected final standings.
+              </p>
+            </header>
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
+              {userContextLoading ? (
+                <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">Loading standings...</div>
+              ) : userContext ? (
+                <EditablePredictionBoard
+                  ref={standingsBoardRef}
+                  seasonSlug={effectiveSeasonSlug}
+                  canEdit={!isReadOnly}
+                  username={username}
                 />
               ) : (
-                <div className="grid gap-6 md:grid-cols-2">
-                  {group.questions.map((question) => (
-                    <QuestionCard
-                      key={question.id}
-                      question={question}
-                      answer={answers[question.id]}
-                      onChange={(value) => handleAnswerChange(question.id, value)}
-                      isReadOnly={isReadOnly}
-                      playerOptions={playerOptions}
-                      teamOptions={teamOptions}
-                      loadingAuxData={loadingAuxData}
-                    />
-                  ))}
+                <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                  Sign in to manage your regular season standings predictions.
                 </div>
               )}
-            </section>
-          ))}
-        </div>
-
-        {/* Submit Button */}
-        {!isReadOnly && (
-          <div id="submit" className="mt-10 flex flex-col items-center gap-3">
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
-              <button
-                type="button"
-                onClick={() => handleSubmit('save')}
-                disabled={submitMutation.isPending}
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-6 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {submitMutation.isPending ? 'Saving…' : 'Save Progress'}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSubmit('submit')}
-                disabled={
-                  submitMutation.isPending || !effectiveSeasonSlug || Object.keys(answers).length === 0
-                }
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-sky-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 dark:disabled:text-slate-500 disabled:shadow-none"
-              >
-                {submitMutation.isPending ? 'Submitting...' : 'Submit Predictions'}
-              </button>
             </div>
-            {hasChanges && <p className="text-amber-500 dark:text-amber-400 text-sm mt-1">You have unsaved changes</p>}
-            <p className="text-xs text-slate-400 dark:text-slate-500 text-center">
-              You can leave answers blank and return anytime—saving uses the same secure submit flow.
-            </p>
-          </div>
-        )}
+          </section>
 
-        {showPaymentModal && effectiveSeasonSlug && (
-          <StripePaymentModal
-            seasonSlug={effectiveSeasonSlug}
-            onClose={() => setShowPaymentModal(false)}
-            onPaymentInitiated={() => {
-              setShowPaymentModal(false);
-              setFeedback({
-                type: 'info',
-                message: 'Redirecting to secure payment...',
-              });
-            }}
-          />
-        )}
+          {/* Progress Bar */}
+          {!isReadOnly && questions.length > 0 && (
+            <>
+              <div ref={progressSentinelRef} aria-hidden="true" className="h-1" />
+              <div
+                className={`mb-6 ${isProgressSticky
+                  ? 'sticky top-4 z-30 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 px-4 py-3 shadow-md'
+                  : ''
+                  }`}
+              >
+                <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                  <span>Progress</span>
+                  <span>
+                    {completedCount} / {questions.length}
+                  </span>
+                </div>
+                <div className="mt-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 h-2">
+                  <div
+                    className="bg-sky-500 dark:bg-sky-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+                  You can save progress and finish later—unanswered questions are totally fine.
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* Questions */}
+          <div id="questions" className="space-y-10">
+            {groupedQuestions.map((group) => (
+              <section key={group.type}>
+                <header className="mb-4">
+                  <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">{group.title}</h2>
+                  {group.description && <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{group.description}</p>}
+                </header>
+                {group.type === 'ist' ? (
+                  <InSeasonTournamentSection
+                    questions={group.questions}
+                    answers={answers}
+                    onAnswerChange={handleAnswerChange}
+                    isReadOnly={isReadOnly}
+                    teamOptions={teamOptions}
+                    loadingAuxData={loadingAuxData}
+                    istStandings={istStandings}
+                    loadingIstStandings={loadingIstStandings}
+                    istStandingsError={istStandingsError}
+                  />
+                ) : group.type === 'nba_finals' ? (
+                  <NBAFinalsSection
+                    questions={group.questions}
+                    answers={answers}
+                    onAnswerChange={handleAnswerChange}
+                    isReadOnly={isReadOnly}
+                    teamOptions={teamOptions}
+                    loadingAuxData={loadingAuxData}
+                  />
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {group.questions.map((question) => (
+                      <QuestionCard
+                        key={question.id}
+                        question={question}
+                        answer={answers[question.id]}
+                        onChange={(value) => handleAnswerChange(question.id, value)}
+                        isReadOnly={isReadOnly}
+                        playerOptions={playerOptions}
+                        teamOptions={teamOptions}
+                        loadingAuxData={loadingAuxData}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            ))}
+          </div>
+
+          {/* Submit Button */}
+          {!isReadOnly && (
+            <div id="submit" className="mt-10 flex flex-col items-center gap-3">
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+                <button
+                  type="button"
+                  onClick={() => handleSubmit('save')}
+                  disabled={submitMutation.isPending}
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-6 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitMutation.isPending ? 'Saving…' : 'Save Progress'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSubmit('submit')}
+                  disabled={
+                    submitMutation.isPending || !effectiveSeasonSlug || Object.keys(answers).length === 0
+                  }
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-sky-600 px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 dark:disabled:text-slate-500 disabled:shadow-none"
+                >
+                  {submitMutation.isPending ? 'Submitting...' : 'Submit Predictions'}
+                </button>
+              </div>
+              {hasChanges && <p className="text-amber-500 dark:text-amber-400 text-sm mt-1">You have unsaved changes</p>}
+              <p className="text-xs text-slate-400 dark:text-slate-500 text-center">
+                You can leave answers blank and return anytime—saving uses the same secure submit flow.
+              </p>
+            </div>
+          )}
+
+          {showPaymentModal && effectiveSeasonSlug && (
+            <StripePaymentModal
+              seasonSlug={effectiveSeasonSlug}
+              onClose={() => setShowPaymentModal(false)}
+              onPaymentInitiated={() => {
+                setShowPaymentModal(false);
+                setFeedback({
+                  type: 'info',
+                  message: 'Redirecting to secure payment...',
+                });
+              }}
+            />
+          )}
         </div>
       </div>
     </>
@@ -1152,12 +1156,9 @@ const NBAFinalsSection = ({
         <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-700/70 p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-600 shadow-inner">
-              <img
-                src={logoSrc}
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = UNKNOWN_TEAM_LOGO;
-                }}
+              <TeamLogo
+                teamName={selectedOption?.label}
+                slug={!selectedOption ? 'unknown' : undefined}
                 alt={`${selectedTeamName} logo`}
                 className="h-10 w-10 object-contain"
               />
@@ -1248,7 +1249,7 @@ const InSeasonTournamentSection = ({
     [questions],
   );
   const conferenceWinnerQuestions = useMemo(
-    () => questions.filter((q) => q.prediction_type === 'conference_winner'),
+    () => questions.filter((q) => q.prediction_type === 'conference_winner' || q.prediction_type === 'champion'),
     [questions],
   );
   const tiebreakerQuestions = useMemo(
@@ -1492,20 +1493,15 @@ const InSeasonTournamentSection = ({
         type="button"
         onClick={() => !isReadOnly && onAnswerChange(question.id, teamId)}
         disabled={isReadOnly}
-        className={`flex min-h-[140px] flex-col items-center justify-center gap-3 rounded-3xl border px-4 py-5 text-center text-sm font-semibold transition ${
-          isSelected
-            ? `${theme.selectedBorder} ${theme.selectedBg} ${theme.selectedText} shadow-sm ring-2 ${theme.ring}`
-            : `border-slate-200 bg-white/90 text-slate-700 ${theme.hoverBorder} ${theme.hoverBg}`
-        } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
+        className={`flex min-h-[140px] flex-col items-center justify-center gap-3 rounded-3xl border px-4 py-5 text-center text-sm font-semibold transition ${isSelected
+          ? `${theme.selectedBorder} ${theme.selectedBg} ${theme.selectedText} shadow-sm ring-2 ${theme.ring}`
+          : `border-slate-200 bg-white/90 text-slate-700 ${theme.hoverBorder} ${theme.hoverBg}`
+          } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
         aria-pressed={isSelected}
       >
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-inner">
-          <img
-            src={logoSrc}
-            onError={(event) => {
-              event.currentTarget.onerror = null;
-              event.currentTarget.src = UNKNOWN_TEAM_LOGO;
-            }}
+          <TeamLogo
+            teamName={team.name}
             alt={`${team.name} logo`}
             className="h-10 w-10 object-contain"
           />
@@ -1541,13 +1537,12 @@ const InSeasonTournamentSection = ({
             </div>
             <div className="flex flex-col">
               <span
-                className={`text-xs font-semibold uppercase tracking-wide ${
-                  conferenceLower === 'east'
-                    ? 'text-[var(--nba-blue-600)] dark:text-[var(--nba-blue-400)]'
-                    : conferenceLower === 'west'
-                      ? 'text-[var(--nba-red-600)] dark:text-[var(--nba-red-400)]'
-                      : 'text-slate-500 dark:text-slate-400'
-                }`}
+                className={`text-xs font-semibold uppercase tracking-wide ${conferenceLower === 'east'
+                  ? 'text-[var(--nba-blue-600)] dark:text-[var(--nba-blue-400)]'
+                  : conferenceLower === 'west'
+                    ? 'text-[var(--nba-red-600)] dark:text-[var(--nba-red-400)]'
+                    : 'text-slate-500 dark:text-slate-400'
+                  }`}
               >
                 {groupMeta.conference || 'Group'}
               </span>
@@ -1584,21 +1579,16 @@ const InSeasonTournamentSection = ({
         type="button"
         onClick={() => !isReadOnly && onAnswerChange(question.id, teamId)}
         disabled={isReadOnly}
-        className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-left text-sm transition ${
-          isSelected
-            ? `${theme.selectedBorder} ${theme.selectedBg} ${theme.selectedText} shadow-sm`
-            : `border-slate-200 bg-white/95 text-slate-700 ${theme.hoverBorder} ${theme.hoverBg}`
-        } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
+        className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-left text-sm transition ${isSelected
+          ? `${theme.selectedBorder} ${theme.selectedBg} ${theme.selectedText} shadow-sm`
+          : `border-slate-200 bg-white/95 text-slate-700 ${theme.hoverBorder} ${theme.hoverBg}`
+          } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
         aria-pressed={isSelected}
       >
         <div className="flex flex-1 items-center gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-inner">
-            <img
-              src={logoSrc}
-              onError={(event) => {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = UNKNOWN_TEAM_LOGO;
-              }}
+            <TeamLogo
+              teamName={team.name}
               alt={`${team.name} logo`}
               className="h-8 w-8 object-contain"
             />
@@ -1609,9 +1599,8 @@ const InSeasonTournamentSection = ({
           </div>
         </div>
         <span
-          className={`ml-3 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-            isSelected ? `bg-white ${theme.selectedText}` : 'bg-white/0 text-transparent'
-          }`}
+          className={`ml-3 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${isSelected ? `bg-white ${theme.selectedText}` : 'bg-white/0 text-transparent'
+            }`}
         >
           ✓
         </span>
@@ -1633,9 +1622,8 @@ const InSeasonTournamentSection = ({
           <div className="flex flex-col">
             {conferenceLabel && (
               <span
-                className={`text-xs font-semibold uppercase tracking-wide ${
-                  conferenceLabel ? theme.selectedText : 'text-slate-500 dark:text-slate-400'
-                }`}
+                className={`text-xs font-semibold uppercase tracking-wide ${conferenceLabel ? theme.selectedText : 'text-slate-500 dark:text-slate-400'
+                  }`}
               >
                 {conferenceLabel} Wildcard
               </span>
@@ -1663,16 +1651,16 @@ const InSeasonTournamentSection = ({
     const variantStyles =
       variant === 'emerald'
         ? {
-            selected: 'border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-200 text-emerald-900',
-            idle:
-              'border-slate-200 bg-white/85 hover:border-emerald-400 hover:bg-emerald-50/70 text-slate-700',
-            badge: 'text-emerald-600',
-          }
+          selected: 'border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-200 text-emerald-900',
+          idle:
+            'border-slate-200 bg-white/85 hover:border-emerald-400 hover:bg-emerald-50/70 text-slate-700',
+          badge: 'text-emerald-600',
+        }
         : {
-            selected: 'border-sky-500 bg-sky-50/90 ring-2 ring-sky-200 text-sky-900',
-            idle: 'border-slate-200 bg-white/85 hover:border-sky-400 hover:bg-sky-50/70 text-slate-700',
-            badge: 'text-sky-600',
-          };
+          selected: 'border-sky-500 bg-sky-50/90 ring-2 ring-sky-200 text-sky-900',
+          idle: 'border-slate-200 bg-white/85 hover:border-sky-400 hover:bg-sky-50/70 text-slate-700',
+          badge: 'text-sky-600',
+        };
 
     const recordSummary = buildRecordSummary(team);
     const logoSrc = getTeamLogoSrc(team.name);
@@ -1683,9 +1671,8 @@ const InSeasonTournamentSection = ({
         type="button"
         onClick={() => !isReadOnly && onAnswerChange(question.id, teamId)}
         disabled={isReadOnly}
-        className={`flex min-h-[104px] items-center justify-between rounded-2xl border px-4 py-4 text-left shadow-sm transition ${
-          isSelected ? variantStyles.selected : variantStyles.idle
-        } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
+        className={`flex min-h-[104px] items-center justify-between rounded-2xl border px-4 py-4 text-left shadow-sm transition ${isSelected ? variantStyles.selected : variantStyles.idle
+          } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
         aria-pressed={isSelected}
       >
         <div className="flex items-center gap-3">
@@ -1788,33 +1775,33 @@ const InSeasonTournamentSection = ({
   );
   void legacyIstLayouts;
 
-const renderFinalistColumn = (
-  label,
-  question,
-  selectedOption,
-  options,
-  scoreQuestion,
-  scoreValue,
-  sideKey,
-) => {
-  if (!question) {
-    return (
-      <div className="flex h-full flex-col rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
-        <p className="text-sm text-slate-500 dark:text-slate-400">No {label.toLowerCase()} question configured.</p>
-      </div>
+  const renderFinalistColumn = (
+    label,
+    question,
+    selectedOption,
+    options,
+    scoreQuestion,
+    scoreValue,
+    sideKey,
+  ) => {
+    if (!question) {
+      return (
+        <div className="flex h-full flex-col rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+          <p className="text-sm text-slate-500 dark:text-slate-400">No {label.toLowerCase()} question configured.</p>
+        </div>
       );
     }
 
-  const selectedTeamName = selectedOption?.label || `Select the ${label}`;
-  const logoSrc = selectedOption ? getTeamLogoSrc(selectedOption.label) : UNKNOWN_TEAM_LOGO;
+    const selectedTeamName = selectedOption?.label || `Select the ${label}`;
+    const logoSrc = selectedOption ? getTeamLogoSrc(selectedOption.label) : UNKNOWN_TEAM_LOGO;
 
-  return (
-    <div className="flex h-full flex-col rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</span>
-        <span className="inline-flex items-center rounded-full bg-sky-100 dark:bg-sky-900/50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">
-          {question.point_value} pts
-        </span>
+    return (
+      <div className="flex h-full flex-col rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</span>
+          <span className="inline-flex items-center rounded-full bg-sky-100 dark:bg-sky-900/50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">
+            {question.point_value} pts
+          </span>
         </div>
         <div className="mt-3">
           <SelectComponent
@@ -1829,12 +1816,9 @@ const renderFinalistColumn = (
         <div className="mt-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-700/70 p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-600 shadow-inner">
-              <img
-                src={logoSrc}
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = UNKNOWN_TEAM_LOGO;
-                }}
+              <TeamLogo
+                teamName={selectedOption?.label}
+                slug={!selectedOption ? 'unknown' : undefined}
                 alt={`${selectedTeamName} logo`}
                 className="h-10 w-10 object-contain"
               />
@@ -2057,8 +2041,8 @@ const QuestionCard = ({
         <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
           <span className="bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 px-3 py-1 rounded-full">{question.point_value} pts</span>
           <span className="capitalize">
-          {question.question_type === 'head_to_head' ? 'Head to Head' : question.question_type.replace(/_/g, ' ')}
-        </span>
+            {question.question_type === 'head_to_head' ? 'Head to Head' : question.question_type.replace(/_/g, ' ')}
+          </span>
         </div>
       </div>
 
@@ -2118,8 +2102,8 @@ const QuestionInput = ({
           answer === 'over'
             ? ' overunder-scale--over'
             : answer === 'under'
-            ? ' overunder-scale--under'
-            : '';
+              ? ' overunder-scale--under'
+              : '';
         const disabledClass = isReadOnly ? ' overunder-scale--disabled' : '';
 
         return (
@@ -2131,9 +2115,8 @@ const QuestionInput = ({
             <span className="overunder-indicator" aria-hidden="true" />
             <button
               type="button"
-              className={`overunder-choice overunder-choice--under ${
-                answer === 'under' ? 'is-selected' : ''
-              } ${isReadOnly ? 'is-disabled' : ''}`}
+              className={`overunder-choice overunder-choice--under ${answer === 'under' ? 'is-selected' : ''
+                } ${isReadOnly ? 'is-disabled' : ''}`}
               onClick={() => onChange('under')}
               disabled={isReadOnly}
               aria-pressed={answer === 'under'}
@@ -2147,9 +2130,8 @@ const QuestionInput = ({
             </div>
             <button
               type="button"
-              className={`overunder-choice overunder-choice--over ${
-                answer === 'over' ? 'is-selected' : ''
-              } ${isReadOnly ? 'is-disabled' : ''}`}
+              className={`overunder-choice overunder-choice--over ${answer === 'over' ? 'is-selected' : ''
+                } ${isReadOnly ? 'is-disabled' : ''}`}
               onClick={() => onChange('over')}
               disabled={isReadOnly}
               aria-pressed={answer === 'over'}
@@ -2164,8 +2146,8 @@ const QuestionInput = ({
           answer === 'yes'
             ? ' yesno-scale--yes'
             : answer === 'no'
-            ? ' yesno-scale--no'
-            : '';
+              ? ' yesno-scale--no'
+              : '';
         const disabledClass = isReadOnly ? ' yesno-scale--disabled' : '';
 
         return (
@@ -2204,8 +2186,8 @@ const QuestionInput = ({
       const scaleStateClass = team1Selected
         ? ' head-to-head-scale--team1'
         : team2Selected
-        ? ' head-to-head-scale--team2'
-        : '';
+          ? ' head-to-head-scale--team2'
+          : '';
       const disabledClass = isReadOnly ? ' head-to-head-scale--disabled' : '';
 
       return (

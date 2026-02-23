@@ -11,6 +11,8 @@ from django.db import transaction
 from typing import List, Optional
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.cache import cache
 from predictions.models import (
     Season, Question, Answer,
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion,
@@ -57,8 +59,28 @@ QUESTION_MODEL_NAME_MAP = {
     NBAFinalsPredictionQuestion._meta.model_name: "nba_finals",
 }
 
+POLYMORPHIC_MODEL_ATTR_MAP = {
+    SuperlativeQuestion._meta.model_name: "superlativequestion",
+    PropQuestion._meta.model_name: "propquestion",
+    PlayerStatPredictionQuestion._meta.model_name: "playerstatpredictionquestion",
+    HeadToHeadQuestion._meta.model_name: "headtoheadquestion",
+    InSeasonTournamentQuestion._meta.model_name: "inseasontournamentquestion",
+    NBAFinalsPredictionQuestion._meta.model_name: "nbafinalspredictionquestion",
+}
+
+POLYMORPHIC_MODEL_CLASS_MAP = {
+    SuperlativeQuestion._meta.model_name: SuperlativeQuestion,
+    PropQuestion._meta.model_name: PropQuestion,
+    PlayerStatPredictionQuestion._meta.model_name: PlayerStatPredictionQuestion,
+    HeadToHeadQuestion._meta.model_name: HeadToHeadQuestion,
+    InSeasonTournamentQuestion._meta.model_name: InSeasonTournamentQuestion,
+    NBAFinalsPredictionQuestion._meta.model_name: NBAFinalsPredictionQuestion,
+}
 
 UserModel = get_user_model()
+
+QUESTIONS_CACHE_TTL = 60
+QUESTIONS_CACHE_KEY_TEMPLATE = "submissions:questions:v2:{season_id}"
 
 
 def _resolve_season(season_slug: str) -> Season:
@@ -117,7 +139,82 @@ def get_question_type_slug(question: Question) -> str:
     return "unknown"
 
 
-def serialize_question(question: Question) -> dict:
+def build_questions_with_real_map(season: Season):
+    base_queryset = Question.objects
+    if hasattr(base_queryset, "non_polymorphic"):
+        base_queryset = base_queryset.non_polymorphic()
+
+    base_questions = list(
+        base_queryset.filter(season=season)
+        .select_related("season", "polymorphic_ctype")
+        .order_by("id")
+    )
+    ids_by_model = {}
+    for question in base_questions:
+        model_name = question.polymorphic_ctype.model if question.polymorphic_ctype else None
+        if not model_name:
+            continue
+        ids_by_model.setdefault(model_name, []).append(question.id)
+
+    real_questions_map = {}
+    for model_name, ids in ids_by_model.items():
+        model_class = POLYMORPHIC_MODEL_CLASS_MAP.get(model_name)
+        if not model_class:
+            continue
+        queryset = model_class.objects.filter(id__in=ids)
+        if model_class is SuperlativeQuestion:
+            queryset = queryset.select_related(
+                "award",
+                "current_leader",
+                "current_runner_up",
+                "season",
+            ).prefetch_related("winners")
+        elif model_class is PropQuestion:
+            queryset = queryset.select_related("related_player", "season")
+        elif model_class is PlayerStatPredictionQuestion:
+            queryset = queryset.select_related("player_stat", "season")
+        elif model_class is HeadToHeadQuestion:
+            queryset = queryset.select_related("team1", "team2", "season")
+        else:
+            queryset = queryset.select_related("season")
+        for real_question in queryset:
+            real_questions_map[real_question.id] = real_question
+
+    return base_questions, real_questions_map
+
+
+def get_cached_questions(season: Season):
+    cache_key = QUESTIONS_CACHE_KEY_TEMPLATE.format(season_id=season.id)
+    cached_questions = cache.get(cache_key)
+    if cached_questions is not None:
+        return cached_questions
+
+    questions, real_questions_map = build_questions_with_real_map(season)
+    serialized_questions = [
+        serialize_question(q, real_questions_map=real_questions_map)
+        for q in questions
+    ]
+    cache.set(cache_key, serialized_questions, timeout=QUESTIONS_CACHE_TTL)
+    return serialized_questions
+
+
+def _resolve_real_question(question: Question) -> Question:
+    if isinstance(question, Question) and question.__class__ is Question:
+        model_name = question.polymorphic_ctype.model if question.polymorphic_ctype else None
+        related_attr = POLYMORPHIC_MODEL_ATTR_MAP.get(model_name)
+        if related_attr:
+            try:
+                related_obj = getattr(question, related_attr)
+            except ObjectDoesNotExist:
+                related_obj = None
+            if related_obj is not None:
+                return related_obj
+    if hasattr(question, "get_real_instance"):
+        return question.get_real_instance()
+    return question
+
+
+def serialize_question(question: Question, real_questions_map: Optional[dict] = None) -> dict:
     """
     Serialize a polymorphic Question into the appropriate schema format.
     
@@ -127,7 +224,10 @@ def serialize_question(question: Question) -> dict:
     Returns:
         Dictionary with question data
     """
-    real_question = question.get_real_instance() if hasattr(question, "get_real_instance") else question
+    if real_questions_map is not None:
+        real_question = real_questions_map.get(question.id, question)
+    else:
+        real_question = _resolve_real_question(question)
     question_type = get_question_type_slug(real_question)
 
     base_data: dict = {
@@ -147,7 +247,7 @@ def serialize_question(question: Question) -> dict:
             "award_id": real_question.award.id,
             "award_name": real_question.award.name,
             "is_finalized": real_question.is_finalized,
-            "winners": list(real_question.winners.values_list('id', flat=True)) if real_question.pk else [],
+            "winners": [winner.id for winner in real_question.winners.all()] if real_question.pk else [],
         }
     
     # Prop Question
@@ -199,10 +299,7 @@ def serialize_question(question: Question) -> dict:
     
     # Fallback for base Question (shouldn't normally happen)
     else:
-        return {
-            **base_data,
-            "question_type": "unknown",
-        }
+        return base_data
 
 
 @router.get(
@@ -405,15 +502,8 @@ def get_questions(request, season_slug: str):
     """
     season = _resolve_season(season_slug)
     
-    # Get all questions for the season
-    questions = (
-        Question.objects.filter(season=season)
-        .select_related('season')
-        .order_by('id')
-    )
-    
-    # Serialize each question
-    serialized_questions = [serialize_question(q) for q in questions]
+    # Get all questions for the season (bulk fetch with related data)
+    serialized_questions = get_cached_questions(season)
     
     # Get submission status
     submission_status = get_submission_status(season)
@@ -447,7 +537,11 @@ def get_user_answers(request, season_slug: str):
     answers = Answer.objects.filter(
         user=request.user,
         question__season=season
-    ).select_related('question', 'question__season').order_by('question_id')
+    ).select_related(
+        'question',
+        'question__season',
+        'question__polymorphic_ctype',
+    ).order_by('question_id')
     
     # Serialize answers
     serialized_answers = [

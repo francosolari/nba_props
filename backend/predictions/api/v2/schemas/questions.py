@@ -68,7 +68,7 @@ class HeadToHeadQuestionSchema(QuestionBaseSchema):
 class InSeasonTournamentQuestionSchema(QuestionBaseSchema):
     """Schema for In-Season Tournament Questions"""
     question_type: Literal["ist"] = "ist"
-    prediction_type: Literal["group_winner", "wildcard", "conference_winner", "tiebreaker"]
+    prediction_type: Literal["group_winner", "wildcard", "conference_winner", "champion", "tiebreaker"]
     ist_group: Optional[str] = None
     is_tiebreaker: bool
 
@@ -242,7 +242,7 @@ class InSeasonTournamentQuestionCreateSchema(Schema):
     season_slug: str
     text: str
     point_value: float = 0.5
-    prediction_type: Literal["group_winner", "wildcard", "conference_winner", "tiebreaker"]
+    prediction_type: Literal["group_winner", "wildcard", "conference_winner", "champion", "tiebreaker"]
     ist_group: Optional[str] = None
     is_tiebreaker: bool = False
 
@@ -278,7 +278,7 @@ class QuestionUpdateSchema(Schema):
     team2_id: Optional[int] = None
 
     # IST question fields
-    prediction_type: Optional[Literal["group_winner", "wildcard", "conference_winner", "tiebreaker"]] = None
+    prediction_type: Optional[Literal["group_winner", "wildcard", "conference_winner", "champion", "tiebreaker"]] = None
     ist_group: Optional[str] = None
     is_tiebreaker: Optional[bool] = None
 

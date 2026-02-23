@@ -1,74 +1,68 @@
-/**
- * Tests for ProgressBar component.
- *
- * A simple UI component used throughout the leaderboard.
- */
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import ProgressBar from '../ProgressBar';
 
-describe('ProgressBar', () => {
-  it('renders without crashing', () => {
-    render(<ProgressBar value={50} max={100} />);
-
+describe('ProgressBar Component', () => {
+  test('renders with default props', () => {
+    render(<ProgressBar />);
     const progressBar = screen.getByRole('progressbar');
     expect(progressBar).toBeInTheDocument();
-  });
-
-  it('displays correct progress percentage', () => {
-    render(<ProgressBar value={75} max={100} />);
-
-    const progressBar = screen.getByRole('progressbar');
-    expect(progressBar).toHaveAttribute('aria-valuenow', '75');
+    expect(progressBar).toHaveAttribute('aria-valuenow', '0');
+    expect(progressBar).toHaveAttribute('aria-valuemin', '0');
     expect(progressBar).toHaveAttribute('aria-valuemax', '100');
   });
 
-  it('handles zero max value', () => {
-    render(<ProgressBar value={0} max={0} />);
-
+  test('renders with custom value and max', () => {
+    render(<ProgressBar value={50} max={200} />);
     const progressBar = screen.getByRole('progressbar');
-    expect(progressBar).toBeInTheDocument();
+    expect(progressBar).toHaveAttribute('aria-valuenow', '50');
+    expect(progressBar).toHaveAttribute('aria-valuemax', '200');
+    // Width should be 25% (50/200)
+    expect(progressBar).toHaveStyle({ width: '25%' });
   });
 
-  it('handles value greater than max', () => {
+  test('clamps value between 0 and max', () => {
     render(<ProgressBar value={150} max={100} />);
-
     const progressBar = screen.getByRole('progressbar');
-    // Should cap at 100%
-    expect(progressBar).toBeInTheDocument();
+    expect(progressBar).toHaveAttribute('aria-valuenow', '100');
+    expect(progressBar).toHaveStyle({ width: '100%' });
+
+    render(<ProgressBar value={-10} max={100} />);
+    const progressBarNegative = screen.getAllByRole('progressbar')[1];
+    expect(progressBarNegative).toHaveAttribute('aria-valuenow', '0');
+    expect(progressBarNegative).toHaveStyle({ width: '0%' });
   });
 
-  it('applies custom color prop', () => {
+  test('displays formatted value when showValue is true', () => {
+    render(<ProgressBar value={75} max={100} showValue={true} valueFormat="percent" />);
+    expect(screen.getByText('75%')).toBeInTheDocument();
+
+    render(<ProgressBar value={5} max={10} showValue={true} valueFormat="fraction" />);
+    expect(screen.getByText('5/10')).toBeInTheDocument();
+
+    render(<ProgressBar value={42} showValue={true} valueFormat="raw" />);
+    expect(screen.getByText('42')).toBeInTheDocument();
+  });
+
+  test('applies custom colors and sizes', () => {
     const { container } = render(
       <ProgressBar
         value={50}
-        max={100}
         color="bg-red-500"
+        bgColor="bg-black"
+        size="lg"
+        className="custom-class"
       />
     );
 
-    // Check if custom color class is applied
-    const progressFill = container.querySelector('.bg-red-500');
-    expect(progressFill).toBeInTheDocument();
-  });
+    // Check for custom class on container
+    expect(container.firstChild).toHaveClass('custom-class');
 
-  it('applies custom size prop', () => {
-    render(<ProgressBar value={50} max={100} size="lg" />);
-
-    const progressBar = screen.getByRole('progressbar');
-    expect(progressBar).toBeInTheDocument();
-  });
-
-  it('shows correct percentage for partial values', () => {
-    render(<ProgressBar value={33} max={100} />);
-
-    const progressBar = screen.getByRole('progressbar');
-    expect(progressBar).toHaveAttribute('aria-valuenow', '33');
-  });
-
-  it('renders with default props', () => {
-    render(<ProgressBar />);
-
-    const progressBar = screen.getByRole('progressbar');
-    expect(progressBar).toBeInTheDocument();
+    // Check for size class
+    // Note: implementation details might make this tricky if classes are composed dynamically
+    // We can check if the rendered HTML contains the expected classes
+    expect(container.innerHTML).toContain('bg-red-500');
+    expect(container.innerHTML).toContain('bg-black');
+    expect(container.innerHTML).toContain('h-4'); // lg size
   });
 });

@@ -44,6 +44,17 @@ jobs:
           pip install --upgrade pip
           pip install -r backend/requirements.txt
 
+      - name: Set up Node.js for static files
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build frontend static files
+        run: |
+          npm ci
+          npm run build
+
       - name: Run Django migrations
         env:
           DJANGO_SETTINGS_MODULE: nba_predictions.settings
@@ -57,6 +68,20 @@ jobs:
         run: |
           cd backend
           python manage.py migrate --noinput
+
+      - name: Collect static files
+        env:
+          DJANGO_SETTINGS_MODULE: nba_predictions.settings
+          DJANGO_DEVELOPMENT: 'True'
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: test_db
+          DATABASE_USER: test_user
+          DATABASE_PASSWORD: test_password
+          SECRET_KEY: test-secret-key-for-ci-testing
+        run: |
+          cd backend
+          python manage.py collectstatic --noinput
 
       - name: Run backend tests with coverage
         env:

@@ -26,7 +26,10 @@ from predictions.api.v2.schemas import (
     QuestionSchema,
 )
 from predictions.api.v2.utils import admin_required
-from predictions.api.v2.endpoints.user_submissions import serialize_question
+from predictions.api.v2.endpoints.user_submissions import (
+    build_questions_with_real_map,
+    serialize_question,
+)
 from ninja.errors import HttpError
 
 
@@ -46,13 +49,9 @@ def admin_list_questions(request, season_slug: str):
     """
     season = get_object_or_404(Season, slug=season_slug)
     
-    questions = (
-        Question.objects.filter(season=season)
-        .select_related('season')
-        .order_by('id')
-    )
+    questions, real_questions_map = build_questions_with_real_map(season)
     
-    return [serialize_question(q) for q in questions]
+    return [serialize_question(q, real_questions_map=real_questions_map) for q in questions]
 
 
 @router.post(

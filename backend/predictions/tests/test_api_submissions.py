@@ -173,8 +173,9 @@ class TestGetQuestionsEndpoint:
         assert len(data['questions']) == 2
         assert 'submission_status' in data
 
-    def test_get_questions_with_current_shortcut(self, api_client, sample_questions):
+    def test_get_questions_with_current_shortcut(self, api_client, open_season, sample_questions):
         """Test retrieving questions using 'current' season slug."""
+        # Ensure open_season is used (it's already created via sample_questions fixture)
         response = api_client.get('/api/v2/submissions/questions/current')
 
         assert response.status_code == 200

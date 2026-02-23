@@ -1,5 +1,5 @@
 import React from 'react';
-import useISTData from '../../hooks/useISTData';
+import { useISTData } from '../../hooks';
 import ISTGroupStandings from '../../components/ist/ISTGroupStandings';
 import ISTWildcardRace from '../../components/ist/ISTWildcardRace';
 import ISTUserLeaderboard from '../../components/ist/ISTUserLeaderboard';

@@ -7,6 +7,13 @@
 // Import jest-dom matchers
 import '@testing-library/jest-dom';
 
+// Polyfills for MSW and JSDOM
+import 'whatwg-fetch';
+import { TextEncoder, TextDecoder } from 'util';
+
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
 // Mock Service Worker for API mocking
 import { server } from './__mocks__/msw/server';
 
@@ -56,21 +63,21 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock IntersectionObserver (used by some components)
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
+  constructor() { }
+  disconnect() { }
+  observe() { }
   takeRecords() {
     return [];
   }
-  unobserve() {}
+  unobserve() { }
 };
 
 // Mock ResizeObserver (used by some components)
 global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  unobserve() {}
+  constructor() { }
+  disconnect() { }
+  observe() { }
+  unobserve() { }
 };
 
 // Mock console methods to reduce noise in tests

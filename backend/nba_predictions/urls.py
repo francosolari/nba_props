@@ -26,9 +26,8 @@ urlpatterns = [
     # path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/', include('accounts.urls')),  # Onboarding views
     path('accounts/', include('allauth.urls')),  # Authentication
-    path('api/v1/', include('predictions.api.v1.urls')),  # Legacy REST API
-    path('api/v2/', api_v2.urls),  # Modern Ninja API
-    path('api/', include('predictions.api.v1.urls')),
+    path('api/', include('predictions.api.urls')),  # API with nested namespaces (api:v1:endpoint)
+    path('api/v2/', api_v2.urls),  # Modern Ninja API (no namespace, uses Django Ninja routing)
     path('stripe/webhook/', stripe_webhook, name='stripe_webhook'),  # Stripe webhook handler
     path('', include('predictions.routing.view_urls')),  # React frontend and Django views
 

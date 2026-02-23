@@ -3,9 +3,10 @@
  *
  * This hook fetches and processes leaderboard data from the API.
  */
+import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import useLeaderboard from '../useLeaderboard';
+import { useLeaderboard } from '../../hooks';
 
 // Create a wrapper component for React Query
 const createWrapper = () => {

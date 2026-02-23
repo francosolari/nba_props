@@ -172,6 +172,7 @@ class InSeasonTournamentQuestion(Question):
         ('group_winner', 'Group Winner'),
         ('wildcard', 'Wildcard'),
         ('conference_winner', 'Conference Winner'),
+        ('champion', 'NBA Cup Champion'),
         ('tiebreaker', 'Tiebreaker Points'),
     ]
 
@@ -190,6 +191,8 @@ class InSeasonTournamentQuestion(Question):
             return f"{self.text} (Wildcard)"
         elif self.prediction_type == 'conference_winner':
             return f"{self.text} (Conference Winner)"
+        elif self.prediction_type == 'champion':
+            return f"{self.text} (NBA Cup Champion)"
         elif self.prediction_type == 'tiebreaker':
             return f"{self.text} (Tiebreaker)"
         return self.text
