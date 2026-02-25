@@ -1,5 +1,7 @@
 import json
 import os
+import re
+import time
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'nba_predictions.settings')
 import django
@@ -15,6 +17,9 @@ from nba_api.stats.endpoints import \
     leaguegamelog, \
     commonplayoffseries, \
     iststandings
+from nba_api.stats.library.http import NBAStatsHTTP
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import ReadTimeout, RequestException, Timeout
 
 from predictions.models import Team, Season, Player, \
     RegularSeasonStandings, \
@@ -69,13 +74,124 @@ def fetch_nba_teams():
     return teams.get_teams()
 
 
-def fetch_nba_standings(season):
-    # print({leaguestandingsv3.LeagueStandingsV3(season='2024-25').get_json()})
-    # save_file = open("savedata.json", "w")
-    # save_file.close()
-    standings_data = leaguestandingsv3.LeagueStandingsV3(season=season).get_data_frames()[0]
-    update_standings(standings_data, season)
-    return standings_data
+def _result_sets_from_payload(payload):
+    """Normalize standings payload to a list of result-set dictionaries."""
+    if not isinstance(payload, dict):
+        raise ValueError(f"Unexpected standings payload type: {type(payload).__name__}")
+
+    if "resultSets" in payload:
+        result_sets = payload["resultSets"]
+    elif "resultSet" in payload:
+        result_sets = payload["resultSet"]
+    else:
+        payload_keys = ", ".join(sorted(payload.keys())) if payload else "<empty>"
+        raise ValueError(
+            f"Unexpected standings payload; missing 'resultSet'/'resultSets'. Keys: {payload_keys}"
+        )
+
+    if isinstance(result_sets, dict):
+        return [result_sets]
+    if isinstance(result_sets, list):
+        return result_sets
+
+    raise ValueError(f"Unexpected standings result set type: {type(result_sets).__name__}")
+
+
+def _extract_standings_dataframe(payload):
+    """Build a standings dataframe from raw NBA API payload."""
+    result_sets = _result_sets_from_payload(payload)
+    dict_result_sets = [result_set for result_set in result_sets if isinstance(result_set, dict)]
+    if not dict_result_sets:
+        raise ValueError("Could not parse standings payload: no valid result-set dictionaries found.")
+
+    # Prefer explicit standings data set by name.
+    ordered_sets = sorted(
+        dict_result_sets,
+        key=lambda rs: 0 if str(rs.get("name", "")).lower() == "standings" else 1,
+    )
+
+    for result_set in ordered_sets:
+        headers = result_set.get("headers")
+        rows = result_set.get("rowSet")
+        if headers and rows is not None:
+            return pd.DataFrame(rows, columns=headers)
+
+    raise ValueError("Could not parse standings rows from NBA API payload.")
+
+
+def _get_int_env(name, default):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_nba_season(season):
+    season_str = str(season)
+    if re.fullmatch(r"\d{2}-\d{2}", season_str):
+        return f"20{season_str}"
+    return season_str
+
+
+def _fetch_standings_payload_v3(season, timeout):
+    response = NBAStatsHTTP().send_api_request(
+        endpoint="leaguestandingsv3",
+        parameters={
+            "LeagueID": "00",
+            "Season": season,
+            "SeasonType": "Regular Season",
+            "SeasonYear": "",
+        },
+        timeout=timeout,
+    )
+    return response.get_dict()
+
+
+def fetch_nba_standings(season, timeout=None, retries=None, retry_delay=None):
+    api_season = _normalize_nba_season(season)
+    timeout = timeout if timeout is not None else _get_int_env("NBA_API_TIMEOUT_SECONDS", 45)
+    retries = retries if retries is not None else _get_int_env("NBA_API_MAX_RETRIES", 3)
+    retry_delay = retry_delay if retry_delay is not None else _get_int_env("NBA_API_RETRY_DELAY_SECONDS", 2)
+
+    retries = max(retries, 1)
+    retry_delay = max(retry_delay, 0)
+
+    last_network_error = None
+
+    for attempt in range(1, retries + 1):
+        try:
+            try:
+                endpoint = leaguestandingsv3.LeagueStandingsV3(season=api_season, timeout=timeout)
+
+            except (KeyError, IndexError, TypeError, ValueError):
+                standings_data = _extract_standings_dataframe(_fetch_standings_payload_v3(api_season, timeout))
+            else:
+                try:
+                    standings_data = endpoint.get_data_frames()[0]
+                except (KeyError, IndexError, TypeError, ValueError):
+                    standings_data = _extract_standings_dataframe(endpoint.get_dict())
+
+            required_columns = {"TeamCity", "TeamName", "Conference", "PlayoffRank", "WINS", "LOSSES"}
+            missing_columns = required_columns.difference(standings_data.columns)
+            if missing_columns:
+                missing = ", ".join(sorted(missing_columns))
+                raise ValueError(f"Standings payload missing required columns: {missing}")
+
+            update_standings(standings_data, season)
+            return standings_data
+
+        except (ReadTimeout, Timeout, RequestsConnectionError, RequestException) as exc:
+            last_network_error = exc
+            if attempt == retries:
+                break
+            time.sleep(retry_delay * attempt)
+
+    raise TimeoutError(
+        f"NBA API request failed after {retries} attempts (timeout={timeout}s): {last_network_error}"
+    ) from last_network_error
 
 
 def update_finals_standings(season, finals):
@@ -202,39 +318,6 @@ def fetch_active_players():
     print(nba_players)
     update_active_players(nba_players)
 
-
-ist_standings = fetch_ist_standings("2025-26")
-# exit(0)
-# fetch_finals_record(season="2021-22")
-# exit(0)
-# print(f"nba teams:{fetch_nba_teams()}")
-
-standings = fetch_nba_standings("2025-26")
-print(f"standings: {standings}")
-standings = standings[[
-    'TeamCity',
-    'TeamName',
-    'Conference',
-    'PlayoffRank',
-    'WINS',
-    'LOSSES',
-    'Record',
-    'HOME',
-    'ROAD',
-    'L10',
-    'LongWinStreak',
-    'strCurrentStreak',
-    'ConferenceGamesBack',
-    'ClinchedPlayoffBirth',
-    'ClinchedPlayIn',
-    'EliminatedConference'
-]]
-standings_east = standings.query("Conference in 'East'").reset_index(drop=True)
-standings_west = standings.query("Conference in 'West'").reset_index(drop=True)
-# standings_east.to_csv('standings_east.csv')
-# standings_west.to_csv('standings_west.csv')
-
-
 def get_player_with_most_fouls(season):
     # Fetch player statistics for the given season
     player_stats = \
@@ -296,44 +379,8 @@ def get_player_averages(player_name, season):
     }
 
 
-# Example usage:
-season = '2025-26'
-player_name, fouls = get_player_with_most_fouls(season=season)
-print(f"{player_name} has the most personal fouls with {fouls} for the {season} season.")
-
-player_name, ppg = get_player_with_highest_ppg(season=season)
-print(f"{player_name} has the highest points per game with {ppg} for the {season} season.")
-
-player_name = "Victor Wembanyama"  # replace with the desired player's name
-season = '2025-26'
-# averages = get_player_averages(player_name, season=season)
-# print(f"{player_name} {season} averages:\n{pd.Series(averages)}")
-# print("Updating active player list")
-fetch_ist_standings(season=season)
-fetch_nba_standings(season=season)
-# fetch_active_players()
-
-# Bronny james
-# data = {'id': 1999503, 'full_name': 'Lebron James Jr',
-#         'first_name': 'Lebron',
-#         'last_name': 'James Jr',
-#         'is_active': True}
-# name = "Lebron James Jr"
-# player = Player.objects.create(name=name)
-#
-# player_obj, created = Player.objects.get_or_create(
-#     name=name,
-# )
-# if not created:
-#     # Update the existing TeamSeasonStats
-#     player_obj.name = name
-#     player_obj.save()
-
-
-# player_name = "Joel Embiid"  # replace with the desired player's name
-# averages = get_player_averages(player_name, season=season)
-# print(f"{player_name} {season} averages:\n{averages}")
-
-# Today's Score Board
-# games = scoreboard.ScoreBoard()
-# print(games.get_dict())
+if __name__ == "__main__":
+    # Manual entry point for local ad-hoc data tasks.
+    season = "2025-26"
+    fetch_ist_standings(season=season)
+    fetch_nba_standings(season=season)

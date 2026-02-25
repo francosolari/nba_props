@@ -23,7 +23,7 @@ jedi==0.19.1
 jupyter_client==8.6.3
 jupyter_core==5.7.2
 matplotlib-inline==0.1.7
-nba_api==1.6.0
+nba_api==1.11.4
 nest-asyncio==1.6.0
 numpy==1.26.4
 oauthlib==3.2.2
