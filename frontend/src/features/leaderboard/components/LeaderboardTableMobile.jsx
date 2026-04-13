@@ -391,8 +391,11 @@ export const LeaderboardTableMobile = ({
                     {nonStandingsQuestions.map(q => {
                       const p = e.user.categories?.[catKey]?.predictions?.find(x => x.question_id === q.id);
                       const ans = p?.answer || '—';
-                      const isCorrect = p?.correct === true;
-                      const isWrong = p?.correct === false;
+                      const pts = p?.points || 0;
+                      const scoreStatus = p?.score_status || (p?.correct === true ? 'correct' : pts > 0 ? 'partial' : p?.correct === false ? 'incorrect' : 'pending');
+                      const isCorrect = scoreStatus === 'correct';
+                      const isPartial = scoreStatus === 'partial';
+                      const isWrong = scoreStatus === 'incorrect';
                       const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
                       const simulatedState = p?.__what_if_state;
                       const lineValue = extractLineValue(p, q.text);
@@ -404,6 +407,7 @@ export const LeaderboardTableMobile = ({
 
                       let color = "text-slate-400 dark:text-slate-600";
                       if (isCorrect) color = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20";
+                      if (isPartial) color = "bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/20";
                       if (isWrong) color = "bg-rose-500/5 text-rose-500/70 dark:text-rose-400/70 ring-1 ring-inset ring-rose-500/10";
 
                       return (

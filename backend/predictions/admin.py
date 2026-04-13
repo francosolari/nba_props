@@ -147,14 +147,14 @@ class Award(admin.ModelAdmin):
 @admin.register(SuperlativeQuestion)
 class SuperlativeQuestionAdmin(PolymorphicChildModelAdmin):
     base_model = SuperlativeQuestion
-    list_display = ('text', 'award', 'is_finalized')
+    list_display = ('text', 'award', 'point_value', 'answer_point_values', 'is_finalized')
     list_filter = ('award', 'is_finalized')
     search_fields = ('text',)
     # Define your admin options here
 
 @admin.register(PropQuestion)
 class PropQuestionAdmin(PolymorphicChildModelAdmin):
-    list_display = ('text', 'outcome_type', 'line')
+    list_display = ('text', 'outcome_type', 'line', 'point_value', 'answer_point_values')
     list_filter = ('outcome_type',)
     search_fields = ('text',)
     base_model = PropQuestion
@@ -187,7 +187,7 @@ class NBAFinalsPredictionQuestionAdmin(PolymorphicChildModelAdmin):
 @admin.register(Question)
 class QuestionAdmin(PolymorphicParentModelAdmin):
     base_model = Question
-    list_display = ('text', 'season', 'point_value', 'is_manual', 'last_updated')
+    list_display = ('text', 'season', 'point_value', 'answer_point_values', 'is_manual', 'last_updated')
     list_filter = ('season', 'is_manual', 'last_updated')
     search_fields = ('text',)
     # base_form =
@@ -416,4 +416,3 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 # Add filter by user or season want to clean up this view
-

@@ -271,17 +271,20 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         const pointValue = Number(prediction.point_value || questionPointValues.get(qid) || prediction.points || 0) || 0;
         let points = Number(prediction.points || 0);
         let correct = prediction.correct;
+        let scoreStatus = prediction.score_status || (correct === true ? 'correct' : points > 0 ? 'partial' : correct === false ? 'incorrect' : 'pending');
 
         if (override === 'correct') {
           points = pointValue;
           correct = true;
+          scoreStatus = 'correct';
         } else if (override === 'incorrect') {
           points = 0;
           correct = false;
+          scoreStatus = 'incorrect';
         }
 
         categoryPoints += points;
-        return { ...prediction, points, correct, __what_if_state: override || 'unchanged' };
+        return { ...prediction, points, correct, score_status: scoreStatus, __what_if_state: override || 'unchanged' };
       });
 
       return { ...category, points: categoryPoints, predictions };

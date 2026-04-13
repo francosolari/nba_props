@@ -96,6 +96,20 @@ describe('LeaderboardTableMobile', () => {
     expect(button.textContent).toBe('Over 9.5');
   });
 
+  test('renders partial-credit answers with amber styling', () => {
+    const displayedUsers = buildDisplayedUsers();
+    displayedUsers[0].user.categories['Player Awards'].predictions[0] = {
+      ...displayedUsers[0].user.categories['Player Awards'].predictions[0],
+      points: 2.5,
+      correct: false,
+      score_status: 'partial',
+    };
+
+    render(<LeaderboardTableMobile {...buildProps({ displayedUsers })} />);
+
+    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('amber');
+  });
+
   test('renders mobile-optimized flex layout with explicit column widths', () => {
     // FAANG-standard: Verify the structural fix for alignment/glitchiness (the "Why" of the change).
     // We expect explicit width classes that match the header to prevent misalignment.

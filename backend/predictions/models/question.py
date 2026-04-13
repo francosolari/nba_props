@@ -7,6 +7,11 @@ class Question(PolymorphicModel):
     season = models.ForeignKey(Season, on_delete=models.CASCADE)
     text = models.TextField()
     point_value = models.FloatField(default=0.5)
+    answer_point_values = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Optional mapping of answer text to points, e.g. {'yes': 3, 'no': 1}.",
+    )
     correct_answer = models.CharField(max_length=100, null=True, blank=True)
     is_manual = models.BooleanField(default=False)
     last_updated = models.DateTimeField(auto_now=True)
@@ -16,6 +21,39 @@ class Question(PolymorphicModel):
 
     def __str__(self):
         return self.text
+
+    @staticmethod
+    def normalize_answer_key(answer_text):
+        """Normalize answer text for case-insensitive scoring lookups."""
+        return str(answer_text or "").strip().lower()
+
+    def is_primary_correct_answer(self, resolved_answer_text):
+        correct_answer = self.normalize_answer_key(self.correct_answer)
+        if not correct_answer:
+            return False
+        return self.normalize_answer_key(resolved_answer_text) == correct_answer
+
+    def points_for_answer(self, resolved_answer_text):
+        normalized_answer = self.normalize_answer_key(resolved_answer_text)
+        answer_points = {
+            self.normalize_answer_key(answer): points
+            for answer, points in (self.answer_point_values or {}).items()
+        }
+
+        if normalized_answer in answer_points:
+            try:
+                return float(answer_points[normalized_answer])
+            except (TypeError, ValueError):
+                return 0
+
+        return float(self.point_value or 0) if self.is_primary_correct_answer(resolved_answer_text) else 0
+
+    def score_status_for_points(self, points, is_correct):
+        if is_correct:
+            return "correct"
+        if (points or 0) > 0:
+            return "partial"
+        return "incorrect"
 
 
 class SuperlativeQuestion(Question):

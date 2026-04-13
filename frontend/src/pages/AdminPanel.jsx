@@ -1470,6 +1470,11 @@ const QuestionRow = ({
 
   const getInitialDraft = useCallback(() => {
     const initial = { ...question };
+    initial.answer_point_values_json = JSON.stringify(
+      initial.answer_point_values || {},
+      null,
+      2,
+    );
     if (initial.award_id !== undefined) {
       initial.award = initial.award_id;
     }
@@ -1490,6 +1495,7 @@ const QuestionRow = ({
 
   const [draft, setDraft] = useState(getInitialDraft());
   const [busy, setBusy] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     if (!isEditing) {
@@ -1499,10 +1505,23 @@ const QuestionRow = ({
 
   const handleSave = async () => {
     setBusy(true);
+    setSaveError("");
+
+    let answerPointValues = {};
+    try {
+      answerPointValues = draft.answer_point_values_json?.trim()
+        ? JSON.parse(draft.answer_point_values_json)
+        : {};
+    } catch {
+      setSaveError('Answer point values must be valid JSON, e.g. {"No": 1, "Runner Up": 2.5}.');
+      setBusy(false);
+      return;
+    }
 
     const basePayload = {
       text: draft.text.trim(),
       point_value: Number(draft.point_value),
+      answer_point_values: answerPointValues,
     };
 
     let specificPayload = {};
@@ -1832,6 +1851,9 @@ const QuestionRow = ({
         )}
         <div className={`flex flex-wrap gap-3 text-xs ${themeStyles.muted}`}>
           <span>Points: {question.point_value}</span>
+          {question.answer_point_values && Object.keys(question.answer_point_values).length > 0 && (
+            <span>Custom scoring enabled</span>
+          )}
           <span>
             Updated: {new Date(question.last_updated).toLocaleString()}
           </span>
@@ -1853,6 +1875,22 @@ const QuestionRow = ({
                 className={`${inputClass} mt-2 w-full`}
               />
             </label>
+            <label className={`text-xs ${themeStyles.subtle}`}>
+              Answer point values JSON
+              <textarea
+                value={draft.answer_point_values_json || "{}"}
+                onChange={(e) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    answer_point_values_json: e.target.value,
+                  }))
+                }
+                className={`${inputClass} mt-2 w-full font-mono text-xs`}
+                rows={4}
+                placeholder='{"No": 1, "Runner Up": 2.5}'
+              />
+            </label>
+            {saveError && <p className="text-xs text-rose-500">{saveError}</p>}
             {renderEditingFields()}
           </div>
         )}

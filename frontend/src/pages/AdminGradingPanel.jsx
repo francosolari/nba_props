@@ -5,6 +5,7 @@ import axios from 'axios';
 import { getCSRFToken } from '../utils/csrf';
 import { useToast } from '../components/Toast';
 import NBAStandings from '../components/NBAStandings';
+import SelectComponent from '../components/SelectComponent';
 import {
   CheckCircle2,
   XCircle,
@@ -45,6 +46,10 @@ const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
   const [bulkGradeMode, setBulkGradeMode] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [editedAnswer, setEditedAnswer] = useState('');
+  const [editedAnswerPlayerId, setEditedAnswerPlayerId] = useState(null);
+  const [editedRunnerUpPlayerId, setEditedRunnerUpPlayerId] = useState(null);
+  const [editedRunnerUpPoints, setEditedRunnerUpPoints] = useState('');
+  const [editedScoringRows, setEditedScoringRows] = useState([]);
   const [showStandings, setShowStandings] = useState(false);
 
   const queryClient = useQueryClient();
@@ -109,13 +114,46 @@ const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
     },
   });
 
+  const { data: playersData } = useQuery({
+    queryKey: ['players', 'grading'],
+    queryFn: async () => {
+      const res = await axios.get('/api/v2/players/');
+      return res.data;
+    },
+    staleTime: 10 * 60 * 1000,
+    enabled: activeTab === 'grading',
+  });
+
+  const playerOptions = useMemo(
+    () => (playersData?.players || [])
+      .map(player => ({ value: player.id, label: player.name }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+    [playersData]
+  );
+  const playerNameById = useMemo(
+    () => new Map((playersData?.players || []).map(player => [String(player.id), player.name])),
+    [playersData]
+  );
+
   // Update question mutation
   const updateQuestionMutation = useMutation({
-    mutationFn: async ({ questionId, correctAnswer, isFinalized }) => {
+    mutationFn: async ({
+      questionId,
+      correctAnswer,
+      isFinalized,
+      answerPointValues,
+      correctAnswerPlayerId,
+      runnerUpPlayerId,
+      runnerUpPoints,
+    }) => {
       const res = await axios.post('/api/v2/admin/grading/update-question', {
         question_id: questionId,
         correct_answer: correctAnswer,
         is_finalized: isFinalized,
+        answer_point_values: answerPointValues,
+        correct_answer_player_id: correctAnswerPlayerId,
+        runner_up_player_id: runnerUpPlayerId,
+        runner_up_points: runnerUpPoints,
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -126,8 +164,13 @@ const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['grading-questions']);
+      queryClient.invalidateQueries(['grading-audit']);
       setEditingQuestion(null);
       setEditedAnswer('');
+      setEditedAnswerPlayerId(null);
+      setEditedRunnerUpPlayerId(null);
+      setEditedRunnerUpPoints('');
+      setEditedScoringRows([]);
     },
   });
 
@@ -197,9 +240,44 @@ const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
     );
   }, [auditData, searchQuery]);
 
-  const handleUpdateQuestion = async (questionId, correctAnswer, isFinalized = null) => {
+  const buildScoringRows = (answerPointValues = {}) => (
+    Object.entries(answerPointValues || {}).map(([answer, points]) => ({
+      answer,
+      points: String(points),
+    }))
+  );
+
+  const scoringRowsToMap = (rows) => {
+    const map = {};
+    rows.forEach((row) => {
+      const answer = String(row.answer || '').trim();
+      if (!answer) return;
+      const points = Number(row.points);
+      if (Number.isNaN(points)) return;
+      map[answer] = points;
+    });
+    return map;
+  };
+
+  const handleUpdateQuestion = async ({
+    questionId,
+    correctAnswer,
+    isFinalized = null,
+    answerPointValues = undefined,
+    correctAnswerPlayerId = undefined,
+    runnerUpPlayerId = undefined,
+    runnerUpPoints = undefined,
+  }) => {
     try {
-      await updateQuestionMutation.mutateAsync({ questionId, correctAnswer, isFinalized });
+      await updateQuestionMutation.mutateAsync({
+        questionId,
+        correctAnswer,
+        isFinalized,
+        answerPointValues,
+        correctAnswerPlayerId,
+        runnerUpPlayerId,
+        runnerUpPoints,
+      });
       toast.success('Question updated successfully!\n\nRun grading to apply this answer to all user submissions.');
     } catch (error) {
       console.error('Error updating question:', error);
@@ -210,19 +288,87 @@ const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
   const handleEditQuestion = (question) => {
     setEditingQuestion(question.question_id);
     setEditedAnswer(question.correct_answer || '');
+    const correctOption = question.correct_answer_player_id
+      ? playerOptions.find(option => String(option.value) === String(question.correct_answer_player_id))
+      : playerOptions.find(option => option.label === question.correct_answer);
+    setEditedAnswerPlayerId(correctOption?.value || null);
+    const scoringRows = buildScoringRows(question.answer_point_values);
+    setEditedScoringRows(scoringRows);
+    const runnerUpEntry = scoringRows.find(row => (
+      question.choices || []
+    ).includes(row.answer) && row.answer !== question.correct_answer);
+    const runnerUpOption = question.runner_up_player_id
+      ? playerOptions.find(option => String(option.value) === String(question.runner_up_player_id))
+      : runnerUpEntry
+        ? playerOptions.find(option => option.label === runnerUpEntry.answer)
+        : null;
+    setEditedRunnerUpPlayerId(runnerUpOption?.value || null);
+    setEditedRunnerUpPoints(
+      runnerUpEntry?.points || (question.question_type === 'SuperlativeQuestion' ? String((Number(question.point_value) || 0) / 2) : '')
+    );
   };
 
   const handleSaveQuestion = async (question) => {
-    if (!editedAnswer.trim()) {
+    const isPlayerQuestion = question.input_type === 'player_search';
+    const correctAnswer = isPlayerQuestion && editedAnswerPlayerId
+      ? playerNameById.get(String(editedAnswerPlayerId))
+      : editedAnswer;
+    const answerPointValues = scoringRowsToMap(editedScoringRows);
+    const runnerUpPoints = editedRunnerUpPoints === '' ? undefined : Number(editedRunnerUpPoints);
+
+    if (!String(correctAnswer || '').trim()) {
       toast.warning('Please enter a correct answer');
       return;
     }
-    await handleUpdateQuestion(question.question_id, editedAnswer);
+    await handleUpdateQuestion({
+      questionId: question.question_id,
+      correctAnswer,
+      answerPointValues,
+      correctAnswerPlayerId: isPlayerQuestion && editedAnswerPlayerId ? Number(editedAnswerPlayerId) : undefined,
+      runnerUpPlayerId: question.question_type === 'SuperlativeQuestion' && editedRunnerUpPlayerId
+        ? Number(editedRunnerUpPlayerId)
+        : undefined,
+      runnerUpPoints: question.question_type === 'SuperlativeQuestion' && editedRunnerUpPlayerId && !Number.isNaN(runnerUpPoints)
+        ? runnerUpPoints
+        : undefined,
+    });
   };
 
   const handleCancelEdit = () => {
     setEditingQuestion(null);
     setEditedAnswer('');
+    setEditedAnswerPlayerId(null);
+    setEditedRunnerUpPlayerId(null);
+    setEditedRunnerUpPoints('');
+    setEditedScoringRows([]);
+  };
+
+  const addScoringRow = (answer = '', points = '') => {
+    setEditedScoringRows(prev => [...prev, { answer, points: String(points) }]);
+  };
+
+  const updateScoringRow = (index, updates) => {
+    setEditedScoringRows(prev => prev.map((row, rowIndex) => (
+      rowIndex === index ? { ...row, ...updates } : row
+    )));
+  };
+
+  const removeScoringRow = (index) => {
+    setEditedScoringRows(prev => prev.filter((_, rowIndex) => rowIndex !== index));
+  };
+
+  const handleRunnerUpSelect = (option, question) => {
+    const playerId = option ? option.value : null;
+    const playerName = option ? option.label : '';
+    const defaultPoints = editedRunnerUpPoints || String((Number(question.point_value) || 0) / 2);
+
+    setEditedRunnerUpPlayerId(playerId);
+    if (!playerName) return;
+    setEditedRunnerUpPoints(defaultPoints);
+    setEditedScoringRows(prev => {
+      const withoutExistingRunnerUp = prev.filter(row => row.answer !== playerName);
+      return [...withoutExistingRunnerUp, { answer: playerName, points: defaultPoints }];
+    });
   };
 
   const handleGradeAnswer = async (answerId, isCorrect, pointsOverride = null, correctAnswer = null) => {
@@ -787,7 +933,7 @@ const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
                                           </div>
                                         )}
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="space-y-3">
                                           {/* Yes/No Radio Buttons */}
                                           {question.input_type === 'yes_no' && (
                                             <div className="flex gap-3">
@@ -844,22 +990,19 @@ const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
                                           {/* Player Search (with suggestions if available) */}
                                           {question.input_type === 'player_search' && (
                                             <div className="flex-1">
-                                              <input
-                                                type="text"
-                                                value={editedAnswer}
-                                                onChange={(e) => setEditedAnswer(e.target.value)}
-                                                placeholder="Enter player name..."
-                                                list={`players-${question.question_id}`}
-                                                className={`w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${getThemeClasses().input}`}
-                                                autoFocus
+                                              <SelectComponent
+                                                options={playerOptions}
+                                                value={editedAnswerPlayerId}
+                                                onChange={(option) => {
+                                                  setEditedAnswerPlayerId(option ? option.value : null);
+                                                  setEditedAnswer(option ? option.label : '');
+                                                }}
+                                                placeholder="Search player database..."
+                                                mode={theme}
                                               />
-                                              {question.choices && question.choices.length > 0 && (
-                                                <datalist id={`players-${question.question_id}`}>
-                                                  {question.choices.map(choice => (
-                                                    <option key={choice} value={choice} />
-                                                  ))}
-                                                </datalist>
-                                              )}
+                                              <div className={`mt-1 text-[11px] ${getThemeClasses().text.muted}`}>
+                                                Saves the selected player's canonical name for grading submitted player IDs.
+                                              </div>
                                             </div>
                                           )}
 
@@ -877,7 +1020,7 @@ const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
 
                                           {/* Save/Cancel buttons (for non-radio inputs) */}
                                           {question.input_type !== 'yes_no' && question.input_type !== 'over_under' && (
-                                            <>
+                                            <div className="flex gap-2">
                                               <button
                                                 onClick={() => handleSaveQuestion(question)}
                                                 disabled={updateQuestionMutation.isPending}
@@ -893,8 +1036,118 @@ const AdminGradingPanel = ({ seasonSlug = 'current', theme = 'dark' }) => {
                                               >
                                                 <X className="w-4 h-4" />
                                               </button>
-                                            </>
+                                            </div>
                                           )}
+
+                                          {/* Custom scoring editor */}
+                                          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+                                            <div className="mb-3 flex items-center justify-between gap-3">
+                                              <div>
+                                                <div className="text-xs font-bold uppercase tracking-wide text-amber-300">
+                                                  Custom answer points
+                                                </div>
+                                                <div className={`text-[11px] ${getThemeClasses().text.muted}`}>
+                                                  Optional. Matching answers earn these points instead of the default point value.
+                                                </div>
+                                              </div>
+                                              <button
+                                                type="button"
+                                                onClick={() => addScoringRow('', '')}
+                                                className="rounded-lg bg-amber-500/20 px-2.5 py-1.5 text-xs font-semibold text-amber-200 hover:bg-amber-500/30"
+                                              >
+                                                Add row
+                                              </button>
+                                            </div>
+
+                                            {question.question_type === 'SuperlativeQuestion' && (
+                                              <div className="mb-3 grid gap-2 md:grid-cols-[1fr_110px]">
+                                                <div>
+                                                  <div className="mb-1 text-[11px] font-semibold text-slate-300">Runner-up player</div>
+                                                  <SelectComponent
+                                                    options={playerOptions}
+                                                    value={editedRunnerUpPlayerId}
+                                                    onChange={(option) => handleRunnerUpSelect(option, question)}
+                                                    placeholder="Search runner-up player..."
+                                                    mode={theme}
+                                                  />
+                                                </div>
+                                                <label className="text-[11px] font-semibold text-slate-300">
+                                                  Runner-up pts
+                                                  <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.5"
+                                                    value={editedRunnerUpPoints}
+                                                    onChange={(e) => {
+                                                      const nextPoints = e.target.value;
+                                                      setEditedRunnerUpPoints(nextPoints);
+                                                      const runnerUpName = editedRunnerUpPlayerId
+                                                        ? playerNameById.get(String(editedRunnerUpPlayerId))
+                                                        : '';
+                                                      if (runnerUpName) {
+                                                        setEditedScoringRows(prev => prev.map(row => (
+                                                          row.answer === runnerUpName ? { ...row, points: nextPoints } : row
+                                                        )));
+                                                      }
+                                                    }}
+                                                    className={`mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${getThemeClasses().input}`}
+                                                  />
+                                                </label>
+                                              </div>
+                                            )}
+
+                                            {editedScoringRows.length === 0 ? (
+                                              <div className={`rounded-lg border border-dashed border-slate-700/50 px-3 py-2 text-xs ${getThemeClasses().text.muted}`}>
+                                                No custom scoring rows. Correct answers use the default point value.
+                                              </div>
+                                            ) : (
+                                              <div className="space-y-2">
+                                                {editedScoringRows.map((row, index) => (
+                                                  <div key={`${row.answer}-${index}`} className="grid gap-2 md:grid-cols-[1fr_110px_auto]">
+                                                    <input
+                                                      type="text"
+                                                      value={row.answer}
+                                                      onChange={(e) => updateScoringRow(index, { answer: e.target.value })}
+                                                      placeholder="Answer text, e.g. No or player name"
+                                                      className={`rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${getThemeClasses().input}`}
+                                                    />
+                                                    <input
+                                                      type="number"
+                                                      min="0"
+                                                      step="0.5"
+                                                      value={row.points}
+                                                      onChange={(e) => updateScoringRow(index, { points: e.target.value })}
+                                                      placeholder="Pts"
+                                                      className={`rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${getThemeClasses().input}`}
+                                                    />
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => removeScoringRow(index)}
+                                                      className="rounded-lg bg-rose-500/15 px-2.5 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/25"
+                                                    >
+                                                      Remove
+                                                    </button>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+
+                                            {question.choices?.length > 0 && (
+                                              <div className="mt-3 flex flex-wrap gap-2">
+                                                {question.choices.map(choice => (
+                                                  <button
+                                                    key={choice}
+                                                    type="button"
+                                                    onClick={() => addScoringRow(choice, choice === question.correct_answer ? question.point_value : '')}
+                                                    className="rounded-full bg-slate-800/70 px-2.5 py-1 text-[11px] text-slate-300 hover:bg-slate-700"
+                                                  >
+                                                    Add {choice}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+
                                         </div>
 
                                         {/* Auto-save for radio buttons */}

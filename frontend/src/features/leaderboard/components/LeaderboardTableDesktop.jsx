@@ -407,9 +407,11 @@ export const LeaderboardTableDesktop = ({
                     {displayedUsers.map(e => {
                       const p = e.user.categories?.[nonStandingsCategoryKey]?.predictions?.find(x => x.question_id === q.id);
                       const ans = p?.answer || '—';
-                      const isCorrect = p?.correct === true;
-                      const isWrong = p?.correct === false;
                       const pts = p?.points || 0;
+                      const scoreStatus = p?.score_status || (p?.correct === true ? 'correct' : pts > 0 ? 'partial' : p?.correct === false ? 'incorrect' : 'pending');
+                      const isCorrect = scoreStatus === 'correct';
+                      const isPartial = scoreStatus === 'partial';
+                      const isWrong = scoreStatus === 'incorrect';
                       const lineValue = extractLineValue(p, q.text);
                       const answerDisplay = lineValue && ans !== '—'
                         ? (String(ans).toLowerCase() === 'over' || String(ans).toLowerCase() === 'under'
@@ -419,6 +421,7 @@ export const LeaderboardTableDesktop = ({
 
                       let color = "text-slate-400 dark:text-slate-500";
                       if (isCorrect) color = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30";
+                      if (isPartial) color = "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30";
                       if (isWrong) color = "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
                       const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
                       const simulatedState = p?.__what_if_state;
@@ -444,7 +447,7 @@ export const LeaderboardTableDesktop = ({
                           {p && (
                             <div className="absolute -top-0.5 right-1 opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-20">
                               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm ${
-                                pts > 0 ? 'bg-emerald-500 text-white' : 'bg-slate-400 text-white'
+                                isCorrect ? 'bg-emerald-500 text-white' : isPartial ? 'bg-amber-500 text-white' : 'bg-slate-400 text-white'
                               }`}>
                                 {pts > 0 ? `+${pts}` : '0'}
                               </span>

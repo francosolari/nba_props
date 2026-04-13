@@ -184,6 +184,7 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
             "correct": ans.is_correct,
             "points": score,
             "point_value": ans.question.point_value,
+            "score_status": ans.question.score_status_for_points(score, ans.is_correct),
         }
         if ans.question_id in prop_question_data:
             pq_info = prop_question_data[ans.question_id]

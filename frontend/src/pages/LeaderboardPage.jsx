@@ -124,12 +124,13 @@ const CategoryDetailCard = ({ icon: Icon, title, data, detailsHref, userId }) =>
     return { east, west };
   }, [data?.predictions, isStandings]);
 
-  const { rights, wrongs } = useMemo(() => {
-    if (isStandings) return { rights: [], wrongs: [] };
+  const { rights, partials, wrongs } = useMemo(() => {
+    if (isStandings) return { rights: [], partials: [], wrongs: [] };
     
     if (data?.interesting && (data.interesting.hard_wins?.length || data.interesting.easy_misses?.length)) {
         return {
           rights: (data.interesting.hard_wins || []).slice(0, 3),
+          partials: [],
           wrongs: (data.interesting.easy_misses || []).slice(0, 3),
         };
     }
@@ -137,7 +138,7 @@ const CategoryDetailCard = ({ icon: Icon, title, data, detailsHref, userId }) =>
     const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
     const withFlags = predictions.map(p => ({
       ...p,
-      _isRight: typeof p.correct === 'boolean' ? p.correct : (typeof p.points === 'number' && p.points > 0),
+      _scoreStatus: p.score_status || (p.correct === true ? 'correct' : Number(p.points || 0) > 0 ? 'partial' : p.correct === false ? 'incorrect' : 'pending'),
     }));
     
     const seedStr = String(userId || '') + title;
@@ -154,8 +155,9 @@ const CategoryDetailCard = ({ icon: Icon, title, data, detailsHref, userId }) =>
     };
 
     return { 
-      rights: pickN(withFlags.filter(p => p._isRight), 3), 
-      wrongs: pickN(withFlags.filter(p => !p._isRight), 3) 
+      rights: pickN(withFlags.filter(p => p._scoreStatus === 'correct'), 3),
+      partials: pickN(withFlags.filter(p => p._scoreStatus === 'partial'), 3),
+      wrongs: pickN(withFlags.filter(p => p._scoreStatus === 'incorrect'), 3)
     };
   }, [data?.predictions, data?.interesting, isStandings, title, userId]);
 
@@ -298,6 +300,24 @@ const CategoryDetailCard = ({ icon: Icon, title, data, detailsHref, userId }) =>
                        <div key={i} className="flex justify-between items-start gap-2 text-[11px] leading-snug">
                          <span className="text-slate-700 dark:text-slate-300 font-medium line-clamp-2">{p.question || p.team}</span>
                          <span className="text-emerald-600 dark:text-emerald-400 font-black whitespace-nowrap">+{p.points}</span>
+                       </div>
+                     ))}
+                   </div>
+                </div>
+              )}
+              {partials.length > 0 && (
+                <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-3 border border-amber-100 dark:border-amber-500/10">
+                   <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider">
+                        <TrendingUp className="w-3.5 h-3.5" /> Partial
+                      </div>
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 bg-amber-100 dark:bg-amber-500/20 px-1.5 py-0.5 rounded-full">{partials.length} counted</span>
+                   </div>
+                   <div className="space-y-1.5">
+                     {partials.map((p, i) => (
+                       <div key={i} className="flex justify-between items-start gap-2 text-[11px] leading-snug">
+                         <span className="text-slate-700 dark:text-slate-300 font-medium line-clamp-2">{p.question || p.team}</span>
+                         <span className="text-amber-600 dark:text-amber-400 font-black whitespace-nowrap">+{p.points}</span>
                        </div>
                      ))}
                    </div>

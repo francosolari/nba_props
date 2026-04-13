@@ -99,4 +99,18 @@ describe('LeaderboardTableDesktop', () => {
     expect(button).toBeInTheDocument();
     expect(button.textContent).toBe('Over 9.5');
   });
+
+  test('renders partial-credit answers with amber styling', () => {
+    const displayedUsers = buildDisplayedUsers();
+    displayedUsers[0].user.categories['Player Awards'].predictions[0] = {
+      ...displayedUsers[0].user.categories['Player Awards'].predictions[0],
+      points: 2.5,
+      correct: false,
+      score_status: 'partial',
+    };
+
+    render(<LeaderboardTableDesktop {...buildProps({ displayedUsers, leaderboardData: displayedUsers })} />);
+
+    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('amber');
+  });
 });

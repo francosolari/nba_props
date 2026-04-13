@@ -1,5 +1,6 @@
 import logging
 from django.core.management.base import BaseCommand, CommandError
+from django.core.cache import cache
 from django.db import transaction, IntegrityError
 from django.contrib.auth.models import User
 from django.db.models import Sum
@@ -50,6 +51,8 @@ class Command(BaseCommand):
         self.stdout.write(f'Grading answers for season: {season.slug}')
         logger.info(f'Starting grading process for season "{season.slug}".')
 
+        cache.delete(AnswerLookupService.PLAYER_CACHE_KEY)
+        cache.delete(AnswerLookupService.TEAM_CACHE_KEY)
         AnswerLookupService.get_lookup_tables()
         logger.info('AnswerLookupService caches pre-warmed.')
 
@@ -86,13 +89,16 @@ class Command(BaseCommand):
                     if question_id not in question_cache:
                         question_instance = answer_obj.question.get_real_instance()
                         correct_answer_text_cached = question_instance.correct_answer
-                        point_value_cached = question_instance.point_value
-                        question_cache[question_id] = (correct_answer_text_cached, point_value_cached,
+                        scoring_rules_cached = question_instance.answer_point_values or {}
+                        question_cache[question_id] = (correct_answer_text_cached, scoring_rules_cached,
                                                        question_instance)
                     else:
-                        correct_answer_text_cached, point_value_cached, question_instance = question_cache[question_id]
+                        correct_answer_text_cached, scoring_rules_cached, question_instance = question_cache[question_id]
 
-                    if correct_answer_text_cached is None or not correct_answer_text_cached.strip():
+                    if (
+                        (correct_answer_text_cached is None or not correct_answer_text_cached.strip())
+                        and not scoring_rules_cached
+                    ):
                         warning_msg = (
                             f'No correct answer set for question ID {question_id} '
                             f'(Answer ID {answer_obj.id}). Skipping.'
@@ -106,15 +112,9 @@ class Command(BaseCommand):
                         skipped_answers += 1
                         continue
 
-                    points = 0
-                    answer_is_correct = False # Default to False
-                    correct_answer_normalized = correct_answer_text_cached.lower().strip()
-
                     resolved_user_answer_text = AnswerLookupService.resolve_answer(answer_obj.answer, question_instance)
-
-                    if resolved_user_answer_text.lower().strip() == correct_answer_normalized:
-                        points = point_value_cached
-                        answer_is_correct = True
+                    answer_is_correct = question_instance.is_primary_correct_answer(resolved_user_answer_text)
+                    points = question_instance.points_for_answer(resolved_user_answer_text)
 
                     # Check if points_earned or is_correct needs updating
                     changed = False

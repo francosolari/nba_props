@@ -235,6 +235,7 @@ def serialize_question(question: Question, real_questions_map: Optional[dict] = 
         "season_slug": real_question.season.slug,
         "text": real_question.text,
         "point_value": real_question.point_value,
+        "answer_point_values": real_question.answer_point_values or {},
         "is_manual": real_question.is_manual,
         "last_updated": real_question.last_updated,
         "question_type": question_type,

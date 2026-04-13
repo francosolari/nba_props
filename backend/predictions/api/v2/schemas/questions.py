@@ -19,6 +19,7 @@ class QuestionBaseSchema(Schema):
     season_slug: str
     text: str
     point_value: float
+    answer_point_values: Dict[str, float] = {}
     is_manual: bool
     last_updated: datetime
     question_type: str  # Discriminator field
@@ -205,6 +206,7 @@ class SuperlativeQuestionCreateSchema(Schema):
     season_slug: str
     text: str
     point_value: float = 0.5
+    answer_point_values: Optional[Dict[str, float]] = None
     award_id: int
 
 
@@ -213,6 +215,7 @@ class PropQuestionCreateSchema(Schema):
     season_slug: str
     text: str
     point_value: float = 0.5
+    answer_point_values: Optional[Dict[str, float]] = None
     outcome_type: Literal["over_under", "yes_no"]
     related_player_id: Optional[int] = None
     line: Optional[float] = None
@@ -223,6 +226,7 @@ class PlayerStatPredictionQuestionCreateSchema(Schema):
     season_slug: str
     text: str
     point_value: float = 0.5
+    answer_point_values: Optional[Dict[str, float]] = None
     player_stat_id: int
     stat_type: str
     fixed_value: Optional[float] = None
@@ -233,6 +237,7 @@ class HeadToHeadQuestionCreateSchema(Schema):
     season_slug: str
     text: str
     point_value: float = 0.5
+    answer_point_values: Optional[Dict[str, float]] = None
     team1_id: int
     team2_id: int
 
@@ -242,6 +247,7 @@ class InSeasonTournamentQuestionCreateSchema(Schema):
     season_slug: str
     text: str
     point_value: float = 0.5
+    answer_point_values: Optional[Dict[str, float]] = None
     prediction_type: Literal["group_winner", "wildcard", "conference_winner", "champion", "tiebreaker"]
     ist_group: Optional[str] = None
     is_tiebreaker: bool = False
@@ -252,6 +258,7 @@ class NBAFinalsPredictionQuestionCreateSchema(Schema):
     season_slug: str
     text: str
     point_value: float = 0.5
+    answer_point_values: Optional[Dict[str, float]] = None
     group_name: Optional[str] = None
 
 
@@ -259,6 +266,7 @@ class QuestionUpdateSchema(Schema):
     """Schema for updating any question"""
     text: Optional[str] = None
     point_value: Optional[float] = None
+    answer_point_values: Optional[Dict[str, float]] = None
 
     # Superlative question fields
     award_id: Optional[int] = None
