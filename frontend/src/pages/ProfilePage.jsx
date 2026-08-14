@@ -137,7 +137,6 @@ export default function ProfilePage({
       <div className="court-profile-main">
         <ProfileStats
           me={me}
-          data={data}
           standings={standings}
           awards={awards}
           props={props}

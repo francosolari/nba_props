@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useLeaderboard } from '../hooks';
 import ProgressBar from '../components/ProgressBar';
+import { ScorebookHeader, ScorebookNumber, ScorebookRow, ScorebookTable } from '../components/scorebook/ScorebookPrimitives';
 import {
   ChevronDown,
   ChevronUp,
@@ -18,7 +19,6 @@ import {
   ArrowRight,
   Lock,
   Calendar,
-  Medal,
   Crown,
   TrendingUp,
   Users,
@@ -61,38 +61,6 @@ const getInitials = (name) => {
 /* ─────────────────────────────────────────────────────────────────────────────
    SUB-COMPONENTS
    ───────────────────────────────────────────────────────────────────────────── */
-
-const RankBadge = ({ rank }) => {
-  if (rank === 1) {
-    return (
-      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 shadow-sm border border-yellow-200">
-        <Crown className="w-4 h-4 text-white drop-shadow-sm" fill="currentColor" />
-        <div className="absolute -bottom-1 -right-1 bg-white text-yellow-600 text-[8px] font-bold px-1 py-px rounded-full border border-yellow-100 shadow-sm leading-none">1st</div>
-      </div>
-    );
-  }
-  if (rank === 2) {
-    return (
-      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-b from-slate-300 to-slate-400 shadow-sm border border-slate-200">
-        <Medal className="w-4 h-4 text-white drop-shadow-sm" />
-        <div className="absolute -bottom-1 -right-1 bg-white text-slate-500 text-[8px] font-bold px-1 py-px rounded-full border border-slate-100 shadow-sm leading-none">2nd</div>
-      </div>
-    );
-  }
-  if (rank === 3) {
-    return (
-      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-b from-amber-600 to-amber-700 shadow-sm border border-amber-500">
-        <Medal className="w-4 h-4 text-white drop-shadow-sm" />
-        <div className="absolute -bottom-1 -right-1 bg-white text-amber-700 text-[8px] font-bold px-1 py-px rounded-full border border-amber-100 shadow-sm leading-none">3rd</div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold text-xs">
-      {rank}
-    </div>
-  );
-};
 
 const CategoryDetailCard = ({ icon: Icon, title, data, detailsHref, userId }) => {
   const pts = data?.points || 0;
@@ -513,33 +481,34 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
 
       {/* ─── 2. Main List ─── */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 md:py-6">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <ScorebookTable as="div" className="court-basic-leaderboard bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
           
-          <div className="hidden md:grid grid-cols-[60px_200px_120px_1fr_40px] gap-4 px-6 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <ScorebookHeader className="court-basic-leaderboard__head hidden md:grid grid-cols-[76px_220px_140px_1fr_40px] gap-0 px-0 py-0">
             <div className="text-center">Rank</div>
-            <div>Player</div>
+            <div>Participant</div>
             <div className="text-center">Total Points</div>
-            <div className="pl-6">Performance</div>
+            <div>Category preview</div>
             <div></div>
-          </div>
+          </ScorebookHeader>
 
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {leaderboardData.slice(0, visibleCount).map((entry) => {
               const isExpanded = expandedUsers.has(entry.user.id);
               const displayName = entry.user.display_name || entry.user.username;
               return (
-                <div key={entry.user.id} className={`group transition-colors duration-200 ${isExpanded ? 'bg-slate-50/80 dark:bg-slate-800/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+                <div key={entry.user.id} className={`court-basic-entry group ${entry.rank === 1 ? 'is-leader' : ''} ${isExpanded ? 'is-expanded' : ''}`}>
                   
-                  <button 
+                  <ScorebookRow
+                    as="button"
                     type="button"
                     onClick={() => toggleUserExpansion(entry.user.id)}
-                    className="w-full text-left cursor-pointer grid grid-cols-[auto_1fr_auto_auto] md:grid-cols-[60px_200px_120px_1fr_40px] gap-3 md:gap-4 items-center px-4 md:px-6 py-2.5 md:py-3.5 focus:outline-none"
+                    className="court-basic-leaderboard__row w-full text-left cursor-pointer grid grid-cols-[56px_minmax(0,1fr)_76px_24px] md:grid-cols-[76px_220px_140px_1fr_40px] gap-0 items-center p-0 focus:outline-none"
                   >
-                    <div className="flex justify-center md:justify-center">
-                       <RankBadge rank={entry.rank} />
+                    <div className="court-basic-rank">
+                       <ScorebookNumber>{entry.rank}</ScorebookNumber>
                     </div>
 
-                    <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="court-basic-participant flex items-center gap-3 overflow-hidden">
                       <div className="relative flex-shrink-0">
                          {entry.user.avatar ? (
                            <img src={entry.user.avatar} className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700" alt="" onError={(e)=>e.target.style.display='none'}/>
@@ -568,15 +537,15 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
                     </div>
 
                     {/* Points: Primary Metric - Now moved earlier in desktop grid */}
-                    <div className="text-center">
-                       <div className="text-base text-center md:text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
+                    <div className="court-basic-points-cell text-center">
+                       <ScorebookNumber className="court-basic-points">
                          {entry.user.total_points.toLocaleString()}
-                       </div>
+                       </ScorebookNumber>
                        <div className="md:hidden text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Pts</div>
                     </div>
 
                     {/* Desktop: Category Previews - Now after points */}
-                    <div className="hidden md:flex items-center gap-4 pl-6">
+                    <div className="court-basic-preview hidden md:flex items-center gap-4">
                       {['Regular Season Standings', 'Player Awards', 'Props & Yes/No'].map(catKey => {
                         const catData = getCategory(entry, catKey);
                         const pct = catData.max_points > 0 ? (catData.points / catData.max_points) * 100 : 0;
@@ -597,12 +566,12 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
                       })}
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="court-basic-disclosure flex justify-center">
                        <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
                          <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                        </div>
                     </div>
-                  </button>
+                  </ScorebookRow>
 
                   <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0 invisible'}`}>
                     <div className="px-2 md:px-6 pb-5 pt-1">
@@ -658,7 +627,7 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               </button>
             </div>
           )}
-        </div>
+        </ScorebookTable>
       </main>
     </div>
   );
