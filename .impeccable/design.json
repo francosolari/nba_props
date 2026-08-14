@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-14T16:19:21Z",
+  "title": "Design System: NBA Predictions Game — Courtside Album",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Clean Paper",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(100% 0 0)"]
+      },
+      "carbon-ink": {
+        "role": "neutral",
+        "displayName": "Carbon Ink",
+        "tonalRamp": ["oklch(15% 0.006 250)", "oklch(27% 0.006 250)", "oklch(39% 0.006 250)", "oklch(51% 0.006 250)", "oklch(63% 0.006 250)", "oklch(75% 0.006 250)", "oklch(87% 0.006 250)", "oklch(95% 0.006 250)"]
+      },
+      "nba-blue": {
+        "role": "primary",
+        "displayName": "NBA Blue",
+        "tonalRamp": ["oklch(15% 0.09 250)", "oklch(27% 0.12 250)", "oklch(39% 0.14 250)", "oklch(51% 0.14 250)", "oklch(63% 0.12 250)", "oklch(75% 0.09 250)", "oklch(87% 0.05 250)", "oklch(95% 0.025 250)"]
+      },
+      "nba-blue-dark": {
+        "role": "primary",
+        "displayName": "Deep NBA Blue",
+        "tonalRamp": ["oklch(15% 0.08 250)", "oklch(27% 0.11 250)", "oklch(39% 0.13 250)", "oklch(51% 0.13 250)", "oklch(63% 0.11 250)", "oklch(75% 0.08 250)", "oklch(87% 0.045 250)", "oklch(95% 0.02 250)"]
+      },
+      "nba-blue-soft": {
+        "role": "primary",
+        "displayName": "Pale Blue Sheet",
+        "tonalRamp": ["oklch(15% 0.025 250)", "oklch(27% 0.035 250)", "oklch(39% 0.04 250)", "oklch(51% 0.04 250)", "oklch(63% 0.035 250)", "oklch(75% 0.03 250)", "oklch(87% 0.025 250)", "oklch(95% 0.018 250)"]
+      },
+      "nba-red": {
+        "role": "secondary",
+        "displayName": "NBA Red",
+        "tonalRamp": ["oklch(15% 0.10 28)", "oklch(27% 0.14 28)", "oklch(39% 0.18 28)", "oklch(51% 0.20 28)", "oklch(63% 0.17 28)", "oklch(75% 0.12 28)", "oklch(87% 0.07 28)", "oklch(95% 0.03 28)"]
+      },
+      "nba-red-dark": {
+        "role": "secondary",
+        "displayName": "Deep NBA Red",
+        "tonalRamp": ["oklch(15% 0.09 28)", "oklch(27% 0.13 28)", "oklch(39% 0.17 28)", "oklch(51% 0.18 28)", "oklch(63% 0.15 28)", "oklch(75% 0.11 28)", "oklch(87% 0.06 28)", "oklch(95% 0.028 28)"]
+      },
+      "nba-red-soft": {
+        "role": "secondary",
+        "displayName": "Pale Red Sheet",
+        "tonalRamp": ["oklch(15% 0.025 28)", "oklch(27% 0.035 28)", "oklch(39% 0.045 28)", "oklch(51% 0.045 28)", "oklch(63% 0.04 28)", "oklch(75% 0.035 28)", "oklch(87% 0.025 28)", "oklch(95% 0.018 28)"]
+      },
+      "leader-gold": {
+        "role": "tertiary",
+        "displayName": "Leader Gold",
+        "tonalRamp": ["oklch(15% 0.07 88)", "oklch(27% 0.10 88)", "oklch(39% 0.13 88)", "oklch(51% 0.16 88)", "oklch(63% 0.17 88)", "oklch(75% 0.15 88)", "oklch(87% 0.09 88)", "oklch(95% 0.04 88)"]
+      },
+      "leader-gold-soft": {
+        "role": "tertiary",
+        "displayName": "Pale Leader Gold",
+        "tonalRamp": ["oklch(15% 0.035 88)", "oklch(27% 0.05 88)", "oklch(39% 0.065 88)", "oklch(51% 0.075 88)", "oklch(63% 0.08 88)", "oklch(75% 0.075 88)", "oklch(87% 0.06 88)", "oklch(95% 0.04 88)"]
+      },
+      "hardwood-tan": {
+        "role": "tertiary",
+        "displayName": "Hardwood Tan",
+        "tonalRamp": ["oklch(15% 0.035 68)", "oklch(27% 0.055 68)", "oklch(39% 0.07 68)", "oklch(51% 0.08 68)", "oklch(63% 0.09 68)", "oklch(75% 0.08 68)", "oklch(87% 0.05 68)", "oklch(95% 0.025 68)"]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "tonalRamp": ["oklch(15% 0.008 250)", "oklch(27% 0.01 250)", "oklch(39% 0.012 250)", "oklch(51% 0.012 250)", "oklch(63% 0.01 250)", "oklch(75% 0.008 250)", "oklch(87% 0.006 250)", "oklch(95% 0.004 250)"]
+      },
+      "carbon-rule": {
+        "role": "neutral",
+        "displayName": "Carbon Rule",
+        "tonalRamp": ["oklch(15% 0.006 250)", "oklch(27% 0.006 250)", "oklch(39% 0.006 250)", "oklch(51% 0.006 250)", "oklch(63% 0.006 250)", "oklch(75% 0.006 250)", "oklch(87% 0.006 250)", "oklch(95% 0.006 250)"]
+      },
+      "soft-rule": {
+        "role": "neutral",
+        "displayName": "Soft Rule",
+        "tonalRamp": ["oklch(15% 0.006 250)", "oklch(27% 0.008 250)", "oklch(39% 0.009 250)", "oklch(51% 0.01 250)", "oklch(63% 0.01 250)", "oklch(75% 0.009 250)", "oklch(87% 0.007 250)", "oklch(95% 0.004 250)"]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Verified Green",
+        "tonalRamp": ["oklch(15% 0.07 148)", "oklch(27% 0.10 148)", "oklch(39% 0.12 148)", "oklch(51% 0.13 148)", "oklch(63% 0.12 148)", "oklch(75% 0.09 148)", "oklch(87% 0.05 148)", "oklch(95% 0.025 148)"]
+      },
+      "warning": {
+        "role": "tertiary",
+        "displayName": "Deadline Amber",
+        "tonalRamp": ["oklch(15% 0.07 65)", "oklch(27% 0.10 65)", "oklch(39% 0.12 65)", "oklch(51% 0.13 65)", "oklch(63% 0.12 65)", "oklch(75% 0.09 65)", "oklch(87% 0.05 65)", "oklch(95% 0.025 65)"]
+      },
+      "danger": {
+        "role": "secondary",
+        "displayName": "Trust Red",
+        "tonalRamp": ["oklch(15% 0.08 28)", "oklch(27% 0.12 28)", "oklch(39% 0.15 28)", "oklch(51% 0.17 28)", "oklch(63% 0.15 28)", "oklch(75% 0.10 28)", "oklch(87% 0.055 28)", "oklch(95% 0.025 28)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Album Display", "purpose": "Oversized, direct first-viewport statements." },
+      "headline": { "displayName": "Page Identity", "purpose": "Primary page names above season state and action." },
+      "title": { "displayName": "Ruled Section Title", "purpose": "Major groups inside the album sheet." },
+      "body": { "displayName": "Reading Text", "purpose": "Instructions, explanations, forms, and comparison detail." },
+      "label": { "displayName": "Scorebook Label", "purpose": "Navigation, controls, ranks, headers, and compact status." }
+    },
+    "shadows": [
+      {
+        "name": "structural-menu-offset",
+        "value": "4px 4px 0 var(--court-rule)",
+        "purpose": "Hard offset used only for open menus in the detailed comparison. Resting surfaces have no shadow."
+      },
+      {
+        "name": "participant-identity-inset",
+        "value": "inset 0 -5px 0 var(--court-gold)",
+        "purpose": "Gold identity rule beneath the signed-in participant's score strip."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-ease",
+        "value": "160ms ease-out",
+        "purpose": "Background, text-color, and one-pixel press transitions on primary controls."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms, 1 iteration",
+        "purpose": "Global animation and transition fallback when reduced motion is requested."
+      }
+    ],
+    "breakpoints": [
+      { "name": "rail", "value": "768px" },
+      { "name": "wide-album", "value": "1200px" }
+    ],
+    "depthPhilosophy": "Flat scorebook surfaces use carbon rules and attached tonal fields. Only open menus receive a hard offset shadow; identity and changed state use inset gold rules instead of floating elevation."
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The canonical participant action: flat league blue, carbon framed, condensed, and touch-safe.",
+      "html": "<button class=\"ds-btn-primary\">Save picks</button>",
+      "css": ".ds-btn-primary { display:inline-flex; min-height:44px; align-items:center; justify-content:center; padding:11px 12px; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-blue); color:#fff; font-family:var(--court-display); font-size:1rem; font-weight:700; letter-spacing:.035em; line-height:1; text-transform:uppercase; transition:background-color 160ms ease-out,color 160ms ease-out,transform 160ms ease-out; } .ds-btn-primary:hover { background:var(--court-blue-dark); } .ds-btn-primary:focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } .ds-btn-primary:active { transform:translateY(1px); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A white-stock companion action that preserves the same dimensions and scorebook voice.",
+      "html": "<button class=\"ds-btn-secondary\">Review entry</button>",
+      "css": ".ds-btn-secondary { display:inline-flex; min-height:44px; align-items:center; justify-content:center; padding:11px 12px; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-paper); color:var(--court-ink); font-family:var(--court-display); font-size:1rem; font-weight:700; letter-spacing:.035em; line-height:1; text-transform:uppercase; transition:background-color 160ms ease-out,transform 160ms ease-out; } .ds-btn-secondary:hover { background:var(--court-blue-soft); } .ds-btn-secondary:focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } .ds-btn-secondary:active { transform:translateY(1px); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A 48px white field with a decisive carbon stroke and gold keyboard focus.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Player search</span><input class=\"ds-field-input\" type=\"search\" placeholder=\"Search players\"></label>",
+      "css": ".ds-field { display:grid; gap:6px; color:var(--court-ink); font-family:var(--court-text); } .ds-field-label { font-family:var(--court-display); font-size:.75rem; font-weight:700; letter-spacing:.035em; text-transform:uppercase; } .ds-field-input { min-height:48px; padding:0 12px; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-paper); color:var(--court-ink); font:inherit; } .ds-field-input::placeholder { color:var(--court-muted); opacity:1; } .ds-field-input:hover { border-color:var(--court-blue); } .ds-field-input:focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; }"
+    },
+    {
+      "name": "Mobile Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "The persistent five-cell mobile score strip; this sample shows the active and neighboring states.",
+      "html": "<nav class=\"ds-mobile-nav\" aria-label=\"Primary navigation\"><a class=\"ds-nav-link\" href=\"#\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg><span>Home</span></a><a class=\"ds-nav-link ds-is-active\" href=\"#\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 5h6M9 9h6M9 13h4M5 3h14v18H5z\"/></svg><span>Picks</span></a><a class=\"ds-nav-link\" href=\"#\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 4h8v3a4 4 0 0 1-8 0zM12 11v5M8 20h8M5 5H3v2a4 4 0 0 0 4 4M19 5h2v2a4 4 0 0 1-4 4\"/></svg><span>Leaders</span></a></nav>",
+      "css": ".ds-mobile-nav { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); min-height:74px; border-top:2px solid var(--court-rule); background:var(--court-paper); } .ds-nav-link { display:flex; min-height:52px; flex-direction:column; gap:4px; align-items:center; justify-content:center; border-right:1px solid var(--court-rule-soft); color:var(--court-ink); font-family:var(--court-display); font-size:.75rem; font-weight:700; letter-spacing:.035em; line-height:1; text-decoration:none; text-transform:uppercase; } .ds-nav-link:last-child { border-right:0; } .ds-nav-link svg { width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:2; } .ds-nav-link:hover { background:var(--court-blue-soft); } .ds-nav-link:focus-visible { outline:3px solid var(--court-gold); outline-offset:-4px; } .ds-nav-link.ds-is-active { background:var(--court-blue); color:#fff; }"
+    },
+    {
+      "name": "Ruled Album Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "A joined scorebook container that creates hierarchy with an ink header and internal rules rather than shadow.",
+      "html": "<section class=\"ds-panel\"><header class=\"ds-panel-head\">Leaderboard snapshot</header><div class=\"ds-panel-row\"><strong>#1</strong><span>Jordan R.</span><strong>148 pts</strong></div><div class=\"ds-panel-row\"><strong>#2</strong><span>Maya K.</span><strong>143 pts</strong></div></section>",
+      "css": ".ds-panel { overflow:hidden; border:2px solid var(--court-rule); border-radius:5px; background:var(--court-paper); color:var(--court-ink); font-family:var(--court-text); } .ds-panel-head { min-height:44px; display:flex; align-items:center; padding:0 12px; background:var(--court-ink); color:#fff; font-family:var(--court-display); font-weight:700; letter-spacing:.04em; text-transform:uppercase; } .ds-panel-row { display:grid; grid-template-columns:40px 1fr auto; min-height:48px; align-items:center; gap:8px; padding:0 12px; border-bottom:1px solid var(--court-rule); } .ds-panel-row:last-child { border-bottom:0; } .ds-panel-row:hover { background:var(--court-blue-soft); } .ds-panel:focus-within { outline:3px solid var(--court-gold); outline-offset:3px; } .ds-panel-row strong { font-family:var(--court-display); font-variant-numeric:tabular-nums; }"
+    },
+    {
+      "name": "Participant Score Strip",
+      "kind": "custom",
+      "refersTo": "identity-score-strip",
+      "description": "The advanced board's attached LIVE state and gold signed-in identity treatment.",
+      "html": "<div class=\"ds-score-band\"><div class=\"ds-score-status\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 4h8v3a4 4 0 0 1-8 0zM12 11v5M8 20h8M5 5H3v2a4 4 0 0 0 4 4M19 5h2v2a4 4 0 0 1-4 4\"/></svg><span>Live</span></div><div class=\"ds-score-player ds-is-me\"><b class=\"ds-rank\">4</b><span><small>You · Franco</small><strong>126 pts</strong></span></div><div class=\"ds-score-player\"><b class=\"ds-rank\">1</b><span><small>Maya K.</small><strong>148 pts</strong></span></div></div>",
+      "css": ".ds-score-band { display:flex; overflow:auto; border:2px solid var(--court-rule); background:var(--court-paper); color:var(--court-ink); font-family:var(--court-display); } .ds-score-status,.ds-score-player { display:flex; min-height:52px; align-items:center; gap:8px; padding:0 12px; border-right:1px solid var(--court-rule); } .ds-score-status { border-right-width:2px; background:var(--court-ink); color:#fff; font-size:.65rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; } .ds-score-status svg { width:16px; height:16px; fill:none; stroke:var(--court-gold); stroke-width:2; } .ds-score-player { min-width:150px; } .ds-score-player.ds-is-me { background:var(--court-gold-soft); box-shadow:inset 0 -5px 0 var(--court-gold); } .ds-rank { display:grid; width:28px; height:28px; place-items:center; border:1px solid var(--court-rule); font-variant-numeric:tabular-nums; } .ds-is-me .ds-rank { background:var(--court-gold); } .ds-score-player span { display:flex; min-width:0; flex-direction:column; } .ds-score-player small { font-size:.65rem; font-weight:800; letter-spacing:.02em; text-transform:uppercase; } .ds-score-player strong { font-size:.9rem; font-variant-numeric:tabular-nums; } .ds-score-player:hover { background:var(--court-blue-soft); } .ds-score-player.ds-is-me:hover { background:var(--court-gold-soft); } .ds-score-player:focus-visible { outline:3px solid var(--court-gold); outline-offset:-4px; }"
+    },
+    {
+      "name": "What-If Standings Move",
+      "kind": "custom",
+      "description": "The signature direct-manipulation state: an enabled control, gold insertion rule, and visibly moved team row.",
+      "html": "<div class=\"ds-what-if\"><button class=\"ds-what-if-toggle\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8\"/></svg>What-If</button><div class=\"ds-insertion\">Drop here</div><div class=\"ds-team-row ds-is-moved\"><b>4</b><span>New York Knicks</span><strong>+3 pts</strong></div></div>",
+      "css": ".ds-what-if { display:grid; gap:8px; width:320px; color:var(--court-ink); font-family:var(--court-text); } .ds-what-if-toggle { display:inline-flex; min-height:44px; width:max-content; align-items:center; gap:7px; padding:0 14px; border:1px solid var(--court-rule); border-radius:3px; background:var(--court-gold); color:var(--court-ink); font-family:var(--court-display); font-size:.75rem; font-weight:800; letter-spacing:.035em; text-transform:uppercase; } .ds-what-if-toggle svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; } .ds-what-if-toggle:hover { filter:saturate(1.1); } .ds-what-if-toggle:focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } .ds-what-if-toggle:active { transform:translateY(1px); } .ds-insertion { min-height:32px; padding:7px 10px 7px 15px; background:linear-gradient(90deg,var(--court-gold) 0 5px,var(--court-gold-soft) 5px 100%); font-family:var(--court-display); font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; } .ds-team-row { display:grid; grid-template-columns:28px 1fr auto; min-height:48px; align-items:center; gap:8px; padding:0 10px; border:1px solid var(--court-rule); background:var(--court-paper); } .ds-team-row.ds-is-moved { outline:2px solid var(--court-gold); outline-offset:-2px; background:var(--court-gold-soft); } .ds-team-row strong { color:var(--court-success); font-family:var(--court-display); font-variant-numeric:tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Courtside Album",
+    "overview": "The Courtside Album turns prediction data into a calm, collectible scorebook. Clean white stock, carbon rules, condensed display type, and flat league color make the experience feel printed and durable while real NBA names and team marks keep every decision immediately recognizable.\n\nSimple participant tasks stay in the same album world: scan the season state, make or review picks, track rank, and manage the account. Dense comparison becomes a Fold-Out Comparison rather than a different product—controls, identity, scores, and simulated standings remain attached to the same ruled sheet as detail unfolds.\n\nThe system is mobile-primary and deliberately refuses generic SaaS cards, cream grounds, glass, glossy gradients, soft bento clusters, excessive pills, and neon esports spectacle. Information earns hierarchy through rules, strips, typography, and sparse color rather than decorative containers.",
+    "keyCharacteristics": [
+      "Clean white stock divided by crisp carbon rules.",
+      "Condensed, uppercase scorebook display type paired with a highly legible text face.",
+      "Flat NBA blue and red for navigation, conference, and league context.",
+      "Sparse gold reserved for participant identity, leaders, and What-If feedback.",
+      "Mobile masthead and persistent five-item bottom navigation that expand into a ruled desktop rail.",
+      "Fold-out comparison tables that keep controls, context, and simulation state visible."
+    ],
+    "rules": [
+      { "name": "The White Stock Rule", "body": "Participant surfaces use clean white as their ground; cream is not a substitute.", "section": "colors" },
+      { "name": "The Sparse Gold Rule", "body": "Gold identifies the signed-in participant, a leader, keyboard focus, or active simulation feedback; it is not general decoration.", "section": "colors" },
+      { "name": "The Conference Pair Rule", "body": "Blue and red may distinguish East and West or related NBA contexts, but they do not compete across every element on a screen.", "section": "colors" },
+      { "name": "The Scorebook Voice Rule", "body": "Use Barlow Condensed for identity, navigation, score, and state; use Source Sans 3 for reading and decision support.", "section": "typography" },
+      { "name": "The Direct Headline Rule", "body": "The first viewport opens with an oversized headline or unmistakable page identity, never an ornamental eyebrow stack that delays the task.", "section": "typography" },
+      { "name": "The Context Stays Attached Rule", "body": "Sorting, compared players, participant identity, section mode, and What-If state remain visually attached to the data they change.", "section": "layout" },
+      { "name": "The Mobile Truth Rule", "body": "Desktop reveals more columns and simultaneous context; it does not introduce a separate information architecture.", "section": "layout" },
+      { "name": "The Flat Scorebook Rule", "body": "Surfaces stay flat at rest; use borders, rules, and tonal fields before considering a shadow.", "section": "elevation" },
+      { "name": "The Ruled Edge Rule", "body": "If content belongs to one data sheet, join it with internal rules instead of scattering it into separate rounded cards.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do start every participant page on clean white stock with a direct page identity and its primary action or state above the fold.",
+      "Do use two-pixel carbon outer rules and one-pixel soft internal rules to build joined scorebook sheets.",
+      "Do preserve real NBA team names, team-logo assets, and selective blue/red conference context.",
+      "Do keep every primary touch target at least 44px and retain the persistent five-item mobile navigation.",
+      "Do keep account, payment, deadline, and recovery surfaces inside the same ruled album shell.",
+      "Do reserve gold for the signed-in participant, leaders, focus, and What-If feedback.",
+      "Do keep What-If drag-and-drop visibly causal with an insertion rule, moved state, and in-place score updates."
+    ],
+    "donts": [
+      "Don't use cream or beige as the page background; hardwood tan is an accent, not stock.",
+      "Don't fall back to generic SaaS cards, bento grids, glass, glossy gradients, soft shadow stacks, or excessive pill shapes.",
+      "Don't create a separate visual language for dense comparison; unfold the Courtside Album instead.",
+      "Don't let blue, red, or gold become decorative noise across an entire screen.",
+      "Don't hide participant identity, sorting, compared players, or simulation state once they affect visible scores.",
+      "Don't make core interactions hover-dependent or remove the gold keyboard-focus treatment."
+    ]
+  }
+}

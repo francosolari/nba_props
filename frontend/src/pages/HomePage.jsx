@@ -393,7 +393,7 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
   const leaderboardTopTen = Array.isArray(leaderboardData) ? leaderboardData.slice(0, 10) : [];
   const heroMeta = rootProps.isAuthenticated
     ? `Welcome back${rootProps.displayName ? `, ${rootProps.displayName}` : ''}`
-    : 'Props Prediction';
+    : null;
   const heroHeadlineMap = {
     guest: 'Make your NBA predictions.',
     incomplete: 'Pick up your predictions right where you left off.',
@@ -442,12 +442,8 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
         <div className="home-hero__background" />
         <div className="home-hero__content">
           <div className="home-hero__body">
-            <div className="home-hero__brand">
-              <img src="/static/img/nba_predictions_logo.png" alt="NBA Predictions Logo" />
-              <span>Props Prediction</span>
-            </div>
-            <p className="home-hero__meta">{heroMeta}</p>
             <h1>{heroHeadline}</h1>
+            {heroMeta ? <p className="home-hero__meta">{heroMeta}</p> : null}
             <p className="home-hero__subcopy">{heroSubcopy}</p>
             <div className="home-hero__actions">
               {primaryCta ? (

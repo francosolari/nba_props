@@ -26,6 +26,13 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
 import ISTCenterPage from './pages/ist/ISTCenterPage.jsx';
 import SiteLayout from './components/SiteLayout.jsx';
+import '@fontsource/barlow-condensed/latin-600.css';
+import '@fontsource/barlow-condensed/latin-700.css';
+import '@fontsource/barlow-condensed/latin-800.css';
+import '@fontsource/source-sans-3/latin-400.css';
+import '@fontsource/source-sans-3/latin-600.css';
+import '@fontsource/source-sans-3/latin-700.css';
+import './styles/courtside.css';
 
 console.log("React bundle loaded and running!");
 

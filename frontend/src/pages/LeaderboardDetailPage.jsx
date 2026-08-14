@@ -386,7 +386,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   if (error) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 flex items-center justify-center text-rose-500 font-bold">{String(error)}</div>;
 
   return (
-    <div className="h-screen md:min-h-screen md:h-auto overflow-hidden md:overflow-visible bg-slate-50 dark:bg-slate-950 font-sans selection:bg-sky-500/30 text-sm flex flex-col">
+    <div className="court-detail-page h-screen md:min-h-screen md:h-auto overflow-hidden md:overflow-visible bg-slate-50 dark:bg-slate-950 font-sans selection:bg-sky-500/30 text-sm flex flex-col">
 
       <LeaderboardHeader
         selectedSeason={selectedSeason}
@@ -414,6 +414,14 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         isPinMePinned={isPinMePinned}
         onTogglePinMe={handleTogglePinMe}
       />
+
+      {mode === 'compare' && (
+        <LeaderboardPodium
+          whatIfEnabled={whatIfEnabled}
+          withSimTotals={withSimTotals}
+          loggedInUserId={pinTargetUserId}
+        />
+      )}
 
       {/* ─── 3. Main Content ─── */}
       <main className="flex-1 min-h-0 w-full px-0 md:px-4 py-0 md:pb-20 overflow-hidden md:overflow-visible">
@@ -462,8 +470,6 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
           </div>
         )}
       </main>
-
-      <LeaderboardPodium whatIfEnabled={whatIfEnabled} withSimTotals={withSimTotals} />
 
       <SimulationModal 
         show={showWhatIfConfirm} 

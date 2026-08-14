@@ -165,7 +165,7 @@ export const LeaderboardTableDesktop = ({
   }, [isStandingsSection, leaderboardData, nonStandingsCategoryKey]);
 
   return (
-    <div ref={tableRef} className="hidden md:block w-full">
+    <div ref={tableRef} className="court-detail-desktop hidden md:block w-full">
       {/* Sticky Header Row */}
       <div className="sticky top-[109px] z-[35] bg-white dark:bg-slate-900 shadow-sm">
         <div className="flex" style={{ height: HEADER_HEIGHT }}>
@@ -290,7 +290,7 @@ export const LeaderboardTableDesktop = ({
                               ref={prov.innerRef}
                               {...prov.draggableProps}
                               {...prov.dragHandleProps}
-                              className={`flex border-b border-slate-100 dark:border-slate-800/50 transition-all ${
+                              className={`court-drag-row flex border-b border-slate-100 dark:border-slate-800/50 transition-all ${snap.isDragging ? 'is-dragging' : ''} ${isMoved ? 'is-moved' : ''} ${
                                 snap.isDragging
                                   ? 'bg-sky-100 dark:bg-sky-900/40 shadow-lg ring-2 ring-sky-400 rounded-lg z-50'
                                   : draggingId === row.id

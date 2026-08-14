@@ -717,7 +717,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 py-8 md:py-12">
+      <div className="court-submissions-page min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 py-8 md:py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
@@ -1653,12 +1653,12 @@ const InSeasonTournamentSection = ({
         ? {
           selected: 'border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-200 text-emerald-900',
           idle:
-            'border-slate-200 bg-white/85 hover:border-emerald-400 hover:bg-emerald-50/70 text-slate-700',
+            'border-slate-200 bg-white/85 hover:border-emerald-400 hover:bg-emerald-50/70 text-emerald-900',
           badge: 'text-emerald-600',
         }
         : {
           selected: 'border-sky-500 bg-sky-50/90 ring-2 ring-sky-200 text-sky-900',
-          idle: 'border-slate-200 bg-white/85 hover:border-sky-400 hover:bg-sky-50/70 text-slate-700',
+          idle: 'border-slate-200 bg-white/85 hover:border-sky-400 hover:bg-sky-50/70 text-sky-900',
           badge: 'text-sky-600',
         };
 

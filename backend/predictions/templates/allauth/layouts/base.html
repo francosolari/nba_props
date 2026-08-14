@@ -19,7 +19,15 @@
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
     <link rel="icon" href="{% static 'img/favicon.ico' %}">
 </head>
-<body class="bg-gray-100 dark:bg-slate-900">
+<body class="court-body">
+    <!--
+    THESIS: NBA prediction data reads like a beautifully inked courtside album, refusing generic SaaS cards and desktop-first tables.
+    OWN-WORLD: Clean white stock, carbon outlines, flat NBA blue and red, restrained hardwood tan, sparse leader gold, ruled scorebook panels, condensed editorial type, and selective court geometry.
+    STORY: Participants enter the competition with clear authentication, payment, deadline, and recovery states before returning to their picks and rank.
+    FIRST VIEWPORT: Mobile presents one focused account task inside the same compact masthead and ruled white ledger used across the product; desktop adds breathing room, not a new shell.
+    FORM: Courtside Album with Fold-Out Comparison for advanced data; grounded direction 1, user-pinned over seed 876362a2.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
     <!-- Global Site Layout (SideNav) -->
     <div id="site-layout-root"
          data-current-page="{% block current_page %}home{% endblock %}"
@@ -27,37 +35,36 @@
     </div>
 
     <!-- Header Section -->
-    <header id="main-header" class="bg-blue-600 text-white text-sm py-0 fixed w-full top-0 left-0 z-50 transition-all duration-300 ease-in-out md:ml-16 md:w-[calc(100%-64px)]">
+    <header id="main-header" class="court-topbar">
         <!-- Navigation Bar -->
-        <nav class="bg-gray-800 p-1 h-12 fixed top-0 w-full z-50">
-            <div class="container mx-auto flex justify-between items-center h-full">
+        <nav>
+            <div class="court-topbar__inner">
                 <!-- Left: Navigation Links -->
-                <div class="space-x-4">
+                <div class="court-topbar__admin">
                     {% if user.is_authenticated %}
 
                         {% if user.is_staff or user.username == 'francosolari' %}
                             <a href="{% url 'predictions_views:admin_panel' %}"
-                               class="text-blue-400 hover:text-blue-300 transition-colors duration-200">
+                               class="court-text-link">
                                 Admin
                             </a>
                         {% endif %}
                     {% endif %}
                 </div>
                 <!-- Center: Logo -->
-                <div class="absolute left-1/2 transform -translate-x-1/2">
-                    <a href="/">
-                        <img src="{% static 'img/nba_predictions_logo.png' %}" alt="NBA Predictions Logo" class="h-full max-h-10">
-                    </a>
-                </div>
+                <a class="court-topbar__brand" href="/">
+                    <img src="{% static 'img/nba_predictions_logo.png' %}" alt="">
+                    <span>NBA Predictions</span>
+                </a>
 
                 <!-- Right: User Info (Login/Logout) -->
-                <div class="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4 text-gray-300">
+                <div class="court-topbar__account">
                     {% if user.is_authenticated %}
-                        <span>Logged in as <span class="font-semibold text-gray-400">{{ user.username }}</span></span>
-                        <a href="{% url 'account_logout' %}" class="hover:text-white">(Log out)</a>
+                        <span class="court-topbar__username">{{ user.username }}</span>
+                        <a href="{% url 'account_logout' %}" class="court-text-link">Log out</a>
                     {% else %}
-                        <a href="{% url 'account_login' %}?next={{ request.path }}" class="hover:text-white">Log in</a>
-                        <a href="{% url 'account_signup' %}?next={{ request.path }}" class="hover:text-white">Create Account</a>
+                        <a href="{% url 'account_login' %}?next={{ request.path }}" class="court-text-link">Log in</a>
+                        <a href="{% url 'account_signup' %}?next={{ request.path }}" class="court-button court-button--small">Create account</a>
                     {% endif %}
                 </div>
             </div>
@@ -65,13 +72,13 @@
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto mt-16 md:ml-16">
+    <main class="court-page-main court-page-main--account">
         {% block content %}
         {% endblock content %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white p-4 text-center mt-8">
+    <footer class="court-footer">
         <p>&copy; 2024 NBA Predictions. All rights reserved.</p>
     </footer>
 

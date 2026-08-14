@@ -130,7 +130,7 @@ describe('ISTCenterPage', () => {
 
     render(<ISTCenterPage />);
 
-    expect(screen.getByText('NBA CUP 2024')).toBeInTheDocument();
+    expect(screen.queryByText('NBA CUP 2024')).not.toBeInTheDocument();
     expect(screen.getByText('In-Season Tournament')).toBeInTheDocument();
     expect(screen.getByText('Eastern Conference')).toBeInTheDocument();
     expect(screen.getByText('Western Conference')).toBeInTheDocument();

@@ -147,7 +147,7 @@ export const LeaderboardTableMobile = ({
   };
 
   return (
-    <div className="md:hidden flex-1 min-h-0 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
+    <div className="court-detail-mobile md:hidden flex-1 min-h-0 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
       {section === 'standings' ? (
         <div className="space-y-6">
           {['West', 'East'].map(conf => {
@@ -216,7 +216,7 @@ export const LeaderboardTableMobile = ({
                                           ref={prov.innerRef}
                                           {...prov.draggableProps}
                                           {...prov.dragHandleProps}
-                                          className={`flex-shrink-0 w-14 px-1 py-3 text-center transition-all backdrop-blur-sm ${
+                                          className={`court-drag-column flex-shrink-0 w-14 px-1 py-3 text-center transition-all backdrop-blur-sm ${snap.isDragging ? 'is-dragging' : ''} ${isMoved ? 'is-moved' : ''} ${
                                             snap.isDragging
                                               ? 'bg-sky-50 dark:bg-sky-900/40 shadow-xl z-[60] scale-105 rounded-lg border-2 border-sky-400'
                                               : isMoved

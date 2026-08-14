@@ -17,7 +17,7 @@ import SubmissionsTab from "../components/profile/SubmissionsTab";
 import SettingsTab from "../components/profile/SettingsTab";
 
 const pageShellClasses =
-  "min-h-screen bg-[#F8FAFC] dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 font-sans selection:bg-teal-500/30";
+  "court-profile-page min-h-screen bg-[#F8FAFC] dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 font-sans";
 
 export default function ProfilePage({
   seasonSlug: seasonFromProp = "current",

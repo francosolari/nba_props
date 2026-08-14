@@ -3,7 +3,7 @@ import { useISTData } from '../../hooks';
 import ISTGroupStandings from '../../components/ist/ISTGroupStandings';
 import ISTWildcardRace from '../../components/ist/ISTWildcardRace';
 import ISTUserLeaderboard from '../../components/ist/ISTUserLeaderboard';
-import { Trophy, Users, Target, Zap } from 'lucide-react';
+import { Trophy, Users, Target } from 'lucide-react';
 
 /**
  * Main IST Tournament Center Page - Redesigned
@@ -41,7 +41,7 @@ function ISTCenterPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const westGroups = groups.filter(g => g.conference === 'West');
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="court-ist-page min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Modern Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-black">
         {/* Background Pattern */}
@@ -55,12 +55,6 @@ function ISTCenterPage({ seasonSlug: initialSeasonSlug = 'current' }) {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             {/* Left: Title & Description */}
             <div className="flex-1 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 mb-4">
-                <Zap className="w-4 h-4 text-amber-400" />
-                <span className="text-sm font-bold text-amber-300 tracking-wide">
-                  NBA CUP {season?.year ? season.year.split('-')[0] : new Date().getFullYear()}
-                </span>
-              </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-3 tracking-tight">
                 In-Season Tournament
               </h1>

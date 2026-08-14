@@ -463,14 +463,14 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-teal-500/30">
+    <div className="court-leaderboard-page min-h-screen bg-slate-50 dark:bg-slate-950 font-sans">
       
       {/* ─── 1. Compact Header ─── */}
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 pt-4 pb-4 md:pt-6 md:pb-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
            <div className="flex items-center justify-between gap-4 mb-4">
               <div>
-                <h1 className="text-xl md:text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
+                <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
                   NBA Predictions Leaderboard
                 </h1>
               </div>
