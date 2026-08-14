@@ -1,5 +1,6 @@
 {% extends "allauth/layouts/manage.html" %}
 {% load static %}
+{% block main_class %}court-page-main--profile{% endblock %}
 
 {% block content %}
   <div
@@ -12,4 +13,3 @@
   ></div>
   <script src="{% static 'js/bundle.js' %}"></script>
 {% endblock %}
-

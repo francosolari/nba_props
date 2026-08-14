@@ -134,8 +134,7 @@ export default function ProfilePage({
         onSeasonChange={setSelectedSeason}
       />
 
-      {/* Main Content */}
-      <div className="container mx-auto px-2 sm:px-4 max-w-6xl -mt-6 sm:-mt-10 md:-mt-12 relative z-20">
+      <div className="court-profile-main">
         <ProfileStats
           me={me}
           data={data}
@@ -150,7 +149,6 @@ export default function ProfilePage({
           canEdit={canEdit}
         />
 
-        {/* Content Area */}
         <div className="min-h-[400px]">
           {activeTab === "dashboard" && (
             <DashboardTab

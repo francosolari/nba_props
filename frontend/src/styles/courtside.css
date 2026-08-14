@@ -1656,6 +1656,7 @@ button[type="submit"]:active {
 
 /* Player passport / season scorebook */
 .court-profile-page { background: #fff !important; }
+.court-page-main--profile { padding: 0; }
 .court-profile-hero { margin: 0 !important; color: var(--court-ink); background: #fff; border: 0; border-bottom: 2px solid var(--court-rule); box-shadow: none; }
 .court-profile-stripe { display: flex; justify-content: space-between; padding: 8px max(16px, calc((100vw - 1216px) / 2 + 16px)); color: #fff; font: 800 10px var(--court-body); letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; background: linear-gradient(90deg, var(--court-blue) 0 72%, var(--court-red) 72%); }
 .court-profile-hero__inner { width: min(100%, 1216px); margin: 0 auto; padding: 26px 16px 28px; }
@@ -1674,9 +1675,9 @@ button[type="submit"]:active {
 .court-profile-rank-stamp strong { font: 800 30px var(--court-display); }
 .court-season-select { position: relative; display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 12px 34px 12px 16px; }
 .court-season-select > span { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-.court-season-select select { appearance: none; color: var(--court-ink); font: 800 18px var(--court-display); background: transparent; border: 0; outline: 0; }
+.court-page-main .court-season-select select { min-height: 0; padding: 0; appearance: none; color: var(--court-ink) !important; font: 800 18px var(--court-display); background: transparent !important; border: 0 !important; border-radius: 0 !important; outline: 0; }
 .court-season-select svg { position: absolute; right: 12px; bottom: 20px; width: 15px; }
-.court-profile-page > div:nth-of-type(3) { margin-top: 0 !important; }
+.court-profile-main { width: min(100%, 1216px); margin: 0 auto; padding: 24px 16px 56px; }
 .court-profile-score-strip { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 24px; border: 2px solid var(--court-rule); }
 .court-profile-score { display: grid; grid-template-columns: 24px 1fr; align-items: center; padding: 13px 16px; border-right: 1px solid var(--court-rule); }
 .court-profile-score:last-child { border-right: 0; }
@@ -1896,6 +1897,7 @@ button[type="submit"]:active {
   .court-simulation-sheet { padding: 22px 16px max(20px, env(safe-area-inset-bottom)); }
   .court-profile-stripe { padding-right: 12px; padding-left: 12px; }
   .court-profile-hero__inner { padding: 14px 12px 16px; }
+  .court-profile-main { padding: 16px 12px 40px; }
   .court-profile-primary { grid-template-columns: 72px minmax(0, 1fr); }
   .court-profile-monogram { font-size: 31px; }
   .court-profile-copy { padding: 13px 12px; }
