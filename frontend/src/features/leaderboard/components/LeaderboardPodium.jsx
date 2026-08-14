@@ -7,15 +7,16 @@ export const LeaderboardPodium = ({ whatIfEnabled, withSimTotals, loggedInUserId
     (entry) => String(entry.user.id) === String(loggedInUserId)
   );
   const participants = loggedInEntry
-    ? [loggedInEntry, ...leaders.filter((entry) => String(entry.user.id) !== String(loggedInUserId))].slice(0, 4)
+    ? [loggedInEntry, ...leaders.filter((entry) => String(entry.user.id) !== String(loggedInUserId))].slice(0, 3)
     : leaders;
 
   return (
-    <div className="court-score-band shrink-0 w-full text-xs border-b-2 border-slate-900 bg-white">
+    <div className={`court-score-band shrink-0 w-full text-xs border-b-2 border-slate-900 bg-white ${whatIfEnabled ? 'is-simulating' : ''}`}>
       <div className="flex items-stretch overflow-x-auto no-scrollbar">
         <div className="court-score-band__status flex items-center gap-2 border-r-2 border-slate-900 px-3 shrink-0">
           <Trophy className="w-4 h-4 text-amber-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest">{whatIfEnabled ? 'SIM' : 'LIVE'}</span>
+          {whatIfEnabled && <span className="sr-only">SIM</span>}
+          <span className="court-score-band__mode">{whatIfEnabled ? 'PRIVATE WHAT-IF' : 'LIVE TABLE'}</span>
         </div>
         <div className="flex min-w-max flex-1 items-stretch">
           {participants.map((entry) => {

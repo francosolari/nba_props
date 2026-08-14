@@ -170,7 +170,7 @@ const statusStyles = (status) => {
 const PredictionChip = ({ entry }) => {
   const { container, icon } = statusStyles(entry.status);
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium ${container}`}>
+    <span className={`cup-pick-mark ${container}`}>
       {icon}
       <span className="uppercase tracking-tight text-[10px] text-slate-500 dark:text-slate-400">
         {entry.label}
@@ -216,7 +216,7 @@ function ISTUserLeaderboard({ users = [] }) {
 
   if (!users || users.length === 0) {
     return (
-      <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/50 rounded-xl shadow-lg p-8 text-center">
+      <div className="cup-leaders-empty">
         <UsersIcon className="w-12 h-12 mx-auto text-slate-400 dark:text-slate-500 mb-3" />
         <p className="text-slate-600 dark:text-slate-400">
           No IST predictions submitted yet.
@@ -226,9 +226,9 @@ function ISTUserLeaderboard({ users = [] }) {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden">
+    <section className="cup-leaders-sheet">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+      <header className="cup-leaders-header">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-amber-500" />
@@ -240,10 +240,12 @@ function ISTUserLeaderboard({ users = [] }) {
             {users.length} {users.length === 1 ? 'player' : 'players'}
           </div>
         </div>
-      </div>
+      </header>
+
+      <div className="cup-leaders-columns" aria-hidden="true"><span>Rank / player</span><span>Record</span><span>Points</span></div>
 
       {/* Compact User List */}
-      <div className="divide-y divide-slate-100 dark:divide-slate-700/40">
+      <div className="cup-leaders-list">
         {users.slice(0, visibleCount).map((entry) => {
           const user = entry.user;
           const predictions = entry.predictions || [];
@@ -260,9 +262,9 @@ function ISTUserLeaderboard({ users = [] }) {
           const isExpanded = expandedUserIds.has(user.id);
 
           return (
-            <div
+            <article
               key={user.id}
-              className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors"
+              className={`cup-leader-row ${isExpanded ? 'is-expanded' : ''}`}
             >
               {/* Main Row */}
               <div className="flex items-center gap-2">
@@ -277,42 +279,15 @@ function ISTUserLeaderboard({ users = [] }) {
                     <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                       {user.display_name || user.username}
                     </p>
-                    {/* Record badges */}
-                    <div className="flex items-center gap-1 text-[10px] font-medium">
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
-                        <CheckCircle2 className="w-2.5 h-2.5" />
-                        {correctCount}
-                      </span>
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400">
-                        <XCircle className="w-2.5 h-2.5" />
-                        {incorrectCount}
-                      </span>
-                      {pendingCount > 0 && (
-                        <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
-                          {pendingCount}
-                        </span>
-                      )}
+                    <div className="cup-leader-record">
+                      <span>{correctCount}–{incorrectCount}</span>
+                      {pendingCount > 0 && <small>{pendingCount} open</small>}
                     </div>
                   </div>
 
                   {/* Inline Predictions */}
                   {predictions.length > 0 && (
                     <div className="mt-2 space-y-2">
-                      {!isExpanded && previewEntries.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          <div className="flex flex-wrap gap-1 sm:hidden">
-                            {previewEntriesMobile.map((item, index) => (
-                              <PredictionChip key={`preview-mobile-${index}-${item.team}`} entry={item} />
-                            ))}
-                          </div>
-                          <div className="hidden sm:flex sm:flex-wrap sm:gap-1">
-                            {previewEntries.map((item, index) => (
-                              <PredictionChip key={`preview-${index}-${item.team}`} entry={item} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
                       {isExpanded && (breakdown.groupWinners.East.length > 0 || breakdown.groupWinners.West.length > 0) && (
                         <div className="rounded-md bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 px-2 py-2">
                           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -412,14 +387,14 @@ function ISTUserLeaderboard({ users = [] }) {
                   </div>
                 </div>
               )}
-            </div>
+            </article>
           );
         })}
       </div>
 
       {/* Load More Button */}
       {visibleCount < users.length && (
-        <div className="px-4 py-3 border-t border-slate-200/80 dark:border-slate-700/60 text-center">
+        <div className="cup-leaders-more">
           <button
             className="px-5 py-2 border rounded-lg bg-white text-slate-700 border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-all text-sm font-medium shadow-sm hover:shadow"
             onClick={() => setVisibleCount((prev) => prev + 10)}
@@ -428,7 +403,7 @@ function ISTUserLeaderboard({ users = [] }) {
           </button>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

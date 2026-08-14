@@ -274,11 +274,11 @@ export const LeaderboardTableDesktop = ({
               <div className="flex w-full">
                 {/* Fixed left columns - contains Droppable */}
                 <Droppable droppableId={`${conf.toLowerCase()}-fixed`}>
-                  {(provided) => (
+                  {(provided, dropSnapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className="flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10"
+                      className={`court-drop-ledger flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10 ${dropSnapshot.isDraggingOver ? 'is-dragging-over' : ''}`}
                       style={{ width: fixedColWidth + rankColWidth }}
                     >
                       {teams.map((row, idx) => (
@@ -312,8 +312,8 @@ export const LeaderboardTableDesktop = ({
                                 <TeamLogo className="w-5 h-5 object-contain" teamName={row.team} />
                                 <span className="text-[13px] font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">{row.team}</span>
                               </div>
-                              <div className="w-[55px] flex items-center justify-center text-sm font-bold text-slate-400">
-                                {whatIfEnabled ? (simActualMap.get(row.team) || row.actual_position) : (row.actual_position || '—')}
+                              <div className="court-move-rank w-[55px] flex items-center justify-center text-sm font-bold text-slate-400">
+                                {isMoved ? <><del>{row.actual_position}</del><span>→</span><strong>{simActualMap.get(row.team)}</strong></> : (row.actual_position || '—')}
                               </div>
                             </div>
                           ); }}
@@ -353,7 +353,7 @@ export const LeaderboardTableDesktop = ({
 
                           return (
                             <div key={e.user.id} data-col-user={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative will-change-transform" style={{ width: userColWidth }}>
-                              <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200 ${colorClass}`}>
+                              <div className={`court-position-ticket inline-flex items-center justify-center w-8 h-8 text-xs font-bold transition-all duration-200 ${colorClass}`}>
                                 {predPos}
                               </div>
                               {p && (
@@ -431,7 +431,7 @@ export const LeaderboardTableDesktop = ({
                           <button
                             type="button"
                             onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
-                            className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color} ${
+                            className={`court-answer-ticket inline-flex items-center justify-center px-2.5 py-1.5 text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color} ${
                               isInteractive ? 'cursor-pointer hover:brightness-95 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.35)] active:scale-[0.98]' : 'cursor-default'
                             } ${
                               simulatedState === 'correct'

@@ -242,6 +242,20 @@ function SubmissionPreview({ submitUrl, hasSubmission, submissionOpen, isAuthent
   const statusText = hasSubmission ? 'Submission saved' : submissionOpen ? 'Submission open' : 'Submission closed';
   const foldText = hasSubmission ? 'Review your picks' : submissionOpen ? 'Start your picks' : 'View submissions page';
 
+  if (!isAuthenticated) {
+    return (
+      <aside className="home-entry-sheet" aria-label="How to play">
+        <div className="home-entry-sheet__mast"><span>Season entry sheet</span><strong>{submissionOpen ? 'Open' : 'Preview'}</strong></div>
+        <ol>
+          <li><span>1</span><div><strong>Order all 30 teams</strong><small>Set your East and West finish.</small></div></li>
+          <li><span>2</span><div><strong>Call awards and props</strong><small>Make every pick before tip-off.</small></div></li>
+          <li><span>3</span><div><strong>Climb the live table</strong><small>Exact calls earn the most points.</small></div></li>
+        </ol>
+        <div className="home-entry-sheet__footer"><span>{submissionOpen ? 'Entries open now' : 'Next entry window'}</span><div><a href={loginUrl || '#login'}>Log in</a><a href={signupUrl || '#signup'}>Create entry</a></div></div>
+      </aside>
+    );
+  }
+
   // Use real user data when authenticated and available, otherwise show preview
   const hasRealStandings = isAuthenticated && submissionData?.standings &&
     (submissionData.standings.east?.length > 0 || submissionData.standings.west?.length > 0);
