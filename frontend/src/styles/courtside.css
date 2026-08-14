@@ -21,6 +21,7 @@
   --court-desktop-rail: 220px;
   --court-display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --court-text: "Source Sans 3", system-ui, sans-serif;
+  --court-body: var(--court-text);
   color-scheme: light;
 }
 
@@ -1656,19 +1657,22 @@ button[type="submit"]:active {
 /* Player passport / season scorebook */
 .court-profile-page { background: #fff !important; }
 .court-profile-hero { margin: 0 !important; color: var(--court-ink); background: #fff; border: 0; border-bottom: 2px solid var(--court-rule); box-shadow: none; }
-.court-profile-stripe { display: flex; justify-content: space-between; padding: 8px max(16px, calc((100vw - 1216px) / 2 + 16px)); color: #fff; font: 800 10px var(--court-body); letter-spacing: .16em; text-transform: uppercase; background: linear-gradient(90deg, var(--court-blue) 0 72%, var(--court-red) 72%); }
-.court-profile-hero__body .container { padding-top: 26px; padding-bottom: 28px; }
-.court-profile-identity { display: grid; grid-template-columns: 100px minmax(0, 1fr) auto auto; align-items: stretch; gap: 0; border: 2px solid var(--court-rule); }
+.court-profile-stripe { display: flex; justify-content: space-between; padding: 8px max(16px, calc((100vw - 1216px) / 2 + 16px)); color: #fff; font: 800 10px var(--court-body); letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; background: linear-gradient(90deg, var(--court-blue) 0 72%, var(--court-red) 72%); }
+.court-profile-hero__inner { width: min(100%, 1216px); margin: 0 auto; padding: 26px 16px 28px; }
+.court-profile-identity { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; border: 2px solid var(--court-rule); }
+.court-profile-primary { display: grid; min-width: 0; grid-template-columns: 100px minmax(0, 1fr); }
 .court-profile-monogram { display: grid; place-items: center; color: #fff; font: 800 42px var(--court-display); background: var(--court-blue); border-right: 2px solid var(--court-rule); }
 .court-profile-copy { align-self: center; min-width: 0; padding: 18px 22px; }
 .court-profile-copy .court-kicker { color: var(--court-red); }
 .court-profile-copy h1 { margin: 0; overflow: hidden; font: 800 clamp(30px, 5vw, 54px)/.92 var(--court-display); letter-spacing: .01em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .court-profile-copy p { margin: 8px 0 0; color: #53606d; font-size: 13px; }
-.court-profile-rank-stamp { display: grid; grid-template-columns: 26px auto; align-content: center; column-gap: 8px; min-width: 132px; padding: 12px 18px; color: var(--court-blue); border-left: 1px solid var(--court-rule); }
-.court-profile-rank-stamp svg { grid-row: span 2; width: 24px; }
+.court-profile-meta { display: grid; grid-template-columns: 160px 140px; border-left: 1px solid var(--court-rule); }
+.court-profile-rank-stamp { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 12px 18px; color: var(--court-blue); border-right: 1px solid var(--court-rule); }
+.court-profile-rank-stamp svg { width: 24px; flex: 0 0 auto; }
+.court-profile-rank-stamp div { display: flex; min-width: 0; flex-direction: column; }
 .court-profile-rank-stamp span { color: #596573; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .court-profile-rank-stamp strong { font: 800 30px var(--court-display); }
-.court-season-select { position: relative; display: flex; min-width: 120px; flex-direction: column; justify-content: center; padding: 12px 34px 12px 16px; border-left: 1px solid var(--court-rule); }
+.court-season-select { position: relative; display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 12px 34px 12px 16px; }
 .court-season-select > span { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .court-season-select select { appearance: none; color: var(--court-ink); font: 800 18px var(--court-display); background: transparent; border: 0; outline: 0; }
 .court-season-select svg { position: absolute; right: 12px; bottom: 20px; width: 15px; }
@@ -1873,6 +1877,13 @@ button[type="submit"]:active {
 .court-move-rank strong { color: var(--court-ink); }
 .court-drop-ledger.is-dragging-over { box-shadow: inset 0 0 0 3px var(--court-gold) !important; }
 
+@media (max-width: 960px) {
+  .court-profile-identity { grid-template-columns: 1fr; }
+  .court-profile-meta { grid-template-columns: 1fr 1fr; border-top: 1px solid var(--court-rule); border-left: 0; }
+  .court-profile-rank-stamp,
+  .court-season-select { min-height: 62px; }
+}
+
 @media (max-width: 767px) {
   .court-modal-backdrop { padding: 0; }
   .court-roster-sheet,
@@ -1884,17 +1895,15 @@ button[type="submit"]:active {
   .court-sheet-footer button { padding: 0 16px; }
   .court-simulation-sheet { padding: 22px 16px max(20px, env(safe-area-inset-bottom)); }
   .court-profile-stripe { padding-right: 12px; padding-left: 12px; }
-  .court-profile-hero__body .container { padding-top: 14px; padding-bottom: 16px; }
-  .court-profile-identity { grid-template-columns: 70px 1fr; }
+  .court-profile-hero__inner { padding: 14px 12px 16px; }
+  .court-profile-primary { grid-template-columns: 72px minmax(0, 1fr); }
   .court-profile-monogram { font-size: 31px; }
   .court-profile-copy { padding: 13px 12px; }
-  .court-profile-copy h1 { font-size: 31px; }
+  .court-profile-copy h1 { font-size: clamp(28px, 9vw, 34px); }
   .court-profile-copy p { font-size: 11px; }
-  .court-profile-rank-stamp,
-  .court-season-select { min-height: 58px; border-top: 1px solid var(--court-rule); border-left: 0; }
-  .court-profile-rank-stamp { grid-column: 1; min-width: 0; padding: 8px; }
-  .court-profile-rank-stamp svg { display: none; }
-  .court-season-select { grid-column: 2; border-left: 1px solid var(--court-rule); }
+  .court-profile-rank-stamp { padding: 8px 12px; }
+  .court-profile-rank-stamp strong { font-size: 26px; }
+  .court-season-select { padding-left: 14px; }
   .court-profile-score-strip { grid-template-columns: repeat(2, 1fr); }
   .court-profile-score { border-bottom: 1px solid var(--court-rule); }
   .court-profile-score:nth-child(even) { border-right: 0; }
