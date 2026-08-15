@@ -56,14 +56,14 @@ export const buildRecordSummary = (team) => {
 
 const THEMES = {
   east: {
-    selected: 'border-[var(--nba-blue-400)] bg-[var(--nba-blue-50)] text-[var(--nba-blue-700)]',
-    idle: 'hover:border-[var(--nba-blue-400)] hover:bg-[var(--nba-blue-50)]',
+    selected: 'ist-team-choice--east border-[var(--nba-blue-400)] bg-[var(--nba-blue-50)] text-[var(--nba-blue-700)]',
+    idle: 'ist-team-choice--east hover:border-[var(--nba-blue-400)] hover:bg-[var(--nba-blue-50)]',
     marker: 'ist-group-marker--east',
     text: 'text-[var(--nba-blue-700)]',
   },
   west: {
-    selected: 'border-[var(--nba-red-400)] bg-[var(--nba-red-50)] text-[var(--nba-red-700)]',
-    idle: 'hover:border-[var(--nba-red-400)] hover:bg-[var(--nba-red-50)]',
+    selected: 'ist-team-choice--west border-[var(--nba-red-400)] bg-[var(--nba-red-50)] text-[var(--nba-red-700)]',
+    idle: 'ist-team-choice--west hover:border-[var(--nba-red-400)] hover:bg-[var(--nba-red-50)]',
     marker: 'ist-group-marker--west',
     text: 'text-[var(--nba-red-700)]',
   },

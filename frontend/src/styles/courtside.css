@@ -2365,6 +2365,10 @@ button[type="submit"]:active {
   background: var(--court-red);
   border-color: var(--court-red);
 }
+.court-submissions-page .ist-team-choice--east:hover,
+.court-submissions-page .ist-team-choice--east[aria-pressed="true"] { border-color: var(--court-blue); }
+.court-submissions-page .ist-team-choice--west:hover,
+.court-submissions-page .ist-team-choice--west[aria-pressed="true"] { border-color: var(--court-red); }
 
 .court-submissions-page .submission-question-group { scroll-margin-top: calc(var(--court-topbar-height) + 150px); }
 .court-submissions-page .submission-question-group > header { gap: 12px; }
