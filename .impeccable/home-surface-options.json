@@ -1,0 +1,43 @@
+{
+  "title": "Choose the home-page composition",
+  "question": "Which structure makes the game clearest for visitors while giving returning players the fastest route to their next action?",
+  "options": [
+    {
+      "id": "next-play",
+      "label": "The Next Play",
+      "kicker": "THE ROLL",
+      "lineage": "courtside coach's game plan",
+      "thesis": "One unmistakable next action leads; the season record unfolds directly beneath it.",
+      "palette": ["#ffffff", "#101214", "#07549a", "#d52b1e", "#e7b92f"],
+      "materials": ["white scorebook stock", "carbon rules", "attached action ledger"],
+      "viewport": "Guests see the game promise beside a three-step entry sheet; players see their rank, score, entry state, and next action in one joined board.",
+      "risk": "The task-first hierarchy leaves less room for a broad marketing story.",
+      "comp": ".impeccable/mocks/decision/home-next-play.webp"
+    },
+    {
+      "id": "conference-command",
+      "label": "Conference Command",
+      "lineage": "arena stat desk split by East and West",
+      "thesis": "League context frames the entry experience, with East and West acting as the page's organizing rails.",
+      "palette": ["#ffffff", "#101214", "#07549a", "#d52b1e", "#f5f8fa"],
+      "materials": ["joined conference ledgers", "score-table rules", "team-mark rhythm"],
+      "viewport": "A central entry call is bracketed by live conference context, then resolves into the personal season ledger for signed-in players.",
+      "risk": "Real standings can compete with the user's own prediction status if the balance is not exact.",
+      "comp": ".impeccable/mocks/decision/home-conference-command.webp"
+    },
+    {
+      "id": "season-scorebook",
+      "label": "Season Scorebook",
+      "lineage": "a single bound season record",
+      "thesis": "The entire home page reads as one continuous score sheet from entry to rank.",
+      "palette": ["#ffffff", "#101214", "#53606d", "#07549a", "#fff4c7"],
+      "materials": ["continuous ruled sheet", "pinned participant row", "inked section bands"],
+      "viewport": "A compact cover statement attaches directly to a live ledger; guests see how scoring works while players see their own row pinned in context.",
+      "risk": "The continuous data rhythm can feel dense for a first-time visitor.",
+      "comp": ".impeccable/mocks/decision/home-season-scorebook.webp"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "comp", "toggle": true},
+  "steer": true
+}

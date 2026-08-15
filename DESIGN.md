@@ -144,7 +144,7 @@ The Courtside Album is a calm, collectible sports-prediction scorebook: a durabl
 
 Its story is sequential and visible in the surfaces: enter picks on ruled slips, follow calls in the season scorebook, climb the joined table, then unfold advanced comparison and private What-If detail. The first viewport always names the task and places the participant's current entry, deadline, rank, score, or next action beside it. On mobile, task and action precede secondary explanation or detail.
 
-Dense workflows stay inside the same album world. Home uses an attached entry ledger; profile becomes a player passport and answer book; Cup leaders join into one score sheet; comparison tools rise as rule sheets; and What-If marks changes directly on the live-looking table without altering live results.
+Dense workflows stay inside the same album world. Home's state-aware Next Play pairs the task with an attached guest entry ledger or participant status sheet; profile becomes a player passport and answer book; Cup leaders join into one score sheet; comparison tools rise as rule sheets; and What-If marks changes directly on the live-looking table without altering live results.
 
 **Key Characteristics:**
 
@@ -232,11 +232,15 @@ Mobile is the primary operating composition. A fixed 56px masthead and persisten
 
 The document canvas must never scroll horizontally. Wide comparison ledgers may scroll inside their own bounded region with touch momentum and overscroll containment; mobile scrollbars are visually hidden without disabling swipe, keyboard, or programmatic scrolling. Popovers and listboxes remain constrained to their trigger and the viewport rather than widening the page.
 
-At 768px, the bottom navigation becomes a fixed 220px ruled rail and the masthead grows to 64px. Participant content occupies the remaining canvas, generally capped near 1380px; the home album may widen to 1560px from 1200px upward. Home pairs its direct task statement with a flat attached entry ledger. Picks use ruled slips and a sticky submission ledger near the action edge. Profile assembles a season passport, four-part score strip, category ledger, recent calls, moments, and answer book. Cup leaders remain connected rows with prediction detail behind expansion.
+At 768px, the bottom navigation becomes a fixed 220px ruled rail and the masthead grows to 64px. Participant content occupies the remaining canvas, generally capped near 1380px; the home album may widen to 1560px from 1200px upward. Home pairs its direct task statement with one flat attached ledger: guests receive the game promise, entry path, and numbered three-step enter-to-score story; authenticated participants receive a 2×2 status sheet for personal rank, total score, entry state, and deadline, followed by an attached gold next-action band. Picks use ruled slips and a sticky submission ledger near the action edge. Profile assembles a season passport, four-part score strip, category ledger, recent calls, moments, and answer book. Cup leaders remain connected rows with prediction detail behind expansion.
+
+Below 768px, authenticated Home tightens the task statement and status rows so personal state remains visible before the persistent bottom navigation. It removes the generic fee/format/deadline fact strip and the secondary hero action because those duplicate the participant ledger; rank, score, entry state, deadline, and the primary next action remain. Guest Home keeps the direct promise and primary entry path, then places the attached three-step ledger immediately after them.
 
 Advanced comparison is one Fold-Out Comparison workspace. Sorting, selected players, live/private state, and score context remain attached above the data. The comparison roster and What-If explanation use bottom sheets on mobile and centered rule sheets on desktop. During simulation, the attached score band turns gold, totals and deltas update in place, moved teams show old→new ranks, the drop target draws a directional gold insertion stripe, and Reset What-If remains available beside the mode controls.
 
 **The First Ledger Rule.** The first viewport must make the task unmistakable and show the participant's current entry, score, rank, deadline, or next action; mobile places the task and action before secondary detail.
+
+**The Home State Compression Rule.** Home may remove only duplicate generic facts and the secondary hero action on authenticated mobile; personal rank, score, entry state, deadline, and next action stay attached and visible before persistent navigation.
 
 **The Context Stays Attached Rule.** Sorting, compared players, participant identity, section mode, and What-If state remain visually attached to the data they change.
 
@@ -305,9 +309,11 @@ Compact selectors are accessible button-and-listbox controls, not restyled nativ
 
 Mobile uses a persistent five-cell bottom bar: Home, Picks, Cup, Leaders, and Profile. A line icon sits above a condensed uppercase label; soft rules divide cells and the active destination becomes solid NBA blue. At 768px it becomes a 220px ruled rail with the product logo, current season, full labels, and Advanced Board. Hover uses a pale blue field and carbon frame; active remains solid blue.
 
-### Home Entry Ledger
+### Home — The Next Play
 
-The home cover pairs its direct task statement with a flat entry sheet attached to a blue binding stripe. A red masthead names the season preview, numbered ruled rows tell the enter→follow→climb story, and the footer joins deadline/account context to Log In or Create Entry actions. On mobile the ledger follows the primary task/action rather than preceding it.
+The home cover is task-first and changes its attached ledger by authentication state without changing visual language. Guests see the direct game promise and primary entry path beside a red-masthead entry sheet whose three numbered ruled rows explain rank teams, call awards and props, and earn points all season; the joined footer offers Log In and Start Your Entry. Authenticated participants see personal rank, total score, entry state, and deadline in a complete 2×2 ruled status sheet, followed by a pale-gold Next Play band with the context-specific create, review, or edit action.
+
+Desktop presents the task and ledger as one side-by-side attached cover. On authenticated mobile, tighten the hero and status cells, hide the generic fact strip and secondary hero action, and retain all four personal status fields plus the primary next action before the persistent navigation. On guest mobile, keep the promise and entry action first, then the attached three-step ledger.
 
 ### Season Passport and Answer Book
 
@@ -334,6 +340,7 @@ Live/private status and participant scores form an attached score band above the
 ### Do:
 
 - **Do** start every participant page with an unmistakable task identity and current entry, score, rank, deadline, or primary action in the first viewport.
+- **Do** keep Home state-aware: guests get the promise, entry path, and attached three-step ledger; authenticated participants get rank, score, entry state, deadline, and the attached next action.
 - **Do** use two-pixel carbon outer rules and one-pixel ledger or soft rules to build joined scorebook sheets.
 - **Do** preserve real NBA team names, team-logo assets, and selective blue/red conference context.
 - **Do** keep primary touch targets at least 44px and retain the persistent five-item mobile navigation.
@@ -350,6 +357,7 @@ Live/private status and participant scores form an attached score band above the
 - **Don't** fall back to generic SaaS cards, bento grids, glass, glossy gradients, soft shadow stacks, or excessive pill shapes.
 - **Don't** treat the mobile standings transposition as a defect or force the desktop row orientation into a narrow viewport.
 - **Don't** create separate visual languages for home, picks, profile, Cup, and advanced comparison; bind them into the same album.
+- **Don't** generalize Home's guest/authenticated composition or mobile duplicate-removal rules into unrelated participant surfaces.
 - **Don't** let blue, red, gold, or new neutral steps become decorative noise across an entire screen.
 - **Don't** hide participant identity, sorting, selected players, or simulation state once they affect visible scores.
 - **Don't** make core interactions hover-dependent, encode meaning in microprint alone, or remove the gold keyboard-focus treatment.

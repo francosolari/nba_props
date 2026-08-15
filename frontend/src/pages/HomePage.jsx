@@ -4,56 +4,34 @@ import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
   BarChart3,
-  Calendar,
-  CheckCircle2,
+  CalendarDays,
+  Check,
+  ChevronRight,
   ClipboardList,
-  Clock,
-  Trophy,
-  TrendingUp,
+  Clock3,
+  Medal,
   Target,
-  UserPlus,
+  Trophy,
   Users,
-  LineChart,
 } from 'lucide-react';
 import { useLeaderboard, useUserSubmissions } from '../hooks';
 import '../styles/palette.css';
 
 const DEFAULT_SEASON = 'current';
+const ENTRY_FEE = '$25';
 
 const parseBool = (value) => String(value || '').toLowerCase() === 'true';
 
 function getRootProps() {
-  const el = typeof document !== 'undefined' ? document.getElementById('home-root') : null;
-  if (!el) {
-    return {
-      seasonSlug: DEFAULT_SEASON,
-      isAuthenticated: false,
-      userId: '',
-      username: '',
-      displayName: '',
-      hasStandingSubmission: false,
-      hasAnswerSubmission: false,
-      hasSubmission: false,
-      submissionOpen: false,
-      submissionStart: '',
-      submissionEnd: '',
-      submitUrl: '',
-      signupUrl: '',
-      loginUrl: '',
-      leaderboardUrl: '',
-      profileUrl: '',
-    };
-  }
+  const element = typeof document !== 'undefined' ? document.getElementById('home-root') : null;
+  const data = element?.dataset || {};
 
-  const data = el.dataset || {};
   return {
     seasonSlug: data.seasonSlug || DEFAULT_SEASON,
     isAuthenticated: parseBool(data.isAuthenticated),
     userId: data.userId || '',
     username: data.username || '',
     displayName: data.displayName || '',
-    hasStandingSubmission: parseBool(data.hasStandingSubmission),
-    hasAnswerSubmission: parseBool(data.hasAnswerSubmission),
     hasSubmission: parseBool(data.hasSubmission),
     submissionOpen: parseBool(data.submissionOpen),
     submissionStart: data.submissionStart || '',
@@ -62,486 +40,281 @@ function getRootProps() {
     signupUrl: data.signupUrl || '',
     loginUrl: data.loginUrl || '',
     leaderboardUrl: data.leaderboardUrl || '',
-    profileUrl: data.profileUrl || '',
   };
 }
 
-function formatDateRange(startIso, endIso) {
-  if (!startIso && !endIso) return null;
-  const start = startIso ? new Date(startIso) : null;
-  const end = endIso ? new Date(endIso) : null;
-  const dateOptions = { month: 'long', day: 'numeric' };
-  const timeOptions = { hour: 'numeric', minute: '2-digit' };
-
-  if (start && end) {
-    const sameDay = start.toDateString() === end.toDateString();
-    const startDate = start.toLocaleDateString(undefined, dateOptions);
-    const endDate = end.toLocaleDateString(undefined, dateOptions);
-    const startTime = start.toLocaleTimeString(undefined, timeOptions);
-    const endTime = end.toLocaleTimeString(undefined, timeOptions);
-    if (sameDay) {
-      return `${startDate} | ${startTime} - ${endTime}`;
-    }
-    return `${startDate} ${startTime} - ${endDate} ${endTime}`;
-  }
-
-  if (end) {
-    const endDate = end.toLocaleDateString(undefined, dateOptions);
-    const endTime = end.toLocaleTimeString(undefined, timeOptions);
-    return `Closes ${endDate} | ${endTime}`;
-  }
-
-  return null;
+function formatDate(value, includeTime = false) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    ...(includeTime ? { hour: 'numeric', minute: '2-digit' } : {}),
+  });
 }
 
-const PREVIEW_STANDINGS = {
-  east: [{ team_name: 'Celtics' }, { team_name: 'Knicks' }, { team_name: 'Bucks' }, { team_name: '76ers' }],
-  west: [{ team_name: 'Nuggets' }, { team_name: 'Thunder' }, { team_name: 'Timberwolves' }, { team_name: 'Mavericks' }],
-};
+function getEntryAction(rootProps) {
+  if (!rootProps.isAuthenticated) {
+    return {
+      label: 'Start your entry',
+      href: rootProps.submitUrl || rootProps.signupUrl || '#signup',
+    };
+  }
+  if (!rootProps.hasSubmission && rootProps.submissionOpen) {
+    return { label: 'Create your entry', href: rootProps.submitUrl };
+  }
+  if (rootProps.hasSubmission && rootProps.submissionOpen) {
+    return { label: 'Review or edit picks', href: rootProps.submitUrl };
+  }
+  return { label: 'Review your picks', href: rootProps.submitUrl };
+}
 
-const PREVIEW_SECTIONS = [
-  { label: 'Props & Totals', total: 7, completed: 3 },
-  { label: 'Superlatives', total: 4, completed: 2 },
-  { label: 'In-Season Tournament', total: 2, completed: 0 },
-];
-
-function StatCard({ icon: Icon, title, value, subtitle, highlightUrl, highlightTitle }) {
-  const Wrapper = highlightUrl ? 'a' : 'div';
-  const wrapperProps = highlightUrl
-    ? {
-      href: highlightUrl,
-      title: highlightTitle || title,
-      className: 'home-stat-card home-stat-card--link',
-    }
-    : { className: 'home-stat-card' };
-
+function ActionLink({ href, children, secondary = false }) {
+  if (!href) return null;
   return (
-    <Wrapper {...wrapperProps}>
-      <div className="home-stat-card__icon">
-        <Icon className="w-4 h-4" />
-      </div>
-      <div className="home-stat-card__label">{title}</div>
-      <div className="home-stat-card__value">{value}</div>
-      {subtitle ? <div className="home-stat-card__subtle">{subtitle}</div> : null}
-    </Wrapper>
+    <a className={`next-play-action${secondary ? ' is-secondary' : ''}`} href={href}>
+      <span>{children}</span>
+      <ArrowRight aria-hidden="true" />
+    </a>
   );
 }
 
-function LeaderboardPreview({ entries, leaderboardUrl }) {
+function GuestEntryLedger({ submissionOpen, loginUrl, action }) {
+  const steps = [
+    ['Rank all 30 teams', 'Set the East and West in the order you think they finish.'],
+    ['Call awards and props', 'Choose the season-defining players, totals, and outcomes.'],
+    ['Earn points all season', 'Your picks earn points as NBA results are graded.'],
+  ];
+
   return (
-    <section className="home-section">
-      <div className="home-section__header">
-        <div>
-          <h2>Leaderboard snapshot</h2>
-          <p>See who is surging this season. Tap any name to deep dive into the full board.</p>
-        </div>
-        {leaderboardUrl ? (
-          <a href={leaderboardUrl} className="home-link">
-            View full leaderboard
-            <ArrowRight className="w-4 h-4" />
-          </a>
-        ) : null}
-      </div>
-      <div className="home-leaderboard">
-        <div className="home-leaderboard__head">
-          <span>#</span>
-          <span>Player</span>
-          <span>Points</span>
-        </div>
-        <div className="home-leaderboard__body">
-          {entries.length === 0 ? (
-            <div className="home-leaderboard__empty">
-              <Users className="w-5 h-5" />
-              <span>Leaderboard coming soon. Submit your picks to claim a spot.</span>
-            </div>
-          ) : (
-            entries.map((entry) => (
-              <a
-                key={`${entry.rank}-${entry.user?.username || entry.user?.id || entry.rank}`}
-                href={leaderboardUrl || '#'}
-                className="home-leaderboard__row"
-              >
-                <span className="home-leaderboard__rank">#{entry.rank ?? '--'}</span>
-                <span className="home-leaderboard__name">{entry.user?.display_name || entry.user?.username || 'Player'}</span>
-                <span className="home-leaderboard__points">{entry.user?.total_points ?? entry.points ?? 0}</span>
-              </a>
-            ))
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function StandingsPreview({ standings, isAuthenticated, loginUrl, signupUrl }) {
-  if (!standings || (!standings.eastern?.length && !standings.western?.length)) {
-    return null;
-  }
-
-  const renderConference = (label, teams, accent) => (
-    <div className={`home-standings-card home-standings-card--${accent}`}>
-      <header>
-        <span>{label}</span>
-        <LineChart className="w-4 h-4" />
+    <aside className="next-play-ledger next-play-ledger--guest" aria-label="How the game works">
+      <header className="next-play-ledger__mast">
+        <span>Season entry sheet</span>
+        <strong>{submissionOpen ? 'Entries open' : 'Season preview'}</strong>
       </header>
-      <ul>
-        {teams.map((team) => (
-          <li key={`${label}-${team.team}`}>
-            <span className="home-standings-card__position">#{team.position}</span>
-            <span className="home-standings-card__team">{team.team}</span>
-            <span className="home-standings-card__record">
-              {team.wins}-{team.losses}
+      <ol className="next-play-steps">
+        {steps.map(([title, detail], index) => (
+          <li key={title}>
+            <span className="next-play-steps__number">{String(index + 1).padStart(2, '0')}</span>
+            <span className="next-play-steps__copy">
+              <strong>{title}</strong>
+              <small>{detail}</small>
             </span>
           </li>
         ))}
-      </ul>
-    </div>
+      </ol>
+      <footer className="next-play-ledger__footer">
+        <a href={loginUrl || '#login'}>Log in</a>
+        <a href={action.href}>{action.label}<ChevronRight aria-hidden="true" /></a>
+      </footer>
+    </aside>
   );
+}
 
-  const content = (
-    <div className="home-standings-grid">
-      {renderConference('Eastern Conference', standings.eastern || [], 'east')}
-      {renderConference('Western Conference', standings.western || [], 'west')}
-    </div>
-  );
+function PlayerLedger({ rootProps, me, action, submissionLoading, submissionData }) {
+  const deadline = formatDate(rootProps.submissionEnd, true) || 'Not scheduled';
+  const totalPoints = me?.user?.total_points;
+  const sectionTotal = submissionData?.sections?.reduce((sum, section) => sum + (section.total || 0), 0) || 0;
+  const sectionComplete = submissionData?.sections?.reduce((sum, section) => sum + (section.completed || 0), 0) || 0;
+  const entryStatus = submissionLoading
+    ? 'Checking entry'
+    : rootProps.hasSubmission
+      ? 'Entry saved'
+      : rootProps.submissionOpen
+        ? 'Action needed'
+        : 'No valid entry';
 
   return (
-    <section className="home-section">
-      <div className="home-section__header">
-        <div>
-          <h2>Standings pulse</h2>
-          <p>A quick glance at how the conferences are shaping up right now.</p>
-        </div>
+    <aside className="next-play-ledger next-play-ledger--player" aria-label="Your season status">
+      <header className="next-play-ledger__mast">
+        <span>Your season ledger</span>
+        <strong>{rootProps.submissionOpen ? 'Live window' : 'Picks locked'}</strong>
+      </header>
+      <div className="next-play-player-grid">
+        <div><span>Rank</span><strong>{me?.rank ? `#${me.rank}` : '—'}</strong><small>{me ? 'Live position' : 'Awaiting score'}</small></div>
+        <div><span>Total score</span><strong>{Number.isFinite(totalPoints) ? totalPoints.toLocaleString() : '—'}</strong><small>Points earned</small></div>
+        <div><span>Entry</span><strong className="next-play-player-grid__status">{entryStatus}</strong><small>{sectionTotal ? `${sectionComplete} of ${sectionTotal} calls saved` : 'Season submission'}</small></div>
+        <div><span>Deadline</span><strong className="next-play-player-grid__deadline">{deadline}</strong><small>{rootProps.submissionOpen ? 'Edits allowed until then' : 'Submission window closed'}</small></div>
       </div>
-      <div className="home-auth-wrapper">
-        {!isAuthenticated && (
-          <div className="home-auth-overlay">
-            <div className="home-auth-modal">
-              <p>Log-in or sign up to make your predictions</p>
-              <div className="home-auth-actions">
-                <a href={loginUrl || '#login'} className="home-cta primary">Log In</a>
-                <a href={signupUrl || '#signup'} className="home-cta secondary">Sign Up</a>
-              </div>
-            </div>
-          </div>
-        )}
-        <div style={{ filter: !isAuthenticated ? 'blur(2px)' : 'none' }}>
-          {content}
-        </div>
+      <div className="next-play-ledger__next">
+        <span><ClipboardList aria-hidden="true" /></span>
+        <div><strong>Next play</strong><small>{rootProps.hasSubmission ? 'Review your picks before the window closes.' : 'Complete your standings, awards, and props.'}</small></div>
+        <ActionLink href={action.href}>{action.label}</ActionLink>
+      </div>
+    </aside>
+  );
+}
+
+function ScorePath() {
+  const stages = [
+    { icon: ClipboardList, title: 'Make the calls', copy: 'Standings, awards, props, playoffs, and the NBA Cup.' },
+    { icon: Target, title: 'Results become points', copy: 'Your score updates as real NBA outcomes are graded.' },
+    { icon: Trophy, title: 'Climb the table', copy: 'Track your overall rank and every scoring category.' },
+  ];
+
+  return (
+    <section className="next-play-path" aria-labelledby="score-path-title">
+      <header>
+        <h2 id="score-path-title">One entry, scored all season.</h2>
+        <p>Submit your picks once. Your score updates as NBA results are graded.</p>
+      </header>
+      <div className="next-play-path__stages">
+        {stages.map(({ icon: Icon, title, copy }, index) => (
+          <article key={title}>
+            <span className="next-play-path__index">{String(index + 1).padStart(2, '0')}</span>
+            <Icon aria-hidden="true" />
+            <div><h3>{title}</h3><p>{copy}</p></div>
+          </article>
+        ))}
       </div>
     </section>
   );
 }
 
-function SubmissionPreview({ submitUrl, hasSubmission, submissionOpen, isAuthenticated, loginUrl, signupUrl, submissionData, isLoadingSubmissionData }) {
-  const Wrapper = submitUrl && isAuthenticated ? 'a' : 'div';
-  const wrapperClassNames = ['home-submission-card'];
-  if (submitUrl && isAuthenticated) wrapperClassNames.push('home-submission-card--link');
-  if (hasSubmission) wrapperClassNames.push('home-submission-card--complete');
-  const StatusIcon = hasSubmission ? CheckCircle2 : Clock;
-  const statusText = hasSubmission ? 'Submission saved' : submissionOpen ? 'Submission open' : 'Submission closed';
-  const foldText = hasSubmission ? 'Review your picks' : submissionOpen ? 'Start your picks' : 'View submissions page';
-
-  if (!isAuthenticated) {
-    return (
-      <aside className="home-entry-sheet" aria-label="How to play">
-        <div className="home-entry-sheet__mast"><span>Season entry sheet</span><strong>{submissionOpen ? 'Open' : 'Preview'}</strong></div>
-        <ol>
-          <li><span>1</span><div><strong>Order all 30 teams</strong><small>Set your East and West finish.</small></div></li>
-          <li><span>2</span><div><strong>Call awards and props</strong><small>Make every pick before tip-off.</small></div></li>
-          <li><span>3</span><div><strong>Climb the live table</strong><small>Exact calls earn the most points.</small></div></li>
-        </ol>
-        <div className="home-entry-sheet__footer"><span>{submissionOpen ? 'Entries open now' : 'Next entry window'}</span><div><a href={loginUrl || '#login'}>Log in</a><a href={submitUrl || signupUrl || '#signup'}>Start entry</a></div></div>
-      </aside>
-    );
-  }
-
-  // Use real user data when authenticated and available, otherwise show preview
-  const hasRealStandings = isAuthenticated && submissionData?.standings &&
-    (submissionData.standings.east?.length > 0 || submissionData.standings.west?.length > 0);
-  const hasRealSections = isAuthenticated && submissionData?.sections && submissionData.sections.length > 0;
-
-  const standings = (hasRealStandings && !isLoadingSubmissionData) ? submissionData.standings : PREVIEW_STANDINGS;
-  const sections = (hasRealSections && !isLoadingSubmissionData) ? submissionData.sections : PREVIEW_SECTIONS;
-
-  const content = (
-    <Wrapper
-      className={wrapperClassNames.join(' ')}
-      {...(submitUrl && isAuthenticated ? { href: submitUrl } : {})}
-    >
-      <div className="home-submission-card__header">
-        <div className="home-submission-card__title">
-          <ClipboardList className="w-4 h-4" />
-          <span>Props Prediction board</span>
-        </div>
-        <div className="home-submission-card__status">
-          <StatusIcon className="w-4 h-4" />
-          <span>{statusText}</span>
-        </div>
-      </div>
-      <div className="home-submission-card__board">
-        <div className="home-submission-card__standings">
-          {Object.entries(standings).map(([conference, teams]) => (
-            <div key={conference} className={`home-submission-card__column home-submission-card__column--${conference}`}>
-              <header>{conference.toUpperCase()}</header>
-              <ul>
-                {teams.slice(0, 4).map((team, index) => {
-                  // For real user data, show the predicted_position; for preview, show sequential
-                  const displayPosition = hasRealStandings && !isLoadingSubmissionData
-                    ? (team.predicted_position || team.position || index + 1)
-                    : (index + 1);
-                  return (
-                    <li key={`${conference}-${team.team_name || team.name || index}`}>
-                      <span className="home-submission-card__seed">{displayPosition}</span>
-                      <span className="home-submission-card__team">{team.team_name || team.name}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="home-submission-card__sections">
-          {sections.map((section, index) => {
-            // When showing real data for authenticated users, use actual completion status
-            const hasRealData = isAuthenticated && hasRealSections && !isLoadingSubmissionData;
-            const Icon = section.completed > 0 ? CheckCircle2 : Clock;
-
-            // Determine state based on whether we're showing real or preview data
-            let state;
-            if (!isAuthenticated) {
-              state = 'Not started';
-            } else if (hasRealData) {
-              state = section.completed === section.total
-                ? 'Submitted'
-                : section.completed > 0
-                  ? 'Draft saved'
-                  : 'Pending';
-            } else {
-              // Preview data when authenticated but data hasn't loaded yet
-              state = section.completed === section.total
-                ? 'Submitted'
-                : section.completed > 0
-                  ? 'Draft saved'
-                  : 'Pending';
-            }
-
-            return (
-              <div key={section.label} className="home-submission-card__section">
-                <Icon className="w-3 h-3" />
-                <div>
-                  <span className="home-submission-card__section-label">{section.label}</span>
-                  <span className="home-submission-card__section-meta">
-                    {section.completed}/{section.total} • {state}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      <div className="home-submission-card__fold">
-        <span>{foldText}</span>
-        <ArrowRight className="w-4 h-4" />
-      </div>
-    </Wrapper>
-  );
+function PersonalScorebook({ me, hasSubmission, leaderboardUrl }) {
+  const categories = me?.user?.categories || {};
+  const rows = [
+    ['Regular season', categories['Regular Season Standings']],
+    ['Player awards', categories['Player Awards']],
+    ['Props & yes/no', categories['Props & Yes/No']],
+  ];
 
   return (
-    <div className="home-auth-wrapper">
-      {!isAuthenticated && (
-        <div className="home-auth-overlay">
-          <div className="home-auth-modal">
-            <p>Log-in or sign up to make your predictions</p>
-            <div className="home-auth-actions">
-              <a href={loginUrl || '#login'} className="home-cta primary">Log In</a>
-              <a href={signupUrl || '#signup'} className="home-cta secondary">Sign Up</a>
-            </div>
-          </div>
-        </div>
-      )}
-      <div style={{ filter: !isAuthenticated ? 'blur(2px)' : 'none', height: '100%' }}>
-        {content}
+    <section className="next-play-scorebook" aria-labelledby="personal-scorebook-title">
+      <header className="next-play-section-head">
+        <div><h2 id="personal-scorebook-title">Your scorebook</h2><p>See your category scores and overall total.</p></div>
+        {leaderboardUrl ? <a href={leaderboardUrl}>Full breakdown <ArrowRight aria-hidden="true" /></a> : null}
+      </header>
+      <div className="next-play-scorebook__summary">
+        <div><Medal aria-hidden="true" /><span>Overall rank</span><strong>{me?.rank ? `#${me.rank}` : '—'}</strong></div>
+        <div><BarChart3 aria-hidden="true" /><span>Total score</span><strong>{Number.isFinite(me?.user?.total_points) ? me.user.total_points.toLocaleString() : hasSubmission ? '0' : '—'}</strong></div>
       </div>
-    </div>
+      <div className="next-play-scorebook__rows">
+        <div className="next-play-scorebook__row is-head"><span>Category</span><span>Score</span><span>Available</span></div>
+        {rows.map(([label, category]) => (
+          <div className="next-play-scorebook__row" key={label}>
+            <span>{label}</span><strong>{category?.points || 0}</strong><span>{category?.max_points || '—'}</span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
+function LeaderboardLedger({ entries, leaderboardUrl, currentUserId }) {
+  return (
+    <section className="next-play-leaders" aria-labelledby="leaders-title">
+      <header className="next-play-section-head">
+        <div><h2 id="leaders-title">Live table</h2><p>The top of the season-long competition.</p></div>
+        {leaderboardUrl ? <a href={leaderboardUrl}>View leaderboard <ArrowRight aria-hidden="true" /></a> : null}
+      </header>
+      <div className="next-play-leaders__table">
+        <div className="next-play-leaders__row is-head"><span>Rank</span><span>Player</span><span>Points</span></div>
+        {entries.length ? entries.slice(0, 6).map((entry) => {
+          const isCurrent = currentUserId && String(entry.user?.id) === String(currentUserId);
+          return (
+            <a className={`next-play-leaders__row${isCurrent ? ' is-current' : ''}`} href={leaderboardUrl || '#'} key={`${entry.rank}-${entry.user?.id || entry.user?.username}`}>
+              <strong>#{entry.rank ?? '—'}</strong>
+              <span>{entry.user?.display_name || entry.user?.username || 'Player'}{isCurrent ? ' (You)' : ''}</span>
+              <strong>{entry.user?.total_points ?? entry.points ?? 0}</strong>
+            </a>
+          );
+        }) : (
+          <div className="next-play-leaders__empty"><Users aria-hidden="true" /><span>The table will fill when scored entries are available.</span></div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function StandingsPulse({ standings }) {
+  if (!standings?.eastern?.length && !standings?.western?.length) return null;
+  const conferences = [['East', standings.eastern || []], ['West', standings.western || []]];
+  return (
+    <section className="next-play-pulse" aria-labelledby="pulse-title">
+      <header className="next-play-section-head"><div><h2 id="pulse-title">NBA standings</h2><p>Compare your predictions with the current conference leaders.</p></div></header>
+      <div className="next-play-pulse__grid">
+        {conferences.map(([name, teams]) => (
+          <div className={`next-play-conference is-${name.toLowerCase()}`} key={name}>
+            <header><span>{name}</span><span>W–L</span></header>
+            {teams.slice(0, 4).map((team) => (
+              <div key={`${name}-${team.team}`}><strong>{team.position}</strong><span>{team.team}</span><b>{team.wins}–{team.losses}</b></div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }) {
   const rootProps = useMemo(() => getRootProps(), []);
-  const seasonSlug = seasonSlugProp || rootProps.seasonSlug || DEFAULT_SEASON;
-
+  const seasonSlug = seasonSlugProp || rootProps.seasonSlug;
   const { data: leaderboardData, isLoading: leaderboardLoading } = useLeaderboard(seasonSlug);
   const { submissionData, isLoading: submissionLoading } = useUserSubmissions(seasonSlug, rootProps.isAuthenticated);
-
   const { data: homepageData } = useQuery({
     queryKey: ['homepage-data', seasonSlug],
-    queryFn: async () => {
-      const res = await axios.get('/api/v2/homepage/data');
-      return res.data || {};
-    },
+    queryFn: async () => (await axios.get('/api/v2/homepage/data')).data || {},
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
+  const leaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
   const me = useMemo(() => {
-    if (!rootProps.isAuthenticated || !Array.isArray(leaderboardData)) return null;
-    const byId = rootProps.userId
-      ? leaderboardData.find((entry) => String(entry.user?.id) === String(rootProps.userId))
-      : null;
-    if (byId) return byId;
-    if (rootProps.username) {
-      return leaderboardData.find((entry) => String(entry.user?.username) === String(rootProps.username)) || null;
-    }
-    return null;
-  }, [leaderboardData, rootProps]);
+    if (!rootProps.isAuthenticated) return null;
+    return leaderboard.find((entry) => (
+      rootProps.userId && String(entry.user?.id) === String(rootProps.userId)
+    )) || leaderboard.find((entry) => (
+      rootProps.username && String(entry.user?.username) === String(rootProps.username)
+    )) || null;
+  }, [leaderboard, rootProps.isAuthenticated, rootProps.userId, rootProps.username]);
 
-  const categories = me?.user?.categories || {};
-  const standings = categories['Regular Season Standings'] || { points: 0, max_points: 0 };
-  const awards = categories['Player Awards'] || { points: 0, max_points: 0 };
-  const props = categories['Props & Yes/No'] || { points: 0, max_points: 0 };
-
-  const heroVariant = !rootProps.isAuthenticated ? 'guest' : rootProps.hasSubmission ? 'submitted' : 'incomplete';
-  const deadlineCopy = formatDateRange(rootProps.submissionStart, rootProps.submissionEnd);
-  const leaderboardTopTen = Array.isArray(leaderboardData) ? leaderboardData.slice(0, 10) : [];
-  const heroMeta = rootProps.isAuthenticated
-    ? `Welcome back${rootProps.displayName ? `, ${rootProps.displayName}` : ''}`
-    : null;
-  const heroHeadlineMap = {
-    guest: 'Make your NBA predictions.',
-    incomplete: 'Pick up your predictions right where you left off.',
-    submitted: 'Monitor your points here.',
-  };
-  const heroSubcopyMap = {
-    guest: 'Build standings, awards, and props once—follow them all season without spreadsheets.',
-    incomplete: 'Standings, awards, and props stay synced so you can finish before submissions lock.',
-    submitted: 'Review standings, awards, and props at a glance.',
-  };
-  const heroHeadline = heroHeadlineMap[heroVariant];
-  const heroSubcopy = heroSubcopyMap[heroVariant];
-
-  let primaryCta = null;
-  let secondaryCta = null;
-  if (rootProps.isAuthenticated) {
-    if (rootProps.submitUrl) {
-      const label = !rootProps.hasSubmission && rootProps.submissionOpen
-        ? 'Create submission'
-        : rootProps.hasSubmission && rootProps.submissionOpen
-          ? 'Edit submission'
-          : 'View submission';
-      primaryCta = { label, href: rootProps.submitUrl, icon: ClipboardList };
-    }
-    if (rootProps.leaderboardUrl) {
-      secondaryCta = { label: 'View leaderboard', href: rootProps.leaderboardUrl, icon: ArrowRight };
-    }
-  } else {
-    primaryCta = { label: 'Start your entry', href: rootProps.submitUrl || rootProps.signupUrl || '#signup', icon: ArrowRight };
-    secondaryCta = { label: 'Create account', href: rootProps.signupUrl || '#signup', icon: UserPlus };
-  }
-
-  let deadlineDescription = null;
-  if (rootProps.submissionEnd) {
-    const base = deadlineCopy || '';
-    if (rootProps.submissionOpen) {
-      deadlineDescription = `Submission Period: ${base}`;
-    } else {
-      deadlineDescription = `${base || 'Submissions are locked.'} You can still review your answers.`;
-    }
-  }
+  const action = getEntryAction(rootProps);
+  const deadline = formatDate(rootProps.submissionEnd, true);
+  const isPlayer = rootProps.isAuthenticated;
+  const headline = isPlayer
+    ? rootProps.hasSubmission ? 'Your season. Every call accounted for.' : 'Your next play starts here.'
+    : 'Call the season before it happens.';
 
   return (
-    <div className="home-shell">
-      <section className={`home-hero home-hero--${heroVariant}`}>
-        <div className="home-hero__background" />
-        <div className="home-hero__content">
-          <div className="home-hero__body">
-            <h1>{heroHeadline}</h1>
-            {heroMeta ? <p className="home-hero__meta">{heroMeta}</p> : null}
-            <p className="home-hero__subcopy">{heroSubcopy}</p>
-            <div className="home-hero__actions">
-              {primaryCta ? (
-                <a className="home-cta primary" href={primaryCta.href}>
-                  {primaryCta.icon ? <primaryCta.icon className="w-4 h-4" /> : null}
-                  {primaryCta.label}
-                </a>
-              ) : null}
-              {secondaryCta ? (
-                <a className="home-cta secondary" href={secondaryCta.href}>
-                  {secondaryCta.icon ? <secondaryCta.icon className="w-4 h-4" /> : null}
-                  {secondaryCta.label}
-                </a>
-              ) : null}
-            </div>
-            {deadlineDescription ? (
-              <div className="home-hero__deadline">
-                <Calendar className="w-4 h-4" />
-                <span>{deadlineDescription}</span>
-              </div>
-            ) : null}
+    <main className={`next-play-home${isPlayer ? ' is-player' : ' is-guest'}`}>
+      <section className="next-play-hero">
+        <div className="next-play-hero__copy">
+          <h1>{headline}</h1>
+          <p>{isPlayer
+            ? `Welcome back${rootProps.displayName ? `, ${rootProps.displayName}` : ''}. Check your picks, score, and current rank.`
+            : 'Rank every team, call the awards and props, then earn points as the real NBA season unfolds.'}</p>
+          <div className="next-play-hero__actions">
+            <ActionLink href={action.href}>{action.label}</ActionLink>
+            <ActionLink href={isPlayer ? rootProps.leaderboardUrl : rootProps.loginUrl} secondary>{isPlayer ? 'View leaderboard' : 'Log in'}</ActionLink>
           </div>
-          <div className="home-hero__preview">
-            <SubmissionPreview
-              submitUrl={rootProps.submitUrl}
-              hasSubmission={rootProps.hasSubmission}
-              submissionOpen={rootProps.submissionOpen}
-              isAuthenticated={rootProps.isAuthenticated}
-              loginUrl={rootProps.loginUrl}
-              signupUrl={rootProps.signupUrl}
-              submissionData={submissionData}
-              isLoadingSubmissionData={submissionLoading}
-            />
-          </div>
+          <dl className="next-play-facts">
+            <div><dt><CalendarDays aria-hidden="true" />Entry deadline</dt><dd>{deadline || (rootProps.submissionOpen ? 'Open now' : 'To be announced')}</dd></div>
+            <div><dt><ClipboardList aria-hidden="true" />Entry fee</dt><dd>{ENTRY_FEE}</dd></div>
+            <div><dt><Clock3 aria-hidden="true" />Scoring</dt><dd>All season</dd></div>
+          </dl>
         </div>
+        {isPlayer ? (
+          <PlayerLedger rootProps={rootProps} me={me} action={action} submissionLoading={submissionLoading} submissionData={submissionData} />
+        ) : (
+          <GuestEntryLedger submissionOpen={rootProps.submissionOpen} loginUrl={rootProps.loginUrl} action={action} />
+        )}
       </section>
 
-      <div className="home-main">
-        {rootProps.isAuthenticated && (
-          <div className="home-main__col home-main__col--primary">
-            <section className="home-section home-section--tight">
-              <div className="home-section__header">
-                <div>
-                  <h2>Season snapshot</h2>
-                  <p>Monitor rank, totals, and category scoring without leaving the homepage.</p>
-                </div>
-              </div>
-              <div className="home-stats-grid">
-                <StatCard
-                  icon={Trophy}
-                  title="Rank"
-                  value={me?.rank ? `#${me.rank}` : rootProps.hasSubmission ? 'Pending' : '--'}
-                  subtitle={leaderboardData?.length ? `${leaderboardData.length} total entries` : 'Leaderboard updates nightly'}
-                  highlightUrl={rootProps.leaderboardUrl}
-                  highlightTitle="Go to leaderboard"
-                />
-                <StatCard
-                  icon={TrendingUp}
-                  title="Total points"
-                  value={me?.user?.total_points?.toLocaleString() || (rootProps.hasSubmission ? '0' : '--')}
-                  subtitle={rootProps.hasSubmission ? 'Across all categories' : 'Submit to start scoring'}
-                />
-                <StatCard
-                  icon={BarChart3}
-                  title="Standings"
-                  value={standings.points || 0}
-                  subtitle={standings.max_points ? `of ${standings.max_points} pts` : 'Predictions lock on opening night'}
-                />
-                <StatCard
-                  icon={Target}
-                  title="Props & awards"
-                  value={(awards.points || 0) + (props.points || 0)}
-                  subtitle={(awards.max_points || 0) + (props.max_points || 0) ? `of ${(awards.max_points || 0) + (props.max_points || 0)} pts` : 'Awaiting graded results'}
-                />
-              </div>
-            </section>
+      {!isPlayer ? <ScorePath /> : null}
 
-            <StandingsPreview standings={homepageData?.mini_standings} isAuthenticated={rootProps.isAuthenticated} loginUrl={rootProps.loginUrl} signupUrl={rootProps.signupUrl} />
-          </div>
-        )}
-        <div className="home-main__col home-main__col--secondary" style={{ width: !rootProps.isAuthenticated ? '100%' : undefined, maxWidth: !rootProps.isAuthenticated ? '100%' : undefined }}>
-          <LeaderboardPreview entries={leaderboardTopTen} leaderboardUrl={rootProps.leaderboardUrl} />
-        </div>
+      <div className={`next-play-dashboard${isPlayer ? '' : ' is-guest'}`} aria-busy={leaderboardLoading}>
+        {isPlayer ? <PersonalScorebook me={me} hasSubmission={rootProps.hasSubmission} leaderboardUrl={rootProps.leaderboardUrl} /> : null}
+        <LeaderboardLedger entries={leaderboard} leaderboardUrl={rootProps.leaderboardUrl} currentUserId={rootProps.userId} />
+        {isPlayer ? <StandingsPulse standings={homepageData?.mini_standings} /> : null}
       </div>
-    </div>
+
+      <section className="next-play-close">
+        <span><Check aria-hidden="true" /></span>
+        <div><h2>{isPlayer ? 'Review your picks before they lock.' : 'Think you know how the season ends?'}</h2><p>{isPlayer ? 'Check your entry and follow each scoring update.' : 'Put it on the record before submissions close.'}</p></div>
+        <ActionLink href={action.href}>{action.label}</ActionLink>
+      </section>
+    </main>
   );
 }

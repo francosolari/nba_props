@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-15T17:13:19Z",
+  "generatedAt": "2026-08-15T20:52:23Z",
   "title": "Design System: Props Predictions — Courtside Album",
   "extensions": {
     "colorMeta": {
@@ -225,11 +225,11 @@
       "css": ".ds-mobile-nav { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); min-height:74px; border-top:2px solid var(--court-rule); background:var(--court-paper); } .ds-nav-link { display:flex; min-height:52px; flex-direction:column; gap:4px; align-items:center; justify-content:center; border-right:1px solid var(--court-rule-soft); color:var(--court-ink); font-family:var(--court-display); font-size:11px; font-weight:800; letter-spacing:.08em; text-decoration:none; text-transform:uppercase; } .ds-nav-link:last-child { border-right:0; } .ds-nav-link svg { width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:2; } .ds-nav-link:hover { background:var(--court-blue-soft); } .ds-nav-link:focus-visible { outline:3px solid var(--court-gold); outline-offset:-4px; } .ds-nav-link.ds-is-active { background:var(--court-blue); color:#fff; }"
     },
     {
-      "name": "Home Entry Ledger",
+      "name": "Home — The Next Play",
       "kind": "card",
-      "description": "The attached three-step entry story with league binding, red masthead, and joined account actions.",
-      "html": "<section class=\"ds-entry-ledger\"><header>Season entry sheet <strong>Preview</strong></header><ol><li><b>1</b><span><strong>Order all 30 teams</strong><small>Set your East and West finish.</small></span></li><li><b>2</b><span><strong>Call awards and props</strong><small>Make every pick before tip-off.</small></span></li><li><b>3</b><span><strong>Climb the live table</strong><small>Exact calls earn the most points.</small></span></li></ol><footer><span>Next entry window</span><a href=\"#\">Log in</a><a href=\"#\">Create entry</a></footer></section>",
-      "css": ".ds-entry-ledger { border:2px solid var(--court-rule); border-left:10px solid var(--court-blue); border-radius:0; background:#fff; color:var(--court-ink); font-family:var(--court-text); } .ds-entry-ledger header { display:flex; min-height:48px; align-items:center; justify-content:space-between; padding:0 14px; border-bottom:2px solid var(--court-rule); background:var(--court-red); color:#fff; font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; } .ds-entry-ledger ol { margin:0; padding:0; list-style:none; } .ds-entry-ledger li { display:grid; grid-template-columns:52px 1fr; min-height:66px; border-bottom:1px solid var(--court-rule); } .ds-entry-ledger li b { display:grid; place-items:center; border-right:1px solid var(--court-rule); color:var(--court-blue); font:800 26px var(--court-display); } .ds-entry-ledger li span { display:flex; flex-direction:column; justify-content:center; padding:9px 14px; } .ds-entry-ledger li strong { font:800 17px var(--court-display); text-transform:uppercase; } .ds-entry-ledger li small { color:#53606d; font-size:12px; } .ds-entry-ledger footer { display:grid; grid-template-columns:1fr auto auto; align-items:stretch; font-size:11px; font-weight:800; text-transform:uppercase; } .ds-entry-ledger footer span,.ds-entry-ledger footer a { display:grid; min-height:48px; place-items:center; padding:0 12px; } .ds-entry-ledger footer a { border-left:1px solid var(--court-rule); color:var(--court-blue); text-decoration:none; } .ds-entry-ledger footer a:last-child { background:var(--court-blue); color:#fff; }"
+      "description": "The state-aware home cover: guests receive an attached three-step entry ledger; authenticated participants receive a complete 2×2 status sheet and attached next action.",
+      "html": "<section class=\"ds-next-play\"><header><span>Your season ledger</span><strong>Live window</strong></header><div class=\"ds-next-play-grid\"><div><small>Rank</small><strong>#12</strong><em>Live position</em></div><div><small>Total score</small><strong>148</strong><em>Points earned</em></div><div><small>Entry</small><strong class=\"ds-next-play-state\">Entry saved</strong><em>42 of 42 calls saved</em></div><div><small>Deadline</small><strong class=\"ds-next-play-state\">Oct 21, 7:00 PM</strong><em>Edits allowed until then</em></div></div><footer><b aria-hidden=\"true\">✓</b><span><strong>Next play</strong><small>Review your picks before the window closes.</small></span><a href=\"#\">Review or edit picks →</a></footer></section>",
+      "css": ".ds-next-play { overflow:hidden; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-paper); color:var(--court-ink); font-family:var(--court-text); } .ds-next-play>header { display:flex; min-height:50px; align-items:center; justify-content:space-between; gap:12px; padding:0 14px; border-bottom:2px solid var(--court-rule); background:var(--court-red); color:var(--court-paper); font-size:11px; font-weight:800; letter-spacing:.11em; text-transform:uppercase; } .ds-next-play-grid { display:grid; grid-template-columns:1fr 1fr; } .ds-next-play-grid>div { display:flex; min-height:120px; min-width:0; flex-direction:column; justify-content:center; padding:14px; border-right:1px solid var(--court-rule); border-bottom:1px solid var(--court-rule); } .ds-next-play-grid>div:nth-child(even) { border-right:0; } .ds-next-play-grid small { color:var(--court-steel); font-size:10px; font-style:normal; font-weight:800; letter-spacing:.09em; text-transform:uppercase; } .ds-next-play-grid strong { margin-top:6px; font:800 35px/.9 var(--court-display); text-transform:uppercase; } .ds-next-play-grid .ds-next-play-state { font-size:20px; line-height:1; } .ds-next-play-grid em { margin-top:7px; color:var(--court-steel); font-size:11px; font-style:normal; line-height:1.25; } .ds-next-play>footer { display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:10px; padding:14px; border-top:2px solid var(--court-rule); background:var(--court-gold-soft); } .ds-next-play>footer>b { display:grid; width:34px; height:34px; place-items:center; border:1px solid var(--court-rule); color:var(--court-blue-dark); } .ds-next-play>footer>span { display:flex; min-width:0; flex-direction:column; } .ds-next-play>footer span>strong { font:800 17px/1 var(--court-display); letter-spacing:.04em; text-transform:uppercase; } .ds-next-play>footer a { display:inline-flex; min-height:48px; align-items:center; padding:0 15px; border:1px solid var(--court-rule); border-radius:4px; background:var(--court-blue); color:var(--court-paper); font:800 13px/1 var(--court-display); letter-spacing:.07em; text-decoration:none; text-transform:uppercase; } .ds-next-play>footer a:hover { background:var(--court-blue-dark); } .ds-next-play :focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } @media(max-width:767px) { .ds-next-play-grid>div { min-height:82px; padding:10px; } .ds-next-play-grid strong { font-size:28px; } .ds-next-play-grid .ds-next-play-state { font-size:17px; } .ds-next-play>footer { grid-template-columns:38px minmax(0,1fr); padding:10px; } .ds-next-play>footer a { grid-column:1/-1; } }"
     },
     {
       "name": "Season Passport Ledger",
@@ -270,7 +270,7 @@
   ],
   "narrative": {
     "northStar": "The Courtside Album",
-    "overview": "The Courtside Album is a calm, collectible sports-prediction scorebook: a durable league program or season album, never a generic SaaS dashboard. Props Predictions is the expandable product identity; the current competition remains NBA-first, so predictions, rank, scored calls, and side-by-side comparisons are written onto white stock with carbon rules, selective league color, compressed arena-program type, and real team marks.\n\nIts story is sequential and visible in the surfaces: enter picks on ruled slips, follow calls in the season scorebook, climb the joined table, then unfold advanced comparison and private What-If detail. The first viewport always names the task and places the participant's current entry, deadline, rank, score, or next action beside it. On mobile, task and action precede secondary explanation or detail.\n\nDense workflows stay inside the same album world. Home uses an attached entry ledger; profile becomes a player passport and answer book; Cup leaders join into one score sheet; comparison tools rise as rule sheets; and What-If marks changes directly on the live-looking table without altering live results.",
+    "overview": "The Courtside Album is a calm, collectible sports-prediction scorebook: a durable league program or season album, never a generic SaaS dashboard. Props Predictions is the expandable product identity; the current competition remains NBA-first, so predictions, rank, scored calls, and side-by-side comparisons are written onto white stock with carbon rules, selective league color, compressed arena-program type, and real team marks.\n\nIts story is sequential and visible in the surfaces: enter picks on ruled slips, follow calls in the season scorebook, climb the joined table, then unfold advanced comparison and private What-If detail. The first viewport always names the task and places the participant's current entry, deadline, rank, score, or next action beside it. On mobile, task and action precede secondary explanation or detail.\n\nDense workflows stay inside the same album world. Home's state-aware Next Play pairs the task with an attached guest entry ledger or participant status sheet; profile becomes a player passport and answer book; Cup leaders join into one score sheet; comparison tools rise as rule sheets; and What-If marks changes directly on the live-looking table without altering live results.",
     "keyCharacteristics": [
       "White scorebook stock divided by crisp carbon and steel rules.",
       "Barlow Condensed identity type paired with Source Sans 3 for decisions and data.",
@@ -318,6 +318,11 @@
         "section": "layout"
       },
       {
+        "name": "The Home State Compression Rule",
+        "body": "Home may remove only duplicate generic facts and the secondary hero action on authenticated mobile; personal rank, score, entry state, deadline, and next action stay attached and visible before persistent navigation.",
+        "section": "layout"
+      },
+      {
         "name": "The Context Stays Attached Rule",
         "body": "Sorting, compared players, participant identity, section mode, and What-If state remain visually attached to the data they change.",
         "section": "layout"
@@ -345,6 +350,7 @@
     ],
     "dos": [
       "Do start every participant page with an unmistakable task identity and current entry, score, rank, deadline, or primary action in the first viewport.",
+      "Do keep Home state-aware: guests get the promise, entry path, and attached three-step ledger; authenticated participants get rank, score, entry state, deadline, and the attached next action.",
       "Do use two-pixel carbon outer rules and one-pixel ledger or soft rules to build joined scorebook sheets.",
       "Do preserve real NBA team names, team-logo assets, and selective blue/red conference context.",
       "Do keep primary touch targets at least 44px and retain the persistent five-item mobile navigation.",
@@ -360,6 +366,7 @@
       "Don't fall back to generic SaaS cards, bento grids, glass, glossy gradients, soft shadow stacks, or excessive pill shapes.",
       "Don't treat the mobile standings transposition as a defect or force the desktop row orientation into a narrow viewport.",
       "Don't create separate visual languages for home, picks, profile, Cup, and advanced comparison; bind them into the same album.",
+      "Don't generalize Home's guest/authenticated composition or mobile duplicate-removal rules into unrelated participant surfaces.",
       "Don't let blue, red, gold, or new neutral steps become decorative noise across an entire screen.",
       "Don't hide participant identity, sorting, selected players, or simulation state once they affect visible scores.",
       "Don't make core interactions hover-dependent, encode meaning in microprint alone, or remove the gold keyboard-focus treatment.",

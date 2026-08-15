@@ -1,5 +1,21 @@
 # Frontend visual testing
 
+## Home page
+
+The home-page harness renders both guest and authenticated states without using a configured database:
+
+```bash
+npm run build
+python3 frontend/qa/home_server.py
+```
+
+Open `http://127.0.0.1:8002/qa-home.html` for the guest state and
+`http://127.0.0.1:8002/qa-home.html?state=auth` for the authenticated state. Check both at
+1440 × 1000 and 390 × 844. The primary action must appear before secondary detail on mobile,
+touch targets must be at least 44 pixels tall, and the document must not scroll horizontally.
+
+## Submissions page
+
 The submissions page has a deterministic local harness for responsive UI checks. It avoids the
 configured remote database and serves only local production assets plus stable API fixtures.
 

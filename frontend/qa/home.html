@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home page QA</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+  </head>
+  <body>
+    <div id="site-layout-root" data-season-slug="2026-27"></div>
+    <main class="court-page-main">
+      <div
+        id="home-root"
+        data-is-authenticated="false"
+        data-user-id=""
+        data-username=""
+        data-display-name=""
+        data-season-slug="2026-27"
+        data-has-standing-submission="false"
+        data-has-answer-submission="false"
+        data-has-submission="false"
+        data-submission-open="true"
+        data-submission-start="2026-08-15T04:01:00-04:00"
+        data-submission-end="2026-10-20T19:00:00-04:00"
+        data-submit-url="/submit/2026-27/"
+        data-signup-url="/accounts/signup/"
+        data-login-url="/accounts/login/"
+        data-leaderboard-url="/leaderboard/2026-27/"
+        data-profile-url="/user/profile/"
+      ></div>
+    </main>
+    <script>
+      if (new URLSearchParams(window.location.search).get('state') === 'auth') {
+        const root = document.getElementById('home-root');
+        root.dataset.isAuthenticated = 'true';
+        root.dataset.userId = '101';
+        root.dataset.username = 'jordan-qa';
+        root.dataset.displayName = 'Jordan';
+        root.dataset.hasStandingSubmission = 'true';
+        root.dataset.hasAnswerSubmission = 'true';
+        root.dataset.hasSubmission = 'true';
+      }
+    </script>
+    <script src="/static/js/bundle.js"></script>
+  </body>
+</html>
