@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useLeaderboard } from '../hooks';
 import ProgressBar from '../components/ProgressBar';
+import CourtSelect from '../components/CourtSelect';
 import { ScorebookHeader, ScorebookNumber, ScorebookRow, ScorebookTable } from '../components/scorebook/ScorebookPrimitives';
 import {
   ChevronDown,
@@ -413,15 +414,17 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex justify-center items-center gap-2 text-sm">
                   <span className="text-slate-500">Past seasons:</span>
-                  <select
+                  <CourtSelect
+                    label="Past season"
+                    showLabel={false}
+                    className="court-select--compact"
                     value={selectedSeason}
                     onChange={(e) => setSelectedSeason(e.target.value)}
-                    className="font-semibold text-slate-900 dark:text-white bg-transparent outline-none cursor-pointer hover:text-teal-600"
                   >
                     {seasonsData.map((s) => (
                       <option key={s.slug} value={s.slug}>{s.year}</option>
                     ))}
-                  </select>
+                  </CourtSelect>
                 </div>
               </div>
            )}
@@ -439,21 +442,19 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current' }) {
            <div className="flex items-center justify-between gap-4 mb-4">
               <div>
                 <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                  NBA Predictions Leaderboard
+                  Props Predictions Leaderboard
                 </h1>
               </div>
 
               {seasonsData && seasonsData.length > 1 && (
-                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg px-2.5 py-1 border border-slate-200 dark:border-slate-700">
-                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Season</span>
-                  <select
+                <CourtSelect
+                  label="Season"
+                  className="court-select--compact"
                     value={selectedSeason}
                     onChange={(e) => setSelectedSeason(e.target.value)}
-                    className="bg-transparent text-xs font-bold text-slate-900 dark:text-white focus:outline-none cursor-pointer"
-                  >
+                >
                     {seasonsData.map((s) => <option key={s.slug} value={s.slug}>{s.year}</option>)}
-                  </select>
-                </div>
+                </CourtSelect>
               )}
            </div>
 

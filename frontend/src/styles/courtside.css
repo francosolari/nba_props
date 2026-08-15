@@ -10,6 +10,8 @@
   --court-gold: #e7b92f;
   --court-gold-soft: #fff4c7;
   --court-wood: #c9985b;
+  --court-sheet-wash: #f5f8fa;
+  --court-steel: #53606d;
   --court-muted: #5d6368;
   --court-rule: #15181a;
   --court-rule-soft: #cfd4d8;
@@ -331,6 +333,144 @@ button[type="submit"]:active {
 .court-page-main textarea::placeholder {
   color: #5c6266;
   opacity: 1;
+}
+
+/* Compact listboxes and searchable roster pickers share one scorebook face. */
+.court-select {
+  position: relative;
+  min-width: 0;
+  color: var(--court-ink);
+}
+
+.court-select__trigger {
+  display: grid;
+  width: 100%;
+  min-height: 48px;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  grid-template-rows: auto auto;
+  align-content: center;
+  column-gap: 10px;
+  padding: 6px 10px 6px 12px;
+  color: var(--court-ink);
+  text-align: left;
+  background: var(--court-paper);
+  border: 2px solid var(--court-rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.court-select__label {
+  grid-column: 1;
+  color: var(--court-steel);
+  font: 800 9px/1 var(--court-display);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.court-select__value {
+  grid-column: 1;
+  overflow: hidden;
+  font: 800 16px/1.1 var(--court-display);
+  letter-spacing: .02em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.court-select__icon {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 17px;
+  height: 17px;
+  color: var(--court-blue);
+  pointer-events: none;
+  stroke-width: 2.5;
+  transition: transform 160ms ease-out;
+}
+
+.court-select.is-open .court-select__icon {
+  transform: rotate(180deg);
+}
+
+.court-select.is-disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.court-select.is-disabled .court-select__trigger {
+  cursor: not-allowed;
+}
+
+.court-select--compact .court-select__trigger {
+  min-height: 44px;
+  grid-template-columns: auto minmax(0, 1fr) 17px;
+  grid-template-rows: 1fr;
+  align-items: center;
+  gap: 9px;
+  padding: 0 9px 0 10px;
+  border-radius: 3px;
+}
+
+.court-select--compact .court-select__label,
+.court-select--compact .court-select__value,
+.court-select--compact .court-select__icon {
+  grid-row: 1;
+}
+
+.court-select--compact .court-select__label { grid-column: 1; }
+.court-select--compact .court-select__value {
+  grid-column: 2;
+  font-size: 14px;
+}
+.court-select--compact .court-select__icon { grid-column: 3; }
+
+.court-select__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 140;
+  width: 100%;
+  min-width: 0;
+  max-width: calc(100vw - 24px);
+  max-height: 264px;
+  overflow-y: auto;
+  background: var(--court-paper);
+  border: 2px solid var(--court-rule);
+  border-radius: 3px;
+  box-shadow: 4px 4px 0 var(--court-rule);
+}
+
+.court-select__option {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 11px;
+  color: var(--court-ink);
+  font: 800 16px/1 var(--court-display);
+  letter-spacing: .02em;
+  text-align: left;
+  text-transform: uppercase;
+  background: var(--court-paper);
+  border: 0;
+  border-bottom: 1px solid var(--court-rule-soft);
+  border-radius: 0;
+}
+
+.court-select__option:last-child { border-bottom: 0; }
+.court-select__option:hover,
+.court-select__option:focus-visible { background: var(--court-blue-soft); }
+.court-select__option.is-selected { color: #fff; background: var(--court-blue); }
+.court-select__option svg { width: 17px; }
+
+@media (hover: hover) {
+  .court-select__trigger:hover {
+    border-color: var(--court-blue);
+  }
 }
 
 /* Home */
@@ -1719,10 +1859,10 @@ button[type="submit"]:active {
 .court-profile-rank-stamp div { display: flex; min-width: 0; flex-direction: column; }
 .court-profile-rank-stamp span { color: #596573; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .court-profile-rank-stamp strong { font: 800 30px var(--court-display); }
-.court-season-select { position: relative; display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 12px 34px 12px 16px; }
-.court-season-select > span { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-.court-page-main .court-season-select select { min-height: 0; padding: 0; appearance: none; color: var(--court-ink) !important; font: 800 18px var(--court-display); background: transparent !important; border: 0 !important; border-radius: 0 !important; outline: 0; }
-.court-season-select svg { position: absolute; right: 12px; bottom: 20px; width: 15px; }
+.court-season-select { position: relative; display: block; min-width: 0; padding: 10px 12px; }
+.court-season-select .court-select__trigger { height: 100%; min-height: 48px; }
+.court-season-select .court-select__value { font-size: 18px; }
+.court-season-select .court-select__icon { width: 15px; }
 .court-profile-main { width: min(100%, 1216px); margin: 0 auto; padding: 24px 16px 56px; }
 .court-profile-score-strip { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 24px; border: 2px solid var(--court-rule); }
 .court-profile-score { display: grid; grid-template-columns: 24px 1fr; align-items: center; padding: 13px 16px; border-right: 1px solid var(--court-rule); }
@@ -1990,6 +2130,31 @@ button[type="submit"]:active {
 }
 
 @media (max-width: 767px) {
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  .court-combobox__menu {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .court-select__menu {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .court-leaderboard-page > header > div > div:first-child {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .court-leaderboard-page > header .court-select--compact {
+    width: min(100%, 180px);
+    align-self: flex-end;
+  }
   .court-modal-backdrop { padding: 0; }
   .court-roster-sheet,
   .court-simulation-sheet { max-width: none; border-right: 0; border-bottom: 0; border-left: 0; border-radius: 0; box-shadow: none; }
@@ -2009,7 +2174,7 @@ button[type="submit"]:active {
   .court-profile-copy p { font-size: 11px; }
   .court-profile-rank-stamp { padding: 8px 12px; }
   .court-profile-rank-stamp strong { font-size: 26px; }
-  .court-season-select { padding-left: 14px; }
+  .court-season-select { padding: 8px; }
   .court-profile-score-strip { grid-template-columns: repeat(2, 1fr); }
   .court-profile-score { border-bottom: 1px solid var(--court-rule); }
   .court-profile-score:nth-child(even) { border-right: 0; }

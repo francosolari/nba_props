@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, waitFor, fireEvent } from '@testing-library/react';
+import { screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { rest } from 'msw';
 import { server } from '../../__mocks__/msw/server';
 import { renderWithProviders } from '../../test-utils';
@@ -76,12 +76,12 @@ describe('LeaderboardPage', () => {
         renderWithProviders(<LeaderboardPage seasonSlug="2024-25" />);
 
         await waitFor(() => {
-            expect(screen.getByText('NBA Predictions Leaderboard')).toBeInTheDocument();
+            expect(screen.getByText('Props Predictions Leaderboard')).toBeInTheDocument();
         });
 
         // Check metrics
-        expect(screen.getByText('Players')).toBeInTheDocument();
-        expect(screen.getByText('2')).toBeInTheDocument(); // Total players from mock
+        const playersMetric = screen.getByText('Players').parentElement;
+        expect(within(playersMetric).getByText('2')).toBeInTheDocument();
 
         // Check rankings
         expect(screen.getByText('Player One')).toBeInTheDocument();

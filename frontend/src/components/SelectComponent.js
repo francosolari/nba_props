@@ -39,50 +39,60 @@ const SelectComponent = ({
       options={options}
       value={normalizedValue}
       onChange={handleChange}
-      className={`mt-1 text-sm ${className}`}
-      classNamePrefix="react-select"
+      className={`${isLight ? 'court-combobox' : ''} mt-1 text-sm ${className}`.trim()}
+      classNamePrefix={isLight ? 'court-combobox' : 'react-select'}
       placeholder={placeholder}
       isClearable={isClearable}
       isDisabled={isDisabled}
       isSearchable={isSearchable}
+      aria-invalid={hasError || undefined}
       noOptionsMessage={() => 'No options found'}
       styles={{
         control: (provided, state) => ({
           ...provided,
-          minHeight: '44px',
+          minHeight: isLight ? '48px' : '44px',
           backgroundColor: state.isDisabled
             ? isLight
-              ? '#f8fafc'
+              ? 'var(--court-sheet-wash, #f5f8fa)'
               : '#1e293b'
             : isLight
-              ? '#ffffff'
+              ? 'var(--court-paper, #ffffff)'
               : '#0f172a',
-          borderRadius: '14px',
-          borderWidth: '1px',
+          borderRadius: isLight ? '4px' : '14px',
+          borderWidth: isLight ? '2px' : '1px',
           borderColor: hasError
-            ? '#f87171'
+            ? 'var(--court-danger, #b42318)'
             : state.isFocused
-              ? '#2563eb'
+              ? isLight
+                ? 'var(--court-rule, #15181a)'
+                : '#2563eb'
               : isLight
-                ? '#cbd5f5'
+                ? 'var(--court-rule, #15181a)'
                 : '#334155',
           boxShadow: hasError
-            ? '0 0 0 1px #f87171'
+            ? '0 0 0 3px var(--court-red-soft, #fcecea)'
             : state.isFocused
-              ? '0 0 0 1px #2563eb'
+              ? isLight
+                ? '0 0 0 3px var(--court-gold, #e7b92f)'
+                : '0 0 0 1px #2563eb'
               : 'none',
-          paddingLeft: '0.25rem',
-          paddingRight: '0.5rem',
+          paddingLeft: isLight ? '0.125rem' : '0.25rem',
+          paddingRight: isLight ? '0.25rem' : '0.5rem',
           '&:hover': {
-            borderColor: hasError ? '#f87171' : '#2563eb',
+            borderColor: hasError
+              ? 'var(--court-danger, #b42318)'
+              : isLight
+                ? 'var(--court-blue, #07549a)'
+                : '#2563eb',
           },
-          color: isLight ? '#0f172a' : '#e2e8f0',
+          color: isLight ? 'var(--court-ink, #101214)' : '#e2e8f0',
+          fontFamily: isLight ? 'var(--court-text, "Source Sans 3", system-ui, sans-serif)' : undefined,
           transition: 'border-color 0.18s ease, box-shadow 0.18s ease',
         }),
         placeholder: (provided) => ({
           ...provided,
-          color: isLight ? '#64748b' : '#94a3b8',
-          fontWeight: 500,
+          color: isLight ? 'var(--court-steel, #53606d)' : '#94a3b8',
+          fontWeight: isLight ? 600 : 500,
           letterSpacing: '0.01em',
         }),
         singleValue: (provided, state) => ({
@@ -92,65 +102,78 @@ const SelectComponent = ({
               ? '#475569'
               : '#94a3b8'
             : isLight
-              ? '#0f172a'
+              ? 'var(--court-ink, #101214)'
               : '#e2e8f0',
+          fontWeight: isLight ? 700 : undefined,
         }),
         input: (provided) => ({
           ...provided,
-          color: isLight ? '#0f172a' : '#f8fafc',
-          fontSize: '0.95rem',
+          color: isLight ? 'var(--court-ink, #101214)' : '#f8fafc',
+          fontSize: isLight ? '1rem' : '0.95rem',
         }),
         valueContainer: (provided) => ({
           ...provided,
-          padding: '0.4rem 0.5rem',
+          padding: isLight ? '0.45rem 0.625rem' : '0.4rem 0.5rem',
           gap: '0.35rem',
         }),
         dropdownIndicator: (provided, state) => ({
           ...provided,
           color: state.isFocused
-            ? '#2563eb'
+            ? isLight
+              ? 'var(--court-blue, #07549a)'
+              : '#2563eb'
             : isLight
-              ? '#94a3b8'
+              ? 'var(--court-ink, #101214)'
               : '#64748b',
-          padding: '0.4rem',
+          padding: isLight ? '0.55rem' : '0.4rem',
         }),
         clearIndicator: (provided) => ({
           ...provided,
-          color: isLight ? '#94a3b8' : '#cbd5f5',
+          color: isLight ? 'var(--court-steel, #53606d)' : '#cbd5f5',
           padding: '0.4rem',
         }),
         indicatorSeparator: (provided) => ({
           ...provided,
-          backgroundColor: isLight ? 'rgba(148, 163, 184, 0.45)' : 'rgba(71, 85, 105, 0.6)',
+          backgroundColor: isLight ? 'var(--court-rule-soft, #cfd4d8)' : 'rgba(71, 85, 105, 0.6)',
         }),
         menu: (provided) => ({
           ...provided,
-          backgroundColor: isLight ? '#ffffff' : 'rgba(15, 23, 42, 0.95)',
+          backgroundColor: isLight ? 'var(--court-paper, #ffffff)' : 'rgba(15, 23, 42, 0.95)',
           border: isLight
-            ? '1px solid rgba(203, 213, 225, 0.8)'
+            ? '2px solid var(--court-rule, #15181a)'
             : '1px solid rgba(148, 163, 184, 0.35)',
           boxShadow: isLight
-            ? '0 10px 25px rgba(15, 23, 42, 0.08)'
+            ? '4px 4px 0 var(--court-rule, #15181a)'
             : '0 10px 25px rgba(15, 23, 42, 0.45)',
-          borderRadius: '14px',
+          borderRadius: isLight ? '3px' : '14px',
           overflow: 'hidden',
-          marginTop: '0.5rem',
+          marginTop: isLight ? '0.35rem' : '0.5rem',
         }),
         menuList: (provided) => ({
           ...provided,
-          padding: '0.5rem 0',
+          padding: isLight ? '0' : '0.5rem 0',
           maxHeight: '240px',
         }),
         option: (provided, state) => ({
           ...provided,
-          padding: '0.6rem 0.85rem',
-          backgroundColor: state.isFocused
+          minHeight: isLight ? '44px' : undefined,
+          padding: isLight ? '0.7rem 0.85rem' : '0.6rem 0.85rem',
+          backgroundColor: state.isSelected
             ? isLight
-              ? 'rgba(59, 130, 246, 0.12)'
-              : 'rgba(59, 130, 246, 0.18)'
-            : 'transparent',
-          color: isLight ? '#0f172a' : '#e2e8f0',
-          fontWeight: state.isSelected ? 600 : 500,
+              ? 'var(--court-blue, #07549a)'
+              : '#2563eb'
+            : state.isFocused
+              ? isLight
+                ? 'var(--court-blue-soft, #e8f2fb)'
+                : 'rgba(59, 130, 246, 0.18)'
+              : 'transparent',
+          color: state.isSelected
+            ? '#ffffff'
+            : isLight
+              ? 'var(--court-ink, #101214)'
+              : '#e2e8f0',
+          fontWeight: state.isSelected ? 800 : 600,
+          borderBottom: isLight ? '1px solid var(--court-rule-soft, #cfd4d8)' : undefined,
         }),
         menuPortal: (provided) => ({ ...provided, zIndex: 9999 }),
       }}

@@ -1,5 +1,6 @@
 import React from "react";
-import { ChevronDown, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
+import CourtSelect from "../CourtSelect";
 
 export default function ProfileHero({ me, seasons, selectedSeason, onSeasonChange }) {
     const name = me?.user?.display_name || me?.user?.username || "Player";
@@ -23,20 +24,18 @@ export default function ProfileHero({ me, seasons, selectedSeason, onSeasonChang
                                 <Trophy />
                                 <div><span>Current rank</span><strong>#{me?.rank || "—"}</strong></div>
                             </div>
-                            <label className="court-season-select">
-                                <span>Season</span>
-                                <select
-                                    value={selectedSeason}
-                                    onChange={(e) => onSeasonChange(e.target.value)}
-                                >
+                            <CourtSelect
+                                label="Season"
+                                className="court-season-select"
+                                value={selectedSeason}
+                                onChange={(e) => onSeasonChange(e.target.value)}
+                            >
                                     {seasons.map((s) => (
                                         <option key={s.slug} value={s.slug}>
                                             {s.slug}
                                         </option>
                                     ))}
-                                </select>
-                                <ChevronDown />
-                            </label>
+                            </CourtSelect>
                         </div>
                     </div>
                 </div>

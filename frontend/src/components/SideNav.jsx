@@ -69,9 +69,9 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   return (
     <>
       <aside className="court-desktop-nav" aria-label="Primary navigation">
-        <a className="court-desktop-nav__brand" href="/" aria-label="NBA Predictions home">
+        <a className="court-desktop-nav__brand" href="/" aria-label="Props Predictions home">
           <img src="/static/img/nba_predictions_logo.png" alt="" />
-          <span>NBA<br />Predictions</span>
+          <span>Props<br />Predictions</span>
         </a>
         <div className="court-desktop-nav__season">{currentSeasonSlug.replace('-', '–')}</div>
         <nav>{desktopItems.map((item) => renderLink(item))}</nav>

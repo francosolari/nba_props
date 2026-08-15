@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
+import CourtSelect from '../../../components/CourtSelect';
 
 export const LeaderboardHeader = ({
   selectedSeason,
@@ -41,11 +42,15 @@ export const LeaderboardHeader = ({
             </div>
 
             {/* Mobile Season Select (Moved here for better space utilization) */}
-            <div className="md:hidden">
-              <select value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="bg-transparent text-xs font-black text-slate-500 hover:text-slate-900 dark:hover:text-white outline-none cursor-pointer uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded-md py-1 px-2">
+            <CourtSelect
+              label="Season"
+              showLabel={false}
+              value={selectedSeason}
+              onChange={(e) => setSelectedSeason(e.target.value)}
+              className="court-select--compact md:hidden"
+            >
                 {seasonsData?.map((s) => <option key={s.slug} value={s.slug}>{s.year}</option>)}
-              </select>
-            </div>
+            </CourtSelect>
           </div>
 
           {/* Second Row on Mobile: Nav & Mode & Desktop Season */}
@@ -72,9 +77,15 @@ export const LeaderboardHeader = ({
               </div>
 
               {/* Desktop Season Select */}
-              <select value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="hidden md:block bg-transparent text-xs font-black text-slate-500 hover:text-slate-900 dark:hover:text-white outline-none cursor-pointer uppercase tracking-widest border-l border-slate-200 dark:border-slate-700 pl-4">
+              <CourtSelect
+                label="Season"
+                showLabel={false}
+                value={selectedSeason}
+                onChange={(e) => setSelectedSeason(e.target.value)}
+                className="court-select--compact hidden md:block"
+              >
                 {seasonsData?.map((s) => <option key={s.slug} value={s.slug}>{s.year}</option>)}
-              </select>
+              </CourtSelect>
             </div>
           </div>
         </div>
