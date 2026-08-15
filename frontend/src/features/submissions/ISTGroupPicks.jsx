@@ -33,11 +33,17 @@ const TeamChoice = ({ question, team, answer, onAnswerChange, isReadOnly, compac
 
 const GroupCard = ({ question, teams, answers, onAnswerChange, isReadOnly }) => {
   const meta = extractGroupMeta(question.ist_group);
+  const markerTheme = getConferenceTheme(question.ist_group);
   return (
     <div className="flex h-full flex-col border border-slate-200 bg-white p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center bg-slate-900 text-base font-bold text-white">{meta.short || '?'}</div>
+          <div
+            aria-label={`${meta.label || 'NBA Cup group'} marker`}
+            className={`ist-group-marker flex h-10 w-10 items-center justify-center text-base font-bold ${markerTheme.marker}`}
+          >
+            {meta.short || '?'}
+          </div>
           <div><span className="text-xs font-semibold uppercase tracking-wide">{meta.conference || 'Group'}</span><h4 className="text-sm font-semibold">{question.text}</h4></div>
         </div>
         <span className="bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">{question.point_value} pts</span>

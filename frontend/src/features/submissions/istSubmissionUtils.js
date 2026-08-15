@@ -58,14 +58,21 @@ const THEMES = {
   east: {
     selected: 'border-[var(--nba-blue-400)] bg-[var(--nba-blue-50)] text-[var(--nba-blue-700)]',
     idle: 'hover:border-[var(--nba-blue-400)] hover:bg-[var(--nba-blue-50)]',
+    marker: 'ist-group-marker--east',
     text: 'text-[var(--nba-blue-700)]',
   },
   west: {
     selected: 'border-[var(--nba-red-400)] bg-[var(--nba-red-50)] text-[var(--nba-red-700)]',
     idle: 'hover:border-[var(--nba-red-400)] hover:bg-[var(--nba-red-50)]',
+    marker: 'ist-group-marker--west',
     text: 'text-[var(--nba-red-700)]',
   },
-  default: { selected: 'border-slate-400 bg-slate-100 text-slate-800', idle: 'hover:bg-slate-100', text: 'text-slate-700' },
+  default: {
+    selected: 'border-slate-400 bg-slate-100 text-slate-800',
+    idle: 'hover:bg-slate-100',
+    marker: 'ist-group-marker--neutral',
+    text: 'text-slate-700',
+  },
 };
 
 export const getConferenceTheme = (label) => THEMES[resolveConferenceKey(label)?.toLowerCase()] || THEMES.default;

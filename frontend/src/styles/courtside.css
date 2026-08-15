@@ -2349,6 +2349,23 @@ button[type="submit"]:active {
 .submission-progress__jumps a.is-active small { color: var(--court-paper); background: transparent; }
 .submission-progress__jumps a.is-complete:not(.is-active) small { color: var(--court-success); background: var(--court-sheet-wash); }
 
+.court-submissions-page .ist-group-marker {
+  flex: 0 0 40px;
+  color: var(--court-ink);
+  background: var(--court-sheet-wash);
+  border: 2px solid var(--court-rule);
+}
+.court-submissions-page .ist-group-marker--east {
+  color: var(--court-blue);
+  background: var(--court-blue-soft);
+  border-color: var(--court-blue);
+}
+.court-submissions-page .ist-group-marker--west {
+  color: var(--court-red);
+  background: var(--court-red-soft);
+  border-color: var(--court-red);
+}
+
 .court-submissions-page .submission-question-group { scroll-margin-top: calc(var(--court-topbar-height) + 150px); }
 .court-submissions-page .submission-question-group > header { gap: 12px; }
 .submission-section-count {
