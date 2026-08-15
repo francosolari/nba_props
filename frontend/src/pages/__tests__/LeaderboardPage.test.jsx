@@ -158,5 +158,12 @@ describe('LeaderboardPage', () => {
         expect(screen.getAllByText('Off by 1').length).toBeGreaterThan(0);
         expect(screen.getAllByText('Missed').length).toBeGreaterThan(0);
         expect(screen.queryByText('Not yet graded')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getAllByRole('button', { name: /Exact/i })[0]);
+
+        expect(screen.getByText('Celtics')).toBeInTheDocument();
+        expect(screen.getByLabelText('Picked and finished 1st')).toHaveTextContent('1st');
+        expect(document.querySelector('.court-grade-pick__logo')).toHaveAttribute('src', expect.stringContaining('/static/img/teams/'));
+        expect(screen.queryByText(/Picked 1/)).not.toBeInTheDocument();
     });
 });

@@ -1164,8 +1164,10 @@ button[type="submit"]:active {
 .court-grade-pick + .court-grade-pick { border-top: 1px solid var(--court-rule-soft); }
 .court-grade-pick__name { min-width: 0; color: var(--court-ink); font: 700 12px/1.25 var(--court-text); }
 .court-grade-pick__name-text { overflow-wrap: anywhere; }
-.court-grade-pick__logo { display: none; width: 28px; height: 28px; object-fit: contain; }
+.court-grade-pick__name.is-team { display: flex; align-items: center; gap: 8px; }
+.court-grade-pick__logo { display: block; width: 28px; height: 28px; flex: 0 0 auto; object-fit: contain; }
 .court-grade-pick__detail { display: flex; gap: 5px; align-items: center; color: var(--court-steel); font: 700 10px/1.2 var(--court-text); font-variant-numeric: tabular-nums; text-align: right; }
+.court-grade-pick__detail.is-standing { color: var(--court-ink); font: 800 12px/1 var(--court-display); white-space: nowrap; }
 .court-grade-pick__detail b { min-width: 25px; color: currentColor; font: 800 13px/1 var(--court-display); }
 .court-grade-group.is-correct .court-grade-pick__detail b { color: var(--court-success); }
 .court-grade-group.is-partial .court-grade-pick__detail b { color: var(--court-warning); }
@@ -1175,14 +1177,15 @@ button[type="submit"]:active {
 .court-grade-group__more { border-top: 1px solid var(--court-rule-soft); font-weight: 700; }
 
 .court-breakdown-conference .court-grade-pick {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 2px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding-left: 12px;
 }
 
 .court-breakdown-conference .court-grade-pick__detail {
-  justify-content: flex-start;
-  text-align: left;
+  justify-content: flex-end;
+  text-align: right;
 }
 
 .court-breakdown-card__link {
@@ -1883,8 +1886,6 @@ button[type="submit"]:active {
   .court-breakdown-conferences { grid-template-columns: minmax(0, 1fr); }
   .court-breakdown-conference:first-child { border-right: 0; border-bottom: 1px solid var(--court-rule-soft); }
   .court-grade-pick { grid-template-columns: minmax(0, 1fr); gap: 3px; padding-left: 45px; }
-  .court-grade-pick__name.is-team { display: flex; align-items: center; gap: 7px; }
-  .court-grade-pick__logo { display: block; }
   .court-grade-pick__detail { justify-content: space-between; text-align: left; }
 
   .court-profile-page > div:nth-of-type(3) {

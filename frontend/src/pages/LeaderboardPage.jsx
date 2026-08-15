@@ -85,6 +85,25 @@ const resolvePredictionStatus = (prediction, isStandings) => {
   return 'pending';
 };
 
+const getStandingResult = (prediction) => {
+  const predicted = prediction?.predicted_position;
+  const actual = prediction?.actual_position;
+  const predictedLabel = predicted == null ? '—' : formatOrdinal(predicted);
+  const actualLabel = actual == null ? '—' : formatOrdinal(actual);
+
+  if (predicted != null && actual != null && Number(predicted) === Number(actual)) {
+    return {
+      label: predictedLabel,
+      description: `Picked and finished ${predictedLabel}`,
+    };
+  }
+
+  return {
+    label: `${predictedLabel} → ${actualLabel}`,
+    description: `Picked ${predictedLabel}; finished ${actualLabel}`,
+  };
+};
+
 /* ─────────────────────────────────────────────────────────────────────────────
    SUB-COMPONENTS
    ───────────────────────────────────────────────────────────────────────────── */
@@ -123,26 +142,27 @@ const StatusLedger = ({ groups, isStandings, sectionPrefix, expandedSections, to
 
           {isOpen && (
             <div id={`${sectionKey}-content`} className="court-grade-group__content">
-              {items.length > 0 ? items.slice(0, 4).map((prediction, index) => (
-                <div className="court-grade-pick" key={prediction.question_id || `${prediction.team || prediction.question}-${index}`}>
-                  <span className={`court-grade-pick__name ${isStandings ? 'is-team' : ''}`} title={isStandings ? prediction.team : undefined}>
-                    {isStandings && <TeamLogo teamName={prediction.team} alt="" aria-hidden="true" className="court-grade-pick__logo" />}
-                    <span className="court-grade-pick__name-text">{prediction.team || prediction.question || 'Prediction'}</span>
-                  </span>
-                  {isStandings ? (
-                    <span className="court-grade-pick__detail">
-                      Picked {prediction.predicted_position ?? '—'}
-                      <span aria-hidden="true"> / </span>
-                      Finished {prediction.actual_position ?? '—'}
+              {items.length > 0 ? items.slice(0, 4).map((prediction, index) => {
+                const standingResult = isStandings ? getStandingResult(prediction) : null;
+                return (
+                  <div className="court-grade-pick" key={prediction.question_id || `${prediction.team || prediction.question}-${index}`}>
+                    <span className={`court-grade-pick__name ${isStandings ? 'is-team' : ''}`} title={isStandings ? prediction.team : undefined}>
+                      {isStandings && <TeamLogo teamName={prediction.team} alt="" aria-hidden="true" className="court-grade-pick__logo" />}
+                      <span className="court-grade-pick__name-text">{prediction.team || prediction.question || 'Prediction'}</span>
                     </span>
-                  ) : (
-                    <span className="court-grade-pick__detail">
-                      {prediction.answer || 'Answer unavailable'}
-                      {status !== 'pending' && <b>{Number(prediction.points || 0) > 0 ? `+${prediction.points}` : '0'}</b>}
-                    </span>
-                  )}
-                </div>
-              )) : (
+                    {isStandings ? (
+                      <span className="court-grade-pick__detail is-standing" aria-label={standingResult.description}>
+                        {standingResult.label}
+                      </span>
+                    ) : (
+                      <span className="court-grade-pick__detail">
+                        {prediction.answer || 'Answer unavailable'}
+                        {status !== 'pending' && <b>{Number(prediction.points || 0) > 0 ? `+${prediction.points}` : '0'}</b>}
+                      </span>
+                    )}
+                  </div>
+                );
+              }) : (
                 <p className="court-grade-group__empty">No predictions in this state.</p>
               )}
               {items.length > 4 && <p className="court-grade-group__more">+{items.length - 4} more in the full report</p>}
