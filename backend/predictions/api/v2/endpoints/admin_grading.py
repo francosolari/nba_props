@@ -358,10 +358,16 @@ def manual_grade_answer(request, payload: ManualGradeRequest):
     answer.is_correct = payload.is_correct
     if payload.points_override is not None:
         answer.points_earned = payload.points_override
+    elif not payload.is_correct:
+        # Admin explicitly marked this wrong; no computed partial credit applies.
+        answer.points_earned = 0
     else:
         resolved_answers = resolve_answers_optimized([answer])
         resolved_answer = resolved_answers.get(answer.id, str(answer.answer))
-        answer.points_earned = question.points_for_answer(resolved_answer)
+        computed_points = question.points_for_answer(resolved_answer)
+        # Trust the admin's explicit "correct" override even if the answer text
+        # doesn't match a configured correct_answer/answer_point_values entry.
+        answer.points_earned = computed_points if computed_points else float(question.point_value or 0)
 
     answer.save()
 

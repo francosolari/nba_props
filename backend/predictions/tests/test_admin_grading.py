@@ -60,12 +60,17 @@ def regular_user(django_db_setup, django_db_blocker):
         return UserFactory()
 
 
-@pytest.fixture(scope='module')
-def current_season(django_db_setup, django_db_blocker):
-    """Create current season."""
-    with django_db_blocker.unblock():
-        existing = Season.objects.filter(slug='2024-25').first()
-        return existing or SeasonFactory(slug='2024-25')
+@pytest.fixture
+def current_season(db):
+    """Create current season.
+
+    Per-test (not module-scoped): a module-scoped fixture created via
+    django_db_blocker.unblock() commits outside the per-test transaction
+    rollback, leaking a Season row for the rest of the pytest session and
+    corrupting "latest season" resolution in unrelated tests that run
+    afterward in the same session.
+    """
+    return SeasonFactory(slug='2024-25')
 
 
 @pytest.fixture
