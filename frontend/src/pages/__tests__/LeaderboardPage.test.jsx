@@ -99,9 +99,9 @@ describe('LeaderboardPage', () => {
         expect(scores[0]).toBeInTheDocument();
         expect(screen.getByText('Player Two')).toBeInTheDocument();
         expect(screen.getByText('120')).toBeInTheDocument();
-        expect(document.querySelectorAll('.court-rank-medal')).toHaveLength(2);
-        expect(document.querySelector('.court-basic-rank.is-gold .court-rank-medal')).toBeInTheDocument();
-        expect(document.querySelector('.court-basic-rank.is-silver .court-rank-medal')).toBeInTheDocument();
+        expect(document.querySelectorAll('.court-rank-honor')).toHaveLength(2);
+        expect(document.querySelector('.court-basic-rank.is-gold .lucide-trophy')).toBeInTheDocument();
+        expect(document.querySelector('.court-basic-rank.is-silver .lucide-medal')).toBeInTheDocument();
     });
 
     test('does not render a rank summary for logged-out visitors', async () => {

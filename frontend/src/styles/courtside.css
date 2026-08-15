@@ -11,6 +11,8 @@
   --court-gold-soft: #fff4c7;
   --court-wood: #c9985b;
   --court-medal-silver: #aeb8c1;
+  --court-leader-badge-bg: var(--court-gold-soft);
+  --court-leader-badge-ink: var(--court-ink);
   --court-sheet-wash: #f5f8fa;
   --court-steel: #53606d;
   --court-muted: #5d6368;
@@ -997,19 +999,23 @@ button[type="submit"]:active {
 .court-basic-leaderboard__row > div:last-child { border-right: 0; }
 .court-basic-rank { display: grid; position: relative; place-items: center; }
 .court-basic-rank .court-scorebook-number { position: relative; z-index: 1; font-size: 40px; }
-.court-rank-medal {
+.court-rank-honor {
+  display: grid;
   position: absolute;
   z-index: 2;
   top: 9px;
   left: calc(50% + 7px);
   width: 22px;
   height: 22px;
+  place-items: center;
+  border: 1px solid var(--court-ink);
+  border-radius: 50%;
   color: var(--court-ink);
-  stroke-width: 1.75;
 }
-.court-basic-rank.is-gold .court-rank-medal circle { fill: var(--court-gold); }
-.court-basic-rank.is-silver .court-rank-medal circle { fill: var(--court-medal-silver); }
-.court-basic-rank.is-bronze .court-rank-medal circle { fill: var(--court-wood); }
+.court-rank-honor svg { width: 13px; height: 13px; stroke-width: 2; }
+.court-basic-rank.is-gold .court-rank-honor { background: var(--court-gold); }
+.court-basic-rank.is-silver .court-rank-honor { background: var(--court-medal-silver); }
+.court-basic-rank.is-bronze .court-rank-honor { background: var(--court-wood); }
 .court-basic-participant { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 16px; }
 .court-basic-participant [class*="rounded-full"] { border-radius: 999px !important; }
 .court-basic-participant h3 { font: 800 24px var(--court-display) !important; letter-spacing: .01em; }
@@ -1021,14 +1027,14 @@ button[type="submit"]:active {
   gap: 4px;
   padding: 2px 6px;
   border-radius: var(--court-radius-ticket);
-  background: var(--court-gold);
-  color: var(--court-ink);
+  background: var(--court-leader-badge-bg);
+  color: var(--court-leader-badge-ink);
   font: 800 10px/1 var(--court-display);
-  letter-spacing: .04em;
+  letter-spacing: .06em;
   text-transform: uppercase;
   white-space: nowrap;
 }
-.court-category-badge svg { width: 10px; height: 10px; flex: 0 0 auto; }
+.court-category-badge svg { width: 12px; height: 12px; flex: 0 0 auto; }
 .court-basic-points-cell { display: flex; align-items: center; justify-content: center; flex-direction: column; }
 .court-basic-points { font-size: 34px; }
 .court-basic-preview { display: flex; align-items: center; gap: 16px; min-height: 80px; padding: 10px 18px; }
@@ -1104,16 +1110,14 @@ button[type="submit"]:active {
   gap: 5px;
   align-items: center;
   padding: 6px 9px;
-  border-bottom: 1px solid var(--court-rule);
-  border-left: 1px solid var(--court-rule);
-  background: var(--court-gold-soft);
-  color: var(--court-ink);
+  background: var(--court-leader-badge-bg);
+  color: var(--court-leader-badge-ink);
   font: 800 10px/1 var(--court-display);
   letter-spacing: .06em;
   text-transform: uppercase;
 }
 
-.court-breakdown-card__best svg { width: 13px; height: 13px; }
+.court-breakdown-card__best svg { width: 12px; height: 12px; }
 
 .court-breakdown-card__header {
   display: flex;
@@ -1884,7 +1888,8 @@ button[type="submit"]:active {
   .court-leaderboard-page > main .court-basic-leaderboard__row { grid-template-columns: 56px minmax(0, 1fr) 76px 24px; min-height: 70px; }
   .court-basic-leaderboard__row > div { min-height: 70px; }
   .court-basic-rank .court-scorebook-number { font-size: 31px; }
-  .court-rank-medal { top: 8px; left: calc(50% + 5px); width: 18px; height: 18px; }
+  .court-rank-honor { top: 8px; left: calc(50% + 5px); width: 18px; height: 18px; }
+  .court-rank-honor svg { width: 11px; height: 11px; }
   .court-basic-participant { gap: 8px !important; padding: 8px 10px; }
   .court-basic-participant h3 { font-size: 20px !important; }
   .court-basic-points { font-size: 27px; }
