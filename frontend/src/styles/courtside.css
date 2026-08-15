@@ -10,6 +10,7 @@
   --court-gold: #e7b92f;
   --court-gold-soft: #fff4c7;
   --court-wood: #c9985b;
+  --court-medal-silver: #aeb8c1;
   --court-sheet-wash: #f5f8fa;
   --court-steel: #53606d;
   --court-muted: #5d6368;
@@ -994,8 +995,21 @@ button[type="submit"]:active {
 .court-leaderboard-page > main .court-basic-leaderboard__row { display: grid; grid-template-columns: 76px 220px 140px minmax(0, 1fr) 40px; min-height: 80px; border-bottom: 0; background: transparent !important; }
 .court-basic-leaderboard__row > div { height: 100%; min-height: 80px; border-right: 1px solid var(--court-rule-soft); }
 .court-basic-leaderboard__row > div:last-child { border-right: 0; }
-.court-basic-rank { display: grid; place-items: center; }
-.court-basic-rank .court-scorebook-number { font-size: 40px; }
+.court-basic-rank { display: grid; position: relative; place-items: center; }
+.court-basic-rank .court-scorebook-number { position: relative; z-index: 1; font-size: 40px; }
+.court-rank-medal {
+  position: absolute;
+  z-index: 2;
+  top: 9px;
+  left: calc(50% + 7px);
+  width: 22px;
+  height: 22px;
+  color: var(--court-ink);
+  stroke-width: 1.75;
+}
+.court-basic-rank.is-gold .court-rank-medal circle { fill: var(--court-gold); }
+.court-basic-rank.is-silver .court-rank-medal circle { fill: var(--court-medal-silver); }
+.court-basic-rank.is-bronze .court-rank-medal circle { fill: var(--court-wood); }
 .court-basic-participant { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 16px; }
 .court-basic-participant [class*="rounded-full"] { border-radius: 999px !important; }
 .court-basic-participant h3 { font: 800 24px var(--court-display) !important; letter-spacing: .01em; }
@@ -1007,8 +1021,8 @@ button[type="submit"]:active {
   gap: 4px;
   padding: 2px 6px;
   border-radius: var(--court-radius-ticket);
-  background: var(--court-blue-soft);
-  color: var(--court-blue-dark);
+  background: var(--court-gold);
+  color: var(--court-ink);
   font: 800 10px/1 var(--court-display);
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -1870,6 +1884,7 @@ button[type="submit"]:active {
   .court-leaderboard-page > main .court-basic-leaderboard__row { grid-template-columns: 56px minmax(0, 1fr) 76px 24px; min-height: 70px; }
   .court-basic-leaderboard__row > div { min-height: 70px; }
   .court-basic-rank .court-scorebook-number { font-size: 31px; }
+  .court-rank-medal { top: 8px; left: calc(50% + 5px); width: 18px; height: 18px; }
   .court-basic-participant { gap: 8px !important; padding: 8px 10px; }
   .court-basic-participant h3 { font-size: 20px !important; }
   .court-basic-points { font-size: 27px; }

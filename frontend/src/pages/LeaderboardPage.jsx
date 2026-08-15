@@ -17,6 +17,7 @@ import {
   Lock,
   Calendar,
   Crown,
+  Medal,
   Minus,
 } from 'lucide-react';
 
@@ -72,6 +73,7 @@ const STATUS_META = {
 
 const PREVIEW_STATUSES = ['correct', 'partial', 'incorrect'];
 const VALID_SCORE_STATUSES = new Set([...PREVIEW_STATUSES, 'pending']);
+const RANK_MEDAL_TONES = { 1: 'gold', 2: 'silver', 3: 'bronze' };
 
 const resolvePredictionStatus = (prediction, isStandings) => {
   if (VALID_SCORE_STATUSES.has(prediction?.score_status)) return prediction.score_status;
@@ -411,6 +413,7 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
             {leaderboardData.slice(0, visibleCount).map((entry) => {
               const isExpanded = expandedUsers.has(entry.user.id);
               const displayName = entry.user.display_name || entry.user.username;
+              const medalTone = RANK_MEDAL_TONES[entry.rank];
               return (
                 <div key={entry.user.id} className={`court-basic-entry group ${entry.rank === 1 ? 'is-leader' : ''} ${isExpanded ? 'is-expanded' : ''}`}>
                   
@@ -420,8 +423,9 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
                     onClick={() => toggleUserExpansion(entry.user.id)}
                     className="court-basic-leaderboard__row w-full text-left cursor-pointer grid grid-cols-[56px_minmax(0,1fr)_76px_24px] md:grid-cols-[76px_220px_140px_1fr_40px] gap-0 items-center p-0 focus:outline-none"
                   >
-                    <div className="court-basic-rank">
+                    <div className={`court-basic-rank ${medalTone ? `has-medal is-${medalTone}` : ''}`}>
                        <ScorebookNumber>{entry.rank}</ScorebookNumber>
+                       {medalTone && <Medal className="court-rank-medal" aria-hidden="true" />}
                     </div>
 
                     <div className="court-basic-participant flex items-center gap-3 overflow-hidden">
