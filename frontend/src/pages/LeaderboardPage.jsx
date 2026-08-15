@@ -387,7 +387,7 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
             <div></div>
           </ScorebookHeader>
 
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="court-basic-leaderboard__body">
             {leaderboardData.slice(0, visibleCount).map((entry) => {
               const isExpanded = expandedUsers.has(entry.user.id);
               const displayName = entry.user.display_name || entry.user.username;
