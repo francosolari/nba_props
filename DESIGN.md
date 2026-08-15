@@ -1,6 +1,6 @@
 ---
-name: NBA Predictions Game — Courtside Album
-description: A calm, collectible NBA scorebook where picks, rank, calls, and comparisons live on ruled white sheets.
+name: Props Predictions — Courtside Album
+description: A calm, collectible sports-prediction scorebook where picks, rank, calls, and comparisons live on ruled white sheets.
 colors:
   paper: "#ffffff"
   paper-cool: "#f7fbfe"
@@ -97,6 +97,18 @@ components:
     typography: "{typography.body}"
     rounded: "{rounded.control}"
     height: "48px"
+  select-trigger:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.carbon-ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.control}"
+    height: "48px"
+  select-option-active:
+    backgroundColor: "{colors.nba-blue}"
+    textColor: "{colors.paper}"
+    typography: "{typography.label}"
+    rounded: "{rounded.square}"
+    height: "44px"
   sheet:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.carbon-ink}"
@@ -122,13 +134,13 @@ components:
     height: "52px"
 ---
 
-# Design System: NBA Predictions Game — Courtside Album
+# Design System: Props Predictions — Courtside Album
 
 ## Overview
 
 **Creative North Star: "The Courtside Album"**
 
-The Courtside Album is a calm, collectible NBA scorebook: a durable league program or season album, never a generic SaaS dashboard. Predictions, current rank, scored calls, and side-by-side comparisons are written onto white stock with carbon rules, flat league color, compressed arena-program type, and real team marks.
+The Courtside Album is a calm, collectible sports-prediction scorebook: a durable league program or season album, never a generic SaaS dashboard. Props Predictions is the expandable product identity; the current competition remains NBA-first, so predictions, rank, scored calls, and side-by-side comparisons are written onto white stock with carbon rules, selective league color, compressed arena-program type, and real team marks.
 
 Its story is sequential and visible in the surfaces: enter picks on ruled slips, follow calls in the season scorebook, climb the joined table, then unfold advanced comparison and private What-If detail. The first viewport always names the task and places the participant's current entry, deadline, rank, score, or next action beside it. On mobile, task and action precede secondary explanation or detail.
 
@@ -143,6 +155,7 @@ Dense workflows stay inside the same album world. Home uses an attached entry le
 - Near-square controls, slips, tickets, ledgers, and score rows instead of rounded SaaS cards.
 - Persistent mobile bottom navigation that becomes a ruled desktop rail.
 - Responsive comparison that deliberately changes table orientation for scanability while preserving the same facts and actions.
+- Branded listboxes and searchable roster pickers that remain inside the sheet and never expose browser-native picker chrome.
 
 ## Colors
 
@@ -217,6 +230,8 @@ The palette reads as ink, stamps, and selective league color on a white season s
 
 Mobile is the primary operating composition. A fixed 56px masthead and persistent five-item bottom navigation reserve the top and thumb zones; the bottom bar is 74px plus the safe area. Pages use 12–16px outer insets, 8–12px compact gaps, and touch targets of at least 44px. Task identity and the current entry, deadline, score, or primary action appear before secondary detail.
 
+The document canvas must never scroll horizontally. Wide comparison ledgers may scroll inside their own bounded region with touch momentum and overscroll containment; mobile scrollbars are visually hidden without disabling swipe, keyboard, or programmatic scrolling. Popovers and listboxes remain constrained to their trigger and the viewport rather than widening the page.
+
 At 768px, the bottom navigation becomes a fixed 220px ruled rail and the masthead grows to 64px. Participant content occupies the remaining canvas, generally capped near 1380px; the home album may widen to 1560px from 1200px upward. Home pairs its direct task statement with a flat attached entry ledger. Picks use ruled slips and a sticky submission ledger near the action edge. Profile assembles a season passport, four-part score strip, category ledger, recent calls, moments, and answer book. Cup leaders remain connected rows with prediction detail behind expansion.
 
 Advanced comparison is one Fold-Out Comparison workspace. Sorting, selected players, live/private state, and score context remain attached above the data. The comparison roster and What-If explanation use bottom sheets on mobile and centered rule sheets on desktop. During simulation, the attached score band turns gold, totals and deltas update in place, moved teams show old→new ranks, the drop target draws a directional gold insertion stripe, and Reset What-If remains available beside the mode controls.
@@ -277,8 +292,14 @@ Circular geometry is selective: authentic team logos retain their silhouettes, c
 ### Inputs / Fields
 
 - **Style:** White field, decisive carbon stroke, 4px corners, dark text, and a 48px minimum height. Search fields may join directly to adjacent roster actions.
+- **Compact Listbox:** Use the Courtside custom listbox for season and short filter sets. Its trigger uses the same white stock and carbon frame, the menu is no wider than its bounded context or viewport, every option is at least 44px tall, and the selected option becomes league blue with a written label and check mark.
+- **Searchable Picker:** Use the searchable scorebook picker for long player and team rosters. It shares the same frame, type, option rows, focus treatment, and containment rules rather than opening browser-native chrome.
 - **Focus:** Three-pixel gold outline with three-pixel separation; focus is never communicated by color alone.
 - **Error / Disabled:** Use explicit danger or muted treatment and preserve readable labels. Payment, deadline, and submission validity stay written out.
+
+### Courtside Select
+
+Compact selectors are accessible button-and-listbox controls, not restyled native selects. The trigger carries an optional micro-label, a condensed current value, and a blue chevron. Arrow keys move through options, Enter or Space selects, Escape closes, and focus returns to the trigger. Open menus use joined ruled rows and the limited structural offset on desktop; they flatten on mobile. Use this pattern only for bounded option sets such as seasons and filters; searchable rosters keep their dedicated combobox behavior.
 
 ### Navigation
 
@@ -320,6 +341,8 @@ Live/private status and participant scores form an attached score band above the
 - **Do** reserve gold for participant identity, leaders, focus, active simulation, moved ranks, and insertion feedback.
 - **Do** keep What-If visibly private and causal with an attached score band, written reset action, old→new ranks, insertion stripe, and in-place score updates.
 - **Do** keep meaningful dense data at 11px or larger and use 9–10px only for supplemental microprint.
+- **Do** use the Courtside listbox for compact season/filter choices and the searchable scorebook picker for long team/player rosters.
+- **Do** keep the document canvas overflow-free while preserving touch scrolling inside intentionally wide ledgers.
 
 ### Don't:
 
@@ -330,3 +353,5 @@ Live/private status and participant scores form an attached score band above the
 - **Don't** let blue, red, gold, or new neutral steps become decorative noise across an entire screen.
 - **Don't** hide participant identity, sorting, selected players, or simulation state once they affect visible scores.
 - **Don't** make core interactions hover-dependent, encode meaning in microprint alone, or remove the gold keyboard-focus treatment.
+- **Don't** expose browser-native picker menus on branded participant surfaces unless native platform behavior is an explicit product requirement.
+- **Don't** let a menu, table, or expanded row create horizontal page scroll; constrain it to its sheet or give that sheet its own swipe region.

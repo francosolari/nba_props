@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-14T17:24:20Z",
-  "title": "Design System: NBA Predictions Game — Courtside Album",
+  "generatedAt": "2026-08-15T17:13:19Z",
+  "title": "Design System: Props Predictions — Courtside Album",
   "extensions": {
     "colorMeta": {
       "paper": {
@@ -209,12 +209,12 @@
       "css": ".ds-btn-secondary { display:inline-flex; min-height:44px; align-items:center; justify-content:center; padding:11px 12px; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-paper); color:var(--court-ink); font-family:var(--court-display); font-size:11px; font-weight:800; letter-spacing:.08em; line-height:1; text-transform:uppercase; transition:background-color 160ms ease-out,transform 160ms ease-out; } .ds-btn-secondary:hover { background:var(--court-blue-soft); } .ds-btn-secondary:focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } .ds-btn-secondary:active { transform:translateY(1px); }"
     },
     {
-      "name": "Text Field",
-      "kind": "input",
-      "refersTo": "input",
-      "description": "A decisive white field that can stand alone or join directly to roster tools.",
-      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Player search</span><input class=\"ds-field-input\" type=\"search\" placeholder=\"Find a player\"></label>",
-      "css": ".ds-field { display:grid; gap:6px; color:var(--court-ink); font-family:var(--court-text); } .ds-field-label { font-family:var(--court-display); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; } .ds-field-input { min-height:48px; padding:0 12px; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-paper); color:var(--court-ink); font:16px var(--court-text); } .ds-field-input::placeholder { color:#687584; opacity:1; } .ds-field-input:hover { border-color:var(--court-blue); } .ds-field-input:focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; }"
+      "name": "Courtside Select",
+      "kind": "select",
+      "refersTo": "select-trigger",
+      "description": "The bounded custom listbox for seasons and compact filters: keyboard-operable, touch-safe, and contained inside the sheet and viewport.",
+      "html": "<div class=\"ds-select is-open\"><button class=\"ds-select-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"true\"><span><small>Season</small><strong>2025–26</strong></span><b aria-hidden=\"true\">⌄</b></button><div class=\"ds-select-menu\" role=\"listbox\" aria-label=\"Season\"><button class=\"is-selected\" role=\"option\" aria-selected=\"true\"><span>2025–26</span><b aria-hidden=\"true\">✓</b></button><button role=\"option\" aria-selected=\"false\">2024–25</button></div></div>",
+      "css": ".ds-select { position:relative; width:min(190px,100%); color:var(--court-ink); font-family:var(--court-display); } .ds-select-trigger { display:grid; width:100%; min-height:48px; grid-template-columns:minmax(0,1fr) 18px; align-items:center; gap:10px; padding:6px 10px 6px 12px; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-paper); text-align:left; } .ds-select-trigger span { display:flex; min-width:0; flex-direction:column; } .ds-select-trigger small { color:#53606d; font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; } .ds-select-trigger strong { overflow:hidden; font-size:16px; line-height:1.1; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; } .ds-select-trigger>b { color:var(--court-blue); font-size:18px; } .ds-select-menu { position:absolute; top:calc(100% + 6px); right:0; z-index:10; width:100%; max-width:calc(100vw - 24px); overflow:hidden; border:2px solid var(--court-rule); border-radius:3px; background:#fff; box-shadow:4px 4px 0 var(--court-rule); } .ds-select-menu button { display:grid; width:100%; min-height:44px; grid-template-columns:minmax(0,1fr) 18px; align-items:center; gap:12px; padding:8px 11px; border:0; border-bottom:1px solid var(--court-rule-soft); background:#fff; color:var(--court-ink); font:800 16px/1 var(--court-display); text-align:left; text-transform:uppercase; } .ds-select-menu button:last-child { border-bottom:0; } .ds-select-menu button.is-selected { background:var(--court-blue); color:#fff; } .ds-select :focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } @media (max-width:767px) { .ds-select-menu { border-radius:0; box-shadow:none; } }"
     },
     {
       "name": "Mobile Bottom Navigation",
@@ -270,7 +270,7 @@
   ],
   "narrative": {
     "northStar": "The Courtside Album",
-    "overview": "The Courtside Album is a calm, collectible NBA scorebook: a durable league program or season album, never a generic SaaS dashboard. Predictions, current rank, scored calls, and side-by-side comparisons are written onto white stock with carbon rules, flat league color, compressed arena-program type, and real team marks.\n\nIts story is sequential and visible in the surfaces: enter picks on ruled slips, follow calls in the season scorebook, climb the joined table, then unfold advanced comparison and private What-If detail. The first viewport always names the task and places the participant's current entry, deadline, rank, score, or next action beside it. On mobile, task and action precede secondary explanation or detail.\n\nDense workflows stay inside the same album world. Home uses an attached entry ledger; profile becomes a player passport and answer book; Cup leaders join into one score sheet; comparison tools rise as rule sheets; and What-If marks changes directly on the live-looking table without altering live results.",
+    "overview": "The Courtside Album is a calm, collectible sports-prediction scorebook: a durable league program or season album, never a generic SaaS dashboard. Props Predictions is the expandable product identity; the current competition remains NBA-first, so predictions, rank, scored calls, and side-by-side comparisons are written onto white stock with carbon rules, selective league color, compressed arena-program type, and real team marks.\n\nIts story is sequential and visible in the surfaces: enter picks on ruled slips, follow calls in the season scorebook, climb the joined table, then unfold advanced comparison and private What-If detail. The first viewport always names the task and places the participant's current entry, deadline, rank, score, or next action beside it. On mobile, task and action precede secondary explanation or detail.\n\nDense workflows stay inside the same album world. Home uses an attached entry ledger; profile becomes a player passport and answer book; Cup leaders join into one score sheet; comparison tools rise as rule sheets; and What-If marks changes directly on the live-looking table without altering live results.",
     "keyCharacteristics": [
       "White scorebook stock divided by crisp carbon and steel rules.",
       "Barlow Condensed identity type paired with Source Sans 3 for decisions and data.",
@@ -278,7 +278,8 @@
       "Sparse gold attached to participant identity, leaders, focus, and simulation feedback.",
       "Near-square controls, slips, tickets, ledgers, and score rows instead of rounded SaaS cards.",
       "Persistent mobile bottom navigation that becomes a ruled desktop rail.",
-      "Responsive comparison that deliberately changes table orientation for scanability while preserving the same facts and actions."
+      "Responsive comparison that deliberately changes table orientation for scanability while preserving the same facts and actions.",
+      "Branded listboxes and searchable roster pickers that remain inside the sheet and never expose browser-native picker chrome."
     ],
     "rules": [
       {
@@ -350,7 +351,9 @@
       "Do use the Mobile Comparison Transposition: player rows and swipable team columns on mobile; team rows and participant columns on desktop.",
       "Do reserve gold for participant identity, leaders, focus, active simulation, moved ranks, and insertion feedback.",
       "Do keep What-If visibly private and causal with an attached score band, written reset action, old→new ranks, insertion stripe, and in-place score updates.",
-      "Do keep meaningful dense data at 11px or larger and use 9–10px only for supplemental microprint."
+      "Do keep meaningful dense data at 11px or larger and use 9–10px only for supplemental microprint.",
+      "Do use the Courtside listbox for compact season/filter choices and the searchable scorebook picker for long team/player rosters.",
+      "Do keep the document canvas overflow-free while preserving touch scrolling inside intentionally wide ledgers."
     ],
     "donts": [
       "Don't use cream or beige as the page background; hardwood tan is an accent, not stock.",
@@ -359,7 +362,9 @@
       "Don't create separate visual languages for home, picks, profile, Cup, and advanced comparison; bind them into the same album.",
       "Don't let blue, red, gold, or new neutral steps become decorative noise across an entire screen.",
       "Don't hide participant identity, sorting, selected players, or simulation state once they affect visible scores.",
-      "Don't make core interactions hover-dependent, encode meaning in microprint alone, or remove the gold keyboard-focus treatment."
+      "Don't make core interactions hover-dependent, encode meaning in microprint alone, or remove the gold keyboard-focus treatment.",
+      "Don't expose browser-native picker menus on branded participant surfaces unless native platform behavior is an explicit product requirement.",
+      "Don't let a menu, table, or expanded row create horizontal page scroll; constrain it to its sheet or give that sheet its own swipe region."
     ]
   }
 }
