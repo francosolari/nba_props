@@ -294,6 +294,37 @@ describe('SubmissionsPage', () => {
         expect(await screen.findByText(/progress saved/i)).toBeInTheDocument();
     });
 
+    test('hides the payment requirement until a draft has been saved', async () => {
+        server.use(
+            rest.get('/api/v2/submissions/answers/:season', (req, res, ctx) => (
+                res(ctx.json({ answers: [], has_draft: false }))
+            )),
+            rest.get('/api/v2/payments/payment-status/:season', (req, res, ctx) => (
+                res(ctx.json({ is_paid: false, status: 'unpaid' }))
+            ))
+        );
+
+        renderWithProviders(<SubmissionsPage seasonSlug="2024-25" />);
+
+        await screen.findByText(/Who will win MVP/i);
+        expect(screen.queryByText('Payment required')).not.toBeInTheDocument();
+    });
+
+    test('shows the payment requirement for an unpaid saved draft', async () => {
+        server.use(
+            rest.get('/api/v2/submissions/answers/:season', (req, res, ctx) => (
+                res(ctx.json({ answers: [], has_draft: true }))
+            )),
+            rest.get('/api/v2/payments/payment-status/:season', (req, res, ctx) => (
+                res(ctx.json({ is_paid: false, status: 'unpaid' }))
+            ))
+        );
+
+        renderWithProviders(<SubmissionsPage seasonSlug="2024-25" />);
+
+        expect(await screen.findByText('Payment required')).toBeInTheDocument();
+    });
+
     test('lets a guest start an entry and saves the draft on their device', async () => {
         let submissionRequests = 0;
         server.use(

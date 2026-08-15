@@ -1,14 +1,9 @@
 import React from 'react';
-import { screen, waitFor, fireEvent, within } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { rest } from 'msw';
 import { server } from '../../__mocks__/msw/server';
 import { renderWithProviders } from '../../test-utils';
 import LeaderboardPage from '../LeaderboardPage';
-
-// Mock ProgressBar to avoid complexity
-jest.mock('../../components/ProgressBar', () => ({ value, max }) => (
-    <div data-testid="progress-bar" data-value={value} data-max={max} />
-));
 
 describe('LeaderboardPage', () => {
     beforeEach(() => {
@@ -28,7 +23,16 @@ describe('LeaderboardPage', () => {
                                 total_points: 150,
                                 badges: [],
                                 categories: {
-                                    'Regular Season Standings': { points: 50, max_points: 60, predictions: [] },
+                                    'Regular Season Standings': {
+                                        points: 50,
+                                        max_points: 60,
+                                        predictions: [
+                                            { team: 'Celtics', conference: 'East', predicted_position: 1, actual_position: 1, points: 3 },
+                                            { team: 'Knicks', conference: 'East', predicted_position: 2, actual_position: 3, points: 1 },
+                                            { team: 'Bucks', conference: 'East', predicted_position: 1, actual_position: 4, points: 0 },
+                                            { team: 'Heat', conference: 'East', predicted_position: 5, actual_position: null, points: 0 },
+                                        ],
+                                    },
                                     'Player Awards': { points: 60, max_points: 75, predictions: [] },
                                     'Props & Yes/No': { points: 40, max_points: 50, predictions: [] },
                                 },
@@ -72,16 +76,20 @@ describe('LeaderboardPage', () => {
         expect(skeletons.length).toBeGreaterThan(0);
     });
 
-    test('renders leaderboard data and metrics', async () => {
-        renderWithProviders(<LeaderboardPage seasonSlug="2024-25" />);
+    test('renders leaderboard data and the signed-in participant rank only', async () => {
+        renderWithProviders(<LeaderboardPage seasonSlug="2024-25" loggedInUsername="player2" />);
 
         await waitFor(() => {
             expect(screen.getByText('Props Predictions Leaderboard')).toBeInTheDocument();
         });
 
-        // Check metrics
-        const playersMetric = screen.getByText('Players').parentElement;
-        expect(within(playersMetric).getByText('2')).toBeInTheDocument();
+        expect(screen.getByText('Your rank')).toBeInTheDocument();
+        expect(screen.getByText('2nd')).toBeInTheDocument();
+        expect(screen.getByText('/ 2')).toBeInTheDocument();
+        expect(screen.queryByText('Players')).not.toBeInTheDocument();
+        expect(screen.queryByText('Predictions')).not.toBeInTheDocument();
+        expect(screen.queryByText('Accuracy')).not.toBeInTheDocument();
+        expect(screen.queryByText('Top Score')).not.toBeInTheDocument();
 
         // Check rankings
         expect(screen.getByText('Player One')).toBeInTheDocument();
@@ -90,6 +98,16 @@ describe('LeaderboardPage', () => {
         expect(scores[0]).toBeInTheDocument();
         expect(screen.getByText('Player Two')).toBeInTheDocument();
         expect(screen.getByText('120')).toBeInTheDocument();
+    });
+
+    test('does not render a rank summary for logged-out visitors', async () => {
+        renderWithProviders(<LeaderboardPage seasonSlug="2024-25" loggedInUsername="" />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Player One')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText('Your rank')).not.toBeInTheDocument();
     });
 
     test('handles API error', async () => {
@@ -135,5 +153,10 @@ describe('LeaderboardPage', () => {
             // Optionally check if at least one is visible if possible, but presence is good enough here
             expect(breakdowns[0]).toBeInTheDocument();
         });
+
+        expect(screen.getAllByText('Exact').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Off by 1').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Missed').length).toBeGreaterThan(0);
+        expect(screen.queryByText('Not yet graded')).not.toBeInTheDocument();
     });
 });

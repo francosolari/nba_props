@@ -125,6 +125,9 @@ const SubmissionsPage = ({ seasonSlug }) => {
     refetch: refetchEntryFee,
   } = useEntryFeeStatus(effectiveSeasonSlug, { enabled: entryFeeEnabled });
   const entryFeeLoading = entryFeeEnabled ? entryFeeLoadingRaw : false;
+  const hasSavedDraft = Boolean(
+    userAnswersData?.has_draft ?? userAnswersData?.answers?.length,
+  );
   const questions = questionsData?.questions || [];
   const submissionOptions = useSubmissionOptions({ questions, seasonSlug: effectiveSeasonSlug });
   const submissionProgress = useSubmissionProgress({
@@ -349,6 +352,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
             onRetryEntryFee={refetchEntryFee}
             paymentStatusLoading={paymentStatusLoading || entryFeeLoading}
             paymentStatus={paymentStatus}
+            hasSavedDraft={hasSavedDraft}
             onPay={() => setShowPaymentModal(true)}
             isVerifying={isVerifying}
             submissionStatus={submissionStatus}

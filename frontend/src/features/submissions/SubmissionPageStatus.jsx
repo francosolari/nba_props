@@ -2,7 +2,7 @@ import React from 'react';
 import SubmissionAccountPrompt from './SubmissionAccountPrompt';
 
 const SubmissionPageHeader = ({ season }) => (
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+  <div className="flex flex-col gap-6 mb-10">
     <div className="flex flex-col gap-2 text-center md:text-left">
       <span className="inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.2em] uppercase text-sky-600 dark:text-sky-400">
         {season} Season
@@ -14,11 +14,6 @@ const SubmissionPageHeader = ({ season }) => (
         Lock in your regular season standings and answer every question before the window closes.
       </p>
     </div>
-    <nav className="flex flex-wrap items-center justify-center md:justify-end gap-2 text-sm">
-      <a href="#standings" className="px-3 py-2 rounded-full border border-sky-200/80 bg-white/60 text-sky-600 font-semibold">Standings</a>
-      <a href="#questions" className="px-3 py-2 rounded-full border border-slate-200 bg-white/60 text-slate-600 font-semibold">Questions</a>
-      <a href="#submit" className="px-3 py-2 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 font-semibold">Submit</a>
-    </nav>
   </div>
 );
 
@@ -36,7 +31,7 @@ const FeedbackNotice = ({ feedback, onDismiss }) => feedback && (
   </div>
 );
 
-const PaymentStatus = ({ enabled, loading, paymentStatus, onPay }) => {
+const PaymentStatus = ({ enabled, loading, paymentStatus, hasSavedDraft, onPay }) => {
   if (!enabled || loading || !paymentStatus) return null;
   if (paymentStatus.is_paid) {
     return (
@@ -51,6 +46,7 @@ const PaymentStatus = ({ enabled, loading, paymentStatus, onPay }) => {
       </div>
     );
   }
+  if (!hasSavedDraft) return null;
   return (
     <div className="submission-payment is-due">
       <div className="submission-payment__copy">
@@ -91,6 +87,7 @@ const SubmissionPageStatus = ({
   onRetryEntryFee,
   paymentStatusLoading,
   paymentStatus,
+  hasSavedDraft,
   onPay,
   isVerifying,
   submissionStatus,
@@ -110,7 +107,7 @@ const SubmissionPageStatus = ({
         <button type="button" onClick={onRetryEntryFee}>Retry</button>
       </div>
     )}
-    <PaymentStatus enabled={entryFeeEnabled} loading={paymentStatusLoading} paymentStatus={paymentStatus} onPay={onPay} />
+    <PaymentStatus enabled={entryFeeEnabled} loading={paymentStatusLoading} paymentStatus={paymentStatus} hasSavedDraft={hasSavedDraft} onPay={onPay} />
     {isVerifying && <div className="submission-verifying">Verifying your payment...</div>}
     <SubmissionWindowStatus status={submissionStatus} />
   </>

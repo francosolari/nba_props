@@ -877,6 +877,50 @@ button[type="submit"]:active {
   text-transform: uppercase;
 }
 
+.court-your-rank {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  width: min(460px, 100%);
+  min-height: 104px;
+  padding: 14px 20px 17px;
+  border: 2px solid var(--court-rule);
+  border-radius: 4px;
+  background: var(--court-paper);
+  border-bottom-color: var(--court-gold);
+  color: var(--court-ink);
+  font-family: var(--court-display);
+}
+
+.court-your-rank > span {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.court-your-rank > strong {
+  color: var(--court-blue);
+  font-size: clamp(48px, 6vw, 70px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -.025em;
+  line-height: .8;
+  text-transform: uppercase;
+}
+
+.court-your-rank > small {
+  align-self: end;
+  padding: 0 0 2px 8px;
+  color: var(--court-steel);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .court-leaderboard-page > header .grid > div {
   min-height: 70px;
   border: 1px solid var(--court-rule) !important;
@@ -963,10 +1007,192 @@ button[type="submit"]:active {
 .court-basic-points { font-size: 34px; }
 .court-basic-preview { display: flex; align-items: center; gap: 16px; min-height: 80px; padding: 10px 18px; }
 .court-basic-preview > div { min-width: 0; }
+.court-basic-preview__label { display: flex; align-items: end; justify-content: space-between; gap: 5px; margin-bottom: 5px; color: var(--court-steel); font: 700 10px/1 var(--court-text); font-variant-numeric: tabular-nums; }
+.court-basic-preview__label > span:first-child { overflow: hidden; font: 800 11px/1 var(--court-display); letter-spacing: .05em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .court-basic-preview [class*="h-1"] { height: 4px; border-radius: 0; background: #d9dee2 !important; }
 .court-basic-preview [class*="h-full"] { border-radius: 0; background: var(--court-blue) !important; }
 .court-basic-disclosure { display: flex; align-items: center; justify-content: center; }
 .court-basic-entry.is-expanded .court-basic-disclosure svg { color: var(--court-blue) !important; }
+
+/* Expanded participant preview: one joined grading sheet, not nested cards. */
+.court-basic-expansion {
+  border-top: 2px solid var(--court-rule);
+  background: var(--court-sheet-wash);
+}
+
+.court-basic-expansion__inner { padding: 12px; }
+
+.court-breakdown-sheet {
+  overflow: hidden;
+  border: 2px solid var(--court-rule);
+  border-radius: 2px;
+  background: var(--court-paper);
+}
+
+.court-breakdown-sheet__head {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 2px solid var(--court-rule);
+  background: var(--court-ink);
+  color: var(--court-paper);
+}
+
+.court-breakdown-sheet__head h4,
+.court-breakdown-sheet__head a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: inherit;
+  font: 800 12px/1 var(--court-display);
+  letter-spacing: .08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.court-breakdown-sheet__head h4 svg,
+.court-breakdown-sheet__head a svg { width: 14px; height: 14px; }
+.court-breakdown-sheet__head a { min-height: 44px; padding: 0 2px; }
+.court-breakdown-sheet__head a:hover { color: var(--court-gold); text-decoration: underline; }
+
+.court-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.court-breakdown-card {
+  position: relative;
+  min-width: 0;
+  background: var(--court-paper);
+}
+
+.court-breakdown-card + .court-breakdown-card { border-left: 1px solid var(--court-rule); }
+
+.court-breakdown-card__best {
+  display: inline-flex;
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  min-height: 30px;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 9px;
+  border-bottom: 1px solid var(--court-rule);
+  border-left: 1px solid var(--court-rule);
+  background: var(--court-gold-soft);
+  color: var(--court-ink);
+  font: 800 10px/1 var(--court-display);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.court-breakdown-card__best svg { width: 13px; height: 13px; }
+
+.court-breakdown-card__header {
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  color: var(--court-ink);
+  text-decoration: none;
+}
+
+.court-breakdown-card.is-best .court-breakdown-card__header { padding-right: 118px; }
+.court-breakdown-card__header:hover { background: var(--court-blue-soft); color: var(--court-ink); }
+.court-breakdown-card__title { display: flex; min-width: 0; gap: 9px; align-items: center; }
+.court-breakdown-card__title svg { width: 19px; height: 19px; flex: 0 0 auto; color: var(--court-blue); }
+.court-breakdown-card__title strong { font: 800 18px/.95 var(--court-display); letter-spacing: .015em; text-transform: uppercase; }
+
+.court-breakdown-card__score {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--court-steel);
+  font: 700 11px/1 var(--court-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.court-breakdown-card__score b { color: var(--court-ink); font: 800 22px/.85 var(--court-display); }
+.court-breakdown-card__score small { padding-left: 5px; border-left: 1px solid var(--court-rule-soft); color: var(--court-blue); font-weight: 800; }
+
+.court-breakdown-card__meter { height: 5px; border-top: 1px solid var(--court-rule-soft); border-bottom: 1px solid var(--court-rule); background: var(--court-sheet-wash); }
+.court-breakdown-card__meter > span { display: block; height: 100%; background: var(--court-blue); }
+
+.court-breakdown-conferences { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.court-breakdown-conference:first-child { border-right: 1px solid var(--court-rule); }
+.court-breakdown-conference h5 { min-height: 34px; margin: 0; padding: 9px 10px 7px; background: var(--court-paper); font: 800 14px/1 var(--court-display); letter-spacing: .045em; text-transform: uppercase; }
+.court-breakdown-conference.is-east h5 { color: var(--court-blue); background: var(--court-blue-soft); }
+.court-breakdown-conference.is-west h5 { color: var(--court-red-dark); background: var(--court-red-soft); }
+
+.court-grade-ledger { border-top: 1px solid var(--court-rule); }
+.court-grade-group + .court-grade-group { border-top: 1px solid var(--court-rule-soft); }
+.court-leaderboard-page > main .court-grade-group__trigger {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 0;
+  border: 0;
+  background: var(--court-paper);
+  color: var(--court-ink) !important;
+  text-align: left;
+}
+.court-leaderboard-page > main .court-grade-group__trigger:hover { background: var(--court-sheet-wash) !important; }
+.court-grade-group__identity { display: flex; min-width: 0; align-items: center; gap: 7px; padding: 6px 8px; }
+.court-grade-group__identity > span:last-child { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.court-grade-group__identity strong { font: 800 13px/1 var(--court-display); letter-spacing: .04em; text-transform: uppercase; }
+.court-grade-group__identity small { color: var(--court-steel); font: 700 10px/1 var(--court-text); }
+.court-grade-group__mark { display: grid; width: 22px; height: 22px; flex: 0 0 auto; place-items: center; border: 1px solid currentColor; background: var(--court-paper); }
+.court-grade-group__mark svg { width: 13px; height: 13px; }
+.court-grade-group__summary { display: flex; flex: 0 0 auto; align-items: center; border-left: 1px solid var(--court-rule-soft); }
+.court-grade-group__summary b { display: grid; min-width: 32px; height: 100%; place-items: center; font: 800 16px/1 var(--court-display); font-variant-numeric: tabular-nums; }
+.court-grade-group__summary svg { width: 30px; height: 14px; padding: 0 8px; border-left: 1px solid var(--court-rule-soft); transition: transform 160ms ease-out; }
+.court-grade-group.is-open .court-grade-group__summary svg { transform: rotate(180deg); }
+.court-grade-group.is-correct .court-grade-group__mark,
+.court-grade-group.is-correct .court-grade-group__summary b { color: var(--court-success); }
+.court-grade-group.is-partial .court-grade-group__mark,
+.court-grade-group.is-partial .court-grade-group__summary b { color: var(--court-warning); }
+.court-grade-group.is-incorrect .court-grade-group__mark,
+.court-grade-group.is-incorrect .court-grade-group__summary b { color: var(--court-danger); }
+.court-grade-group.is-pending .court-grade-group__mark,
+.court-grade-group.is-pending .court-grade-group__summary b { color: var(--court-steel); }
+
+.court-grade-group__content { border-top: 1px solid var(--court-rule-soft); background: var(--court-sheet-wash); }
+.court-grade-pick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 43px; padding: 7px 10px 7px 45px; }
+.court-grade-pick + .court-grade-pick { border-top: 1px solid var(--court-rule-soft); }
+.court-grade-pick__name { min-width: 0; color: var(--court-ink); font: 700 12px/1.25 var(--court-text); }
+.court-grade-pick__logo { display: none; width: 28px; height: 28px; object-fit: contain; }
+.court-grade-pick__detail { display: flex; gap: 5px; align-items: center; color: var(--court-steel); font: 700 10px/1.2 var(--court-text); font-variant-numeric: tabular-nums; text-align: right; }
+.court-grade-pick__detail b { min-width: 25px; color: currentColor; font: 800 13px/1 var(--court-display); }
+.court-grade-group.is-correct .court-grade-pick__detail b { color: var(--court-success); }
+.court-grade-group.is-partial .court-grade-pick__detail b { color: var(--court-warning); }
+.court-grade-group.is-incorrect .court-grade-pick__detail b { color: var(--court-danger); }
+.court-grade-group__empty,
+.court-grade-group__more { margin: 0; padding: 10px 12px 10px 45px; color: var(--court-steel); font: 600 11px/1.25 var(--court-text); }
+.court-grade-group__more { border-top: 1px solid var(--court-rule-soft); font-weight: 700; }
+
+.court-breakdown-card__link {
+  display: inline-flex;
+  min-height: 44px;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 10px 6px;
+  padding: 0 4px;
+  color: var(--court-blue);
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.court-breakdown-card__link svg { width: 13px; height: 13px; }
 
 /* Submission ledger */
 .court-submissions-page > header {
@@ -1626,6 +1852,44 @@ button[type="submit"]:active {
   .court-basic-points { font-size: 27px; }
   .court-basic-preview { display: none; }
   .court-basic-disclosure { min-width: 24px; }
+
+  .court-leaderboard-page > header > div > div:first-child {
+    align-items: center !important;
+    margin-bottom: 12px !important;
+  }
+
+  .court-leaderboard-page > header h1 { max-width: 6.5ch; }
+  .court-your-rank { min-height: 88px; padding: 11px 14px 15px; }
+  .court-your-rank > strong { font-size: 50px; }
+  .court-your-rank > small { font-size: 17px; }
+
+  .court-basic-expansion__inner { padding: 8px; }
+  .court-breakdown-sheet__head { align-items: stretch; padding: 0; }
+  .court-breakdown-sheet__head h4 { padding: 10px 12px; }
+  .court-breakdown-sheet__head a { padding: 0 10px; border-left: 1px solid #6f7478; font-size: 10px; }
+  .court-breakdown-grid { grid-template-columns: minmax(0, 1fr); }
+  .court-breakdown-card + .court-breakdown-card { border-top: 2px solid var(--court-rule); border-left: 0; }
+  .court-breakdown-card__header { min-height: 64px; padding: 10px 11px; }
+  .court-breakdown-card.is-best .court-breakdown-card__header { padding-top: 38px; padding-right: 11px; }
+  .court-breakdown-card__title { gap: 7px; }
+  .court-breakdown-card__title strong { font-size: 19px; }
+  .court-breakdown-card__score { flex-wrap: wrap; justify-content: flex-end; max-width: 90px; }
+  .court-breakdown-card__score b { font-size: 23px; }
+  .court-breakdown-conferences { grid-template-columns: minmax(0, 1fr); }
+  .court-breakdown-conference:first-child { border-right: 0; border-bottom: 2px solid var(--court-rule); }
+  .court-grade-pick { grid-template-columns: minmax(0, 1fr); gap: 3px; padding-left: 45px; }
+  .court-grade-pick__name.is-team { display: flex; align-items: center; }
+  .court-grade-pick__logo { display: block; }
+  .court-grade-pick__name.is-team .court-grade-pick__name-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .court-grade-pick__detail { justify-content: space-between; text-align: left; }
 
   .court-profile-page > div:nth-of-type(3) {
     margin-top: -38px !important;

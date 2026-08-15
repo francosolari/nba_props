@@ -566,6 +566,10 @@ def get_user_answers(request, season_slug: str):
         "season_slug": season_slug,
         "answers": serialized_answers,
         "total_points": total_points,
+        "has_draft": bool(serialized_answers) or StandingPrediction.objects.filter(
+            user=request.user,
+            season=season,
+        ).exists(),
     }
 
 

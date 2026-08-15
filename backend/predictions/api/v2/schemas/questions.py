@@ -195,6 +195,7 @@ class UserAnswersResponse(Schema):
     season_slug: str
     answers: List[AnswerSchema]
     total_points: Optional[float] = None
+    has_draft: bool = False
 
 
 # ============================================
