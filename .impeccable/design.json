@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-15T20:52:23Z",
+  "title": "Design System: Props Predictions — Courtside Album",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Clean Paper",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(100% 0 0)"]
+      },
+      "paper-cool": {
+        "role": "neutral",
+        "displayName": "Cool Paper",
+        "tonalRamp": ["oklch(15% 0.008 240)", "oklch(27% 0.009 240)", "oklch(39% 0.01 240)", "oklch(51% 0.011 240)", "oklch(63% 0.012 240)", "oklch(75% 0.012 240)", "oklch(87% 0.011 240)", "oklch(98% 0.008 240)"]
+      },
+      "sheet-wash": {
+        "role": "neutral",
+        "displayName": "Scorebook Wash",
+        "tonalRamp": ["oklch(15% 0.01 240)", "oklch(27% 0.012 240)", "oklch(39% 0.013 240)", "oklch(51% 0.014 240)", "oklch(63% 0.014 240)", "oklch(75% 0.013 240)", "oklch(87% 0.011 240)", "oklch(97% 0.008 240)"]
+      },
+      "carbon-ink": {
+        "role": "neutral",
+        "displayName": "Carbon Ink",
+        "tonalRamp": ["oklch(15% 0.006 250)", "oklch(27% 0.006 250)", "oklch(39% 0.006 250)", "oklch(51% 0.006 250)", "oklch(63% 0.006 250)", "oklch(75% 0.006 250)", "oklch(87% 0.006 250)", "oklch(95% 0.006 250)"]
+      },
+      "steel-ink": {
+        "role": "neutral",
+        "displayName": "Steel Ink",
+        "tonalRamp": ["oklch(15% 0.012 245)", "oklch(27% 0.014 245)", "oklch(39% 0.015 245)", "oklch(51% 0.015 245)", "oklch(63% 0.014 245)", "oklch(75% 0.012 245)", "oklch(87% 0.008 245)", "oklch(95% 0.005 245)"]
+      },
+      "quiet-ink": {
+        "role": "neutral",
+        "displayName": "Quiet Ink",
+        "tonalRamp": ["oklch(15% 0.01 245)", "oklch(27% 0.012 245)", "oklch(39% 0.013 245)", "oklch(51% 0.013 245)", "oklch(63% 0.012 245)", "oklch(75% 0.01 245)", "oklch(87% 0.007 245)", "oklch(95% 0.004 245)"]
+      },
+      "nba-blue": {
+        "role": "primary",
+        "displayName": "NBA Blue",
+        "tonalRamp": ["oklch(15% 0.09 250)", "oklch(27% 0.12 250)", "oklch(39% 0.14 250)", "oklch(51% 0.14 250)", "oklch(63% 0.12 250)", "oklch(75% 0.09 250)", "oklch(87% 0.05 250)", "oklch(95% 0.025 250)"]
+      },
+      "nba-blue-dark": {
+        "role": "primary",
+        "displayName": "Deep NBA Blue",
+        "tonalRamp": ["oklch(15% 0.08 250)", "oklch(27% 0.11 250)", "oklch(39% 0.13 250)", "oklch(51% 0.13 250)", "oklch(63% 0.11 250)", "oklch(75% 0.08 250)", "oklch(87% 0.045 250)", "oklch(95% 0.02 250)"]
+      },
+      "nba-blue-soft": {
+        "role": "primary",
+        "displayName": "Pale Blue Sheet",
+        "tonalRamp": ["oklch(15% 0.025 250)", "oklch(27% 0.035 250)", "oklch(39% 0.04 250)", "oklch(51% 0.04 250)", "oklch(63% 0.035 250)", "oklch(75% 0.03 250)", "oklch(87% 0.025 250)", "oklch(95% 0.018 250)"]
+      },
+      "nba-red": {
+        "role": "secondary",
+        "displayName": "NBA Red",
+        "tonalRamp": ["oklch(15% 0.10 28)", "oklch(27% 0.14 28)", "oklch(39% 0.18 28)", "oklch(51% 0.20 28)", "oklch(63% 0.17 28)", "oklch(75% 0.12 28)", "oklch(87% 0.07 28)", "oklch(95% 0.03 28)"]
+      },
+      "nba-red-dark": {
+        "role": "secondary",
+        "displayName": "Deep NBA Red",
+        "tonalRamp": ["oklch(15% 0.09 28)", "oklch(27% 0.13 28)", "oklch(39% 0.17 28)", "oklch(51% 0.18 28)", "oklch(63% 0.15 28)", "oklch(75% 0.11 28)", "oklch(87% 0.06 28)", "oklch(95% 0.028 28)"]
+      },
+      "nba-red-soft": {
+        "role": "secondary",
+        "displayName": "Pale Red Sheet",
+        "tonalRamp": ["oklch(15% 0.025 28)", "oklch(27% 0.035 28)", "oklch(39% 0.045 28)", "oklch(51% 0.045 28)", "oklch(63% 0.04 28)", "oklch(75% 0.035 28)", "oklch(87% 0.025 28)", "oklch(95% 0.018 28)"]
+      },
+      "leader-gold": {
+        "role": "tertiary",
+        "displayName": "Leader Gold",
+        "tonalRamp": ["oklch(15% 0.07 88)", "oklch(27% 0.10 88)", "oklch(39% 0.13 88)", "oklch(51% 0.16 88)", "oklch(63% 0.17 88)", "oklch(75% 0.15 88)", "oklch(87% 0.09 88)", "oklch(95% 0.04 88)"]
+      },
+      "leader-gold-soft": {
+        "role": "tertiary",
+        "displayName": "Pale Leader Gold",
+        "tonalRamp": ["oklch(15% 0.035 88)", "oklch(27% 0.05 88)", "oklch(39% 0.065 88)", "oklch(51% 0.075 88)", "oklch(63% 0.08 88)", "oklch(75% 0.075 88)", "oklch(87% 0.06 88)", "oklch(95% 0.04 88)"]
+      },
+      "hardwood-tan": {
+        "role": "tertiary",
+        "displayName": "Hardwood Tan",
+        "tonalRamp": ["oklch(15% 0.035 68)", "oklch(27% 0.055 68)", "oklch(39% 0.07 68)", "oklch(51% 0.08 68)", "oklch(63% 0.09 68)", "oklch(75% 0.08 68)", "oklch(87% 0.05 68)", "oklch(95% 0.025 68)"]
+      },
+      "carbon-rule": {
+        "role": "neutral",
+        "displayName": "Carbon Rule",
+        "tonalRamp": ["oklch(15% 0.006 250)", "oklch(27% 0.006 250)", "oklch(39% 0.006 250)", "oklch(51% 0.006 250)", "oklch(63% 0.006 250)", "oklch(75% 0.006 250)", "oklch(87% 0.006 250)", "oklch(95% 0.006 250)"]
+      },
+      "ledger-rule": {
+        "role": "neutral",
+        "displayName": "Ledger Rule",
+        "tonalRamp": ["oklch(15% 0.008 245)", "oklch(27% 0.01 245)", "oklch(39% 0.011 245)", "oklch(51% 0.012 245)", "oklch(63% 0.012 245)", "oklch(75% 0.01 245)", "oklch(87% 0.007 245)", "oklch(95% 0.004 245)"]
+      },
+      "soft-rule": {
+        "role": "neutral",
+        "displayName": "Soft Rule",
+        "tonalRamp": ["oklch(15% 0.006 250)", "oklch(27% 0.008 250)", "oklch(39% 0.009 250)", "oklch(51% 0.01 250)", "oklch(63% 0.01 250)", "oklch(75% 0.009 250)", "oklch(87% 0.007 250)", "oklch(95% 0.004 250)"]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Verified Green",
+        "tonalRamp": ["oklch(15% 0.07 148)", "oklch(27% 0.10 148)", "oklch(39% 0.12 148)", "oklch(51% 0.13 148)", "oklch(63% 0.12 148)", "oklch(75% 0.09 148)", "oklch(87% 0.05 148)", "oklch(95% 0.025 148)"]
+      },
+      "warning": {
+        "role": "tertiary",
+        "displayName": "Deadline Amber",
+        "tonalRamp": ["oklch(15% 0.07 65)", "oklch(27% 0.10 65)", "oklch(39% 0.12 65)", "oklch(51% 0.13 65)", "oklch(63% 0.12 65)", "oklch(75% 0.09 65)", "oklch(87% 0.05 65)", "oklch(95% 0.025 65)"]
+      },
+      "danger": {
+        "role": "secondary",
+        "displayName": "Trust Red",
+        "tonalRamp": ["oklch(15% 0.08 28)", "oklch(27% 0.12 28)", "oklch(39% 0.15 28)", "oklch(51% 0.17 28)", "oklch(63% 0.15 28)", "oklch(75% 0.10 28)", "oklch(87% 0.055 28)", "oklch(95% 0.025 28)"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Album Display",
+        "purpose": "Direct first-viewport identity; fluid 50–86px on desktop with bounded 48–76px mobile endpoints."
+      },
+      "headline": {
+        "displayName": "Page Identity",
+        "purpose": "Primary page names above current state or action."
+      },
+      "title": {
+        "displayName": "Ruled Section Title",
+        "purpose": "Sheet mastheads, passport groups, and major ledger sections."
+      },
+      "body": {
+        "displayName": "Reading Text",
+        "purpose": "Instructions, deadlines, forms, and decision support."
+      },
+      "data": {
+        "displayName": "Readable Ledger Data",
+        "purpose": "Names, questions, answers, records, and scores; 11px is the compact meaningful-data floor."
+      },
+      "label": {
+        "displayName": "Scorebook Label",
+        "purpose": "Navigation, controls, ranks, headers, and compact states."
+      }
+    },
+    "shadows": [
+      {
+        "name": "structural-menu-offset",
+        "value": "4px 4px 0 var(--court-rule)",
+        "purpose": "Hard offset for open comparison menus only."
+      },
+      {
+        "name": "desktop-rule-sheet-offset",
+        "value": "12px 12px 0 rgb(5 25 45 / 28%)",
+        "purpose": "Desktop comparison roster and What-If rule sheets; removed when they attach to the mobile bottom edge."
+      },
+      {
+        "name": "participant-identity-inset",
+        "value": "inset 0 -5px 0 var(--court-gold)",
+        "purpose": "Attached gold identity or active-simulation rule inside the score band."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-ease",
+        "value": "160ms ease-out",
+        "purpose": "Background, color, and one-pixel press transitions on controls."
+      },
+      {
+        "name": "row-settle",
+        "value": "240ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Pinned or sorted comparison rows settle into their new order."
+      },
+      {
+        "name": "sheet-enter",
+        "value": "200ms ease-out",
+        "purpose": "Roster bottom sheet opacity and short upward translation."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms, 1 iteration",
+        "purpose": "Global animation and transition fallback when reduced motion is requested."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "small-handset",
+        "value": "430px"
+      },
+      {
+        "name": "desktop-rail",
+        "value": "768px"
+      },
+      {
+        "name": "wide-album",
+        "value": "1200px"
+      }
+    ],
+    "depthPhilosophy": "The Courtside Album is flat at rest. Carbon frames, attached tonal fields, rule weight, and gold inset feedback create hierarchy; only open menus and desktop rule sheets receive hard offset shadows."
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The canonical participant action: flat league blue, carbon framed, condensed, and touch-safe.",
+      "html": "<button class=\"ds-btn-primary\">Save picks</button>",
+      "css": ".ds-btn-primary { display:inline-flex; min-height:44px; align-items:center; justify-content:center; padding:11px 12px; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-blue); color:#fff; font-family:var(--court-display); font-size:11px; font-weight:800; letter-spacing:.08em; line-height:1; text-transform:uppercase; transition:background-color 160ms ease-out,transform 160ms ease-out; } .ds-btn-primary:hover { background:var(--court-blue-dark); } .ds-btn-primary:focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } .ds-btn-primary:active { transform:translateY(1px); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A white-stock companion action with the same scorebook dimensions and voice.",
+      "html": "<button class=\"ds-btn-secondary\">Review entry</button>",
+      "css": ".ds-btn-secondary { display:inline-flex; min-height:44px; align-items:center; justify-content:center; padding:11px 12px; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-paper); color:var(--court-ink); font-family:var(--court-display); font-size:11px; font-weight:800; letter-spacing:.08em; line-height:1; text-transform:uppercase; transition:background-color 160ms ease-out,transform 160ms ease-out; } .ds-btn-secondary:hover { background:var(--court-blue-soft); } .ds-btn-secondary:focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } .ds-btn-secondary:active { transform:translateY(1px); }"
+    },
+    {
+      "name": "Courtside Select",
+      "kind": "select",
+      "refersTo": "select-trigger",
+      "description": "The bounded custom listbox for seasons and compact filters: keyboard-operable, touch-safe, and contained inside the sheet and viewport.",
+      "html": "<div class=\"ds-select is-open\"><button class=\"ds-select-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"true\"><span><small>Season</small><strong>2025–26</strong></span><b aria-hidden=\"true\">⌄</b></button><div class=\"ds-select-menu\" role=\"listbox\" aria-label=\"Season\"><button class=\"is-selected\" role=\"option\" aria-selected=\"true\"><span>2025–26</span><b aria-hidden=\"true\">✓</b></button><button role=\"option\" aria-selected=\"false\">2024–25</button></div></div>",
+      "css": ".ds-select { position:relative; width:min(190px,100%); color:var(--court-ink); font-family:var(--court-display); } .ds-select-trigger { display:grid; width:100%; min-height:48px; grid-template-columns:minmax(0,1fr) 18px; align-items:center; gap:10px; padding:6px 10px 6px 12px; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-paper); text-align:left; } .ds-select-trigger span { display:flex; min-width:0; flex-direction:column; } .ds-select-trigger small { color:#53606d; font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; } .ds-select-trigger strong { overflow:hidden; font-size:16px; line-height:1.1; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; } .ds-select-trigger>b { color:var(--court-blue); font-size:18px; } .ds-select-menu { position:absolute; top:calc(100% + 6px); right:0; z-index:10; width:100%; max-width:calc(100vw - 24px); overflow:hidden; border:2px solid var(--court-rule); border-radius:3px; background:#fff; box-shadow:4px 4px 0 var(--court-rule); } .ds-select-menu button { display:grid; width:100%; min-height:44px; grid-template-columns:minmax(0,1fr) 18px; align-items:center; gap:12px; padding:8px 11px; border:0; border-bottom:1px solid var(--court-rule-soft); background:#fff; color:var(--court-ink); font:800 16px/1 var(--court-display); text-align:left; text-transform:uppercase; } .ds-select-menu button:last-child { border-bottom:0; } .ds-select-menu button.is-selected { background:var(--court-blue); color:#fff; } .ds-select :focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } @media (max-width:767px) { .ds-select-menu { border-radius:0; box-shadow:none; } }"
+    },
+    {
+      "name": "Mobile Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "The persistent five-cell thumb strip; this compact sample shows active and resting destinations.",
+      "html": "<nav class=\"ds-mobile-nav\" aria-label=\"Primary navigation\"><a class=\"ds-nav-link ds-is-active\" href=\"#\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 11 12 3l9 8v9H15v-6H9v6H3z\"/></svg><span>Home</span></a><a class=\"ds-nav-link\" href=\"#\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 3h12v18H6zM9 7h6M9 11h6M9 15h4\"/></svg><span>Picks</span></a><a class=\"ds-nav-link\" href=\"#\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 4h8v3a4 4 0 0 1-8 0zM12 11v5M8 20h8\"/></svg><span>Leaders</span></a></nav>",
+      "css": ".ds-mobile-nav { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); min-height:74px; border-top:2px solid var(--court-rule); background:var(--court-paper); } .ds-nav-link { display:flex; min-height:52px; flex-direction:column; gap:4px; align-items:center; justify-content:center; border-right:1px solid var(--court-rule-soft); color:var(--court-ink); font-family:var(--court-display); font-size:11px; font-weight:800; letter-spacing:.08em; text-decoration:none; text-transform:uppercase; } .ds-nav-link:last-child { border-right:0; } .ds-nav-link svg { width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:2; } .ds-nav-link:hover { background:var(--court-blue-soft); } .ds-nav-link:focus-visible { outline:3px solid var(--court-gold); outline-offset:-4px; } .ds-nav-link.ds-is-active { background:var(--court-blue); color:#fff; }"
+    },
+    {
+      "name": "Home — The Next Play",
+      "kind": "card",
+      "description": "The state-aware home cover: guests receive an attached three-step entry ledger; authenticated participants receive a complete 2×2 status sheet and attached next action.",
+      "html": "<section class=\"ds-next-play\"><header><span>Your season ledger</span><strong>Live window</strong></header><div class=\"ds-next-play-grid\"><div><small>Rank</small><strong>#12</strong><em>Live position</em></div><div><small>Total score</small><strong>148</strong><em>Points earned</em></div><div><small>Entry</small><strong class=\"ds-next-play-state\">Entry saved</strong><em>42 of 42 calls saved</em></div><div><small>Deadline</small><strong class=\"ds-next-play-state\">Oct 21, 7:00 PM</strong><em>Edits allowed until then</em></div></div><footer><b aria-hidden=\"true\">✓</b><span><strong>Next play</strong><small>Review your picks before the window closes.</small></span><a href=\"#\">Review or edit picks →</a></footer></section>",
+      "css": ".ds-next-play { overflow:hidden; border:2px solid var(--court-rule); border-radius:4px; background:var(--court-paper); color:var(--court-ink); font-family:var(--court-text); } .ds-next-play>header { display:flex; min-height:50px; align-items:center; justify-content:space-between; gap:12px; padding:0 14px; border-bottom:2px solid var(--court-rule); background:var(--court-red); color:var(--court-paper); font-size:11px; font-weight:800; letter-spacing:.11em; text-transform:uppercase; } .ds-next-play-grid { display:grid; grid-template-columns:1fr 1fr; } .ds-next-play-grid>div { display:flex; min-height:120px; min-width:0; flex-direction:column; justify-content:center; padding:14px; border-right:1px solid var(--court-rule); border-bottom:1px solid var(--court-rule); } .ds-next-play-grid>div:nth-child(even) { border-right:0; } .ds-next-play-grid small { color:var(--court-steel); font-size:10px; font-style:normal; font-weight:800; letter-spacing:.09em; text-transform:uppercase; } .ds-next-play-grid strong { margin-top:6px; font:800 35px/.9 var(--court-display); text-transform:uppercase; } .ds-next-play-grid .ds-next-play-state { font-size:20px; line-height:1; } .ds-next-play-grid em { margin-top:7px; color:var(--court-steel); font-size:11px; font-style:normal; line-height:1.25; } .ds-next-play>footer { display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:10px; padding:14px; border-top:2px solid var(--court-rule); background:var(--court-gold-soft); } .ds-next-play>footer>b { display:grid; width:34px; height:34px; place-items:center; border:1px solid var(--court-rule); color:var(--court-blue-dark); } .ds-next-play>footer>span { display:flex; min-width:0; flex-direction:column; } .ds-next-play>footer span>strong { font:800 17px/1 var(--court-display); letter-spacing:.04em; text-transform:uppercase; } .ds-next-play>footer a { display:inline-flex; min-height:48px; align-items:center; padding:0 15px; border:1px solid var(--court-rule); border-radius:4px; background:var(--court-blue); color:var(--court-paper); font:800 13px/1 var(--court-display); letter-spacing:.07em; text-decoration:none; text-transform:uppercase; } .ds-next-play>footer a:hover { background:var(--court-blue-dark); } .ds-next-play :focus-visible { outline:3px solid var(--court-gold); outline-offset:3px; } @media(max-width:767px) { .ds-next-play-grid>div { min-height:82px; padding:10px; } .ds-next-play-grid strong { font-size:28px; } .ds-next-play-grid .ds-next-play-state { font-size:17px; } .ds-next-play>footer { grid-template-columns:38px minmax(0,1fr); padding:10px; } .ds-next-play>footer a { grid-column:1/-1; } }"
+    },
+    {
+      "name": "Season Passport Ledger",
+      "kind": "card",
+      "description": "Participant identity, current rank, score context, and category evidence joined into one season scorebook.",
+      "html": "<section class=\"ds-passport\"><header><b>FP</b><span><small>Season passport</small><strong>Franco P.</strong><em>@franco · official ledger</em></span><div><small>Current rank</small><strong>#12</strong></div></header><div class=\"ds-passport-score\"><span><small>Total points</small><strong>148</strong></span><span><small>Calls hit</small><strong>24</strong></span></div><div class=\"ds-passport-row\"><span>Standings<small>30 recorded picks</small></span><strong>52 / 90</strong><b>58%</b></div></section>",
+      "css": ".ds-passport { border:2px solid var(--court-rule); border-radius:2px; background:#fff; color:var(--court-ink); font-family:var(--court-text); } .ds-passport header { display:grid; grid-template-columns:72px 1fr auto; min-height:82px; } .ds-passport header>b { display:grid; place-items:center; border-right:2px solid var(--court-rule); background:var(--court-blue); color:#fff; font:800 32px var(--court-display); } .ds-passport header>span { display:flex; flex-direction:column; justify-content:center; padding:12px 16px; } .ds-passport small { color:#53606d; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; } .ds-passport header span strong { font:800 28px var(--court-display); text-transform:uppercase; } .ds-passport em { color:#687584; font-size:11px; font-style:normal; } .ds-passport header>div { display:flex; min-width:92px; flex-direction:column; justify-content:center; padding:10px 14px; border-left:1px solid var(--court-rule); color:var(--court-blue); } .ds-passport header>div strong { font:800 26px var(--court-display); } .ds-passport-score { display:grid; grid-template-columns:1fr 1fr; border-top:2px solid var(--court-rule); border-bottom:2px solid var(--court-rule); } .ds-passport-score span { display:flex; min-height:58px; flex-direction:column; justify-content:center; padding:8px 14px; border-right:1px solid var(--court-rule); } .ds-passport-score span:last-child { border-right:0; } .ds-passport-score strong { font:800 24px var(--court-display); } .ds-passport-row { display:grid; grid-template-columns:1fr auto 48px; align-items:center; min-height:62px; gap:10px; padding:8px 14px; } .ds-passport-row span { display:flex; flex-direction:column; font:800 18px var(--court-display); text-transform:uppercase; } .ds-passport-row strong,.ds-passport-row b { font-size:12px; }"
+    },
+    {
+      "name": "Pick Slip and Submit Ledger",
+      "kind": "card",
+      "description": "A ruled prediction ticket with square choices and an attached review/submit action edge.",
+      "html": "<section class=\"ds-pick-slip\"><header><span>Q07 · Props</span><strong>Will a team win 60+ games?</strong></header><div class=\"ds-pick-choices\"><button class=\"ds-is-selected\">Yes</button><button>No</button></div><footer><button>Review entry</button><button>Submit picks</button></footer></section>",
+      "css": ".ds-pick-slip { border:2px solid var(--court-rule); border-radius:2px; background:#fff; color:var(--court-ink); font-family:var(--court-text); } .ds-pick-slip header { display:flex; min-height:74px; flex-direction:column; justify-content:center; padding:12px 14px; border-bottom:1px solid var(--court-rule); } .ds-pick-slip header span { color:var(--court-red); font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; } .ds-pick-slip header strong { margin-top:5px; font-size:13px; line-height:1.3; } .ds-pick-choices { display:grid; grid-template-columns:1fr 1fr; } .ds-pick-choices button { min-height:52px; border-right:1px solid var(--court-rule); background:#fff; color:var(--court-ink); font:800 12px var(--court-display); text-transform:uppercase; } .ds-pick-choices button:last-child { border-right:0; } .ds-pick-choices button.ds-is-selected { background:var(--court-blue); color:#fff; } .ds-pick-slip footer { display:grid; grid-template-columns:1fr 1fr; border-top:2px solid var(--court-rule); } .ds-pick-slip footer button { min-height:48px; border-right:1px solid var(--court-rule); background:#fff; color:var(--court-ink); font:800 11px var(--court-display); letter-spacing:.08em; text-transform:uppercase; } .ds-pick-slip footer button:last-child { border-right:0; background:var(--court-blue); color:#fff; } .ds-pick-slip button:focus-visible { outline:3px solid var(--court-gold); outline-offset:-4px; }"
+    },
+    {
+      "name": "Cup Joined Score Row",
+      "kind": "custom",
+      "description": "A compact rank/player/record/points row whose pick breakdown expands inside the same sheet.",
+      "html": "<article class=\"ds-cup-row ds-is-expanded\"><div class=\"ds-cup-main\"><b>1</b><span><strong>Justin F.</strong><small>Show breakdown</small></span><em>7–6</em><strong>7.0<small> pts</small></strong></div><div class=\"ds-cup-picks\"><span>East winner · Boston</span><span>West winner · Denver</span></div></article>",
+      "css": ".ds-cup-row { border-bottom:1px solid #aeb8c1; background:#fff; color:var(--court-ink); font-family:var(--court-text); } .ds-cup-row.ds-is-expanded { border-left:7px solid var(--court-red); background:#f5f8fa; } .ds-cup-main { display:grid; grid-template-columns:28px 1fr 54px 48px; align-items:center; gap:8px; min-height:58px; padding:8px 10px; } .ds-cup-main>b { color:var(--court-blue); font:800 18px var(--court-display); } .ds-cup-main>span { display:flex; min-width:0; flex-direction:column; } .ds-cup-main span strong { overflow:hidden; font-size:12px; text-overflow:ellipsis; white-space:nowrap; } .ds-cup-main small { color:#687584; font-size:9px; font-style:normal; text-transform:uppercase; } .ds-cup-main em { font-size:11px; font-style:normal; font-weight:800; } .ds-cup-main>strong { color:var(--court-success); font-size:13px; text-align:right; } .ds-cup-picks { display:grid; gap:5px; padding:0 10px 10px 46px; } .ds-cup-picks span { min-height:28px; padding:5px 7px; border:1px solid currentColor; border-radius:1px; font-size:11px; } .ds-cup-row:hover { background:#f2f8fc; } .ds-cup-row:focus-within { outline:3px solid var(--court-gold); outline-offset:-3px; }"
+    },
+    {
+      "name": "Comparison Roster Bottom Sheet",
+      "kind": "custom",
+      "description": "A mobile-attached roster editor with ranked rows, square check stamps, and an attached update footer.",
+      "html": "<section class=\"ds-roster-sheet\"><header><span><small>Comparison roster</small><strong>Choose the players on your sheet</strong></span><button aria-label=\"Close\">×</button></header><div class=\"ds-roster-tools\"><input aria-label=\"Find a player\" placeholder=\"Find a player\"><button>Select all</button><button>Clear</button></div><div class=\"ds-roster-head\"><span>Rank / player</span><span>On sheet</span></div><label class=\"ds-roster-row ds-is-selected\"><b>1</b><span><strong>Douglas P.</strong><small>@dapoland</small></span><input type=\"checkbox\" checked><i>✓</i></label><footer><span>4 players ready</span><button>Update comparison</button></footer></section>",
+      "css": ".ds-roster-sheet { overflow:hidden; border:2px solid var(--court-rule); border-bottom:0; border-radius:0; background:#fff; color:var(--court-ink); font-family:var(--court-text); } .ds-roster-sheet header { display:flex; align-items:flex-start; justify-content:space-between; padding:16px; border-bottom:2px solid var(--court-rule); background:var(--court-blue); color:#fff; } .ds-roster-sheet header span { display:flex; flex-direction:column; } .ds-roster-sheet header small { font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; } .ds-roster-sheet header strong { margin-top:4px; font:800 26px/.95 var(--court-display); text-transform:uppercase; } .ds-roster-sheet header button { width:42px; height:42px; border:1px solid rgb(255 255 255 / 70%); color:#fff; font-size:24px; } .ds-roster-tools { display:grid; grid-template-columns:1fr auto auto; border-bottom:1px solid var(--court-rule); } .ds-roster-tools input,.ds-roster-tools button { min-height:48px; padding:0 12px; border:0; border-right:1px solid var(--court-rule); background:#fff; color:var(--court-ink); font-size:11px; } .ds-roster-tools button { font-weight:800; letter-spacing:.08em; text-transform:uppercase; } .ds-roster-tools button:last-child { border-right:0; color:var(--court-red); } .ds-roster-head { display:grid; grid-template-columns:1fr auto; padding:8px 16px; background:var(--court-ink); color:#fff; font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; } .ds-roster-row { display:grid; grid-template-columns:38px 1fr 28px; align-items:center; gap:12px; min-height:58px; padding:8px 16px; border-bottom:1px solid #aeb8c1; } .ds-roster-row.ds-is-selected { background:#e8f4fb; } .ds-roster-row>b { color:var(--court-blue); font:800 18px var(--court-display); } .ds-roster-row>span { display:flex; flex-direction:column; } .ds-roster-row span strong { font-size:15px; } .ds-roster-row span small { color:#53606d; font-size:11px; } .ds-roster-row input { position:absolute; opacity:0; } .ds-roster-row i { display:grid; width:25px; height:25px; place-items:center; border:2px solid var(--court-rule); background:var(--court-blue); color:#fff; font-style:normal; } .ds-roster-sheet footer { display:flex; align-items:center; justify-content:space-between; min-height:50px; padding-left:12px; border-top:2px solid var(--court-rule); font-size:12px; font-weight:700; } .ds-roster-sheet footer button { align-self:stretch; padding:0 16px; border-left:2px solid var(--court-rule); background:var(--court-red); color:#fff; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; } .ds-roster-sheet :focus-visible { outline:3px solid var(--court-gold); outline-offset:-4px; }"
+    },
+    {
+      "name": "What-If Comparison Feedback",
+      "kind": "custom",
+      "refersTo": "simulation-score-band",
+      "description": "The attached private score band, moved-rank notation, insertion stripe, answer ticket, and written reset action.",
+      "html": "<section class=\"ds-whatif\"><header><b>Private What-If</b><span><small>You · Franco</small><strong>#12 · 148 pts <em>▲3</em></strong></span><button>Reset What-If</button></header><div class=\"ds-moved-row\"><span>Boston Celtics</span><strong><del>4</del> → 2</strong></div><div class=\"ds-insertion\">Drop at rank 3</div><div class=\"ds-answer-row\"><span>MVP</span><button class=\"ds-answer-ticket\">Nikola Jokić</button></div></section>",
+      "css": ".ds-whatif { border:2px solid var(--court-rule); border-radius:0; background:#fff; color:var(--court-ink); font-family:var(--court-text); } .ds-whatif header { display:grid; grid-template-columns:auto 1fr auto; min-height:52px; align-items:stretch; border-bottom:5px solid var(--court-gold); background:var(--court-gold-soft); } .ds-whatif header>b { display:grid; place-items:center; padding:0 12px; border-right:2px solid var(--court-rule); background:var(--court-gold); font-size:10px; letter-spacing:.08em; text-transform:uppercase; } .ds-whatif header>span { display:flex; flex-direction:column; justify-content:center; padding:6px 12px; } .ds-whatif header small { font-size:10px; font-weight:800; text-transform:uppercase; } .ds-whatif header strong { font:800 16px var(--court-display); } .ds-whatif header em { color:var(--court-success); font:800 10px var(--court-text); } .ds-whatif header>button { padding:0 12px; border-left:1px solid var(--court-rule); background:#fff; color:var(--court-ink); font-size:10px; font-weight:800; text-transform:uppercase; } .ds-moved-row { display:grid; grid-template-columns:1fr auto; min-height:48px; align-items:center; padding:0 12px; background:var(--court-gold-soft); border-bottom:1px solid var(--court-rule); } .ds-moved-row span { font-size:13px; font-weight:700; } .ds-moved-row strong { font-size:12px; } .ds-moved-row del { color:#687584; font-size:10px; } .ds-insertion { min-height:34px; padding:9px 12px 8px 17px; background:linear-gradient(90deg,var(--court-gold) 0 5px,var(--court-gold-soft) 5px 100%); font-size:11px; font-weight:800; text-transform:uppercase; } .ds-answer-row { display:grid; grid-template-columns:72px 1fr; align-items:center; gap:8px; padding:8px 12px; border-top:1px solid var(--court-rule); font-size:11px; font-weight:800; } .ds-answer-ticket { min-height:32px; padding:6px 8px; border:1px solid var(--court-success); border-radius:1px; background:rgb(21 112 59 / 10%); color:var(--court-success); font-size:11px; font-weight:800; line-height:1.15; } .ds-whatif button:focus-visible { outline:3px solid var(--court-gold); outline-offset:-4px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Courtside Album",
+    "overview": "The Courtside Album is a calm, collectible sports-prediction scorebook: a durable league program or season album, never a generic SaaS dashboard. Props Predictions is the expandable product identity; the current competition remains NBA-first, so predictions, rank, scored calls, and side-by-side comparisons are written onto white stock with carbon rules, selective league color, compressed arena-program type, and real team marks.\n\nIts story is sequential and visible in the surfaces: enter picks on ruled slips, follow calls in the season scorebook, climb the joined table, then unfold advanced comparison and private What-If detail. The first viewport always names the task and places the participant's current entry, deadline, rank, score, or next action beside it. On mobile, task and action precede secondary explanation or detail.\n\nDense workflows stay inside the same album world. Home's state-aware Next Play pairs the task with an attached guest entry ledger or participant status sheet; profile becomes a player passport and answer book; Cup leaders join into one score sheet; comparison tools rise as rule sheets; and What-If marks changes directly on the live-looking table without altering live results.",
+    "keyCharacteristics": [
+      "White scorebook stock divided by crisp carbon and steel rules.",
+      "Barlow Condensed identity type paired with Source Sans 3 for decisions and data.",
+      "Flat NBA blue and red for navigation, conference, and league context.",
+      "Sparse gold attached to participant identity, leaders, focus, and simulation feedback.",
+      "Near-square controls, slips, tickets, ledgers, and score rows instead of rounded SaaS cards.",
+      "Persistent mobile bottom navigation that becomes a ruled desktop rail.",
+      "Responsive comparison that deliberately changes table orientation for scanability while preserving the same facts and actions.",
+      "Branded listboxes and searchable roster pickers that remain inside the sheet and never expose browser-native picker chrome."
+    ],
+    "rules": [
+      {
+        "name": "The White Stock Rule",
+        "body": "Participant surfaces use clean white as their ground; cream is not a substitute.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sparse Gold Rule",
+        "body": "Gold identifies the signed-in participant, a leader, keyboard focus, or active simulation feedback; it is not general decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tonal Step Rule",
+        "body": "Cool paper, scorebook wash, steel ink, and ledger rules may clarify hierarchy inside one sheet; they must not be promoted into floating neutral cards.",
+        "section": "colors"
+      },
+      {
+        "name": "The Scorebook Voice Rule",
+        "body": "Use Barlow Condensed for identity, navigation, score, and state; use Source Sans 3 for reading and decision support.",
+        "section": "typography"
+      },
+      {
+        "name": "The Readable Ledger Rule",
+        "body": "Dense screens may use the intentional 9–13px scale, but core names, answers, values, and actions stay at 11px or larger; microprint remains supplemental.",
+        "section": "typography"
+      },
+      {
+        "name": "The Direct Headline Rule",
+        "body": "Fluid display endpoints are reserved for unmistakable page identity and must leave current entry or score context visible in the first viewport.",
+        "section": "typography"
+      },
+      {
+        "name": "The First Ledger Rule",
+        "body": "The first viewport must make the task unmistakable and show the participant's current entry, score, rank, deadline, or next action; mobile places the task and action before secondary detail.",
+        "section": "layout"
+      },
+      {
+        "name": "The Home State Compression Rule",
+        "body": "Home may remove only duplicate generic facts and the secondary hero action on authenticated mobile; personal rank, score, entry state, deadline, and next action stay attached and visible before persistent navigation.",
+        "section": "layout"
+      },
+      {
+        "name": "The Context Stays Attached Rule",
+        "body": "Sorting, compared players, participant identity, section mode, and What-If state remain visually attached to the data they change.",
+        "section": "layout"
+      },
+      {
+        "name": "The Mobile Comparison Transposition Rule",
+        "body": "Advanced standings intentionally transpose by viewport. Mobile uses player rows with fixed player and score cells while team columns swipe horizontally; desktop uses team rows with participant columns. This is the same comparison model optimized for each scan pattern, not an information-architecture divergence or responsive defect.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Scorebook Rule",
+        "body": "Surfaces stay flat at rest; use borders, rules, and tonal fields before a shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Ruled Edge Rule",
+        "body": "If content belongs to one data sheet, join it with internal rules instead of scattering it into separate rounded cards.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Ticket Radius Rule",
+        "body": "One- and two-pixel radii are intentional softening for dense tickets and ledgers; they should still read as square print artifacts.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do start every participant page with an unmistakable task identity and current entry, score, rank, deadline, or primary action in the first viewport.",
+      "Do keep Home state-aware: guests get the promise, entry path, and attached three-step ledger; authenticated participants get rank, score, entry state, deadline, and the attached next action.",
+      "Do use two-pixel carbon outer rules and one-pixel ledger or soft rules to build joined scorebook sheets.",
+      "Do preserve real NBA team names, team-logo assets, and selective blue/red conference context.",
+      "Do keep primary touch targets at least 44px and retain the persistent five-item mobile navigation.",
+      "Do use the Mobile Comparison Transposition: player rows and swipable team columns on mobile; team rows and participant columns on desktop.",
+      "Do reserve gold for participant identity, leaders, focus, active simulation, moved ranks, and insertion feedback.",
+      "Do keep What-If visibly private and causal with an attached score band, written reset action, old→new ranks, insertion stripe, and in-place score updates.",
+      "Do keep meaningful dense data at 11px or larger and use 9–10px only for supplemental microprint.",
+      "Do use the Courtside listbox for compact season/filter choices and the searchable scorebook picker for long team/player rosters.",
+      "Do keep the document canvas overflow-free while preserving touch scrolling inside intentionally wide ledgers."
+    ],
+    "donts": [
+      "Don't use cream or beige as the page background; hardwood tan is an accent, not stock.",
+      "Don't fall back to generic SaaS cards, bento grids, glass, glossy gradients, soft shadow stacks, or excessive pill shapes.",
+      "Don't treat the mobile standings transposition as a defect or force the desktop row orientation into a narrow viewport.",
+      "Don't create separate visual languages for home, picks, profile, Cup, and advanced comparison; bind them into the same album.",
+      "Don't generalize Home's guest/authenticated composition or mobile duplicate-removal rules into unrelated participant surfaces.",
+      "Don't let blue, red, gold, or new neutral steps become decorative noise across an entire screen.",
+      "Don't hide participant identity, sorting, selected players, or simulation state once they affect visible scores.",
+      "Don't make core interactions hover-dependent, encode meaning in microprint alone, or remove the gold keyboard-focus treatment.",
+      "Don't expose browser-native picker menus on branded participant surfaces unless native platform behavior is an explicit product requirement.",
+      "Don't let a menu, table, or expanded row create horizontal page scroll; constrain it to its sheet or give that sheet its own swipe region."
+    ]
+  }
+}

@@ -4,7 +4,7 @@ Pydantic schemas for admin grading endpoints
 """
 
 from ninja import Schema
-from typing import List, Optional
+from typing import Dict, List, Optional
 from datetime import datetime
 
 
@@ -18,6 +18,7 @@ class QuestionGradingDetail(Schema):
     is_correct: Optional[bool]
     points_earned: float
     point_value: float
+    score_status: str
     is_finalized: bool
     submission_date: Optional[str]
 
@@ -64,6 +65,7 @@ class AnswerReviewItem(Schema):
     is_correct: Optional[bool]
     points_earned: float
     point_value: float
+    score_status: str
     is_finalized: bool
     submission_date: Optional[str]
 
@@ -117,7 +119,10 @@ class QuestionForGradingItem(Schema):
     question_type: str
     category: str
     correct_answer: Optional[str]
+    correct_answer_player_id: Optional[int] = None
+    runner_up_player_id: Optional[int] = None
     point_value: float
+    answer_point_values: Dict[str, float] = {}
     is_finalized: bool
     submission_count: int  # Number of user submissions for this question
     has_correct_answer: bool  # Whether correct_answer is set
@@ -145,7 +150,11 @@ class QuestionsForGradingResponse(Schema):
 class UpdateQuestionRequest(Schema):
     """Request to update a question's correct answer"""
     question_id: int
-    correct_answer: str
+    correct_answer: Optional[str] = None
+    answer_point_values: Optional[Dict[str, float]] = None
+    correct_answer_player_id: Optional[int] = None
+    runner_up_player_id: Optional[int] = None
+    runner_up_points: Optional[float] = None
     is_finalized: Optional[bool] = None
 
 

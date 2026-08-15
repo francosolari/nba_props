@@ -25,8 +25,9 @@ from predictions.models import (
     StandingPrediction, SuperlativeQuestion,
     InSeasonTournamentQuestion, PropQuestion,
     HeadToHeadQuestion, PlayerStatPredictionQuestion,
-    NBAFinalsPredictionQuestion
+    NBAFinalsPredictionQuestion, Player
 )
+from predictions.api.common.utils import resolve_answers_optimized
 from ..schemas.admin_grading import (
     GradingAuditResponse,
     UserGradingBreakdown,
@@ -211,6 +212,7 @@ def get_grading_audit(request, season_slug: str):
                 'is_correct': answer.is_correct,
                 'points_earned': answer.points_earned or 0,
                 'point_value': q_info['point_value'],
+                'score_status': answer.question.score_status_for_points(answer.points_earned, answer.is_correct),
                 'is_finalized': q_info['is_finalized'],
                 'submission_date': answer.submission_date.isoformat() if answer.submission_date else None
             })
@@ -318,6 +320,7 @@ def get_answers_for_review(
             'is_correct': answer.is_correct,
             'points_earned': answer.points_earned or 0,
             'point_value': question.point_value or 0,
+            'score_status': question.score_status_for_points(answer.points_earned, answer.is_correct),
             'is_finalized': is_finalized,
             'submission_date': answer.submission_date.isoformat() if answer.submission_date else None
         })
@@ -348,21 +351,25 @@ def manual_grade_answer(request, payload: ManualGradeRequest):
     answer = get_object_or_404(Answer, id=payload.answer_id)
     question = answer.question.get_real_instance()
 
-    # Update answer
-    answer.is_correct = payload.is_correct
-
-    if payload.points_override is not None:
-        answer.points_earned = payload.points_override
-    else:
-        # Auto-calculate points based on is_correct and point_value
-        answer.points_earned = question.point_value if payload.is_correct else 0
-
-    answer.save()
-
-    # Optionally update question's correct answer
     if payload.correct_answer:
         question.correct_answer = payload.correct_answer
         question.save()
+
+    answer.is_correct = payload.is_correct
+    if payload.points_override is not None:
+        answer.points_earned = payload.points_override
+    elif not payload.is_correct:
+        # Admin explicitly marked this wrong; no computed partial credit applies.
+        answer.points_earned = 0
+    else:
+        resolved_answers = resolve_answers_optimized([answer])
+        resolved_answer = resolved_answers.get(answer.id, str(answer.answer))
+        computed_points = question.points_for_answer(resolved_answer)
+        # Trust the admin's explicit "correct" override even if the answer text
+        # doesn't match a configured correct_answer/answer_point_values entry.
+        answer.points_earned = computed_points if computed_points else float(question.point_value or 0)
+
+    answer.save()
 
     # Recalculate user stats for this season
     season = question.season
@@ -569,6 +576,8 @@ def get_questions_for_grading(request, season_slug: str):
         team1_name = None
         team2_name = None
         related_player_name = None
+        correct_answer_player_id = None
+        runner_up_player_id = None
 
         if isinstance(question_real, PropQuestion):
             outcome_type = question_real.outcome_type
@@ -600,6 +609,8 @@ def get_questions_for_grading(request, season_slug: str):
 
         elif isinstance(question_real, SuperlativeQuestion):
             input_type = 'player_search'
+            correct_answer_player_id = question_real.current_leader_id
+            runner_up_player_id = question_real.current_runner_up_id
             # Use cache to avoid N+1 queries
             if question_real.current_leader_id:
                 leader = players_cache.get(question_real.current_leader_id)
@@ -619,7 +630,10 @@ def get_questions_for_grading(request, season_slug: str):
             'question_type': question_type,
             'category': category,
             'correct_answer': question_real.correct_answer or '',
+            'correct_answer_player_id': correct_answer_player_id,
+            'runner_up_player_id': runner_up_player_id,
             'point_value': question_real.point_value or 0,
+            'answer_point_values': question_real.answer_point_values or {},
             'is_finalized': is_finalized,
             'submission_count': submission_count,
             'has_correct_answer': has_correct_answer,
@@ -663,8 +677,32 @@ def update_question_answer(request, payload: UpdateQuestionRequest):
     question = get_object_or_404(Question, id=payload.question_id)
     question_real = question.get_real_instance()
 
-    # Update correct answer
-    question_real.correct_answer = payload.correct_answer
+    answer_point_values = dict(
+        payload.answer_point_values
+        if payload.answer_point_values is not None
+        else question_real.answer_point_values or {}
+    )
+
+    if payload.correct_answer_player_id is not None:
+        correct_player = get_object_or_404(Player, id=payload.correct_answer_player_id)
+        question_real.correct_answer = correct_player.name
+        if isinstance(question_real, SuperlativeQuestion):
+            question_real.current_leader = correct_player
+    elif payload.correct_answer is not None:
+        question_real.correct_answer = payload.correct_answer
+
+    if payload.runner_up_player_id is not None:
+        runner_up_player = get_object_or_404(Player, id=payload.runner_up_player_id)
+        if isinstance(question_real, SuperlativeQuestion):
+            question_real.current_runner_up = runner_up_player
+        runner_up_points = (
+            payload.runner_up_points
+            if payload.runner_up_points is not None
+            else float(question_real.point_value or 0) / 2
+        )
+        answer_point_values[runner_up_player.name] = runner_up_points
+
+    question_real.answer_point_values = answer_point_values
 
     # Update finalized status if provided
     if payload.is_finalized is not None and isinstance(question_real, SuperlativeQuestion):

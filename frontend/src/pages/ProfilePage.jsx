@@ -17,7 +17,7 @@ import SubmissionsTab from "../components/profile/SubmissionsTab";
 import SettingsTab from "../components/profile/SettingsTab";
 
 const pageShellClasses =
-  "min-h-screen bg-[#F8FAFC] dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 font-sans selection:bg-teal-500/30";
+  "court-profile-page min-h-screen bg-[#F8FAFC] dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 font-sans";
 
 export default function ProfilePage({
   seasonSlug: seasonFromProp = "current",
@@ -37,11 +37,6 @@ export default function ProfilePage({
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const { data } = useLeaderboard(selectedSeason);
-  const { answers, categories } = useProfileAnswers(activeTab, selectedSeason, username, null); // meUsername handled inside hook logic if needed, but here we pass username or null. Wait, the hook expects (activeTab, selectedSeason, username, meUsername).
-  // Let's check how I implemented useProfileAnswers.
-  // It uses: username || meUsername || ""
-  // In ProfilePage original: username || me?.user?.username || ""
-  // So I need 'me'.
 
   const me = useMemo(() => {
     if (!Array.isArray(data)) return null;
@@ -73,22 +68,10 @@ export default function ProfilePage({
     };
   }, [data, userId, username, displayName]);
 
-  // Re-calling hooks with correct params now that 'me' is defined
-  // Actually hooks can't be conditional or depend on variable defined after.
-  // But 'me' depends on 'data' which comes from useLeaderboard.
-  // So I can pass me?.user?.username to the hooks.
-
-  // However, I can't call hooks conditionally.
-  // I'll pass the values to the hooks.
-
   const { answers: fetchedAnswers, categories: fetchedCategories } = useProfileAnswers(activeTab, selectedSeason, username, me?.user?.username);
   const { interestingStats, statsLoading } = useProfileStats(selectedSeason, username, me?.user?.username);
 
   const cats = me?.user?.categories || {};
-
-  // We need to merge fetched categories with 'me' categories or use one of them.
-  // Original code:
-  // const standings = categories?.regular_season_standings ? ... : cats["Regular Season Standings"] ...
 
   const standings = fetchedCategories?.regular_season_standings
     ? {
@@ -151,11 +134,9 @@ export default function ProfilePage({
         onSeasonChange={setSelectedSeason}
       />
 
-      {/* Main Content */}
-      <div className="container mx-auto px-2 sm:px-4 max-w-6xl -mt-6 sm:-mt-10 md:-mt-12 relative z-20">
+      <div className="court-profile-main">
         <ProfileStats
           me={me}
-          data={data}
           standings={standings}
           awards={awards}
           props={props}
@@ -167,7 +148,6 @@ export default function ProfilePage({
           canEdit={canEdit}
         />
 
-        {/* Content Area */}
         <div className="min-h-[400px]">
           {activeTab === "dashboard" && (
             <DashboardTab

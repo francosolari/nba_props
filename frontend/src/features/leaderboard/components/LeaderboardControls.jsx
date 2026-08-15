@@ -47,7 +47,7 @@ export const LeaderboardControls = ({
   };
 
   return (
-    <div className="shrink-0 bg-slate-50/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md relative md:sticky md:top-[61px] z-[40]">
+    <div className="court-detail-controls shrink-0 bg-slate-50/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md relative md:sticky md:top-[61px] z-[40]">
       <div className="w-full px-2 md:px-4 py-1.5 md:py-2 flex items-center gap-1.5 md:gap-4 overflow-x-auto md:overflow-x-visible no-scrollbar">
         <div className="relative shrink-0 hidden md:block">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -144,7 +144,7 @@ export const LeaderboardControls = ({
 
           {mode === 'compare' && (
             <button onClick={onToggleWhatIf} className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all border active:scale-[0.97] ${whatIfEnabled ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'}`}>
-              <FlaskConical className="w-3 h-3 md:w-4 md:h-4" /> <span>What-If</span>
+              <FlaskConical className="w-3 h-3 md:w-4 md:h-4" /> <span>{whatIfEnabled ? 'Reset What-If' : 'What-If'}</span>
             </button>
           )}
 

@@ -147,7 +147,7 @@ export const LeaderboardTableMobile = ({
   };
 
   return (
-    <div className="md:hidden flex-1 min-h-0 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
+    <div className="court-detail-mobile md:hidden flex-1 min-h-0 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
       {section === 'standings' ? (
         <div className="space-y-6">
           {['West', 'East'].map(conf => {
@@ -176,8 +176,8 @@ export const LeaderboardTableMobile = ({
                 >
                   <DragDropContext onDragEnd={(res) => handleDragEnd(res, conf)}>
                     <Droppable droppableId={`mobile-${conf.toLowerCase()}`} direction="horizontal">
-                      {(provided) => (
-                        <div ref={provided.innerRef} {...provided.droppableProps}>
+                      {(provided, dropSnapshot) => (
+                        <div ref={provided.innerRef} {...provided.droppableProps} className={`court-drop-ledger ${dropSnapshot.isDraggingOver ? 'is-dragging-over' : ''}`}>
                           {/* Sticky team-logo header — lives OUTSIDE the overflow-x container
                               so that sticky top-[44px] resolves against the outer overflow-y-auto */}
                           <div className="sticky top-[44px] z-20">
@@ -216,7 +216,7 @@ export const LeaderboardTableMobile = ({
                                           ref={prov.innerRef}
                                           {...prov.draggableProps}
                                           {...prov.dragHandleProps}
-                                          className={`flex-shrink-0 w-14 px-1 py-3 text-center transition-all backdrop-blur-sm ${
+                                          className={`court-drag-column flex-shrink-0 w-14 px-1 py-3 text-center transition-all backdrop-blur-sm ${snap.isDragging ? 'is-dragging' : ''} ${isMoved ? 'is-moved' : ''} ${
                                             snap.isDragging
                                               ? 'bg-sky-50 dark:bg-sky-900/40 shadow-xl z-[60] scale-105 rounded-lg border-2 border-sky-400'
                                               : isMoved
@@ -228,8 +228,8 @@ export const LeaderboardTableMobile = ({
                                             <div className="w-6 h-6 flex items-center justify-center bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-100 dark:border-slate-800">
                                               <TeamLogo className="w-5 h-5 object-contain" teamName={row.team} />
                                             </div>
-                                            <span className="text-[9px] font-black text-slate-400 leading-none">
-                                              {whatIfEnabled ? (simActualMap.get(row.team) || row.actual_position) : (row.actual_position || '—')}
+                                            <span className="court-move-rank text-[9px] font-black text-slate-400 leading-none">
+                                              {isMoved ? <><del>{row.actual_position}</del><span>→</span><strong>{simActualMap.get(row.team)}</strong></> : (row.actual_position || '—')}
                                             </span>
                                           </div>
                                         </div>
@@ -295,7 +295,7 @@ export const LeaderboardTableMobile = ({
 
                                       return (
                                         <div key={row.id} className={`flex-shrink-0 w-14 px-1 py-1.5 text-center border-r border-slate-50 dark:border-slate-800/50 last:border-r-0 flex items-center justify-center ${isMoved ? 'bg-amber-50 dark:bg-amber-900/15' : ''}`}>
-                                          <div className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[10px] font-black transition-all duration-200 ${colorClass}`}>
+                                          <div className={`court-position-ticket inline-flex items-center justify-center w-7 h-7 text-[10px] font-black transition-all duration-200 ${colorClass}`}>
                                             {predPos}
                                           </div>
                                         </div>
@@ -345,10 +345,10 @@ export const LeaderboardTableMobile = ({
                   <div className="flex-shrink-0 w-[100px]" />
                   <div className="flex-shrink-0 w-[42px]" />
                   {nonStandingsQuestions.map((q, idx) => (
-                    <div key={q.id} className="flex-shrink-0 w-[160px] px-2 py-2.5 border-r border-slate-200 dark:border-slate-800 text-center bg-white/95 dark:bg-slate-950/95">
+                    <div key={q.id} className="court-question-head flex-shrink-0 w-[160px] px-2 py-2.5 border-r border-slate-200 dark:border-slate-800 text-center bg-white/95 dark:bg-slate-950/95">
                       <div className="flex flex-col items-center gap-1">
-                        <span className="text-[8px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 rounded px-1.5 py-0.5 uppercase">Q{idx + 1}</span>
-                        <span className="text-[9px] font-black text-slate-400 line-clamp-2 h-[26px] leading-tight uppercase tracking-tight">{q.text}</span>
+                        <span className="court-question-number">Q{idx + 1}</span>
+                        <span className="court-question-label">{q.text}</span>
                       </div>
                     </div>
                   ))}
@@ -391,8 +391,11 @@ export const LeaderboardTableMobile = ({
                     {nonStandingsQuestions.map(q => {
                       const p = e.user.categories?.[catKey]?.predictions?.find(x => x.question_id === q.id);
                       const ans = p?.answer || '—';
-                      const isCorrect = p?.correct === true;
-                      const isWrong = p?.correct === false;
+                      const pts = p?.points || 0;
+                      const scoreStatus = p?.score_status || (p?.correct === true ? 'correct' : pts > 0 ? 'partial' : p?.correct === false ? 'incorrect' : 'pending');
+                      const isCorrect = scoreStatus === 'correct';
+                      const isPartial = scoreStatus === 'partial';
+                      const isWrong = scoreStatus === 'incorrect';
                       const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
                       const simulatedState = p?.__what_if_state;
                       const lineValue = extractLineValue(p, q.text);
@@ -404,6 +407,7 @@ export const LeaderboardTableMobile = ({
 
                       let color = "text-slate-400 dark:text-slate-600";
                       if (isCorrect) color = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20";
+                      if (isPartial) color = "bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-500/20";
                       if (isWrong) color = "bg-rose-500/5 text-rose-500/70 dark:text-rose-400/70 ring-1 ring-inset ring-rose-500/10";
 
                       return (
@@ -411,7 +415,7 @@ export const LeaderboardTableMobile = ({
                           <button
                             type="button"
                             onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
-                            className={`inline-flex items-center justify-center w-full px-2 py-1 rounded-md text-[10px] font-black transition-all ${color} whitespace-normal break-words line-clamp-2 max-h-[34px] ${
+                            className={`court-answer-ticket inline-flex items-center justify-center w-full px-2 py-1 text-[10px] font-black transition-all ${color} whitespace-normal break-words line-clamp-2 min-h-[38px] ${
                               isInteractive ? 'cursor-pointer hover:brightness-95 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.35)] active:scale-[0.98]' : 'cursor-default'
                             } ${
                               simulatedState === 'correct'

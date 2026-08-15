@@ -399,6 +399,34 @@ class TestMainLeaderboard:
         assert mid_awards_preds[0]['points'] == 0
         assert mid_awards_preds[0]['point_value'] == 5
 
+    def test_leaderboard_answer_predictions_include_score_status(self, api_client, season_with_standings):
+        """Answer predictions expose full/partial/incorrect status separately from is_correct."""
+        season = season_with_standings['season']
+        user = UserFactory(username='partialscorer')
+        award = AwardFactory(name='MVP')
+        question = SuperlativeQuestionFactory(
+            season=season,
+            award=award,
+            point_value=5,
+            correct_answer='Winner',
+        )
+        AnswerFactory(
+            user=user,
+            question=question,
+            answer='Runner Up',
+            points_earned=2.5,
+            is_correct=False,
+        )
+
+        response = api_client.get(f'/api/v2/leaderboards/{season.slug}')
+
+        data = response.json()
+        user_entry = next(u for u in data['leaderboard'] if u['username'] == 'partialscorer')
+        prediction = user_entry['categories']['Player Awards']['predictions'][0]
+        assert prediction['correct'] is False
+        assert prediction['points'] == 2.5
+        assert prediction['score_status'] == 'partial'
+
     def test_leaderboard_standing_predictions_sorted_correctly(self, api_client, users_with_predictions):
         """Test that standing predictions are sorted West 1-15, then East 1-15."""
         season = users_with_predictions['season']

@@ -73,6 +73,7 @@ def create_superlative_question(request, payload: SuperlativeQuestionCreateSchem
             season=season,
             text=payload.text,
             point_value=payload.point_value,
+            answer_point_values=payload.answer_point_values or {},
             award=award,
         )
         
@@ -106,6 +107,7 @@ def create_prop_question(request, payload: PropQuestionCreateSchema):
             season=season,
             text=payload.text,
             point_value=payload.point_value,
+            answer_point_values=payload.answer_point_values or {},
             outcome_type=payload.outcome_type,
             related_player=related_player,
             line=payload.line,
@@ -139,6 +141,7 @@ def create_player_stat_question(request, payload: PlayerStatPredictionQuestionCr
             season=season,
             text=payload.text,
             point_value=payload.point_value,
+            answer_point_values=payload.answer_point_values or {},
             player_stat=player_stat,
             stat_type=payload.stat_type,
             fixed_value=payload.fixed_value,
@@ -173,6 +176,7 @@ def create_head_to_head_question(request, payload: HeadToHeadQuestionCreateSchem
             season=season,
             text=payload.text,
             point_value=payload.point_value,
+            answer_point_values=payload.answer_point_values or {},
             team1=team1,
             team2=team2,
         )
@@ -204,6 +208,7 @@ def create_ist_question(request, payload: InSeasonTournamentQuestionCreateSchema
             season=season,
             text=payload.text,
             point_value=payload.point_value,
+            answer_point_values=payload.answer_point_values or {},
             prediction_type=payload.prediction_type,
             ist_group=payload.ist_group,
             is_tiebreaker=payload.is_tiebreaker,
@@ -236,6 +241,7 @@ def create_nba_finals_question(request, payload: NBAFinalsPredictionQuestionCrea
             season=season,
             text=payload.text,
             point_value=payload.point_value,
+            answer_point_values=payload.answer_point_values or {},
             group_name=payload.group_name,
         )
         
@@ -268,6 +274,8 @@ def update_question(request, question_id: int, payload: QuestionUpdateSchema):
             real_question.text = payload.text
         if payload.point_value is not None:
             real_question.point_value = payload.point_value
+        if payload.answer_point_values is not None:
+            real_question.answer_point_values = payload.answer_point_values
 
         # Update type-specific fields
         question_type = real_question.__class__.__name__

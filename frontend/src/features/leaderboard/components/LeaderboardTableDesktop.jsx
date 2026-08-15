@@ -165,7 +165,7 @@ export const LeaderboardTableDesktop = ({
   }, [isStandingsSection, leaderboardData, nonStandingsCategoryKey]);
 
   return (
-    <div ref={tableRef} className="hidden md:block w-full">
+    <div ref={tableRef} className="court-detail-desktop hidden md:block w-full">
       {/* Sticky Header Row */}
       <div className="sticky top-[109px] z-[35] bg-white dark:bg-slate-900 shadow-sm">
         <div className="flex" style={{ height: HEADER_HEIGHT }}>
@@ -274,11 +274,11 @@ export const LeaderboardTableDesktop = ({
               <div className="flex w-full">
                 {/* Fixed left columns - contains Droppable */}
                 <Droppable droppableId={`${conf.toLowerCase()}-fixed`}>
-                  {(provided) => (
+                  {(provided, dropSnapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className="flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10"
+                      className={`court-drop-ledger flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10 ${dropSnapshot.isDraggingOver ? 'is-dragging-over' : ''}`}
                       style={{ width: fixedColWidth + rankColWidth }}
                     >
                       {teams.map((row, idx) => (
@@ -290,7 +290,7 @@ export const LeaderboardTableDesktop = ({
                               ref={prov.innerRef}
                               {...prov.draggableProps}
                               {...prov.dragHandleProps}
-                              className={`flex border-b border-slate-100 dark:border-slate-800/50 transition-all ${
+                              className={`court-drag-row flex border-b border-slate-100 dark:border-slate-800/50 transition-all ${snap.isDragging ? 'is-dragging' : ''} ${isMoved ? 'is-moved' : ''} ${
                                 snap.isDragging
                                   ? 'bg-sky-100 dark:bg-sky-900/40 shadow-lg ring-2 ring-sky-400 rounded-lg z-50'
                                   : draggingId === row.id
@@ -312,8 +312,8 @@ export const LeaderboardTableDesktop = ({
                                 <TeamLogo className="w-5 h-5 object-contain" teamName={row.team} />
                                 <span className="text-[13px] font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">{row.team}</span>
                               </div>
-                              <div className="w-[55px] flex items-center justify-center text-sm font-bold text-slate-400">
-                                {whatIfEnabled ? (simActualMap.get(row.team) || row.actual_position) : (row.actual_position || '—')}
+                              <div className="court-move-rank w-[55px] flex items-center justify-center text-sm font-bold text-slate-400">
+                                {isMoved ? <><del>{row.actual_position}</del><span>→</span><strong>{simActualMap.get(row.team)}</strong></> : (row.actual_position || '—')}
                               </div>
                             </div>
                           ); }}
@@ -353,7 +353,7 @@ export const LeaderboardTableDesktop = ({
 
                           return (
                             <div key={e.user.id} data-col-user={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative will-change-transform" style={{ width: userColWidth }}>
-                              <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200 ${colorClass}`}>
+                              <div className={`court-position-ticket inline-flex items-center justify-center w-8 h-8 text-xs font-bold transition-all duration-200 ${colorClass}`}>
                                 {predPos}
                               </div>
                               {p && (
@@ -407,9 +407,11 @@ export const LeaderboardTableDesktop = ({
                     {displayedUsers.map(e => {
                       const p = e.user.categories?.[nonStandingsCategoryKey]?.predictions?.find(x => x.question_id === q.id);
                       const ans = p?.answer || '—';
-                      const isCorrect = p?.correct === true;
-                      const isWrong = p?.correct === false;
                       const pts = p?.points || 0;
+                      const scoreStatus = p?.score_status || (p?.correct === true ? 'correct' : pts > 0 ? 'partial' : p?.correct === false ? 'incorrect' : 'pending');
+                      const isCorrect = scoreStatus === 'correct';
+                      const isPartial = scoreStatus === 'partial';
+                      const isWrong = scoreStatus === 'incorrect';
                       const lineValue = extractLineValue(p, q.text);
                       const answerDisplay = lineValue && ans !== '—'
                         ? (String(ans).toLowerCase() === 'over' || String(ans).toLowerCase() === 'under'
@@ -419,6 +421,7 @@ export const LeaderboardTableDesktop = ({
 
                       let color = "text-slate-400 dark:text-slate-500";
                       if (isCorrect) color = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30";
+                      if (isPartial) color = "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30";
                       if (isWrong) color = "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
                       const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
                       const simulatedState = p?.__what_if_state;
@@ -428,7 +431,7 @@ export const LeaderboardTableDesktop = ({
                           <button
                             type="button"
                             onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
-                            className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color} ${
+                            className={`court-answer-ticket inline-flex items-center justify-center px-2.5 py-1.5 text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color} ${
                               isInteractive ? 'cursor-pointer hover:brightness-95 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.35)] active:scale-[0.98]' : 'cursor-default'
                             } ${
                               simulatedState === 'correct'
@@ -444,7 +447,7 @@ export const LeaderboardTableDesktop = ({
                           {p && (
                             <div className="absolute -top-0.5 right-1 opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-20">
                               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm ${
-                                pts > 0 ? 'bg-emerald-500 text-white' : 'bg-slate-400 text-white'
+                                isCorrect ? 'bg-emerald-500 text-white' : isPartial ? 'bg-amber-500 text-white' : 'bg-slate-400 text-white'
                               }`}>
                                 {pts > 0 ? `+${pts}` : '0'}
                               </span>

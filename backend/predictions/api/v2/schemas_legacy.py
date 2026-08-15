@@ -250,7 +250,7 @@ class MiniLeaderboardEntrySchema(Schema):
     """
     rank: int = Field(..., description="User's ranking position", example=1, ge=1)
     user: Dict[str, Union[int, str]] = Field(..., description="User identification", example={"username": "nba_fan", "display_name": "John S."})
-    points: int = Field(..., description="Total points earned", example=150, ge=0)
+    points: float = Field(..., description="Total points earned", example=150.5, ge=0)
 
 
 class MiniStandingSchema(Schema):
@@ -285,14 +285,6 @@ class MiniStandingsSchema(Schema):
     """
     eastern: List[MiniStandingSchema] = Field(..., description="Top Eastern Conference teams")
     western: List[MiniStandingSchema] = Field(..., description="Top Western Conference teams")
-
-    @field_validator('eastern', 'western')
-    @classmethod
-    def validate_standings_not_empty(cls, v):
-        """Ensure each conference has at least one team"""
-        if not v:
-            raise ValueError('Conference standings cannot be empty')
-        return v
 
 
 # ====================

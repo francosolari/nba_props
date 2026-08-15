@@ -31,6 +31,7 @@ class AnswerSchema(Schema):
     max_points: Optional[float] = None
     points_earned: Optional[float] = None
     is_correct: Optional[bool] = False
+    score_status: Optional[str] = None
 
 
 class CategoryStatsSchema(Schema):
@@ -150,6 +151,10 @@ def get_user_answers(
                 'max_points': answer_obj.question.point_value if answer_obj.question else None,
                 'points_earned': answer_obj.points_earned,
                 'is_correct': answer_obj.is_correct,
+                'score_status': answer_obj.question.score_status_for_points(
+                    answer_obj.points_earned,
+                    answer_obj.is_correct,
+                ) if answer_obj.question else None,
             }
             answer_data.append(answer_dict)
 

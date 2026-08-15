@@ -271,6 +271,7 @@ class TestGetAnswersEndpoint:
         assert data['season_slug'] == open_season.slug
         assert len(data['answers']) == 2
         assert 'total_points' in data
+        assert data['has_draft'] is True
 
     def test_get_answers_empty(self, auth_client, open_season):
         """Test retrieving answers when user has none."""
@@ -281,6 +282,21 @@ class TestGetAnswersEndpoint:
 
         assert data['answers'] == []
         assert data['total_points'] == 0
+        assert data['has_draft'] is False
+
+    def test_get_answers_reports_standings_only_draft(self, auth_client, open_season, sample_teams):
+        """A saved standings board is enough to count as a draft."""
+        StandingPredictionFactory(
+            user=auth_client.user,
+            season=open_season,
+            team=sample_teams['east'][0],
+            predicted_position=1,
+        )
+
+        response = auth_client.get(f'/api/v2/submissions/answers/{open_season.slug}')
+
+        assert response.status_code == 200
+        assert response.json()['has_draft'] is True
 
     def test_get_answers_invalid_season(self, auth_client):
         """Test error when retrieving answers for non-existent season."""

@@ -5,11 +5,6 @@ import { server } from '../../__mocks__/msw/server';
 import { renderWithProviders } from '../../test-utils';
 import LeaderboardPage from '../LeaderboardPage';
 
-// Mock ProgressBar to avoid complexity
-jest.mock('../../components/ProgressBar', () => ({ value, max }) => (
-    <div data-testid="progress-bar" data-value={value} data-max={max} />
-));
-
 describe('LeaderboardPage', () => {
     beforeEach(() => {
         // Override the default array mock with object format that includes season and totals
@@ -26,9 +21,18 @@ describe('LeaderboardPage', () => {
                                 display_name: 'Player One',
                                 avatar: null,
                                 total_points: 150,
-                                badges: [],
+                                badges: [{ type: 'category_best', category: 'Regular Season Standings' }],
                                 categories: {
-                                    'Regular Season Standings': { points: 50, max_points: 60, predictions: [] },
+                                    'Regular Season Standings': {
+                                        points: 50,
+                                        max_points: 60,
+                                        predictions: [
+                                            { team: 'Celtics', conference: 'East', predicted_position: 1, actual_position: 1, points: 3 },
+                                            { team: 'Knicks', conference: 'East', predicted_position: 2, actual_position: 3, points: 1 },
+                                            { team: 'Bucks', conference: 'East', predicted_position: 1, actual_position: 4, points: 0 },
+                                            { team: 'Heat', conference: 'East', predicted_position: 5, actual_position: null, points: 0 },
+                                        ],
+                                    },
                                     'Player Awards': { points: 60, max_points: 75, predictions: [] },
                                     'Props & Yes/No': { points: 40, max_points: 50, predictions: [] },
                                 },
@@ -72,24 +76,43 @@ describe('LeaderboardPage', () => {
         expect(skeletons.length).toBeGreaterThan(0);
     });
 
-    test('renders leaderboard data and metrics', async () => {
-        renderWithProviders(<LeaderboardPage seasonSlug="2024-25" />);
+    test('renders leaderboard data and the signed-in participant rank only', async () => {
+        renderWithProviders(<LeaderboardPage seasonSlug="2024-25" loggedInUsername="player2" />);
 
         await waitFor(() => {
-            expect(screen.getByText('NBA Predictions Leaderboard')).toBeInTheDocument();
+            expect(screen.getByText('Props Predictions Leaderboard')).toBeInTheDocument();
         });
 
-        // Check metrics
-        expect(screen.getByText('Players')).toBeInTheDocument();
-        expect(screen.getByText('2')).toBeInTheDocument(); // Total players from mock
+        expect(screen.getByText('Your rank')).toBeInTheDocument();
+        expect(document.querySelector('.court-leaderboard-header')).toBeInTheDocument();
+        expect(screen.getByText('2nd')).toBeInTheDocument();
+        expect(screen.getByText('/ 2')).toBeInTheDocument();
+        expect(screen.queryByText('Players')).not.toBeInTheDocument();
+        expect(screen.queryByText('Predictions')).not.toBeInTheDocument();
+        expect(screen.queryByText('Accuracy')).not.toBeInTheDocument();
+        expect(screen.queryByText('Top Score')).not.toBeInTheDocument();
 
         // Check rankings
         expect(screen.getByText('Player One')).toBeInTheDocument();
+        expect(screen.getByText('Top Regular')).toHaveClass('court-category-badge');
         const scores = screen.getAllByText('150');
         expect(scores.length).toBeGreaterThan(0);
         expect(scores[0]).toBeInTheDocument();
         expect(screen.getByText('Player Two')).toBeInTheDocument();
         expect(screen.getByText('120')).toBeInTheDocument();
+        expect(document.querySelectorAll('.court-rank-honor')).toHaveLength(2);
+        expect(document.querySelector('.court-basic-rank.is-gold .lucide-trophy')).toBeInTheDocument();
+        expect(document.querySelector('.court-basic-rank.is-silver .lucide-medal')).toBeInTheDocument();
+    });
+
+    test('does not render a rank summary for logged-out visitors', async () => {
+        renderWithProviders(<LeaderboardPage seasonSlug="2024-25" loggedInUsername="" />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Player One')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText('Your rank')).not.toBeInTheDocument();
     });
 
     test('handles API error', async () => {
@@ -135,5 +158,17 @@ describe('LeaderboardPage', () => {
             // Optionally check if at least one is visible if possible, but presence is good enough here
             expect(breakdowns[0]).toBeInTheDocument();
         });
+
+        expect(screen.getAllByText('Exact').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Off by 1').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Missed').length).toBeGreaterThan(0);
+        expect(screen.queryByText('Not yet graded')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getAllByRole('button', { name: /Exact/i })[0]);
+
+        expect(screen.getByText('Celtics')).toBeInTheDocument();
+        expect(screen.getByLabelText('Picked and finished 1st')).toHaveTextContent('1st');
+        expect(document.querySelector('.court-grade-pick__logo')).toHaveAttribute('src', expect.stringContaining('/static/img/teams/'));
+        expect(screen.queryByText(/Picked 1/)).not.toBeInTheDocument();
     });
 });

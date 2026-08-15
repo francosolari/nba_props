@@ -321,7 +321,6 @@ def leaderboard_detail_page(request, season_slug):
     })
 
 
-@login_required
 def submit_predictions_view(request, season_slug):
     """
     Render the submissions page for users to answer questions.

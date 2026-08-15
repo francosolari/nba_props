@@ -60,12 +60,17 @@ def regular_user(django_db_setup, django_db_blocker):
         return UserFactory()
 
 
-@pytest.fixture(scope='module')
-def current_season(django_db_setup, django_db_blocker):
-    """Create current season."""
-    with django_db_blocker.unblock():
-        existing = Season.objects.filter(slug='2024-25').first()
-        return existing or SeasonFactory(slug='2024-25')
+@pytest.fixture
+def current_season(db):
+    """Create current season.
+
+    Per-test (not module-scoped): a module-scoped fixture created via
+    django_db_blocker.unblock() commits outside the per-test transaction
+    rollback, leaking a Season row for the rest of the pytest session and
+    corrupting "latest season" resolution in unrelated tests that run
+    afterward in the same session.
+    """
+    return SeasonFactory(slug='2024-25')
 
 
 @pytest.fixture
@@ -577,6 +582,8 @@ class TestQuestionsForGradingEndpoint:
 
         super_meta = next(q for q in data['questions'] if q['question_type'] == 'SuperlativeQuestion')
         assert super_meta['choices'] == ['Award Leader', 'Award Runner']
+        assert super_meta['correct_answer_player_id'] == comprehensive_question_set['super_question'].current_leader_id
+        assert super_meta['runner_up_player_id'] == comprehensive_question_set['super_question'].current_runner_up_id
 
         player_stat_meta = next(q for q in data['questions'] if q['question_type'] == 'PlayerStatPredictionQuestion')
         assert player_stat_meta['input_type'] == 'player_search'
@@ -642,6 +649,60 @@ class TestUpdateQuestionAnswerEndpoint:
         question.refresh_from_db()
         assert question.is_finalized is True
         assert question.correct_answer == 'Defender'
+
+    def test_update_superlative_can_set_player_ids_and_runner_up_points(self, admin_client, current_season):
+        """Award grading can use player IDs while storing canonical names for scoring."""
+        award = AwardFactory(name='MIP')
+        winner = PlayerFactory(name='Winner Player')
+        runner_up = PlayerFactory(name='Runner Up Player')
+        question = SuperlativeQuestionFactory(
+            season=current_season,
+            award=award,
+            point_value=5,
+            is_finalized=False,
+        )
+
+        response = admin_client.post(
+            '/api/v2/admin/grading/update-question',
+            data={
+                'question_id': question.id,
+                'correct_answer_player_id': winner.id,
+                'runner_up_player_id': runner_up.id,
+                'runner_up_points': 2.5,
+                'is_finalized': True,
+            },
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        question.refresh_from_db()
+        assert question.correct_answer == winner.name
+        assert question.current_leader_id == winner.id
+        assert question.current_runner_up_id == runner_up.id
+        assert question.answer_point_values == {runner_up.name: 2.5}
+
+    def test_update_question_can_clear_answer_point_values(self, admin_client, current_season):
+        """Submitting an empty scoring map removes stale custom scoring rows."""
+        question = PropQuestionFactory(
+            season=current_season,
+            point_value=3,
+            correct_answer='Yes',
+            answer_point_values={'No': 1},
+        )
+
+        response = admin_client.post(
+            '/api/v2/admin/grading/update-question',
+            data={
+                'question_id': question.id,
+                'correct_answer': 'Yes',
+                'answer_point_values': {},
+            },
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        question.refresh_from_db()
+        assert question.answer_point_values == {}
 
 
 # ============================================================================

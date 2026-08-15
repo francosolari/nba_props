@@ -4,6 +4,7 @@
 /frontend/node_modules/
 /frontend/staticfiles/
 /frontend/static/css/styles.css
+/frontend/static/fonts/
 /frontend/static/js/bundle.js
 /frontend/static/js/bundle.js.LICENSE.txt
 
