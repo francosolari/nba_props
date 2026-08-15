@@ -29,6 +29,12 @@ from predictions.api.v2.schemas import (
 router = Router(tags=["Homepage"])
 
 
+def _display_name(user):
+    """Return a user's profile display name, falling back for legacy users."""
+    profile = getattr(user, 'userprofile', None)
+    return getattr(profile, 'display_name', None) or user.username
+
+
 @router.get(
     "/random-predictions",
     response={200: RandomPredictionsResponseSchema, 500: ErrorSchema},
@@ -50,7 +56,7 @@ def get_random_predictions(request):
 
         ticker_items = []
         for pred in predictions:
-            display_name = getattr(pred.user.userprofile, 'display_name', pred.user.username)
+            display_name = _display_name(pred.user)
 
             # Create ticker message based on prediction type
             if hasattr(pred, 'standingprediction'):
@@ -93,7 +99,7 @@ def get_random_props(request):
 
         ticker_items = []
         for answer in answers:
-            display_name = getattr(answer.user.userprofile, 'display_name', answer.user.username)
+            display_name = _display_name(answer.user)
 
             # Create different message formats
             message_formats = [
@@ -150,7 +156,7 @@ def get_homepage_data(request):
 
         mini_leaderboard = []
         for i, user_stat in enumerate(top_users, 1):
-            display_name = getattr(user_stat.user.userprofile, 'display_name', user_stat.user.username)
+            display_name = _display_name(user_stat.user)
             mini_leaderboard.append({
                 'rank': i,
                 'user': {

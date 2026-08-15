@@ -533,6 +533,28 @@ class TestHomepageEndpoints:
         points = [entry['points'] for entry in data['mini_leaderboard']]
         assert points == sorted(points, reverse=True)
 
+    def test_homepage_data_supports_user_without_profile(self, api_client):
+        """Legacy users without a UserProfile fall back to their username."""
+        Season.objects.all().delete()
+        current = CurrentSeasonFactory()
+        user = UserFactory(username='legacy-user')
+        UserStatsFactory(user=user, season=current, points=42.5)
+        east_team = EasternTeamFactory()
+        west_team = WesternTeamFactory()
+        RegularSeasonStandings.objects.create(
+            season=current, team=east_team, position=1, wins=50, losses=32
+        )
+        RegularSeasonStandings.objects.create(
+            season=current, team=west_team, position=1, wins=48, losses=34
+        )
+
+        response = api_client.get('/api/v2/homepage/data', HTTP_HOST='localhost')
+
+        assert response.status_code == 200, response.content
+        entry = response.json()['mini_leaderboard'][0]
+        assert entry['user']['display_name'] == 'legacy-user'
+        assert entry['points'] == 42.5
+
     def test_homepage_data_mini_standings_structure(self, api_client):
         """Test mini standings returns correct structure."""
         Season.objects.all().delete()
