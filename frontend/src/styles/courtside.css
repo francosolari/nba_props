@@ -2370,6 +2370,153 @@ button[type="submit"]:active {
 .court-submissions-page .ist-team-choice--west:hover,
 .court-submissions-page .ist-team-choice--west[aria-pressed="true"] { border-color: var(--court-red); }
 
+.submission-standings-frame {
+  width: 100%;
+  overflow: hidden;
+  background: var(--court-paper);
+  border: 2px solid var(--court-rule);
+}
+.submission-standings-board { width: 100%; min-width: 0; }
+.submission-standings-board.is-dragging { cursor: grabbing; }
+.submission-standings-loading {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  color: var(--court-steel);
+  font: 800 12px var(--court-body);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.submission-standings-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.court-submissions-page .submission-conference-ledger {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+}
+.submission-conference-ledger + .submission-conference-ledger { border-left: 1px solid var(--court-rule); }
+.court-submissions-page .submission-conference-ledger > header {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 8px;
+  color: var(--court-paper);
+  border-bottom: 2px solid var(--court-rule);
+}
+.submission-conference-ledger.is-east > header { background: var(--court-blue); }
+.submission-conference-ledger.is-west > header { background: var(--court-red); }
+.court-submissions-page .submission-conference-ledger > header h3 {
+  overflow: hidden;
+  margin: 0;
+  color: inherit;
+  font: 800 16px/1 var(--court-display);
+  letter-spacing: .025em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.submission-conference-ledger > header span {
+  flex: 0 0 auto;
+  font: 800 11px/1 var(--court-body);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.submission-conference-list {
+  min-height: 690px;
+  background: var(--court-paper);
+  user-select: none;
+}
+.submission-conference-list.is-dragging-over { box-shadow: inset 0 0 0 2px var(--court-gold); }
+.submission-standing-row {
+  display: grid;
+  min-width: 0;
+  min-height: 46px;
+  grid-template-columns: 12px 20px 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  color: var(--court-ink);
+  background: var(--court-paper);
+  border-bottom: 1px solid var(--court-rule-soft);
+}
+.submission-standing-row.is-editable { cursor: grab; }
+.submission-standing-row.is-dragging {
+  cursor: grabbing;
+  background: var(--court-sheet-wash);
+  border: 1px solid var(--court-rule);
+  box-shadow: 0 12px 24px rgba(24, 27, 30, .16);
+}
+.submission-standing-row:focus-visible { outline: 3px solid var(--court-gold); outline-offset: -3px; }
+.submission-standing-row__grip { width: 12px; color: var(--court-steel); }
+.submission-standing-row__seed {
+  color: var(--court-blue);
+  font: 800 16px/1 var(--court-display);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.submission-conference-ledger.is-west .submission-standing-row__seed { color: var(--court-red); }
+.submission-standing-row__logo { width: 22px; height: 22px; object-fit: contain; }
+.submission-standing-row__team {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.submission-standings-empty { margin: 0; padding: 24px 8px; color: var(--court-steel); font-size: 11px; text-align: center; }
+.submission-standings-actions {
+  display: grid;
+  border-top: 2px solid var(--court-rule);
+}
+.submission-standings-actions > p {
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--court-steel);
+  font: 800 10px/1 var(--court-body);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--court-rule);
+}
+.submission-standings-actions > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.submission-standings-actions button {
+  min-height: 44px;
+  padding: 6px 8px;
+  color: var(--court-ink);
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  background: var(--court-paper);
+  border: 0;
+  border-right: 1px solid var(--court-rule);
+}
+.submission-standings-actions button:last-child { border-right: 0; }
+.submission-standings-actions button.is-primary { color: var(--court-paper); background: var(--court-blue); }
+.submission-standings-actions button:disabled { cursor: not-allowed; opacity: .48; }
+
+@media (min-width: 640px) {
+  .court-submissions-page .submission-conference-ledger > header { min-height: 48px; padding: 8px 12px; }
+  .court-submissions-page .submission-conference-ledger > header h3 { font-size: 28px; }
+  .submission-standing-row {
+    min-height: 52px;
+    grid-template-columns: 18px 30px 32px minmax(0, 1fr);
+    gap: 7px;
+    padding: 6px 10px;
+  }
+  .submission-standing-row__grip { width: 15px; }
+  .submission-standing-row__seed { font-size: 28px; }
+  .submission-standing-row__logo { width: 28px; height: 28px; }
+  .submission-standing-row__team { font-size: 16px; }
+  .submission-conference-list { min-height: 780px; }
+  .submission-standings-actions { grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; }
+  .submission-standings-actions > p { display: flex; align-items: center; border-right: 1px solid var(--court-rule); border-bottom: 0; }
+  .submission-standings-actions > div { min-width: 390px; }
+}
+
 .court-submissions-page .submission-question-group { scroll-margin-top: calc(var(--court-topbar-height) + 150px); }
 .court-submissions-page .submission-question-group > header { gap: 12px; }
 .submission-section-count {

@@ -1,6 +1,7 @@
 """Serve the built submissions UI with deterministic data for visual QA."""
 
 import json
+import mimetypes
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -8,6 +9,32 @@ from pathlib import Path
 FRONTEND_DIR = Path(__file__).resolve().parents[1]
 STATIC_DIR = FRONTEND_DIR / "static"
 PORT = 8001
+
+EAST_TEAM_NAMES = [
+    "Boston Celtics", "New York Knicks", "Milwaukee Bucks", "Cleveland Cavaliers",
+    "Orlando Magic", "Indiana Pacers", "Philadelphia 76ers", "Miami Heat",
+    "Chicago Bulls", "Atlanta Hawks", "Brooklyn Nets", "Toronto Raptors",
+    "Charlotte Hornets", "Detroit Pistons", "Washington Wizards",
+]
+WEST_TEAM_NAMES = [
+    "Oklahoma City Thunder", "Denver Nuggets", "Minnesota Timberwolves",
+    "Los Angeles Lakers", "LA Clippers", "Dallas Mavericks", "Phoenix Suns",
+    "Golden State Warriors", "Sacramento Kings", "Memphis Grizzlies",
+    "New Orleans Pelicans", "Houston Rockets", "San Antonio Spurs",
+    "Utah Jazz", "Portland Trail Blazers",
+]
+
+
+def conference_teams(names, conference, starting_id):
+    """Build stable team fixtures for the responsive standings board."""
+    return [
+        {"id": starting_id + index, "name": name, "conference": conference, "position": index + 1}
+        for index, name in enumerate(names)
+    ]
+
+
+EAST_TEAMS = conference_teams(EAST_TEAM_NAMES, "East", 1)
+WEST_TEAMS = conference_teams(WEST_TEAM_NAMES, "West", 101)
 
 QUESTIONS = [
     {
@@ -55,10 +82,8 @@ class SubmissionQAHandler(BaseHTTPRequestHandler):
             "/api/v2/seasons/": [{"slug": "2025-26", "year": "2025-26"}],
             "/api/v2/submissions/standings/2025-26": {"predictions": []},
             "/api/v2/standings/2025-26": {
-                "east": [{"id": 1, "name": "Boston Celtics", "position": 1},
-                         {"id": 2, "name": "New York Knicks", "position": 2}],
-                "west": [{"id": 3, "name": "Oklahoma City Thunder", "position": 1},
-                         {"id": 4, "name": "Denver Nuggets", "position": 2}],
+                "east": EAST_TEAMS,
+                "west": WEST_TEAMS,
             },
             "/api/v2/players/": {"players": [
                 {"id": 1, "name": "Shai Gilgeous-Alexander"},
@@ -66,12 +91,7 @@ class SubmissionQAHandler(BaseHTTPRequestHandler):
                 {"id": 3, "name": "Victor Wembanyama"},
                 {"id": 4, "name": "Evan Mobley"},
             ]},
-            "/api/v2/teams/": {"teams": [
-                {"id": 1, "name": "Boston Celtics", "conference": "East"},
-                {"id": 2, "name": "New York Knicks", "conference": "East"},
-                {"id": 3, "name": "Oklahoma City Thunder", "conference": "West"},
-                {"id": 4, "name": "Denver Nuggets", "conference": "West"},
-            ]},
+            "/api/v2/teams/": {"teams": EAST_TEAMS + WEST_TEAMS},
         }
         if path in responses:
             self._send(json.dumps(responses[path]).encode(), "application/json")
@@ -82,9 +102,7 @@ class SubmissionQAHandler(BaseHTTPRequestHandler):
         if path.startswith("/static/"):
             asset = STATIC_DIR / path.removeprefix("/static/")
             if asset.is_file() and STATIC_DIR in asset.resolve().parents:
-                content_type = "text/css" if asset.suffix == ".css" else "application/javascript"
-                if asset.suffix in {".woff", ".woff2"}:
-                    content_type = "font/woff2"
+                content_type = mimetypes.guess_type(asset.name)[0] or "application/octet-stream"
                 self._send(asset.read_bytes(), content_type)
                 return
         self.send_error(404)

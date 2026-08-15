@@ -21,6 +21,10 @@ touch targets are at least 44 pixels tall, and neither viewport has horizontal p
 As the anonymous fixture, it should also allow picks, save them to local storage, and show account
 actions only after the guest chooses Save for later or Submit Predictions.
 
+The standings fixture includes all 15 teams in each conference. Keep East and West visible in the
+same viewport on mobile, verify long team names truncate without covering the seed or logo, and
+confirm the two conference ledgers expand to the full submissions content width on desktop.
+
 The fixture is intentionally unauthenticated so the harness cannot write answers or payment data.
 Update `frontend/qa/submissions_server.py` when the page adds a new required GET endpoint or when a
 new question layout needs permanent visual coverage.

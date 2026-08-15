@@ -110,7 +110,7 @@ const SubmissionForm = ({
     <>
       <section id="standings" className="mb-10">
         <header className="mb-4"><h2 className="text-xl sm:text-2xl font-semibold">Regular Season Standings</h2><p className="text-sm text-slate-500 mt-1">Drag and drop teams in each conference to set your projected final standings.</p></header>
-        <div className="bg-white border border-slate-200 rounded-xl">
+        <div className="submission-standings-frame">
           {userContextLoading ? <div className="p-6 text-center text-sm">Loading standings...</div> : (
             <EditablePredictionBoard
               ref={standingsBoardRef}
