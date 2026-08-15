@@ -864,11 +864,41 @@ button[type="submit"]:active {
 
 /* Basic leaderboard: a concise scorebook sheet. */
 .court-leaderboard-page > header {
-  padding: 22px 0 18px !important;
+  padding: 22px 0 !important;
 }
 
-.court-leaderboard-page > header > div > div:first-child {
-  align-items: end !important;
+.court-leaderboard-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: end;
+}
+
+.court-leaderboard-page .court-leaderboard-header__title h1 {
+  max-width: none;
+  font-size: clamp(48px, 4.8vw, 68px) !important;
+}
+
+.court-leaderboard-header__utilities {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+}
+
+.court-leaderboard-header__utilities .court-select--compact {
+  width: 180px;
+}
+
+@media (max-width: 1279px) {
+  .court-leaderboard-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .court-leaderboard-header__utilities {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 .court-leaderboard-page > header select {
@@ -1009,16 +1039,16 @@ button[type="submit"]:active {
   height: 22px;
   place-items: center;
   border: 1px solid var(--court-ink);
-  border-radius: 50%;
+  border-radius: var(--court-radius-ticket);
   color: var(--court-ink);
 }
 .court-rank-honor svg { width: 13px; height: 13px; stroke-width: 2; }
 .court-basic-rank.is-gold .court-rank-honor { background: var(--court-gold); }
 .court-basic-rank.is-silver .court-rank-honor { background: var(--court-medal-silver); }
 .court-basic-rank.is-bronze .court-rank-honor { background: var(--court-wood); }
-.court-basic-rank.is-gold { background: var(--court-gold-soft); }
-.court-basic-rank.is-silver { background: color-mix(in srgb, var(--court-medal-silver) 24%, var(--court-paper)); }
-.court-basic-rank.is-bronze { background: color-mix(in srgb, var(--court-wood) 18%, var(--court-paper)); }
+.court-basic-rank.is-gold .court-rank-honor { transform: rotate(-4deg); }
+.court-basic-rank.is-silver .court-rank-honor { transform: rotate(3deg); }
+.court-basic-rank.is-bronze .court-rank-honor { transform: rotate(-2deg); }
 .court-basic-participant { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 16px; }
 .court-basic-participant [class*="rounded-full"] { border-radius: 999px !important; }
 .court-basic-participant h3 { font: 800 24px var(--court-display) !important; letter-spacing: .01em; }
@@ -1899,35 +1929,26 @@ button[type="submit"]:active {
   .court-basic-preview { display: none; }
   .court-basic-disclosure { min-width: 24px; }
 
-  .court-leaderboard-page > header > div > div:first-child {
-    align-items: center !important;
-    margin-bottom: 12px !important;
-  }
-
-  .court-leaderboard-page > header h1 { max-width: 6.5ch; }
   .court-your-rank { padding-top: 4px; }
   .court-your-rank > strong { font-size: 50px; }
   .court-your-rank > small { font-size: 16px; }
 
   .court-leaderboard-page > header { padding: 14px 0 16px !important; }
   .court-leaderboard-header {
+    gap: 12px;
+  }
+  .court-leaderboard-page .court-leaderboard-header__title h1 {
+    max-width: 7ch;
+    font-size: clamp(44px, 12vw, 58px) !important;
+  }
+  .court-leaderboard-header__utilities {
     display: grid;
     grid-template-columns: minmax(118px, 1fr) minmax(142px, 170px);
     gap: 10px;
     align-items: end;
   }
-  .court-leaderboard-header__top { display: contents !important; }
-  .court-leaderboard-header__title { grid-column: 1 / -1; }
-  .court-leaderboard-header__top .court-select--compact {
-    grid-column: 2;
-    grid-row: 2;
+  .court-leaderboard-header__utilities .court-select--compact {
     width: 100%;
-    align-self: end;
-  }
-  .court-leaderboard-header > .court-your-rank {
-    grid-column: 1;
-    grid-row: 2;
-    align-self: end;
   }
 
   .court-basic-expansion__inner { padding: 0; }
@@ -2466,10 +2487,6 @@ button[type="submit"]:active {
   .court-select__menu {
     border-radius: 0;
     box-shadow: none;
-  }
-  .court-leaderboard-page > header > div > div:first-child {
-    flex-direction: column;
-    align-items: stretch !important;
   }
   .court-leaderboard-page > header .court-select--compact {
     width: min(100%, 180px);

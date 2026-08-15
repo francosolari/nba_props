@@ -373,32 +373,32 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
       {/* ─── 1. Compact Header ─── */}
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 pt-4 pb-4 md:pt-6 md:pb-6">
         <div className="court-leaderboard-header max-w-7xl mx-auto px-4 sm:px-6">
-           <div className="court-leaderboard-header__top flex items-center justify-between gap-4 mb-4">
-              <div className="court-leaderboard-header__title">
-                <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                  Props Predictions Leaderboard
-                </h1>
+          <div className="court-leaderboard-header__title">
+            <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              Props Predictions Leaderboard
+            </h1>
+          </div>
+
+          <div className="court-leaderboard-header__utilities">
+            {loggedInUsername && (
+              <div className="court-your-rank" aria-label={currentUserEntry ? `Your rank is ${formatOrdinal(currentUserEntry.rank)} out of ${leaderboardData.length}` : `You are not ranked among ${leaderboardData.length} participants`}>
+                <span>Your rank</span>
+                <strong>{currentUserEntry ? formatOrdinal(currentUserEntry.rank) : '—'}</strong>
+                <small>/ {leaderboardData.length}</small>
               </div>
+            )}
 
               {seasonsData && seasonsData.length > 1 && (
                 <CourtSelect
                   label="Season"
                   className="court-select--compact"
-                    value={selectedSeason}
-                    onChange={(e) => setSelectedSeason(e.target.value)}
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(e.target.value)}
                 >
-                    {seasonsData.map((s) => <option key={s.slug} value={s.slug}>{s.year}</option>)}
+                  {seasonsData.map((s) => <option key={s.slug} value={s.slug}>{s.year}</option>)}
                 </CourtSelect>
               )}
-           </div>
-
-           {loggedInUsername && (
-             <div className="court-your-rank" aria-label={currentUserEntry ? `Your rank is ${formatOrdinal(currentUserEntry.rank)} out of ${leaderboardData.length}` : `You are not ranked among ${leaderboardData.length} participants`}>
-               <span>Your rank</span>
-               <strong>{currentUserEntry ? formatOrdinal(currentUserEntry.rank) : '—'}</strong>
-               <small>/ {leaderboardData.length}</small>
-             </div>
-           )}
+          </div>
         </div>
       </header>
 
