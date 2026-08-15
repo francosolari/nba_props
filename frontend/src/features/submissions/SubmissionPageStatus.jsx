@@ -1,4 +1,5 @@
 import React from 'react';
+import SubmissionAccountPrompt from './SubmissionAccountPrompt';
 
 const SubmissionPageHeader = ({ season }) => (
   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
@@ -22,15 +23,13 @@ const SubmissionPageHeader = ({ season }) => (
 );
 
 const FeedbackNotice = ({ feedback, onDismiss }) => feedback && (
-  <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm">
+  <div className="submission-feedback">
     <div
-      className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lg ${feedback.type === 'error'
-        ? 'border-rose-200 bg-rose-50 text-rose-700'
-        : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}
+      className={`submission-feedback__sheet is-${feedback.type}`}
       role={feedback.type === 'error' ? 'alert' : 'status'}
     >
       <span>{feedback.message}</span>
-      <button type="button" onClick={onDismiss} className="text-xs font-semibold uppercase tracking-wide">
+      <button type="button" onClick={onDismiss}>
         Dismiss
       </button>
     </div>
@@ -41,26 +40,26 @@ const PaymentStatus = ({ enabled, loading, paymentStatus, onPay }) => {
   if (!enabled || loading || !paymentStatus) return null;
   if (paymentStatus.is_paid) {
     return (
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-        <div className="flex flex-col gap-0.5">
-          <span className="font-semibold">Payment confirmed</span>
+      <div className="submission-payment is-paid">
+        <div className="submission-payment__copy">
+          <strong>Payment confirmed</strong>
           {paymentStatus.paid_at && (
             <span className="text-xs">Paid on {new Date(paymentStatus.paid_at).toLocaleDateString()}</span>
           )}
         </div>
-        <span className="text-xs font-medium px-3 py-1 bg-emerald-100 rounded-full">Submission valid</span>
+        <span className="submission-payment__stamp">Submission valid</span>
       </div>
     );
   }
   return (
-    <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <p className="font-semibold text-amber-900">Payment required</p>
+    <div className="submission-payment is-due">
+      <div className="submission-payment__copy">
+        <div>
+          <strong>Payment required</strong>
           <p>Your predictions remain a draft until the $25.00 entry fee is paid.</p>
           <p className="text-xs">You can still edit paid entries until the deadline.</p>
         </div>
-        <button type="button" onClick={onPay} className="min-h-11 bg-amber-500 px-6 py-2 text-sm font-semibold text-white">
+        <button type="button" onClick={onPay}>
           Pay now
         </button>
       </div>
@@ -69,11 +68,8 @@ const PaymentStatus = ({ enabled, loading, paymentStatus, onPay }) => {
 };
 
 const SubmissionWindowStatus = ({ status }) => status && (
-  <div className={`p-4 rounded-lg border mb-6 ${status.is_open
-    ? 'bg-emerald-50 border-emerald-200'
-    : 'bg-rose-50 border-rose-200'}`}
-  >
-    <p className={`font-semibold ${status.is_open ? 'text-emerald-800' : 'text-rose-800'}`}>
+  <div className={`submission-window is-${status.is_open ? 'open' : 'closed'}`}>
+    <p>
       {status.message}
     </p>
     {status.days_until_close !== null && status.days_until_close !== undefined && (
@@ -98,18 +94,24 @@ const SubmissionPageStatus = ({
   onPay,
   isVerifying,
   submissionStatus,
+  isAuthenticated,
+  accountPromptAction,
+  onDismissAccountPrompt,
 }) => (
   <>
     <SubmissionPageHeader season={season} />
+    {!isAuthenticated && (
+      <SubmissionAccountPrompt action={accountPromptAction} onDismiss={onDismissAccountPrompt} />
+    )}
     <FeedbackNotice feedback={feedback} onDismiss={onDismissFeedback} />
     {entryFeeEnabled && entryFeeError && (
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3 border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+      <div className="submission-entry-error">
         <div><strong>Entry fee status unavailable</strong><p>{entryFeeErrorMessage}</p></div>
-        <button type="button" onClick={onRetryEntryFee} className="min-h-11 border border-amber-300 px-4">Retry</button>
+        <button type="button" onClick={onRetryEntryFee}>Retry</button>
       </div>
     )}
     <PaymentStatus enabled={entryFeeEnabled} loading={paymentStatusLoading} paymentStatus={paymentStatus} onPay={onPay} />
-    {isVerifying && <div className="mb-8 border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">Verifying your payment...</div>}
+    {isVerifying && <div className="submission-verifying">Verifying your payment...</div>}
     <SubmissionWindowStatus status={submissionStatus} />
   </>
 );

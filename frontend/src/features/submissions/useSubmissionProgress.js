@@ -49,12 +49,21 @@ const useSubmissionProgress = ({ seasonSlug, questions, userAnswersData }) => {
 
   useEffect(() => {
     if (!userAnswersData?.answers) return;
-    const existingAnswers = Object.fromEntries(
+    const serverAnswers = Object.fromEntries(
       userAnswersData.answers.map((answer) => [answer.question_id, answer.answer]),
     );
-    setAnswers(existingAnswers);
-    setHasChanges(false);
-  }, [userAnswersData]);
+    let localAnswers = {};
+    try {
+      localAnswers = storageKey ? JSON.parse(localStorage.getItem(storageKey) || '{}') : {};
+    } catch (error) {
+      console.warn('Failed to restore cached submissions after sign in', error);
+    }
+    const hasLocalDraft = Object.entries(localAnswers).some(
+      ([questionId, answer]) => String(serverAnswers[questionId] ?? '') !== String(answer),
+    );
+    setAnswers({ ...localAnswers, ...serverAnswers });
+    setHasChanges(hasLocalDraft);
+  }, [storageKey, userAnswersData]);
 
   useEffect(() => {
     if (storageKey && hasChanges && Object.keys(answers).length > 0) {
@@ -63,9 +72,13 @@ const useSubmissionProgress = ({ seasonSlug, questions, userAnswersData }) => {
   }, [answers, hasChanges, storageKey]);
 
   const handleAnswerChange = useCallback((questionId, value) => {
-    setAnswers((current) => ({ ...current, [questionId]: value }));
+    setAnswers((current) => {
+      const next = { ...current, [questionId]: value };
+      if (storageKey) localStorage.setItem(storageKey, JSON.stringify(next));
+      return next;
+    });
     setHasChanges(true);
-  }, []);
+  }, [storageKey]);
 
   const groupedQuestions = useMemo(() => groupQuestions(questions), [questions]);
   const missingQuestions = useMemo(

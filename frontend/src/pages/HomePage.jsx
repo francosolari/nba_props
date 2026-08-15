@@ -251,7 +251,7 @@ function SubmissionPreview({ submitUrl, hasSubmission, submissionOpen, isAuthent
           <li><span>2</span><div><strong>Call awards and props</strong><small>Make every pick before tip-off.</small></div></li>
           <li><span>3</span><div><strong>Climb the live table</strong><small>Exact calls earn the most points.</small></div></li>
         </ol>
-        <div className="home-entry-sheet__footer"><span>{submissionOpen ? 'Entries open now' : 'Next entry window'}</span><div><a href={loginUrl || '#login'}>Log in</a><a href={signupUrl || '#signup'}>Create entry</a></div></div>
+        <div className="home-entry-sheet__footer"><span>{submissionOpen ? 'Entries open now' : 'Next entry window'}</span><div><a href={loginUrl || '#login'}>Log in</a><a href={submitUrl || signupUrl || '#signup'}>Start entry</a></div></div>
       </aside>
     );
   }
@@ -436,7 +436,7 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
       secondaryCta = { label: 'View leaderboard', href: rootProps.leaderboardUrl, icon: ArrowRight };
     }
   } else {
-    primaryCta = { label: 'Log in to start', href: rootProps.loginUrl || '#login', icon: ArrowRight };
+    primaryCta = { label: 'Start your entry', href: rootProps.submitUrl || rootProps.signupUrl || '#signup', icon: ArrowRight };
     secondaryCta = { label: 'Create account', href: rootProps.signupUrl || '#signup', icon: UserPlus };
   }
 

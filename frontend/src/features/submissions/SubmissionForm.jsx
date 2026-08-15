@@ -48,11 +48,14 @@ const SubmissionActions = ({
   seasonSlug,
   onSave,
   onSubmit,
+  isAuthenticated,
 }) => (
   <div id="submit" className={`submission-actions mt-10${validationAttempted && missingCount > 0 ? ' has-validation-error' : ''}`}>
     <div className="submission-actions__status" id="submission-requirements">
       <div><span>Entry status</span><strong>{missingCount === 0 ? 'All questions answered' : `${missingCount} ${missingCount === 1 ? 'question' : 'questions'} left`}</strong></div>
-      <p aria-live="assertive">{validationAttempted && missingCount > 0
+      <p aria-live="assertive">{!isAuthenticated
+        ? 'Your draft stays on this device. Create an account when you save or submit.'
+        : validationAttempted && missingCount > 0
         ? 'Final submission needs every question. Save this draft now or finish the remaining picks.'
         : 'Save a draft anytime. Final submission requires every question.'}</p>
     </div>
@@ -77,7 +80,7 @@ const SubmissionActions = ({
 const SubmissionForm = ({
   standingsBoardRef,
   userContextLoading,
-  userContext,
+  isAuthenticated,
   username,
   seasonSlug,
   isReadOnly,
@@ -100,6 +103,7 @@ const SubmissionForm = ({
   submitPending,
   onSave,
   onSubmit,
+  onAuthenticationRequired,
 }) => {
   const sharedProps = { isReadOnly, playerOptions, teamOptions, loadingAuxData, istStandings, loadingIstStandings, istStandingsError };
   return (
@@ -107,9 +111,17 @@ const SubmissionForm = ({
       <section id="standings" className="mb-10">
         <header className="mb-4"><h2 className="text-xl sm:text-2xl font-semibold">Regular Season Standings</h2><p className="text-sm text-slate-500 mt-1">Drag and drop teams in each conference to set your projected final standings.</p></header>
         <div className="bg-white border border-slate-200 rounded-xl">
-          {userContextLoading ? <div className="p-6 text-center text-sm">Loading standings...</div> : userContext ? (
-            <EditablePredictionBoard ref={standingsBoardRef} seasonSlug={seasonSlug} canEdit={!isReadOnly} username={username} />
-          ) : <div className="p-6 text-center text-sm">Sign in to manage your regular season standings predictions.</div>}
+          {userContextLoading ? <div className="p-6 text-center text-sm">Loading standings...</div> : (
+            <EditablePredictionBoard
+              ref={standingsBoardRef}
+              seasonSlug={seasonSlug}
+              canEdit={!isReadOnly}
+              username={username}
+              localOnly={!isAuthenticated}
+              draftStorageKey={`submission_standings_${seasonSlug}`}
+              onLocalSave={onAuthenticationRequired}
+            />
+          )}
         </div>
       </section>
       {!isReadOnly && questions.length > 0 && (
@@ -118,7 +130,7 @@ const SubmissionForm = ({
       <div id="questions" className="space-y-10">
         {groupedQuestions.map((group) => <QuestionGroup key={group.type} group={group} answers={answers} onAnswerChange={handleAnswerChange} sharedProps={sharedProps} />)}
       </div>
-      {!isReadOnly && <SubmissionActions validationAttempted={validationAttempted} missingCount={missingCount} hasChanges={hasChanges} isPending={submitPending} seasonSlug={seasonSlug} onSave={onSave} onSubmit={onSubmit} />}
+      {!isReadOnly && <SubmissionActions validationAttempted={validationAttempted} missingCount={missingCount} hasChanges={hasChanges} isPending={submitPending} seasonSlug={seasonSlug} onSave={onSave} onSubmit={onSubmit} isAuthenticated={isAuthenticated} />}
     </>
   );
 };

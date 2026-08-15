@@ -34,7 +34,12 @@ QUESTIONS = [
     },
 ]
 
-STATUS = {"is_open": True, "deadline": "2026-10-01T23:59:59Z", "season_slug": "2025-26"}
+STATUS = {
+    "is_open": True,
+    "deadline": "2026-10-01T23:59:59Z",
+    "season_slug": "2025-26",
+    "message": "Entries are open until October 1.",
+}
 
 
 class SubmissionQAHandler(BaseHTTPRequestHandler):
@@ -49,6 +54,12 @@ class SubmissionQAHandler(BaseHTTPRequestHandler):
             "/api/v2/user/context": {"username": None, "is_admin": False, "is_authenticated": False},
             "/api/v2/seasons/": [{"slug": "2025-26", "year": "2025-26"}],
             "/api/v2/submissions/standings/2025-26": {"predictions": []},
+            "/api/v2/standings/2025-26": {
+                "east": [{"id": 1, "name": "Boston Celtics", "position": 1},
+                         {"id": 2, "name": "New York Knicks", "position": 2}],
+                "west": [{"id": 3, "name": "Oklahoma City Thunder", "position": 1},
+                         {"id": 4, "name": "Denver Nuggets", "position": 2}],
+            },
             "/api/v2/players/": {"players": [
                 {"id": 1, "name": "Shai Gilgeous-Alexander"},
                 {"id": 2, "name": "Nikola Jokic"},

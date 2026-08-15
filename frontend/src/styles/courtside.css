@@ -2039,11 +2039,11 @@ button[type="submit"]:active {
 /* Picks become ruled entry slips instead of a form-card grid */
 .court-submissions-page { padding-top: 28px !important; color: var(--court-ink); background: #fff !important; }
 .court-submissions-page > div { max-width: 1080px !important; }
-.court-submissions-page > div > div:first-child { margin-bottom: 28px !important; padding: 22px; border: 2px solid var(--court-rule); border-top: 9px solid var(--court-blue); }
+.court-submissions-page > div > div:first-child { margin-bottom: 28px !important; padding: 22px; border: 2px solid var(--court-rule); }
 .court-submissions-page h1 { font: 800 clamp(38px, 6vw, 68px)/.9 var(--court-display) !important; letter-spacing: .01em; text-transform: uppercase; }
 .court-submissions-page nav { gap: 0 !important; border: 1px solid var(--court-rule); }
 .court-submissions-page nav a { min-height: 42px; padding: 0 14px !important; border: 0 !important; border-right: 1px solid var(--court-rule) !important; border-radius: 0 !important; box-shadow: none !important; }
-.court-submissions-page section > header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; padding: 0 0 10px; border-bottom: 3px solid var(--court-rule); }
+.court-submissions-page section > header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; padding: 0 0 10px; border-bottom: 2px solid var(--court-rule); }
 .court-submissions-page section > header h2 { font: 800 28px/1 var(--court-display) !important; letter-spacing: .02em; text-transform: uppercase; }
 .court-submissions-page #standings > div { border: 2px solid var(--court-rule) !important; border-radius: 2px !important; box-shadow: none !important; }
 .court-submissions-page #questions > section > .grid { gap: 0 !important; border: 2px solid var(--court-rule); }
@@ -2054,7 +2054,7 @@ button[type="submit"]:active {
 .court-submissions-page #questions textarea,
 .court-submissions-page #questions button { border-radius: 0 !important; box-shadow: none !important; }
 .court-submissions-page [class*="rounded-full"] { border-radius: 2px !important; }
-.court-submissions-page #submit { position: sticky; bottom: 62px; z-index: 35; align-items: stretch !important; padding: 10px; background: #fff; border: 2px solid var(--court-rule); box-shadow: 0 -8px 0 rgb(255 255 255 / 88%); }
+.court-submissions-page #submit { position: sticky; bottom: 62px; z-index: 35; align-items: stretch !important; padding: 10px; background: var(--court-paper); border: 2px solid var(--court-rule); box-shadow: none; }
 .court-submissions-page #submit > div { gap: 0 !important; }
 .court-submissions-page #submit button { min-height: 48px; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
 .court-submissions-page #submit button:last-child { color: #fff !important; background: var(--court-blue) !important; border-left: 1px solid var(--court-rule) !important; }
@@ -2254,11 +2254,9 @@ button[type="submit"]:active {
   color: var(--court-ink);
   background: var(--court-paper);
   border: 2px solid var(--court-rule);
-  border-top: 6px solid var(--court-blue);
   border-radius: 2px;
 }
 
-.court-submissions-page .submission-progress.is-complete { border-top-color: var(--court-success); }
 .submission-progress__section,
 .submission-progress__overall { min-width: 0; padding: 10px 12px 11px; }
 .submission-progress__section { display: none; }
@@ -2281,7 +2279,7 @@ button[type="submit"]:active {
   font-variant-numeric: tabular-nums;
   text-transform: uppercase;
 }
-.submission-progress__label-row strong { font-size: 13px; letter-spacing: .035em; }
+.submission-progress__label-row strong { font-size: 11px; letter-spacing: .035em; }
 .submission-progress__section p {
   overflow: hidden;
   margin: 5px 0 8px;
@@ -2296,20 +2294,19 @@ button[type="submit"]:active {
   height: 7px;
   flex: 1 1 auto;
   overflow: hidden;
-  background: #dbe1e6;
+  background: var(--court-rule-soft);
   border: 1px solid var(--court-rule);
 }
 .submission-progress__track > span {
   display: block;
   height: 100%;
   background: var(--court-blue);
-  transition: width 220ms cubic-bezier(.2, .8, .2, 1);
 }
 .submission-progress.is-complete .submission-progress__track > span { background: var(--court-success); }
 .submission-progress__status {
   flex: 0 0 auto;
   color: var(--court-blue-dark);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .045em;
 }
@@ -2350,7 +2347,7 @@ button[type="submit"]:active {
 }
 .submission-progress__jumps a.is-active { color: var(--court-paper); background: var(--court-blue); }
 .submission-progress__jumps a.is-active small { color: var(--court-paper); background: transparent; }
-.submission-progress__jumps a.is-complete:not(.is-active) small { color: var(--court-success); background: #eaf6ee; }
+.submission-progress__jumps a.is-complete:not(.is-active) small { color: var(--court-success); background: var(--court-sheet-wash); }
 
 .court-submissions-page .submission-question-group { scroll-margin-top: calc(var(--court-topbar-height) + 150px); }
 .court-submissions-page .submission-question-group > header { gap: 12px; }
@@ -2368,7 +2365,7 @@ button[type="submit"]:active {
 }
 .submission-section-count.is-complete {
   color: var(--court-success);
-  background: #eaf6ee;
+  background: var(--court-sheet-wash);
   border-color: var(--court-success);
 }
 
@@ -2396,9 +2393,9 @@ button[type="submit"]:active {
 }
 .submission-actions.has-validation-error .submission-actions__status { background: var(--court-red-soft); }
 .submission-actions__status > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.submission-actions__status span { color: var(--court-steel); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
-.submission-actions__status strong { font-size: 14px; letter-spacing: .035em; }
-.submission-actions__status p { margin: 0; color: var(--court-steel); font-size: 12px; line-height: 1.3; }
+.submission-actions__status span { color: var(--court-steel); font-size: 11px; font-weight: 800; letter-spacing: .1em; }
+.submission-actions__status strong { font-size: 11px; letter-spacing: .035em; }
+.submission-actions__status p { margin: 0; color: var(--court-steel); font-size: 11px; line-height: 1.3; }
 .submission-actions.has-validation-error .submission-actions__status p { color: var(--court-danger); }
 .court-submissions-page #submit .submission-actions__buttons {
   display: grid;
@@ -2408,7 +2405,7 @@ button[type="submit"]:active {
 .court-submissions-page #submit .submission-actions__buttons button {
   min-height: 50px;
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .055em;
   border: 0 !important;
@@ -2431,7 +2428,7 @@ button[type="submit"]:active {
   margin: 0;
   padding: 6px 10px;
   color: var(--court-warning);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .07em;
   text-align: center;
@@ -2468,6 +2465,84 @@ button[type="submit"]:active {
   .submission-section-count { justify-self: start; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .submission-progress__track > span { transition: none; }
+/* Anonymous entry and trust-critical submission notices */
+.submission-account-note,
+.submission-payment,
+.submission-entry-error,
+.submission-verifying,
+.submission-window,
+.submission-feedback__sheet {
+  color: var(--court-ink);
+  background: var(--court-paper);
+  border: 2px solid var(--court-rule);
+  border-radius: 2px;
+  box-shadow: none;
+}
+.submission-account-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 12px 14px;
+  background: var(--court-blue-soft);
+}
+.submission-account-note strong,
+.submission-payment strong,
+.submission-window > p:first-child,
+.submission-entry-error strong {
+  font: 800 18px/1 var(--court-display);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.submission-account-note p,
+.submission-payment p,
+.submission-entry-error p { margin: 3px 0 0; color: var(--court-steel); font-size: 16px; line-height: 1.45; }
+.submission-account-note.is-prompted { background: var(--court-gold-soft); }
+.submission-account-note__actions { display: flex; flex: 0 0 auto; align-items: stretch; }
+.court-submissions-page .submission-account-note__actions a,
+.submission-account-note__actions button,
+.submission-entry-error button,
+.submission-payment button {
+  display: grid;
+  min-height: 44px;
+  padding: 0 12px;
+  place-items: center;
+  color: var(--court-ink);
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: var(--court-paper);
+  border: 0;
+  border-left: 1px solid var(--court-rule);
+  border-radius: 0;
+}
+.court-submissions-page .submission-account-note__actions a:first-child { color: var(--court-paper); background: var(--court-blue); }
+.submission-payment,
+.submission-entry-error { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; padding: 12px 14px; }
+.submission-payment__copy { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; }
+.submission-payment.is-paid { border-color: var(--court-success); }
+.submission-payment.is-due,
+.submission-entry-error { background: var(--court-gold-soft); }
+.submission-payment__stamp { padding: 6px 8px; color: var(--court-success); font: 800 11px/1 var(--court-display); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--court-success); }
+.submission-window { margin-bottom: 24px; padding: 12px 14px; }
+.submission-window.is-open { color: var(--court-success); background: var(--court-sheet-wash); }
+.submission-window.is-closed { color: var(--court-danger); background: var(--court-red-soft); }
+.submission-window p { margin: 0; }
+.submission-verifying { margin-bottom: 24px; padding: 12px 14px; color: var(--court-blue-dark); background: var(--court-blue-soft); }
+.submission-feedback { position: fixed; right: 16px; bottom: calc(var(--court-nav-height) + 16px); z-index: 60; width: min(380px, calc(100vw - 32px)); }
+.submission-feedback__sheet { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding: 12px 14px; }
+.submission-feedback__sheet.is-error { color: var(--court-danger); background: var(--court-red-soft); }
+.submission-feedback__sheet.is-success { color: var(--court-success); background: var(--court-sheet-wash); }
+.submission-feedback__sheet button { color: currentColor; font: 800 10px/1 var(--court-display); letter-spacing: .08em; text-transform: uppercase; background: transparent; border: 0; }
+
+@media (max-width: 640px) {
+  .submission-account-note,
+  .submission-payment,
+  .submission-entry-error { align-items: stretch; flex-direction: column; }
+  .submission-payment__copy { align-items: stretch; flex-direction: column; }
+  .submission-account-note__actions { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--court-rule); }
+  .submission-account-note__actions button { grid-column: 1 / -1; border-top: 1px solid var(--court-rule); border-left: 0; }
+  .submission-account-note__actions a:first-child { border-left: 0 !important; }
+  .submission-feedback { right: 12px; bottom: calc(var(--court-nav-height) + 12px); width: calc(100vw - 24px); }
 }

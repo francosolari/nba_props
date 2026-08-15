@@ -1,9 +1,3 @@
-// File: frontend/src/pages/SubmissionsPage.jsx
-/**
- * SubmissionsPage - Light mode interface for submitting predictions
- * Features: deadline enforcement, auto-save, progress tracking, grouped sections
- */
-
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
@@ -23,6 +17,7 @@ import { getQuestionGroupType, isAnswered } from '../features/submissions/submis
 import { getAxiosErrorMessage } from '../features/submissions/submissionErrors';
 import useSubmissionOptions from '../features/submissions/useSubmissionOptions';
 import useSubmissionProgress from '../features/submissions/useSubmissionProgress';
+import useAnonymousSubmission from '../features/submissions/useAnonymousSubmission';
 import '../styles/SubmissionsPage.css';
 
 const FALLBACK_LATEST_SEASON = '2025-26';
@@ -32,6 +27,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const [seasonLoading, setSeasonLoading] = useState(!seasonSlug);
   const [latestSeasonSlug, setLatestSeasonSlug] = useState(FALLBACK_LATEST_SEASON);
   const [feedback, setFeedback] = useState(null);
+  const [accountPromptAction, setAccountPromptAction] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const standingsBoardRef = useRef(null);
 
@@ -41,14 +37,12 @@ const SubmissionsPage = ({ seasonSlug }) => {
   const isAuthenticated = !!userContext?.is_authenticated;
   const entryFeeEnabled = !!effectiveSeasonSlug && isAuthenticated;
 
-  // Stripe payment status
   const {
     data: paymentStatus,
     isLoading: paymentStatusLoading,
     refetch: refetchPaymentStatus,
   } = usePaymentStatus(effectiveSeasonSlug, { enabled: entryFeeEnabled });
 
-  // Handle post-payment redirect
   const {
     isVerifying,
     verificationSuccess,
@@ -56,21 +50,17 @@ const SubmissionsPage = ({ seasonSlug }) => {
     clearUrlParams,
   } = usePaymentRedirectHandler(effectiveSeasonSlug);
 
-  // Handle successful payment verification
   useEffect(() => {
     if (verificationSuccess && paymentData?.is_paid) {
       setFeedback({
         type: 'success',
         message: 'Payment confirmed. Your submission is now valid, and you can still edit until the deadline.',
       });
-      // Clean up URL parameters
       clearUrlParams();
-      // Refetch data
       refetchPaymentStatus();
     }
   }, [verificationSuccess, paymentData, clearUrlParams, refetchPaymentStatus]);
 
-  // Discover the latest season when no slug provided
   useEffect(() => {
     if (seasonSlug || activeSeasonSlug) {
       setSeasonLoading(false);
@@ -168,8 +158,18 @@ const SubmissionsPage = ({ seasonSlug }) => {
       'We could not load the latest prediction questions. Please try again in a moment.'
     )
     : null;
+  const { requestAccount, saveAnonymousDraft } = useAnonymousSubmission({
+    isAuthenticated,
+    seasonSlug: effectiveSeasonSlug,
+    standingsBoardRef,
+    setFeedback,
+    setAccountPromptAction,
+    setHasChanges,
+  });
 
   const handleSubmit = async (action = 'submit') => {
+    if (await saveAnonymousDraft(action)) return;
+
     if (action === 'submit' && missingQuestions.length > 0) {
       const unansweredLabel = missingQuestions.length === 1
         ? '1 unanswered question remains. Complete it before submitting, or save for later.'
@@ -254,6 +254,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
       setHasChanges(false);
       setValidationAttempted(false);
       localStorage.removeItem(`submissions_${slugToUse}`);
+      localStorage.removeItem(`submission_standings_${slugToUse}`);
 
       // Check payment status after submission
       let needsPayment = false;
@@ -351,11 +352,14 @@ const SubmissionsPage = ({ seasonSlug }) => {
             onPay={() => setShowPaymentModal(true)}
             isVerifying={isVerifying}
             submissionStatus={submissionStatus}
+            isAuthenticated={isAuthenticated}
+            accountPromptAction={accountPromptAction}
+            onDismissAccountPrompt={() => setAccountPromptAction(null)}
           />
           <SubmissionForm
             standingsBoardRef={standingsBoardRef}
             userContextLoading={userContextLoading}
-            userContext={userContext}
+            isAuthenticated={isAuthenticated}
             username={username}
             seasonSlug={effectiveSeasonSlug}
             isReadOnly={isReadOnly}
@@ -373,6 +377,7 @@ const SubmissionsPage = ({ seasonSlug }) => {
             submitPending={submitMutation.isPending}
             onSave={() => handleSubmit('save')}
             onSubmit={() => handleSubmit('submit')}
+            onAuthenticationRequired={requestAccount}
           />
           {showPaymentModal && effectiveSeasonSlug && (
             <StripePaymentModal

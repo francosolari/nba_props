@@ -82,8 +82,23 @@ const StandingsList = memo(({ conference, teams, isEditable }) => (
   </div>
 ));
 
+const restoreDraftOrder = (teams, orderedIds = []) => {
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0) return teams;
+  const teamsById = new Map(teams.map((team) => [String(team.team_id), team]));
+  const ordered = orderedIds.map((id) => teamsById.get(String(id))).filter(Boolean);
+  const included = new Set(ordered.map((team) => String(team.team_id)));
+  return [...ordered, ...teams.filter((team) => !included.has(String(team.team_id)))];
+};
+
 const EditablePredictionBoard = forwardRef(function EditablePredictionBoard(
-  { seasonSlug: initialSeasonSlug, canEdit = true, username },
+  {
+    seasonSlug: initialSeasonSlug,
+    canEdit = true,
+    username,
+    localOnly = false,
+    draftStorageKey = null,
+    onLocalSave,
+  },
   ref
 ) {
   const [eastStandings, setEastStandings] = useState([]);
@@ -199,12 +214,14 @@ const EditablePredictionBoard = forwardRef(function EditablePredictionBoard(
       setLoading(true);
       let body = {};
 
-      try {
-        const config = username ? { params: { username } } : {};
-        const response = await axios.get(`/api/v2/submissions/standings/${slugToUse}`, config);
-        body = response.data || {};
-      } catch (error) {
-        console.error('Error fetching user standings predictions:', error);
+      if (!localOnly) {
+        try {
+          const config = username ? { params: { username } } : {};
+          const response = await axios.get(`/api/v2/submissions/standings/${slugToUse}`, config);
+          body = response.data || {};
+        } catch (error) {
+          console.error('Error fetching user standings predictions:', error);
+        }
       }
 
       let east = Array.isArray(body.east) && body.east.length ? sortPredictions(body.east) : [];
@@ -280,6 +297,16 @@ const EditablePredictionBoard = forwardRef(function EditablePredictionBoard(
         }
       }
 
+      if (draftStorageKey) {
+        try {
+          const draft = JSON.parse(localStorage.getItem(draftStorageKey) || 'null');
+          east = restoreDraftOrder(east, draft?.east);
+          west = restoreDraftOrder(west, draft?.west);
+        } catch (error) {
+          console.warn('Unable to restore local standings draft', error);
+        }
+      }
+
       if (isMounted) {
         const eastClone = east.map((team) => ({ ...team }));
         const westClone = west.map((team) => ({ ...team }));
@@ -332,7 +359,7 @@ const EditablePredictionBoard = forwardRef(function EditablePredictionBoard(
     return () => {
       isMounted = false;
     };
-  }, [seasonSlug, username]);
+  }, [draftStorageKey, localOnly, seasonSlug, username]);
 
   const handleDragStart = useCallback(() => {
     setIsDragging(true);
@@ -403,6 +430,20 @@ const EditablePredictionBoard = forwardRef(function EditablePredictionBoard(
 
       const payload = [...eastPayload, ...westPayload];
 
+      if (localOnly) {
+        if (draftStorageKey) {
+          localStorage.setItem(draftStorageKey, JSON.stringify({
+            east: eastPayload.map((prediction) => prediction.team_id),
+            west: westPayload.map((prediction) => prediction.team_id),
+          }));
+        }
+        setInitialEastStandings(eastStandings.map((team) => ({ ...team })));
+        setInitialWestStandings(westStandings.map((team) => ({ ...team })));
+        setSaving(false);
+        onLocalSave?.();
+        return { success: true, localOnly: true, slug: slugOverride || seasonSlug };
+      }
+
       try {
         let targetSlug = slugOverride || seasonSlug;
 
@@ -445,6 +486,7 @@ const EditablePredictionBoard = forwardRef(function EditablePredictionBoard(
 
         setInitialEastStandings(eastStandings.map((team) => ({ ...team })));
         setInitialWestStandings(westStandings.map((team) => ({ ...team })));
+        if (draftStorageKey) localStorage.removeItem(draftStorageKey);
         if (!canEdit) {
           setIsEditing(false);
         }
@@ -472,8 +514,11 @@ const EditablePredictionBoard = forwardRef(function EditablePredictionBoard(
     },
     [
       canEdit,
+      draftStorageKey,
       eastStandings,
       hasUnsavedChanges,
+      localOnly,
+      onLocalSave,
       seasonSlug,
       westStandings,
     ]

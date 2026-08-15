@@ -10,7 +10,7 @@ jest.mock('../../components/SelectComponent', () => ({ value, onChange, options,
     <select
         data-testid="select-component"
         value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(options?.find((option) => String(option.value) === e.target.value) || null)}
         aria-label={placeholder}
     >
         <option value="">{placeholder}</option>
@@ -97,6 +97,7 @@ describe('SubmissionsPage', () => {
     };
 
     beforeEach(() => {
+        localStorage.clear();
         // Set up default mocks for all the hooks
         server.use(
             rest.get('/api/v2/submissions/questions/:season', (req, res, ctx) => {
@@ -291,5 +292,55 @@ describe('SubmissionsPage', () => {
             });
         });
         expect(await screen.findByText(/progress saved/i)).toBeInTheDocument();
+    });
+
+    test('lets a guest start an entry and saves the draft on their device', async () => {
+        let submissionRequests = 0;
+        server.use(
+            rest.get('/api/v2/user/context', (req, res, ctx) => res(ctx.json({
+                username: null,
+                is_admin: false,
+                is_authenticated: false,
+            }))),
+            rest.post('/api/v2/submissions/answers/:season', (req, res, ctx) => {
+                submissionRequests += 1;
+                return res(ctx.json({ status: 'success' }));
+            })
+        );
+
+        renderWithProviders(<SubmissionsPage seasonSlug="2024-25" />);
+
+        expect(await screen.findByText(/no account needed to start/i)).toBeInTheDocument();
+        fireEvent.change(screen.getAllByTestId('select-component')[0], { target: { value: '1' } });
+        fireEvent.click(screen.getByRole('button', { name: /save for later/i }));
+
+        expect(await screen.findByText(/keep your entry with an account/i)).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /create account/i })).toHaveAttribute(
+            'href',
+            '/accounts/signup/?next=%2F'
+        );
+        expect(JSON.parse(localStorage.getItem('submissions_2024-25'))).toMatchObject({ 1: 1 });
+        expect(submissionRequests).toBe(0);
+    });
+
+    test('requires a guest to create an account before final submission', async () => {
+        let submissionRequests = 0;
+        server.use(
+            rest.get('/api/v2/user/context', (req, res, ctx) => res(ctx.json({
+                username: null,
+                is_admin: false,
+                is_authenticated: false,
+            }))),
+            rest.post('/api/v2/submissions/answers/:season', (req, res, ctx) => {
+                submissionRequests += 1;
+                return res(ctx.json({ status: 'success' }));
+            })
+        );
+
+        renderWithProviders(<SubmissionsPage seasonSlug="2024-25" />);
+        fireEvent.click(await screen.findByRole('button', { name: /submit predictions/i }));
+
+        expect(await screen.findByText(/create an account or log in to submit them/i)).toBeInTheDocument();
+        expect(submissionRequests).toBe(0);
     });
 });

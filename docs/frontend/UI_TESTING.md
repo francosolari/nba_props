@@ -18,6 +18,8 @@ Open `http://127.0.0.1:8001/qa-submissions.html`. Test at least these two viewpo
 For the submission flow, verify that the desktop tracker shows current-section and overall
 progress, mobile hides current-section progress, section jumps remain horizontally scrollable,
 touch targets are at least 44 pixels tall, and neither viewport has horizontal page overflow.
+As the anonymous fixture, it should also allow picks, save them to local storage, and show account
+actions only after the guest chooses Save for later or Submit Predictions.
 
 The fixture is intentionally unauthenticated so the harness cannot write answers or payment data.
 Update `frontend/qa/submissions_server.py` when the page adds a new required GET endpoint or when a
