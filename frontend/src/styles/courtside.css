@@ -2241,3 +2241,233 @@ button[type="submit"]:active {
   .home-hero__body h1 { max-width: none; font-size: 48px !important; line-height: .9 !important; }
   .home-hero__subcopy { font-size: 16px !important; }
 }
+
+/* Submission completion ledger */
+.court-submissions-page { overflow-x: clip; }
+
+.court-submissions-page .submission-progress {
+  position: sticky;
+  top: calc(var(--court-topbar-height) + 8px);
+  z-index: 34;
+  display: grid;
+  margin: 0 0 24px;
+  color: var(--court-ink);
+  background: var(--court-paper);
+  border: 2px solid var(--court-rule);
+  border-top: 6px solid var(--court-blue);
+  border-radius: 2px;
+}
+
+.court-submissions-page .submission-progress.is-complete { border-top-color: var(--court-success); }
+.submission-progress__section,
+.submission-progress__overall { min-width: 0; padding: 10px 12px 11px; }
+.submission-progress__section { display: none; }
+.submission-progress__label-row,
+.submission-progress__overall-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.submission-progress__label {
+  color: var(--court-steel);
+  font: 800 10px/1 var(--court-body);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.submission-progress__label-row strong,
+.submission-progress__status,
+.submission-section-count,
+.submission-actions__status span,
+.submission-actions__status strong,
+.submission-actions__buttons button,
+.submission-actions__unsaved {
+  font-family: var(--court-display);
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+.submission-progress__label-row strong { font-size: 13px; letter-spacing: .035em; }
+.submission-progress__section p {
+  overflow: hidden;
+  margin: 5px 0 8px;
+  font: 800 18px/1 var(--court-display);
+  letter-spacing: .015em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.submission-progress__overall-row { margin-top: 8px; }
+.submission-progress__track {
+  height: 7px;
+  flex: 1 1 auto;
+  overflow: hidden;
+  background: #dbe1e6;
+  border: 1px solid var(--court-rule);
+}
+.submission-progress__track > span {
+  display: block;
+  height: 100%;
+  background: var(--court-blue);
+  transition: width 220ms cubic-bezier(.2, .8, .2, 1);
+}
+.submission-progress.is-complete .submission-progress__track > span { background: var(--court-success); }
+.submission-progress__status {
+  flex: 0 0 auto;
+  color: var(--court-blue-dark);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .045em;
+}
+.submission-progress.is-complete .submission-progress__status { color: var(--court-success); }
+.submission-progress__jumps {
+  display: flex;
+  grid-column: 1 / -1;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  border-top: 1px solid var(--court-rule);
+  scroll-snap-type: x proximity;
+}
+.submission-progress__jumps::-webkit-scrollbar { display: none; }
+.court-submissions-page .submission-progress__jumps a {
+  display: flex;
+  min-width: max-content;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px !important;
+  color: var(--court-ink);
+  font: 800 12px/1 var(--court-display);
+  letter-spacing: .035em;
+  text-transform: uppercase;
+  background: var(--court-paper);
+  border: 0 !important;
+  border-right: 1px solid var(--court-rule) !important;
+  scroll-snap-align: start;
+}
+.submission-progress__jumps a small {
+  padding: 3px 4px;
+  color: var(--court-danger);
+  font: 800 9px/1 var(--court-body);
+  letter-spacing: .045em;
+  background: var(--court-red-soft);
+  border: 1px solid currentColor;
+}
+.submission-progress__jumps a.is-active { color: var(--court-paper); background: var(--court-blue); }
+.submission-progress__jumps a.is-active small { color: var(--court-paper); background: transparent; }
+.submission-progress__jumps a.is-complete:not(.is-active) small { color: var(--court-success); background: #eaf6ee; }
+
+.court-submissions-page .submission-question-group { scroll-margin-top: calc(var(--court-topbar-height) + 150px); }
+.court-submissions-page .submission-question-group > header { gap: 12px; }
+.submission-section-count {
+  align-self: center;
+  padding: 7px 9px;
+  color: var(--court-blue-dark);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  background: var(--court-blue-soft);
+  border: 1px solid var(--court-blue);
+  border-radius: 1px;
+}
+.submission-section-count.is-complete {
+  color: var(--court-success);
+  background: #eaf6ee;
+  border-color: var(--court-success);
+}
+
+.court-submissions-page #submit.submission-actions {
+  position: sticky;
+  bottom: calc(var(--court-nav-height) - 6px + env(safe-area-inset-bottom));
+  z-index: 35;
+  display: grid;
+  align-items: stretch !important;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  color: var(--court-ink);
+  background: var(--court-paper);
+  border: 2px solid var(--court-rule);
+  border-radius: 2px;
+  box-shadow: none;
+}
+.submission-actions__status {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  background: var(--court-sheet-wash);
+  border-bottom: 1px solid var(--court-rule);
+}
+.submission-actions.has-validation-error .submission-actions__status { background: var(--court-red-soft); }
+.submission-actions__status > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.submission-actions__status span { color: var(--court-steel); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.submission-actions__status strong { font-size: 14px; letter-spacing: .035em; }
+.submission-actions__status p { margin: 0; color: var(--court-steel); font-size: 12px; line-height: 1.3; }
+.submission-actions.has-validation-error .submission-actions__status p { color: var(--court-danger); }
+.court-submissions-page #submit .submission-actions__buttons {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 0 !important;
+}
+.court-submissions-page #submit .submission-actions__buttons button {
+  min-height: 50px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .055em;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.submission-actions__save { color: var(--court-blue-dark); background: var(--court-paper); }
+.court-submissions-page #submit .submission-actions__submit {
+  color: var(--court-paper) !important;
+  background: var(--court-blue) !important;
+  border-left: 1px solid var(--court-rule) !important;
+}
+.court-submissions-page #submit .submission-actions__submit.is-incomplete {
+  color: var(--court-blue-dark) !important;
+  background: var(--court-blue-soft) !important;
+}
+.submission-actions__buttons button:disabled { cursor: not-allowed; opacity: .58; }
+.submission-actions__buttons button:active { transform: translateY(1px); }
+.submission-actions__unsaved {
+  margin: 0;
+  padding: 6px 10px;
+  color: var(--court-warning);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-align: center;
+  background: var(--court-gold-soft);
+  border-top: 1px solid var(--court-rule);
+}
+
+@media (hover: hover) {
+  .submission-actions__save:hover { background: var(--court-sheet-wash); }
+  .court-submissions-page #submit .submission-actions__submit:hover { background: var(--court-blue-dark) !important; }
+  .court-submissions-page #submit .submission-actions__submit.is-incomplete:hover {
+    color: var(--court-paper) !important;
+    background: var(--court-blue) !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .court-submissions-page .submission-progress { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+  .submission-progress__section { display: block; border-right: 1px solid var(--court-rule); }
+  .submission-progress__overall { display: flex; flex-direction: column; justify-content: center; }
+  .court-submissions-page #submit.submission-actions {
+    bottom: 18px;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .submission-actions__status { min-width: 0; border-right: 1px solid var(--court-rule); border-bottom: 0; }
+  .court-submissions-page #submit .submission-actions__buttons { grid-template-columns: 150px 190px; }
+  .submission-actions__unsaved { grid-column: 1 / -1; }
+}
+
+@media (max-width: 520px) {
+  .court-submissions-page #standings > header { grid-template-columns: 1fr; align-items: start; gap: 4px; }
+  .court-submissions-page #standings > div { box-sizing: border-box; max-width: 100%; }
+  .court-submissions-page .submission-question-group > header { grid-template-columns: 1fr; align-items: start; }
+  .submission-section-count { justify-self: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submission-progress__track > span { transition: none; }
+}
