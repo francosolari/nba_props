@@ -2356,13 +2356,13 @@ button[type="submit"]:active {
   border: 2px solid var(--court-rule);
 }
 .court-submissions-page .ist-group-marker--east {
-  color: var(--court-blue);
-  background: var(--court-blue-soft);
+  color: var(--court-paper);
+  background: var(--court-blue);
   border-color: var(--court-blue);
 }
 .court-submissions-page .ist-group-marker--west {
-  color: var(--court-red);
-  background: var(--court-red-soft);
+  color: var(--court-paper);
+  background: var(--court-red);
   border-color: var(--court-red);
 }
 
