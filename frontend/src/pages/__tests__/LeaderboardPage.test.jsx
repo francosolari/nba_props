@@ -21,7 +21,7 @@ describe('LeaderboardPage', () => {
                                 display_name: 'Player One',
                                 avatar: null,
                                 total_points: 150,
-                                badges: [],
+                                badges: [{ type: 'category_best', category: 'Regular Season Standings' }],
                                 categories: {
                                     'Regular Season Standings': {
                                         points: 50,
@@ -93,6 +93,7 @@ describe('LeaderboardPage', () => {
 
         // Check rankings
         expect(screen.getByText('Player One')).toBeInTheDocument();
+        expect(screen.getByText('Top Regular')).toHaveClass('court-category-badge');
         const scores = screen.getAllByText('150');
         expect(scores.length).toBeGreaterThan(0);
         expect(scores[0]).toBeInTheDocument();

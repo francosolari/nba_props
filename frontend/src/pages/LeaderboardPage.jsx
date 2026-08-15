@@ -442,8 +442,8 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
                         {entry.user.badges && entry.user.badges.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-0.5">
                             {entry.user.badges.filter(b => b.type === 'category_best').slice(0, 2).map((b, i) => (
-                              <span key={i} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-500/30 whitespace-nowrap leading-none">
-                                <Crown className="w-2 h-2" /> 
+                              <span key={i} className="court-category-badge">
+                                <Crown aria-hidden="true" />
                                 {b.category ? `Top ${b.category.split(' ')[0]}` : 'Leader'}
                               </span>
                             ))}

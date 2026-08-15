@@ -24,6 +24,7 @@
   --court-display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --court-text: "Source Sans 3", system-ui, sans-serif;
   --court-body: var(--court-text);
+  --court-radius-ticket: 1px;
   color-scheme: light;
 }
 
@@ -987,19 +988,33 @@ button[type="submit"]:active {
 .court-basic-leaderboard__head > div:last-child { border-right: 0; }
 .court-basic-entry { border-bottom: 1px solid var(--court-rule-soft); background: #fff; }
 .court-basic-entry:last-child { border-bottom: 0; }
-.court-basic-entry.is-leader { background: #f6d86f; }
+.court-basic-entry.is-leader { background: var(--court-paper); }
 .court-basic-entry.is-expanded { background: #f5f8fa; }
-.court-basic-entry.is-leader.is-expanded { background: #f6d86f; }
+.court-basic-entry.is-leader.is-expanded { background: var(--court-paper); }
 .court-leaderboard-page > main .court-basic-leaderboard__row { display: grid; grid-template-columns: 76px 220px 140px minmax(0, 1fr) 40px; min-height: 80px; border-bottom: 0; background: transparent !important; }
 .court-basic-leaderboard__row > div { height: 100%; min-height: 80px; border-right: 1px solid var(--court-rule-soft); }
 .court-basic-leaderboard__row > div:last-child { border-right: 0; }
-.court-basic-entry.is-leader .court-basic-leaderboard__row > div { border-right-color: rgb(16 18 20 / 22%); }
 .court-basic-rank { display: grid; place-items: center; }
 .court-basic-rank .court-scorebook-number { font-size: 40px; }
 .court-basic-participant { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 16px; }
 .court-basic-participant [class*="rounded-full"] { border-radius: 999px !important; }
 .court-basic-participant h3 { font: 800 24px var(--court-display) !important; letter-spacing: .01em; }
 .court-basic-entry.is-leader .court-basic-participant [class*="rounded-full"] { color: #fff !important; background: var(--court-blue) !important; border-color: var(--court-rule) !important; }
+.court-category-badge {
+  display: inline-flex;
+  min-height: 18px;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--court-radius-ticket);
+  background: var(--court-blue-soft);
+  color: var(--court-blue-dark);
+  font: 800 10px/1 var(--court-display);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.court-category-badge svg { width: 10px; height: 10px; flex: 0 0 auto; }
 .court-basic-points-cell { display: flex; align-items: center; justify-content: center; flex-direction: column; }
 .court-basic-points { font-size: 34px; }
 .court-basic-preview { display: flex; align-items: center; gap: 16px; min-height: 80px; padding: 10px 18px; }
