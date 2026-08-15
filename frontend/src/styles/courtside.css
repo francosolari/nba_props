@@ -1016,6 +1016,9 @@ button[type="submit"]:active {
 .court-basic-rank.is-gold .court-rank-honor { background: var(--court-gold); }
 .court-basic-rank.is-silver .court-rank-honor { background: var(--court-medal-silver); }
 .court-basic-rank.is-bronze .court-rank-honor { background: var(--court-wood); }
+.court-basic-rank.is-gold { background: var(--court-gold-soft); }
+.court-basic-rank.is-silver { background: color-mix(in srgb, var(--court-medal-silver) 24%, var(--court-paper)); }
+.court-basic-rank.is-bronze { background: color-mix(in srgb, var(--court-wood) 18%, var(--court-paper)); }
 .court-basic-participant { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 16px; }
 .court-basic-participant [class*="rounded-full"] { border-radius: 999px !important; }
 .court-basic-participant h3 { font: 800 24px var(--court-display) !important; letter-spacing: .01em; }
@@ -1905,6 +1908,27 @@ button[type="submit"]:active {
   .court-your-rank { padding-top: 4px; }
   .court-your-rank > strong { font-size: 50px; }
   .court-your-rank > small { font-size: 16px; }
+
+  .court-leaderboard-page > header { padding: 14px 0 16px !important; }
+  .court-leaderboard-header {
+    display: grid;
+    grid-template-columns: minmax(118px, 1fr) minmax(142px, 170px);
+    gap: 10px;
+    align-items: end;
+  }
+  .court-leaderboard-header__top { display: contents !important; }
+  .court-leaderboard-header__title { grid-column: 1 / -1; }
+  .court-leaderboard-header__top .court-select--compact {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    align-self: end;
+  }
+  .court-leaderboard-header > .court-your-rank {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+  }
 
   .court-basic-expansion__inner { padding: 0; }
   .court-breakdown-sheet__head { align-items: stretch; padding: 0; }

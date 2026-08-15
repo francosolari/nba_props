@@ -84,6 +84,7 @@ describe('LeaderboardPage', () => {
         });
 
         expect(screen.getByText('Your rank')).toBeInTheDocument();
+        expect(document.querySelector('.court-leaderboard-header')).toBeInTheDocument();
         expect(screen.getByText('2nd')).toBeInTheDocument();
         expect(screen.getByText('/ 2')).toBeInTheDocument();
         expect(screen.queryByText('Players')).not.toBeInTheDocument();
