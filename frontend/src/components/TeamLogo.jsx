@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect, useRef, memo } from 'react';
 
 const TEAM_LOGO_SLUG_OVERRIDES = {
   'los-angeles-clippers': 'la-clippers',
@@ -39,6 +39,7 @@ const TeamLogo = memo(({ teamName, slug, className, alt, ...props }) => {
   );
   const [errorCount, setErrorCount] = useState(0);
   const [loaded, setLoaded] = useState(isAlreadyCached);
+  const imgRef = useRef(null);
 
   useEffect(() => {
     const cached = resolvedLogoSrcBySlug.get(calculatedSlug);
@@ -46,6 +47,16 @@ const TeamLogo = memo(({ teamName, slug, className, alt, ...props }) => {
     setErrorCount(0);
     setLoaded(!!cached);
   }, [calculatedSlug]);
+
+  // The browser may already have this image in its HTTP cache (common on
+  // repeat views), in which case `onLoad` fires late relative to paint and
+  // the opacity-0 → 1 fade is visible as a pop. Checking `.complete`
+  // synchronously before paint catches that case and skips the fade.
+  useLayoutEffect(() => {
+    if (imgRef.current?.complete) {
+      setLoaded(true);
+    }
+  }, [src]);
 
   const handleLoad = useCallback(() => {
     if (!calculatedSlug || !src) return;
@@ -75,6 +86,7 @@ const TeamLogo = memo(({ teamName, slug, className, alt, ...props }) => {
 
   return (
     <img
+      ref={imgRef}
       src={src}
       alt={alt || teamName || 'Team Logo'}
       className={className}

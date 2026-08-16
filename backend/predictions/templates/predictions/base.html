@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Preload critical fonts so they start downloading immediately, ahead of
+         styles.css, minimizing the fallback-to-custom-font swap (FOUT). -->
+    <link rel="preload" href="{% static 'fonts/source-sans-3-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{% static 'fonts/barlow-condensed-latin-700-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+
     <script>
         (function () {
             try {
