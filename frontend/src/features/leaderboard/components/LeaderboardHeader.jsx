@@ -22,8 +22,8 @@ export const LeaderboardHeader = ({
               <a href={`/leaderboard/${selectedSeason}/`} className="p-1.5 md:p-2 rounded-lg text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                 <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
               </a>
-              <h1 className="text-sm md:text-base font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 uppercase tracking-widest block">
-                Leaderboard
+              <h1 className="court-detail-title block uppercase text-slate-900 dark:text-white">
+                Advanced Board
               </h1>
 
               <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden md:block" />
@@ -33,7 +33,7 @@ export const LeaderboardHeader = ({
                 {['standings', 'awards', 'props'].map((s) => {
                   const isActive = section === s;
                   return (
-                    <button key={s} onClick={() => setSection(s)} className={`px-3 py-1.5 rounded-md text-xs font-black uppercase tracking-wider transition-all ${isActive ? 'bg-sky-50 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400' : 'text-slate-400 hover:text-slate-600'}`}>
+                    <button key={s} onClick={() => setSection(s)} className={`court-detail-tab px-3 py-1.5 uppercase transition-all ${isActive ? 'is-active' : ''}`}>
                       {s}
                     </button>
                   );
@@ -60,7 +60,7 @@ export const LeaderboardHeader = ({
               {['standings', 'awards', 'props'].map((s) => {
                 const isActive = section === s;
                 return (
-                  <button key={s} onClick={() => setSection(s)} className={`px-2 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wide transition-all whitespace-nowrap ${isActive ? 'bg-sky-50 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400' : 'text-slate-400 hover:text-slate-600'}`}>
+                  <button key={s} onClick={() => setSection(s)} className={`court-detail-tab px-2 py-1.5 uppercase whitespace-nowrap transition-all ${isActive ? 'is-active' : ''}`}>
                     {s}
                   </button>
                 );
@@ -70,7 +70,7 @@ export const LeaderboardHeader = ({
             <div className="flex items-center gap-2 md:gap-3 shrink-0 ml-auto md:ml-0">
               <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 md:p-1 border border-slate-200 dark:border-slate-700">
                 {['showcase', 'compare'].map(m => (
-                  <button key={m} onClick={() => setMode(m)} className={`px-2 md:px-4 py-1 md:py-1.5 rounded-md text-[9px] md:text-xs font-black uppercase tracking-wide md:tracking-wider transition-all ${mode === m ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                  <button key={m} onClick={() => setMode(m)} className={`court-detail-tab px-2 md:px-4 py-1 md:py-1.5 uppercase transition-all ${mode === m ? 'is-active' : ''}`}>
                     {m}
                   </button>
                 ))}

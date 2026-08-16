@@ -3,8 +3,8 @@ import SubmissionAccountPrompt from './SubmissionAccountPrompt';
 
 const SubmissionPageHeader = ({ season }) => (
   <div className="flex flex-col gap-6 mb-10">
-    <div className="flex flex-col gap-2 text-center md:text-left">
-      <span className="inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.2em] uppercase text-sky-600 dark:text-sky-400">
+    <div className="flex flex-col gap-2 text-left">
+      <span className="inline-flex items-center justify-start gap-2 text-xs font-semibold tracking-[0.2em] uppercase text-sky-600 dark:text-sky-400">
         {season} Season
       </span>
       <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-tight">

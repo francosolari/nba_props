@@ -15,7 +15,6 @@ import {
   Users,
 } from 'lucide-react';
 import { useLeaderboard, useUserSubmissions } from '../hooks';
-import '../styles/palette.css';
 
 const DEFAULT_SEASON = 'current';
 const ENTRY_FEE = '$25';

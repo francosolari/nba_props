@@ -33,7 +33,9 @@ import '@fontsource/barlow-condensed/latin-800.css';
 import '@fontsource/source-sans-3/latin-400.css';
 import '@fontsource/source-sans-3/latin-600.css';
 import '@fontsource/source-sans-3/latin-700.css';
+import './styles/tokens.css';
 import './styles/courtside.css';
+import './styles/prop-choice.css';
 
 console.log("React bundle loaded and running!");
 
