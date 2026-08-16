@@ -26,6 +26,7 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 import ReadOnlyStandingsList from "./components/ReadOnlyStandingsList";
 import ISTCenterPage from './pages/ist/ISTCenterPage.jsx';
 import SiteLayout from './components/SiteLayout.jsx';
+import ThemeToggle from './components/ThemeToggle.jsx';
 import '@fontsource/barlow-condensed/latin-600.css';
 import '@fontsource/barlow-condensed/latin-700.css';
 import '@fontsource/barlow-condensed/latin-800.css';
@@ -100,3 +101,9 @@ mountComponent(ISTCenterPage, 'ist-center-root', 'ISTCenterPage');
 
 // Mount SiteLayout globally - provides SideNav across all pages
 mountComponent(SiteLayout, 'site-layout-root', 'SiteLayout');
+
+// Mount the light/dark theme toggle into the persistent topbar
+const themeToggleRoot = document.getElementById('theme-toggle-root');
+if (themeToggleRoot) {
+  createRoot(themeToggleRoot).render(React.createElement(ThemeToggle));
+}
