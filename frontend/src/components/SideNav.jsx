@@ -10,6 +10,9 @@ import {
   BarChart3,
 } from 'lucide-react';
 
+/** Templates hand down placeholders like "current" until the season is resolved. */
+const PLACEHOLDER_SLUGS = new Set(['latest', 'current', '']);
+
 function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }) {
   const [currentSeasonSlug, setCurrentSeasonSlug] = useState(propSeasonSlug);
   const [isAdmin, setIsAdmin] = useState(() => (
@@ -17,12 +20,12 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
   ));
 
   useEffect(() => {
-    if (propSeasonSlug !== 'latest') {
+    if (!PLACEHOLDER_SLUGS.has(propSeasonSlug)) {
       setCurrentSeasonSlug(propSeasonSlug);
       return;
     }
-    axios.get('/api/v2/latest-season/')
-      .then(({ data }) => setCurrentSeasonSlug(data?.season_slug || propSeasonSlug))
+    axios.get('/api/v2/latest-season')
+      .then(({ data }) => setCurrentSeasonSlug(data?.slug || propSeasonSlug))
       .catch(() => setCurrentSeasonSlug(propSeasonSlug));
   }, [propSeasonSlug]);
 
@@ -73,7 +76,9 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
           <img src="/static/img/nba_predictions_logo.png" alt="" />
           <span>Props<br />Predictions</span>
         </a>
-        <div className="court-desktop-nav__season">{currentSeasonSlug.replace('-', '–')}</div>
+        {PLACEHOLDER_SLUGS.has(currentSeasonSlug) ? null : (
+          <div className="court-desktop-nav__season">{currentSeasonSlug.replace('-', '–')} Season</div>
+        )}
         <nav>{desktopItems.map((item) => renderLink(item))}</nav>
       </aside>
 

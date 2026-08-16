@@ -10,29 +10,61 @@ Endpoints:
 - GET /random-predictions - Get random user predictions for ticker
 - GET /random-props - Get random props/questions for ticker
 - GET /data - Get all homepage data in one call
+
+Per-user prediction analysis lives in `user_insights.py`.
+
+The NBA schedule feed lives in `schedule.py`; the crawler itself is
+`predictions.services.nba_schedule`.
 """
 
+import logging
 import random
+from typing import List, Optional
+
 from ninja import Router
+from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django.http import JsonResponse
+from django.utils import timezone
+from pydantic import BaseModel, Field
 
 from predictions.models import (
     Prediction, Answer, Season, UserStats,
-    RegularSeasonStandings
+    RegularSeasonStandings, InSeasonTournamentStandings
 )
+from predictions.api.v2.utils import results_visible
 from predictions.api.v2.schemas import (
     RandomPredictionsResponseSchema, RandomPropsResponseSchema,
-    HomepageDataResponseSchema, ErrorSchema
+    ErrorSchema
 )
+
+logger = logging.getLogger(__name__)
 
 # Create router for homepage endpoints
 router = Router(tags=["Homepage"])
 
 
 def _display_name(user):
-    """Return a user's profile display name, falling back for legacy users."""
+    """
+    Return a user's display name the way the leaderboard does.
+
+    Most accounts predate UserProfile, so fall back to the "First L." form built
+    from the user's own name fields before dropping to the username.
+    """
     profile = getattr(user, 'userprofile', None)
-    return getattr(profile, 'display_name', None) or user.username
+    name = getattr(profile, 'display_name', None)
+    if name and name != user.username:
+        return name
+    if user.first_name and user.last_name:
+        return f"{user.first_name} {user.last_name[0].upper()}."
+    return user.first_name or user.username
+
+
+def _resolve_season(season_slug):
+    """Resolve an explicit slug, falling back to the most recent season."""
+    if season_slug and season_slug not in ('current', 'latest'):
+        return Season.objects.filter(slug=season_slug).first()
+    return Season.objects.order_by('-start_date').first()
 
 
 @router.get(
@@ -122,227 +154,169 @@ def get_random_props(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+class HomepagePlayerSchema(BaseModel):
+    """A pool participant as the homepage displays them."""
+    id: int
+    username: str
+    display_name: str
+    points: float = 0.0
+    rank: int = 0
+
+
+class HomepageStandingSchema(BaseModel):
+    team: str
+    wins: int
+    losses: int
+    position: Optional[int] = None
+
+
+class HomepageStandingsSchema(BaseModel):
+    eastern: List[HomepageStandingSchema] = Field(default_factory=list)
+    western: List[HomepageStandingSchema] = Field(default_factory=list)
+
+
+class HomepageCupSchema(BaseModel):
+    """The NBA Cup result, published only once a champion has been recorded."""
+    champion_team: str
+    winner: Optional[HomepagePlayerSchema] = None
+    tied_winners: List[HomepagePlayerSchema] = Field(default_factory=list)
+
+
+class HomepageSeasonSchema(BaseModel):
+    slug: str
+    year: str
+    complete: bool = False
+
+
+class HomepageDataSchema(BaseModel):
+    season: Optional[HomepageSeasonSchema] = None
+    mini_leaderboard: List[HomepagePlayerSchema] = Field(default_factory=list)
+    mini_standings: HomepageStandingsSchema = Field(default_factory=HomepageStandingsSchema)
+    podium: List[HomepagePlayerSchema] = Field(default_factory=list)
+    cup: Optional[HomepageCupSchema] = None
+    results_locked: bool = False
+
+
+def _ranked_players(season, limit=None):
+    """Season standings for the pool itself, ranked by graded points."""
+    stats = UserStats.objects.filter(
+        season=season
+    ).select_related('user', 'user__userprofile').order_by('-points', 'user__username')
+
+    if limit:
+        stats = stats[:limit]
+
+    return [
+        HomepagePlayerSchema(
+            id=stat.user.id,
+            username=stat.user.username,
+            display_name=_display_name(stat.user),
+            points=stat.points,
+            rank=index,
+        )
+        for index, stat in enumerate(stats, 1)
+    ]
+
+
+def _cup_result(season):
+    """
+    The Cup honour is published only once an admin has recorded the champion
+    team, which is the signal that the final has actually been played. Until
+    then the pool's Cup standings are still provisional and nothing is shown.
+    """
+    champion = InSeasonTournamentStandings.objects.filter(
+        season=season, ist_champion=True
+    ).select_related('team').first()
+
+    if not champion:
+        return None
+
+    # display_name is a profile property rather than a column, so the totals are
+    # aggregated by id and the winning users are resolved afterwards.
+    totals = Answer.objects.filter(
+        question__season=season,
+        question__polymorphic_ctype__model='inseasontournamentquestion',
+    ).values('user_id').annotate(points=Sum('points_earned')).order_by('-points')
+
+    ranked = [row for row in totals if (row['points'] or 0) > 0]
+    if not ranked:
+        return HomepageCupSchema(champion_team=champion.team.name)
+
+    best = ranked[0]['points']
+    winning_ids = [row['user_id'] for row in ranked if row['points'] == best]
+    users = get_user_model().objects.filter(
+        id__in=winning_ids
+    ).select_related('userprofile').order_by('username')
+
+    leaders = [
+        HomepagePlayerSchema(
+            id=user.id,
+            username=user.username,
+            display_name=_display_name(user),
+            points=best,
+            rank=1,
+        )
+        for user in users
+    ]
+
+    return HomepageCupSchema(
+        champion_team=champion.team.name,
+        winner=leaders[0] if len(leaders) == 1 else None,
+        tied_winners=leaders if len(leaders) > 1 else [],
+    )
+
+
 @router.get(
     "/data",
-    response={200: HomepageDataResponseSchema, 500: ErrorSchema},
+    response={200: HomepageDataSchema, 500: ErrorSchema},
     summary="Get Homepage Data",
     description="""
     Get all homepage data in a single optimized call.
 
-    Returns:
-    - Mini leaderboard (top 5 users)
-    - Mini standings (top 3 from each conference)
-
-    This endpoint combines multiple data sources to minimize API calls
-    for the homepage.
+    Returns the pool leaders, the conference standings, the final podium once a
+    season has ended, and the NBA Cup result once a champion has been recorded.
+    Pass `season_slug` to scope the response to a specific season; it defaults
+    to the most recent one.
     """
 )
-def get_homepage_data(request):
+def get_homepage_data(request, season_slug: str = None):
     """Get all homepage data in one call"""
     try:
-        # Get current/latest season (no is_current field exists, use latest by start_date)
-        current_season = Season.objects.order_by('-start_date').first()
-
-        if not current_season:
-            return {
-                'mini_leaderboard': [],
-                'mini_standings': {'eastern': [], 'western': []}
-            }
-
-        # Mini leaderboard (top 5) - use 'points' not 'total_points'
-        top_users = UserStats.objects.filter(
-            season=current_season
-        ).select_related('user', 'user__userprofile').order_by('-points')[:5]
-
-        mini_leaderboard = []
-        for i, user_stat in enumerate(top_users, 1):
-            display_name = _display_name(user_stat.user)
-            mini_leaderboard.append({
-                'rank': i,
-                'user': {
-                    'username': user_stat.user.username,
-                    'display_name': display_name,
-                    'id': user_stat.user.id
-                },
-                'points': user_stat.points
-            })
-
-        # Mini standings (top 3 from each conference)
-        east_standings = RegularSeasonStandings.objects.filter(
-            season=current_season,
-            team__conference='East'
-        ).select_related('team').order_by('position')[:3]
-
-        west_standings = RegularSeasonStandings.objects.filter(
-            season=current_season,
-            team__conference='West'
-        ).select_related('team').order_by('position')[:3]
-
-        mini_standings = {
-            'eastern': [
-                {
-                    'team': standing.team.name,
-                    'wins': standing.wins,
-                    'losses': standing.losses,
-                    'position': standing.position
-                }
-                for standing in east_standings
-            ],
-            'western': [
-                {
-                    'team': standing.team.name,
-                    'wins': standing.wins,
-                    'losses': standing.losses,
-                    'position': standing.position
-                }
-                for standing in west_standings
-            ]
-        }
-
-        return {
-            'mini_leaderboard': mini_leaderboard,
-            'mini_standings': mini_standings
-        }
-
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-@router.get(
-    "/interesting-stats/{username}",
-    summary="Get Interesting Stats for User",
-    description="""
-    Retrieve interesting prediction statistics for a specific user.
-
-    Returns:
-    - unique_wins: Predictions only this user got right
-    - close_calls: Predictions with near 50/50 split
-    - rare_wins: Predictions few users got right
-    """
-)
-def get_interesting_stats(request, username: str, season_slug: str = None):
-    """Get interesting prediction stats for a user"""
-    try:
-        from django.contrib.auth import get_user_model
-        from django.db.models import Count, Q, F, Case, When, IntegerField
-
-        User = get_user_model()
-
-        # Get user
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=404)
-
-        # Get season
-        if season_slug:
-            try:
-                season = Season.objects.get(slug=season_slug)
-            except Season.DoesNotExist:
-                return JsonResponse({'error': 'Season not found'}, status=404)
-        else:
-            # Get latest season (no is_current field exists)
-            season = Season.objects.order_by('-start_date').first()
+        season = _resolve_season(season_slug)
 
         if not season:
-            return JsonResponse({'error': 'No active season'}, status=404)
+            return HomepageDataSchema()
 
-        # Get user's correct answers
-        user_correct_answers = Answer.objects.filter(
-            user=user,
-            question__season=season,
-            is_correct=True
-        ).select_related('question')
+        # Standings and the season's own honours are public NBA facts, but the
+        # pool's table, podium, and Cup winner are other people's entries and
+        # stay sealed until the submission window closes.
+        visible = results_visible(season, request.user)
+        players = _ranked_players(season) if visible else []
+        complete = season.end_date < timezone.localdate()
 
-        unique_wins = []
-        rare_wins = []
+        standings = {}
+        for key, conference in (('eastern', 'East'), ('western', 'West')):
+            standings[key] = [
+                HomepageStandingSchema(
+                    team=standing.team.name,
+                    wins=standing.wins,
+                    losses=standing.losses,
+                    position=standing.position,
+                )
+                for standing in RegularSeasonStandings.objects.filter(
+                    season=season, team__conference=conference
+                ).select_related('team').order_by('position')[:5]
+            ]
 
-        # Find unique and rare wins
-        for answer in user_correct_answers:
-            question = answer.question
-
-            # Count total correct answers for this question
-            total_correct = Answer.objects.filter(
-                question=question,
-                is_correct=True
-            ).count()
-
-            total_answers = Answer.objects.filter(
-                question=question
-            ).exclude(is_correct__isnull=True).count()
-
-            if total_answers == 0:
-                continue
-
-            correct_percentage = (total_correct / total_answers) * 100 if total_answers > 0 else 0
-
-            stat_item = {
-                'question': question.text,
-                'answer': str(answer.answer),
-                'total_correct': total_correct,
-                'total_answers': total_answers,
-                'correct_percentage': round(correct_percentage, 1),
-                'points_earned': answer.points_earned or 0
-            }
-
-            # Unique wins (only user got it right)
-            if total_correct == 1:
-                unique_wins.append(stat_item)
-            # Rare wins (less than 20% got it right)
-            elif correct_percentage < 20:
-                rare_wins.append(stat_item)
-
-        # Find close calls (near 50/50 split on yes/no or over/under questions)
-        from predictions.models import PropQuestion
-
-        close_calls = []
-        prop_questions = PropQuestion.objects.filter(
-            season=season,
-            outcome_type__in=['yes_no', 'over_under']
+        return HomepageDataSchema(
+            season=HomepageSeasonSchema(slug=season.slug, year=season.year, complete=complete),
+            mini_leaderboard=players[:5],
+            mini_standings=HomepageStandingsSchema(**standings),
+            podium=players[:3] if complete else [],
+            cup=_cup_result(season) if visible else None,
+            results_locked=not visible,
         )
 
-        for question in prop_questions:
-            answers_query = Answer.objects.filter(question=question).exclude(answer='')
-            total_count = answers_query.count()
-
-            if total_count < 5:  # Need at least 5 answers for meaningful split
-                continue
-
-            # Get answer distribution
-            answer_counts = answers_query.values('answer').annotate(
-                count=Count('id')
-            )
-
-            if len(answer_counts) == 2:
-                counts = [ac['count'] for ac in answer_counts]
-                split_percentage = min(counts) / total_count * 100
-
-                # If split is between 40-60%, it's a close call
-                if 40 <= split_percentage <= 60:
-                    user_answer = Answer.objects.filter(
-                        question=question,
-                        user=user
-                    ).first()
-
-                    if user_answer:
-                        close_calls.append({
-                            'question': question.text,
-                            'user_answer': str(user_answer.answer),
-                            'is_correct': user_answer.is_correct,
-                            'split_percentage': round(split_percentage, 1),
-                            'total_responses': total_count,
-                            'distribution': {ac['answer']: ac['count'] for ac in answer_counts}
-                        })
-
-        return {
-            'unique_wins': unique_wins[:5],  # Limit to top 5
-            'rare_wins': sorted(rare_wins, key=lambda x: x['correct_percentage'])[:5],
-            'close_calls': close_calls[:5],
-            'season': season.slug
-        }
-
     except Exception as e:
-        import traceback
-        print(f"Error in interesting_stats: {str(e)}")
-        print(traceback.format_exc())
+        logger.exception("Failed to build homepage data")
         return JsonResponse({'error': str(e)}, status=500)

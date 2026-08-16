@@ -1,6 +1,8 @@
 # nba_predictions/predictions/api/v2/endpoints/answers.py
 
 from ninja import Router, Schema
+
+from predictions.api.v2.utils import results_visible
 from ninja.pagination import paginate, PageNumberPagination
 from ninja.errors import HttpError
 from typing import List, Optional, Dict
@@ -197,8 +199,16 @@ def get_all_users_answers_by_season(
     """
     Retrieve answers for all users for a specific season with efficient batch processing.
     Optimized for performance with minimal database queries.
+
+    Returns nothing while the season's submission window is still open: these
+    are other participants' picks, and they stay private until every entry is
+    locked. Admins are exempt.
     """
     try:
+        season = Season.objects.filter(slug=season_slug).first()
+        if not results_visible(season, request.user):
+            return Answer.objects.none()
+
         answers_qs = Answer.objects.filter(question__season__slug=season_slug).select_related(
             'user',
             'question',

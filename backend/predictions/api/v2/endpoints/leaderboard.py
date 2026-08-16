@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Union
 
 from ninja import Router
+
+from predictions.api.v2.utils import results_visible
 from django.utils import timezone
 from predictions.models import Answer, RegularSeasonStandings, Season
 from predictions.models.prediction import StandingPrediction
@@ -249,8 +251,10 @@ def leaderboard_view(request, season_slug: str):
         except Season.DoesNotExist:
             return {"error": f"Season '{season_slug}' not found", "leaderboard": [], "season": None}
 
-    # Build leaderboard data
-    leaderboard = _build_leaderboard(season.slug)
+    # Other entries stay sealed until the submission window closes, so nobody
+    # can copy a submitted entry while they still have time to change theirs.
+    visible = results_visible(season, request.user)
+    leaderboard = _build_leaderboard(season.slug) if visible else []
 
     # Serialize season metadata
     submission_end = None
@@ -263,6 +267,7 @@ def leaderboard_view(request, season_slug: str):
 
     return {
         "leaderboard": leaderboard,
+        "results_locked": not visible,
         "season": {
             "slug": season.slug,
             "year": season.year,

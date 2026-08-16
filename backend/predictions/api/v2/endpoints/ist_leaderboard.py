@@ -9,6 +9,7 @@ from collections import defaultdict
 
 from predictions.models import Answer, Season, InSeasonTournamentQuestion
 from predictions.api.v2.schemas import UserDisplaySchema
+from predictions.api.v2.utils import results_visible
 from pydantic import BaseModel, Field
 
 from predictions.api.common.services.answer_lookup_service import AnswerLookupService
@@ -69,12 +70,15 @@ def get_ist_leaderboard(request, season_slug: str):
         else:
             season = Season.objects.get(slug=season_slug)
 
-        if not season:
+        # Cup picks are part of the same sealed entry, so they stay private
+        # until the submission window closes. Admins are exempt.
+        if not season or not results_visible(season, request.user):
             return ISTLeaderboardResponse(
                 leaderboard=[],
                 total_users=0,
                 total_predictions=0,
-                avg_accuracy=0.0
+                avg_accuracy=0.0,
+                season=SeasonInfoSchema(slug=season.slug, year=season.year) if season else None
             )
 
         # Get all IST answers for this season (evaluate queryset once for performance)
