@@ -3018,6 +3018,16 @@ button[type="submit"]:active {
   margin-top: 22px;
 }
 
+/* Once picks lock the headline is a caption on a status card, not a poster.
+   The copy column tightens so the ledger's numbers lead instead of a void. */
+.next-play-home.is-season .next-play-hero__copy { padding: clamp(22px, 3.4vw, 40px) clamp(18px, 3.4vw, 44px); }
+.next-play-home.is-season .next-play-hero h1 { max-width: 15ch; font-size: clamp(34px, 5.2vw, 52px); }
+.next-play-home.is-season .next-play-hero__standfirst { margin-top: 14px; font-size: clamp(14px, 1.4vw, 16px); }
+.next-play-home.is-season .next-play-hero__actions { margin-top: 18px; }
+/* The ring needs a tall panel to read as a court arc. In the compressed season
+   hero it crosses the copy as a stray line, so it is dropped. */
+.next-play-home.is-season .next-play-hero__copy::after { display: none; }
+
 .next-play-action {
   display: inline-flex;
   min-height: 48px;
@@ -3194,7 +3204,6 @@ button[type="submit"]:active {
 .next-play-podium,
 .next-play-games,
 .next-play-note,
-.next-play-scorebook,
 .next-play-leaders,
 .next-play-pulse,
 .next-play-close { margin-top: 14px; border: 2px solid var(--court-rule); border-radius: 4px; background: var(--court-paper); }
@@ -3213,45 +3222,208 @@ button[type="submit"]:active {
 .next-play-categories__rows strong { display: block; font: 800 20px/1 var(--court-display); letter-spacing: .025em; text-transform: uppercase; }
 .next-play-categories__rows span { display: block; max-width: 62ch; margin-top: 5px; color: var(--court-steel); font-size: 13px; line-height: 1.4; }
 
-.next-play-dashboard { display: grid; gap: 14px; }
-.next-play-dashboard:empty { display: none; }
+/* The workbench owns its own rhythm, so the cards inside drop the stacked
+   margin the standalone sections carry and rely on the grid gap. */
+.next-play-workbench { display: grid; gap: 14px; margin-top: 14px; }
+.next-play-workbench:empty { display: none; }
+.next-play-workbench > * { min-width: 0; margin-top: 0; }
+/* In a narrow rail the caption and the reset control cannot share a line. */
+.next-play-workbench > .nba-games .next-play-section-head { flex-wrap: wrap; gap: 10px; }
+.next-play-workbench > .nba-games .next-play-section-head > div { flex: 1 1 190px; }
 .next-play-section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
 .next-play-section-head a { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; color: var(--court-blue-dark); font: 800 11px/1 var(--court-display); letter-spacing: .06em; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; text-transform: uppercase; }
 .next-play-section-head a svg { width: 15px; height: 15px; }
 
-.next-play-scorebook__summary { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 2px solid var(--court-rule); }
-.next-play-scorebook__summary > div { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; min-height: 78px; align-items: center; gap: 8px; padding: 12px; border-right: 1px solid var(--court-rule); }
-.next-play-scorebook__summary > div:last-child { border-right: 0; }
-.next-play-scorebook__summary svg { width: 20px; height: 20px; color: var(--court-blue); }
-.next-play-scorebook__summary span { color: var(--court-steel); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-.next-play-scorebook__summary strong { font: 800 29px/1 var(--court-display); font-variant-numeric: tabular-nums; }
-.next-play-scorebook__row,
 .next-play-leaders__row { display: grid; min-height: 48px; align-items: center; border-bottom: 1px solid var(--court-rule-soft); font-variant-numeric: tabular-nums; }
-.next-play-scorebook__row { grid-template-columns: minmax(0, 1fr) 62px 72px; padding: 0 12px; }
-.next-play-scorebook__row:last-child,
 .next-play-leaders__row:last-child { border-bottom: 0; }
-.next-play-scorebook__row.is-head,
 .next-play-leaders__row.is-head { min-height: 42px; color: #fff; font: 800 10px/1 var(--court-body); letter-spacing: .07em; text-transform: uppercase; background: var(--court-carbon); }
-.next-play-scorebook__row > :nth-child(n+2) { text-align: right; }
 
 .next-play-leaders { overflow: hidden; }
 .next-play-leaders__row { grid-template-columns: 54px minmax(0, 1fr) 72px; padding: 0 12px; color: var(--court-ink); text-decoration: none; }
 .next-play-leaders__row > :last-child { text-align: right; }
 .next-play-leaders__row:not(.is-head):hover { background: var(--court-blue-soft); }
 .next-play-leaders__row.is-current { background: var(--court-gold-soft); box-shadow: inset 0 -4px 0 var(--court-gold); }
+/* Pinned out-of-window row: a hard rule marks the jump in the standings. */
+.next-play-leaders__row.is-pinned { border-top: 2px solid var(--court-rule); }
 
 .next-play-pulse__grid { display: grid; }
 .next-play-conference:first-child { border-bottom: 2px solid var(--court-rule); }
+/* Fifteen rows a side, so the row is tighter than a five-team teaser. */
 .next-play-conference > header,
-.next-play-conference > div { display: grid; grid-template-columns: 32px minmax(0, 1fr) 64px; min-height: 45px; align-items: center; gap: 8px; padding: 0 10px; border-bottom: 1px solid var(--court-rule-soft); }
-.next-play-conference > header { grid-template-columns: 1fr auto; min-height: 43px; color: #fff; font: 800 12px/1 var(--court-display); letter-spacing: .08em; text-transform: uppercase; border-bottom: 2px solid var(--court-rule); }
+.next-play-conference > div { display: grid; grid-template-columns: 26px minmax(0, 1fr) 72px; min-height: 34px; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--court-rule-soft); }
+/* Actual, your call, team, record, points. */
+.next-play-conference.is-scored > div { grid-template-columns: 26px 26px minmax(0, 1fr) 62px 26px; }
+.next-play-conference > header { grid-template-columns: 1fr auto; min-height: 40px; color: #fff; font: 800 12px/1 var(--court-display); letter-spacing: .08em; text-transform: uppercase; border-bottom: 2px solid var(--court-rule); }
+/* The header's flexible first column spans the row's rank, call, and team
+   columns, so the two fixed columns still line up under their labels. */
+.next-play-conference.is-scored > header { grid-template-columns: minmax(0, 1fr) 62px 26px; }
+.next-play-conference.is-scored > header > :nth-child(n+2) { font-size: 9px; letter-spacing: .06em; opacity: .84; }
+.next-play-conference.is-scored > header > :last-child { text-align: right; }
 .next-play-conference.is-east > header { background: var(--court-blue); }
 .next-play-conference.is-west > header { background: var(--court-red); }
+/* Rows are opaque and stackable so a re-sorting row animates over its
+   neighbours instead of showing through them. */
+.next-play-conference > div { position: relative; background: var(--court-paper); }
 .next-play-conference > div:last-child { border-bottom: 0; }
-.next-play-conference > div > strong { color: var(--court-blue); font: 800 18px/1 var(--court-display); }
+.next-play-conference > div > strong { color: var(--court-blue); font: 800 14px/1 var(--court-display); font-variant-numeric: tabular-nums; }
 .next-play-conference.is-west > div > strong { color: var(--court-red); }
-.next-play-conference > div > span { overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.next-play-conference > div > b { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.next-play-conference > div > span { overflow: hidden; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.next-play-conference > div > b { text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* The two lines a conference is actually read against: the guaranteed playoff
+   places, then the play-in. Rows are children 2–16, after the header. */
+.next-play-conference > div:nth-child(7) { border-bottom: 2px solid var(--court-rule); }
+.next-play-conference > div:nth-child(11) { border-bottom: 1px dashed var(--court-steel); }
+
+/* ---- Your call against the table --------------------------------------- */
+
+/* The called position sits directly beside the real one, so the distance
+   between the two numbers is the answer, read without any decoding. */
+.next-play-conference__call {
+  color: var(--court-steel);
+  font: 800 13px/1 var(--court-display);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.next-play-conference__pts {
+  color: var(--court-steel);
+  font: 800 13px/1 var(--court-display);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+/* A scoring call is marked at the edge, not by flooding the row: thirty rows
+   of fill would read as noise. The tint is saved for a row this projection
+   actually moved, which is the thing worth looking at while calling games. */
+.next-play-conference > div.is-scoring .next-play-conference__call { color: var(--court-ink); }
+.next-play-conference > div.is-band-1 { box-shadow: inset 2px 0 0 var(--court-rule); }
+.next-play-conference > div.is-band-1 .next-play-conference__pts { color: var(--court-ink); }
+.next-play-conference > div.is-band-3 { box-shadow: inset 3px 0 0 var(--court-gold); }
+.next-play-conference > div.is-band-3 .next-play-conference__pts { color: var(--court-ink); font-size: 14px; }
+
+.next-play-conference > div.is-called { background: var(--court-gold-soft); }
+.next-play-conference > div.is-called.is-band-3 { box-shadow: inset 3px 0 0 var(--court-gold); }
+
+/* Which half of the record the called result moved. */
+.next-play-conference b .is-gained { color: var(--court-success); }
+.next-play-conference b .is-dropped { color: var(--court-danger); }
+
+/* Position movement under a projection. */
+.next-play-conference > div > strong u,
+.next-play-leaders__row > strong u {
+  margin-left: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  text-decoration: none;
+  vertical-align: 1px;
+}
+.next-play-home .is-up { color: var(--court-success); }
+.next-play-home .is-down { color: var(--court-danger); }
+
+.next-play-conference__total {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  color: var(--court-steel);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  background: var(--court-paper-cool);
+  border-top: 2px solid var(--court-rule);
+}
+
+/* ---- Calling tonight's games ------------------------------------------- */
+
+.next-play-reset {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  color: var(--court-ink);
+  font: 800 10px/1 var(--court-display);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  background: var(--court-paper);
+  border: 1px solid var(--court-rule);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.next-play-reset:hover:not(:disabled) { color: #fff; background: var(--court-blue); }
+.next-play-reset:disabled { color: var(--court-steel); border-color: var(--court-rule-soft); cursor: default; opacity: .55; }
+.next-play-reset svg { width: 13px; height: 13px; }
+
+/* One night at a time: a full slate is a dozen games, so the rail tabs by day
+   rather than cutting the list off partway through. */
+.next-play-days {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 2px solid var(--court-rule);
+}
+.next-play-days::-webkit-scrollbar { display: none; }
+.next-play-days__tab {
+  display: flex;
+  min-height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  padding: 0 11px;
+  color: var(--court-steel);
+  font: 800 10px/1 var(--court-display);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--court-paper-cool);
+  border: 0;
+  border-right: 1px solid var(--court-rule-soft);
+  cursor: pointer;
+}
+.next-play-days__tab:hover { color: var(--court-ink); background: var(--court-blue-soft); }
+.next-play-days__tab.is-active { color: #fff; background: var(--court-blue); }
+.next-play-days__tab > span { font-size: 9px; font-weight: 700; opacity: .7; }
+/* A count of calls held on a night you are not looking at. */
+.next-play-days__tab > i {
+  display: grid;
+  min-width: 15px;
+  height: 15px;
+  place-items: center;
+  padding: 0 3px;
+  color: var(--court-ink);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+  background: var(--court-gold);
+  border-radius: 8px;
+}
+
+.nba-games__matchup.is-pickable { gap: 4px; }
+.nba-games__pick {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.nba-games__pick:hover { background: var(--court-blue-soft); border-color: var(--court-rule-soft); }
+.nba-games__pick.is-picked { background: var(--court-gold-soft); border-color: var(--court-rule); }
+/* The label carries the toggle's meaning to assistive tech, not a third line. */
+.nba-games__pick-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.nba-games__row.is-called { background: var(--court-paper-cool); }
 
 .next-play-close { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; align-items: center; padding: 18px 16px; background: var(--court-paper-cool); }
 .next-play-close > span { display: grid; width: 40px; height: 40px; place-items: center; color: #fff; background: var(--court-red); border: 1px solid var(--court-rule); }
@@ -3262,12 +3434,15 @@ button[type="submit"]:active {
 
 /* ---- Final standings podium -------------------------------------------- */
 
+/* Capped and centred: across a full-width card the three plinths would drift
+   apart into unrelated blocks instead of reading as one podium. */
 .next-play-podium__stand {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  max-width: 560px;
   align-items: end;
-  margin: 0;
-  padding: 24px 16px 0;
+  margin: 0 auto;
+  padding: 16px 16px 0;
   list-style: none;
 }
 
@@ -3281,19 +3456,19 @@ button[type="submit"]:active {
 .next-play-podium__name {
   display: flex;
   min-width: 0;
-  min-height: 72px;
+  min-height: 58px;
   flex-direction: column;
   align-items: center;
   justify-content: end;
-  padding: 0 6px 10px;
+  padding: 0 6px 8px;
   text-align: center;
 }
 
-.next-play-podium__name svg { width: 22px; height: 22px; margin-bottom: 6px; color: var(--court-gold); }
+.next-play-podium__name svg { width: 18px; height: 18px; margin-bottom: 4px; color: var(--court-gold); }
 .next-play-podium__name strong {
   max-width: 100%;
   overflow: hidden;
-  font: 800 clamp(15px, 2vw, 21px)/1.05 var(--court-display);
+  font: 800 clamp(14px, 1.7vw, 18px)/1.05 var(--court-display);
   letter-spacing: .02em;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -3305,7 +3480,7 @@ button[type="submit"]:active {
 .next-play-podium__block {
   display: grid;
   width: 100%;
-  max-width: 210px;
+  max-width: 164px;
   margin: 0 auto;
   place-items: center;
   border: 2px solid var(--court-rule);
@@ -3315,7 +3490,7 @@ button[type="submit"]:active {
   transition: transform 620ms cubic-bezier(.16, 1, .3, 1);
 }
 .next-play-podium__block b {
-  font: 800 clamp(30px, 4.4vw, 46px)/1 var(--court-display);
+  font: 800 clamp(26px, 3.2vw, 34px)/1 var(--court-display);
   font-variant-numeric: tabular-nums;
   opacity: 0;
   transition: opacity 260ms ease-out 380ms;
@@ -3323,34 +3498,34 @@ button[type="submit"]:active {
 .next-play-podium__stand.is-raised .next-play-podium__block { transform: scaleY(1); }
 .next-play-podium__stand.is-raised .next-play-podium__block b { opacity: 1; }
 
-.is-rank-1 .next-play-podium__block { height: 132px; color: var(--court-ink); background: var(--court-gold); }
-.is-rank-2 .next-play-podium__block { height: 98px; color: var(--court-ink); background: var(--court-medal-silver); transition-delay: 90ms; }
-.is-rank-3 .next-play-podium__block { height: 74px; color: var(--court-ink); background: var(--court-wood); transition-delay: 180ms; }
+.is-rank-1 .next-play-podium__block { height: 96px; color: var(--court-ink); background: var(--court-gold); }
+.is-rank-2 .next-play-podium__block { height: 72px; color: var(--court-ink); background: var(--court-medal-silver); transition-delay: 90ms; }
+.is-rank-3 .next-play-podium__block { height: 54px; color: var(--court-ink); background: var(--court-wood); transition-delay: 180ms; }
 .is-rank-2 .next-play-podium__block b,
 .is-rank-3 .next-play-podium__block b { transition-delay: 470ms; }
-.is-rank-1 .next-play-podium__name strong { font-size: clamp(17px, 2.4vw, 25px); }
+.is-rank-1 .next-play-podium__name strong { font-size: clamp(16px, 2vw, 21px); }
 
 /* ---- NBA Cup honour ---------------------------------------------------- */
 
 .next-play-cup {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto auto auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
+  gap: 4px 10px;
   margin-top: 14px;
-  padding: 16px;
+  padding: 9px 14px;
   overflow: hidden;
   background: var(--court-gold-soft);
   border: 2px solid var(--court-rule);
   border-radius: 4px;
-  box-shadow: inset 0 -5px 0 var(--court-gold);
+  box-shadow: inset 0 -3px 0 var(--court-gold);
 }
-.next-play-cup__mast { display: flex; grid-column: 1 / -1; align-items: center; gap: 8px; color: var(--court-ink); font: 800 11px/1 var(--court-body); letter-spacing: .11em; text-transform: uppercase; }
-.next-play-cup__mast svg { width: 16px; height: 16px; color: var(--court-red); }
-.next-play-cup__names { font: 800 clamp(24px, 3.6vw, 38px)/1 var(--court-display); letter-spacing: .01em; text-transform: uppercase; }
-.next-play-cup__detail { max-width: 54ch; margin-top: 7px; color: var(--court-steel); font-size: 13px; line-height: 1.4; }
-.next-play-cup__logo { width: 62px; height: 62px; flex: 0 0 auto; object-fit: contain; }
+.next-play-cup__icon { width: 15px; height: 15px; color: var(--court-red); }
+.next-play-cup__mast { color: var(--court-steel); font: 800 10px/1 var(--court-body); letter-spacing: .11em; text-transform: uppercase; white-space: nowrap; }
+.next-play-cup__names { font: 800 17px/1 var(--court-display); letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; }
+.next-play-cup__detail { min-width: 0; overflow: hidden; color: var(--court-steel); font-size: 12px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.next-play-cup__logo { width: 26px; height: 26px; flex: 0 0 auto; object-fit: contain; }
 
 /* ---- NBA games (shared: rail, ticker, day listing) ---------------------- */
 
@@ -3435,9 +3610,19 @@ button[type="submit"]:active {
   .next-play-ledger--player .next-play-player-grid { min-height: 0; flex: 1; }
   .next-play-ledger--player .next-play-player-grid > div { min-height: 0; }
   .next-play-ledger__mast { padding-right: 18px; padding-left: 18px; }
-  /* Sections appear only when they hold real data, so the dashboard fits
-     whatever survives instead of reserving empty columns. */
-  .next-play-dashboard { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); align-items: start; }
+  /* Fixtures and pool table share a narrow left rail; the standings take the
+     rest and stay level with the games that change them. */
+  .next-play-workbench {
+    grid-template-columns: minmax(286px, .82fr) minmax(0, 2.18fr);
+    grid-template-areas: "games table" "pool table";
+    align-items: start;
+  }
+  .next-play-workbench > .nba-games { grid-area: games; }
+  .next-play-workbench > .next-play-pulse { grid-area: table; }
+  .next-play-workbench > .next-play-leaders { grid-area: pool; }
+  /* Nothing left to call: the pool table takes the rail on its own. */
+  .next-play-workbench.is-settled { grid-template-areas: "pool table"; }
+  .next-play-workbench.is-single { grid-template-columns: minmax(0, 1fr); grid-template-areas: "table"; }
   .next-play-pulse__grid { grid-template-columns: 1fr 1fr; }
   .next-play-conference:first-child { border-right: 2px solid var(--court-rule); border-bottom: 0; }
 }
@@ -3448,7 +3633,7 @@ button[type="submit"]:active {
   .next-play-player-grid > div { border-right: 1px solid var(--court-rule); }
   .next-play-player-grid > div:nth-child(even) { border-right: 0; }
   .next-play-player-grid strong { font-size: 38px; }
-  .next-play-dashboard { grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); }
+  .next-play-workbench { grid-template-columns: minmax(320px, .74fr) minmax(0, 2.26fr); }
 }
 
 /* Signed-in phones open on the task and its status, not on a full-bleed

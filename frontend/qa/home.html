@@ -5,8 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Home page QA</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+      .qa-states { position: fixed; z-index: 999; left: 12px; bottom: 12px; display: flex;
+        gap: 1px; padding: 1px; background: #111; border-radius: 4px; font-family: system-ui, sans-serif; }
+      .qa-states a { padding: 7px 11px; color: #111; font-size: 11px; font-weight: 700;
+        letter-spacing: .04em; text-decoration: none; text-transform: uppercase; background: #fff; }
+      .qa-states a:first-child { border-radius: 3px 0 0 3px; }
+      .qa-states a:last-child { border-radius: 0 3px 3px 0; }
+      .qa-states a:hover { color: #fff; background: #07549a; }
+      .qa-states a[aria-current] { color: #fff; background: #07549a; }
+    </style>
   </head>
   <body>
+    <!-- The harness has no accounts: every state is a fixture, picked here. -->
+    <nav class="qa-states" aria-label="QA states">
+      <a href="?">Guest</a>
+      <a href="?state=auth">Entry open</a>
+      <a href="?state=season">Season underway</a>
+      <a href="?state=graded">Season graded</a>
+    </nav>
     <div id="site-layout-root" data-season-slug="2026-27"></div>
     <main class="court-page-main">
       <div
@@ -30,8 +47,11 @@
       ></div>
     </main>
     <script>
-      if (new URLSearchParams(window.location.search).get('state') === 'auth') {
-        const root = document.getElementById('home-root');
+      const state = new URLSearchParams(window.location.search).get('state');
+      const root = document.getElementById('home-root');
+      const current = document.querySelector(`.qa-states a[href="${state ? `?state=${state}` : '?'}"]`);
+      if (current) current.setAttribute('aria-current', 'page');
+      if (state === 'auth' || state === 'season' || state === 'graded') {
         root.dataset.isAuthenticated = 'true';
         root.dataset.userId = '101';
         root.dataset.username = 'jordan-qa';
@@ -39,6 +59,13 @@
         root.dataset.hasStandingSubmission = 'true';
         root.dataset.hasAnswerSubmission = 'true';
         root.dataset.hasSubmission = 'true';
+      }
+      // Picks locked and the window long past: what the page looks like once
+      // there is nothing left to enter and only the score matters.
+      if (state === 'season' || state === 'graded') {
+        root.dataset.submissionOpen = 'false';
+        root.dataset.submissionStart = '2026-08-15T04:01:00-04:00';
+        root.dataset.submissionEnd = '2026-10-20T19:00:00-04:00';
       }
     </script>
     <script src="/static/js/bundle.js"></script>

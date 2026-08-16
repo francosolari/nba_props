@@ -2,28 +2,33 @@ import React from 'react';
 import ActionLink from './ActionLink';
 
 /** Once picks lock, rank and score are the whole story and get the ledger back. */
-export function StatusLedger({ me, action, hasSubmission, seasonLabel }) {
+export function StatusLedger({ me, action, hasSubmission, seasonLabel, projecting = false }) {
   const totalPoints = me?.user?.total_points;
+  const swing = projecting ? me?.standingsDelta || 0 : 0;
   const categories = me?.user?.categories || {};
   const leader = Object.entries(categories)
     .sort(([, a], [, b]) => (b?.points || 0) - (a?.points || 0))[0];
 
   return (
-    <aside className="next-play-ledger next-play-ledger--player" aria-label="Your season status">
+    <aside className={`next-play-ledger next-play-ledger--player${projecting ? ' is-projecting' : ''}`} aria-label="Your season status">
       <header className="next-play-ledger__mast">
         <span>Your season</span>
-        <strong>Picks locked</strong>
+        <strong>{projecting ? 'Projected' : 'Picks locked'}</strong>
       </header>
       <div className="next-play-player-grid">
         <div>
           <span>Rank</span>
           <strong>{me?.rank ? `#${me.rank}` : '—'}</strong>
-          <small>{me ? 'Overall position' : 'Awaiting first grade'}</small>
+          <small>
+            {projecting && me?.actualRank && me.actualRank !== me.rank
+              ? `Now #${me.actualRank}`
+              : me ? 'Overall position' : 'Awaiting first grade'}
+          </small>
         </div>
         <div>
           <span>Total score</span>
           <strong>{Number.isFinite(totalPoints) ? totalPoints.toLocaleString() : hasSubmission ? '0' : '—'}</strong>
-          <small>Points earned</small>
+          <small>{swing ? `${swing > 0 ? '+' : ''}${swing} from your calls` : 'Points earned'}</small>
         </div>
         <div>
           <span>Best category</span>

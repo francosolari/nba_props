@@ -11,21 +11,18 @@ export function CupHonour({ cup }) {
   const winners = cup.winner ? [cup.winner] : cup.tied_winners;
   if (!winners.length) return null;
 
+  // A standing honour, not a headline: one ruled line for the rest of the season.
+
   return (
     <section className="next-play-cup" aria-labelledby="cup-title">
-      <div className="next-play-cup__mast">
-        <Medal aria-hidden="true" />
-        <span id="cup-title">NBA Cup winner</span>
-      </div>
-      <div className="next-play-cup__body">
-        <p className="next-play-cup__names">
-          {winners.map((winner) => winner.display_name).join(' & ')}
-        </p>
-        <p className="next-play-cup__detail">
-          {winners.length > 1 ? 'Tied on ' : ''}{winners[0].points} points on the Cup questions.
-          {' '}The {cup.champion_team} lifted the trophy.
-        </p>
-      </div>
+      <Medal className="next-play-cup__icon" aria-hidden="true" />
+      <span className="next-play-cup__mast" id="cup-title">NBA Cup</span>
+      <p className="next-play-cup__names">
+        {winners.map((winner) => winner.display_name).join(' & ')}
+      </p>
+      <p className="next-play-cup__detail">
+        {winners.length > 1 ? 'Tied on ' : ''}{winners[0].points} pts · {cup.champion_team} lifted the trophy
+      </p>
       <TeamLogo teamName={cup.champion_team} className="next-play-cup__logo" alt="" />
     </section>
   );

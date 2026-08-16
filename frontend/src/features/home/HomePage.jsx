@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { Users } from 'lucide-react';
 import { useLeaderboard, usePaymentStatus, useUserSubmissions } from '../../hooks';
-import NBAGames from '../../components/nba/NBAGames';
 import useNbaSchedule from '../../components/nba/useNbaSchedule';
+import FixtureRail from './components/FixtureRail';
 import ActionLink from './components/ActionLink';
 import GuestEntryLedger from './components/GuestEntryLedger';
 import EntryChecklist from './components/EntryChecklist';
@@ -12,7 +12,8 @@ import StatusLedger from './components/StatusLedger';
 import CategorySheet from './components/CategorySheet';
 import Podium from './components/Podium';
 import CupHonour from './components/CupHonour';
-import { PersonalScorebook, LeaderboardLedger, StandingsPulse } from './components/SeasonTables';
+import { LeaderboardLedger, StandingsPulse } from './components/SeasonTables';
+import { buildPredictionIndex, projectLeaderboard, projectStandings } from './whatIf';
 import {
   DEFAULT_SEASON,
   ENTRY_FEE,
@@ -46,6 +47,7 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
   const podium = homepageData?.podium || [];
   const cup = homepageData?.cup || null;
   const isEntry = phase === 'entry' || phase === 'preview';
+  const liveSeason = phase === 'season' && !seasonComplete;
 
   const { data: payment } = usePaymentStatus(seasonSlug, {
     enabled: rootProps.isAuthenticated && phase !== 'guest',
@@ -53,11 +55,16 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
   // Only fetched while a season is actually being played; the shared hook keeps
   // the slow upstream feed off the critical path.
   const { games: upcomingGames } = useNbaSchedule(seasonSlug, {
-    limit: 5,
-    enabled: phase === 'season' && !seasonComplete,
+    // Several nights' worth: a single NBA slate can run to a dozen games, and
+    // the rail groups them by day rather than truncating mid-slate.
+    limit: 40,
+    enabled: liveSeason,
   });
 
   const leaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
+  // The podium already names the top three, so the table below it starts at 4th.
+  const skipTop = seasonComplete && podium.length >= 3 ? 3 : 0;
+  const showLeaders = phase === 'season' && leaderboard.length > skipTop;
   const me = useMemo(() => {
     if (!rootProps.isAuthenticated) return null;
     return leaderboard.find((entry) => (
@@ -99,6 +106,51 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
   const countdown = useLockCountdown(rootProps.submissionEnd);
   const seasonLabel = formatSeason(rootProps.seasonSlug) || formatSeason(seasonSlug);
   const entryDone = entry.paid && entry.picksComplete;
+
+  // The ladder is read against this entry's own board.
+  const predictionIndex = useMemo(
+    () => buildPredictionIndex(submissionData?.standings),
+    [submissionData],
+  );
+
+  /**
+   * Calling tonight's games. Each pick names the winning side of one game; the
+   * table and the pool are then re-scored against the result that would follow,
+   * so "what does this game do to my score" is answered in place.
+   */
+  const [calls, setCalls] = useState(() => new Map());
+  const handleCall = useCallback((game, side) => {
+    setCalls((current) => {
+      const next = new Map(current);
+      const id = game.game_id ?? game.id;
+      if (side) next.set(id, side); else next.delete(id);
+      return next;
+    });
+  }, []);
+  const clearCalls = useCallback(() => setCalls(new Map()), []);
+
+  const outcomes = useMemo(() => (
+    upcomingGames
+      .filter((game) => calls.has(game.game_id ?? game.id))
+      .map((game) => {
+        const side = calls.get(game.game_id ?? game.id);
+        return side === 'home'
+          ? { winner: game.home?.name, loser: game.away?.name }
+          : { winner: game.away?.name, loser: game.home?.name };
+      })
+  ), [upcomingGames, calls]);
+
+  const projecting = outcomes.length > 0;
+  const shownStandings = useMemo(() => (
+    projecting ? projectStandings(homepageData?.mini_standings, outcomes) : homepageData?.mini_standings
+  ), [projecting, homepageData, outcomes]);
+  const shownLeaderboard = useMemo(() => (
+    projecting ? projectLeaderboard(leaderboard, shownStandings) : leaderboard
+  ), [projecting, leaderboard, shownStandings]);
+  const shownMe = useMemo(() => {
+    if (!projecting || !me) return me;
+    return shownLeaderboard.find((entry) => String(entry.user?.id) === String(me.user?.id)) || me;
+  }, [projecting, shownLeaderboard, me]);
 
   const superlativeCount = useMemo(() => (
     (submissionData?.sections || []).find((section) => section.label === 'Superlatives')?.total || 0
@@ -156,7 +208,7 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
             loading={submissionLoading}
           />
         ) : (
-          <StatusLedger me={me} action={action} hasSubmission={rootProps.hasSubmission} seasonLabel={seasonLabel} />
+          <StatusLedger me={shownMe} action={action} hasSubmission={rootProps.hasSubmission} seasonLabel={seasonLabel} projecting={projecting} />
         )}
       </section>
 
@@ -169,20 +221,35 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
         : null}
       {phase !== 'guest' && cup ? <CupHonour cup={cup} /> : null}
 
-      <div className="next-play-dashboard" aria-busy={leaderboardLoading}>
-        {phase === 'season' ? <PersonalScorebook me={me} hasSubmission={rootProps.hasSubmission} leaderboardUrl={rootProps.leaderboardUrl} /> : null}
-        {/* Other entrants' picks and scores stay private until play begins. */}
-        {phase === 'season' ? (
-          <LeaderboardLedger
-            entries={leaderboard}
-            leaderboardUrl={rootProps.leaderboardUrl}
-            currentUserId={rootProps.userId}
-            skipTop={seasonComplete && podium.length >= 3 ? 3 : 0}
+      {/* Calling a game and reading the table it moves are one task, so the
+          fixtures sit directly beside the standings and the pool table drops
+          below them. DOM order is the phone order: call, table, then pool. */}
+      <div
+        className={`next-play-workbench${liveSeason ? '' : ' is-settled'}${showLeaders ? '' : ' is-single'}`}
+        aria-busy={leaderboardLoading}
+      >
+        {liveSeason ? (
+          <FixtureRail
+            games={upcomingGames}
+            picks={calls}
+            onPick={handleCall}
+            onReset={clearCalls}
+            projecting={projecting}
           />
         ) : null}
-        <StandingsPulse standings={homepageData?.mini_standings} />
-        {phase === 'season' && !seasonComplete ? (
-          <NBAGames games={upcomingGames} variant="rail" title="Next up" caption="The next games on the NBA schedule." />
+
+        <StandingsPulse standings={shownStandings} predictions={predictionIndex} projecting={projecting} />
+
+        {/* Other entrants' picks and scores stay private until play begins. */}
+        {showLeaders ? (
+          <LeaderboardLedger
+            entries={shownLeaderboard}
+            projecting={projecting}
+            leaderboardUrl={rootProps.leaderboardUrl}
+            currentUserId={rootProps.userId}
+            skipTop={skipTop}
+            limit={6}
+          />
         ) : null}
       </div>
 

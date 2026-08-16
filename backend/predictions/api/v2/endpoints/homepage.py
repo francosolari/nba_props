@@ -303,9 +303,12 @@ def get_homepage_data(request, season_slug: str = None):
                     losses=standing.losses,
                     position=standing.position,
                 )
+                # The whole conference, not a top five: home shows each entry's
+                # board against the real ladder, and a truncated table would
+                # hide exactly the misses further down that cost the most.
                 for standing in RegularSeasonStandings.objects.filter(
                     season=season, team__conference=conference
-                ).select_related('team').order_by('position')[:5]
+                ).select_related('team').order_by('position')
             ]
 
         return HomepageDataSchema(

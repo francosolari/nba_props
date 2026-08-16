@@ -42,17 +42,52 @@ function Score({ game }) {
   );
 }
 
-function GameRow({ game, variant }) {
+/**
+ * A scheduled game the reader can call. Each side is a toggle: picking one
+ * sets it as the winner, picking it again clears the game back to undecided.
+ */
+function PickableMatchup({ game, pick, onPick }) {
+  const sides = [['away', game.away], ['home', game.home]];
+  return (
+    <span className="nba-games__matchup is-pickable">
+      {sides.map(([side, team], index) => (
+        <React.Fragment key={side}>
+          {index ? <i>at</i> : null}
+          <button
+            type="button"
+            className={`nba-games__pick${pick === side ? ' is-picked' : ''}`}
+            aria-pressed={pick === side}
+            onClick={() => onPick(game, pick === side ? null : side)}
+          >
+            <Side team={team} />
+            <span className="nba-games__pick-label">
+              {pick === side ? `${team.tricode} win` : `Call ${team.tricode}`}
+            </span>
+          </button>
+        </React.Fragment>
+      ))}
+    </span>
+  );
+}
+
+function GameRow({ game, variant, pickable, pick, onPick }) {
   const isDay = variant === 'day';
   const live = game.status === 'live';
+  // A final result is settled; anything still to be decided can be called,
+  // including a game in progress.
+  const canPick = pickable && game.status !== 'final';
 
   return (
-    <div className={`nba-games__row${live ? ' is-live' : ''}`}>
+    <div className={`nba-games__row${live ? ' is-live' : ''}${pick ? ' is-called' : ''}`}>
+      {canPick ? (
+        <PickableMatchup game={game} pick={pick} onPick={onPick} />
+      ) : (
       <span className="nba-games__matchup">
         <Side team={game.away} showRecord={isDay} />
         <i>at</i>
         <Side team={game.home} showRecord={isDay} />
       </span>
+      )}
       <span className="nba-games__meta">
         <Score game={game} />
         <em>
@@ -81,7 +116,9 @@ function TickerItem({ game }) {
   );
 }
 
-export default function NBAGames({ games = [], variant = 'rail', title, caption, action }) {
+export default function NBAGames({
+  games = [], variant = 'rail', title, caption, action, pickable = false, picks, onPick, beforeRows,
+}) {
   if (!games.length) return null;
 
   if (variant === 'ticker') {
@@ -109,8 +146,18 @@ export default function NBAGames({ games = [], variant = 'rail', title, caption,
           {action}
         </header>
       ) : null}
+      {beforeRows}
       <div className="nba-games__rows">
-        {games.map((game) => <GameRow key={game.game_id} game={game} variant={variant} />)}
+        {games.map((game) => (
+          <GameRow
+            key={game.game_id}
+            game={game}
+            variant={variant}
+            pickable={pickable}
+            pick={picks?.get(game.game_id ?? game.id) || null}
+            onPick={onPick}
+          />
+        ))}
       </div>
     </section>
   );
