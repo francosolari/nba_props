@@ -1,11 +1,15 @@
 import React from 'react';
 import { TYPE_CONFIG, TYPE_OPTIONS } from '../questionBatchWizardUtils';
 import { cardClass, subtleTextClass, labelTextClass, buttonMutedClass, primaryButtonClass } from './wizardStyles';
+import CopySuperlativesPanel from './CopySuperlativesPanel';
 
 const DraftStep = ({
   drafts,
   defaultPointValue,
+  seasons,
+  seasonSlug,
   onAddDraft,
+  onAddDraftsFromCopy,
   onDuplicateDraft,
   onRemoveDraft,
   onUpdateDraft,
@@ -13,6 +17,11 @@ const DraftStep = ({
   canAdvance,
 }) => (
   <section className="space-y-6">
+    <CopySuperlativesPanel
+      seasons={seasons}
+      currentSeasonSlug={seasonSlug}
+      onAddDrafts={onAddDraftsFromCopy}
+    />
     {drafts.map((draft, index) => (
       <div key={draft.id} className={`${cardClass} p-6`}>
         <div className="flex items-center justify-between gap-4">

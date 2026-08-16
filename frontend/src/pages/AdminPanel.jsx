@@ -343,6 +343,7 @@ const AdminPanel = ({ seasonSlug }) => {
         awards={awards}
         teams={teams}
         players={players}
+        seasons={seasons}
         mutations={batchMutations}
         onCompleted={handleBatchCompleted}
       />

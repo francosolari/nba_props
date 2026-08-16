@@ -15,6 +15,7 @@ const ConfigureStepFields = ({ draft, awardOptions, playerOptions, teamOptions, 
           options={awardOptions}
           value={draft.data.awardId}
           onChange={(option) => onUpdateDraftData(draft.id, { awardId: option ? option.value : '' })}
+          mode="light"
         />
       );
     case 'prop':
@@ -59,6 +60,7 @@ const ConfigureStepFields = ({ draft, awardOptions, playerOptions, teamOptions, 
             options={playerOptions}
             value={draft.data.relatedPlayerId}
             onChange={(option) => onUpdateDraftData(draft.id, { relatedPlayerId: option ? option.value : null })}
+            mode="light"
           />
         </>
       );
@@ -70,12 +72,14 @@ const ConfigureStepFields = ({ draft, awardOptions, playerOptions, teamOptions, 
             options={teamOptions}
             value={draft.data.team1Id}
             onChange={(option) => onUpdateDraftData(draft.id, { team1Id: option ? option.value : null })}
+            mode="light"
           />
           <SelectComponent
             placeholder="Team 2"
             options={teamOptions}
             value={draft.data.team2Id}
             onChange={(option) => onUpdateDraftData(draft.id, { team2Id: option ? option.value : null })}
+            mode="light"
           />
         </div>
       );

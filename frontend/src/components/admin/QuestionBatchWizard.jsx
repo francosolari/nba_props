@@ -21,6 +21,7 @@ const QuestionBatchWizard = ({
   awards = [],
   teams = [],
   players = [],
+  seasons = [],
   mutations = {},
   onCompleted,
 }) => {
@@ -34,7 +35,11 @@ const QuestionBatchWizard = ({
     [awards]
   );
   const teamOptions = useMemo(
-    () => teams.map((team) => ({ value: team.id, label: team.name })),
+    () =>
+      teams.map((team) => ({
+        value: team.id,
+        label: `${team.name}${team.conference ? ` • ${team.conference}` : ''}`,
+      })),
     [teams]
   );
   const playerOptions = useMemo(
@@ -89,6 +94,20 @@ const QuestionBatchWizard = ({
         draft.id === draftId ? { ...draft, data: { ...draft.data, ...updates } } : draft
       )
     );
+  };
+
+  const handleAddDraftsFromCopy = (entries) => {
+    setDrafts((prev) => {
+      const newDrafts = entries.map((entry) => ({
+        id: `draft-${Math.random().toString(36).slice(2, 11)}`,
+        type: entry.type,
+        text: entry.text,
+        pointValue: entry.pointValue ?? defaultPointValue,
+        data: entry.data,
+      }));
+      const isPristine = prev.length === 1 && !prev[0].text.trim();
+      return isPristine ? newDrafts : [...prev, ...newDrafts];
+    });
   };
 
   const allDraftsValidForStep1 = drafts.length > 0 && drafts.every((draft) => draft.text.trim());
@@ -212,7 +231,10 @@ const QuestionBatchWizard = ({
             <DraftStep
               drafts={drafts}
               defaultPointValue={defaultPointValue}
+              seasons={seasons}
+              seasonSlug={seasonSlug}
               onAddDraft={handleAddDraft}
+              onAddDraftsFromCopy={handleAddDraftsFromCopy}
               onDuplicateDraft={handleDuplicateDraft}
               onRemoveDraft={handleRemoveDraft}
               onUpdateDraft={handleUpdateDraft}
