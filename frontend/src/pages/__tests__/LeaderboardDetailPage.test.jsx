@@ -173,7 +173,7 @@ describe('LeaderboardDetailPage', () => {
 
       render(<LeaderboardDetailPage seasonSlug="2024-25" />);
 
-      expect(await screen.findByText(/advanced board locked/i)).toBeInTheDocument();
+      expect(await screen.findByText(/stat sheet locked/i)).toBeInTheDocument();
       expect(screen.getByText(/sealed while predictions are open/i)).toBeInTheDocument();
       expect(screen.queryByTestId('leaderboard-table-desktop')).not.toBeInTheDocument();
     });
@@ -182,7 +182,7 @@ describe('LeaderboardDetailPage', () => {
       render(<LeaderboardDetailPage seasonSlug="2024-25" />);
 
       expect(await screen.findByTestId('leaderboard-table-desktop')).toBeInTheDocument();
-      expect(screen.queryByText(/advanced board locked/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/stat sheet locked/i)).not.toBeInTheDocument();
     });
   });
 

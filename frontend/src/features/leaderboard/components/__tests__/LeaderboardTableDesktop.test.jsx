@@ -171,3 +171,51 @@ describe('LeaderboardTableDesktop — settlement and roster controls', () => {
     expect(container.querySelectorAll('.is-sticky').length).toBeGreaterThan(1);
   });
 });
+
+describe('LeaderboardTableDesktop — the answer key', () => {
+  const withResult = (overrides) => {
+    const users = buildDisplayedUsers();
+    users[0].user.categories['Player Awards'].predictions[0] = {
+      ...users[0].user.categories['Player Awards'].predictions[0],
+      ...overrides,
+    };
+    return users;
+  };
+
+  const renderWith = (overrides) => {
+    const users = withResult(overrides);
+    return render(<LeaderboardTableDesktop {...buildProps({ displayedUsers: users, leaderboardData: users })} />);
+  };
+
+  test('shows the result even when nobody picked it', () => {
+    // Nobody in this comparison chose Wembanyama, so without the key the actual
+    // outcome appears nowhere on the board.
+    const { container } = renderWith({ correct_answer: 'Victor Wembanyama', is_locked: true });
+
+    const key = container.querySelector('.court-adv-key');
+    expect(key).toHaveTextContent('Victor Wembanyama');
+    expect(screen.queryByRole('button', { name: /victor wembanyama/i })).not.toBeInTheDocument();
+  });
+
+  test('a provisional result is labelled as leading, a settled one as won', () => {
+    const { container, rerender } = renderWith({ correct_answer: 'Leader', is_locked: false, is_finalized: false });
+    expect(container.querySelector('.court-adv-key')).toHaveTextContent('Leading');
+
+    const settled = withResult({ correct_answer: 'Leader', is_finalized: true });
+    rerender(<LeaderboardTableDesktop {...buildProps({ displayedUsers: settled, leaderboardData: settled })} />);
+    expect(container.querySelector('.court-adv-key')).toHaveTextContent('Won');
+  });
+
+  test('the runner-up is named alongside the winner', () => {
+    const { container } = renderWith({ correct_answer: 'Leader', runner_up_answer: 'Second' });
+    const key = container.querySelector('.court-adv-key');
+    expect(key).toHaveTextContent('Leader');
+    expect(key).toHaveTextContent('2nd');
+    expect(key).toHaveTextContent('Second');
+  });
+
+  test('an ungraded question shows no key rather than an empty one', () => {
+    const { container } = renderWith({ correct_answer: null, runner_up_answer: null });
+    expect(container.querySelector('.court-adv-key')).not.toBeInTheDocument();
+  });
+});

@@ -490,7 +490,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   if (seasonInfo?.submissions_open && seasonInfo?.submission_end_date) {
     return (
       <LockedResultsSheet
-        title="Advanced Board Locked"
+        title="Stat Sheet Locked"
         description="Other players' picks stay sealed while predictions are open. Check back later!"
         submissionEndDate={seasonInfo.submission_end_date}
         seasonsData={seasonsData}

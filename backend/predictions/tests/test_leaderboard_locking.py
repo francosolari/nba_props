@@ -148,6 +148,9 @@ class TestAwardPayload:
         prediction = award_predictions(_build_leaderboard(season.slug))[0]
         assert prediction['leader_answer'] == 'Leader'
         assert prediction['runner_up_answer'] == 'Runner Up'
+        # The result travels with the question so the board can name it even when
+        # nobody picked it — a leader no one backed has no cell of its own.
+        assert prediction['correct_answer'] == 'Leader'
         assert prediction['is_finalized'] is False
         # Scored off today's odds, so the points can still move.
         assert prediction['is_locked'] is False
@@ -274,3 +277,25 @@ class TestDisplayName:
         StandingPredictionFactory(user=user, season=season, team=team, predicted_position=1, points=3)
 
         assert _build_leaderboard(season.slug)[0]['display_name'] == user.username
+
+
+@pytest.mark.django_db
+class TestAnswerKey:
+    def test_a_result_nobody_picked_still_reaches_the_board(self):
+        season = CurrentSeasonFactory(slug='lock-9', year='lock-9')
+        leader, runner_up = PlayerFactory(name='Unpicked'), PlayerFactory(name='Second')
+        question = award_question(season, leader, runner_up)
+        # The only entry names somebody else entirely.
+        AnswerFactory(user=UserFactory(), question=question, answer='Someone Else', points_earned=0, is_correct=False)
+
+        prediction = award_predictions(_build_leaderboard(season.slug))[0]
+        assert prediction['answer'] == 'Someone Else'
+        assert prediction['correct_answer'] == 'Unpicked'
+        assert prediction['runner_up_answer'] == 'Second'
+
+    def test_an_ungraded_question_reports_no_result_rather_than_an_empty_string(self):
+        season = CurrentSeasonFactory(slug='lock-10', year='lock-10')
+        question = SuperlativeQuestionFactory(season=season, correct_answer='', is_finalized=False)
+        AnswerFactory(user=UserFactory(), question=question, answer='A Guess', points_earned=0, is_correct=None)
+
+        assert award_predictions(_build_leaderboard(season.slug))[0]['correct_answer'] is None

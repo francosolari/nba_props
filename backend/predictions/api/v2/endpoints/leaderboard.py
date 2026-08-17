@@ -281,6 +281,10 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
             "points": score,
             "point_value": ans.question.point_value,
             "score_status": ans.question.score_status_for_points(score, ans.is_correct),
+            # The result itself, so the board can show the answer key beside a
+            # question rather than leaving it to be inferred from whoever happened
+            # to pick it — which is impossible when nobody did.
+            "correct_answer": ans.question.correct_answer or None,
             # Superlatives carry a real finalization flag: until an award is
             # awarded, `correct_answer` is only the current odds leader, so the
             # points it scores are provisional. Question types without the flag

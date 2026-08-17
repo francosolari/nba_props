@@ -1006,12 +1006,14 @@
 
 .court-adv-question {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
   padding: 8px 14px;
 }
 
-.court-adv-question span {
+.court-adv-question__text {
   display: -webkit-box;
   overflow: hidden;
   font-size: 13px;
@@ -1022,10 +1024,71 @@
 }
 
 .court-adv-question svg {
+  display: inline;
   width: 13px;
   height: 13px;
-  flex: none;
+  margin-left: 4px;
   color: var(--court-warning);
+  vertical-align: -2px;
+}
+
+/* ── Answer key ───────────────────────────────────────────────────────────────
+   What actually happened, kept beside the question in the fixed column. A
+   result nobody picked has no cell anywhere else on the board. */
+
+.court-adv-key {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.court-adv-key__row {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.court-adv-key__mark {
+  flex: none;
+  padding: 1px 4px;
+  font: 800 9px/1.4 var(--court-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border-radius: 1px;
+}
+
+.court-adv-key__mark.is-hit {
+  color: var(--court-success);
+  background: var(--court-success-soft);
+}
+
+.court-adv-key__mark.is-near {
+  color: var(--court-warning);
+  background: var(--court-warning-soft);
+}
+
+.court-adv-key__name {
+  overflow: hidden;
+  color: var(--court-steel);
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* In the mobile column head the key sits on carbon stock. */
+.court-adv-key--compact {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.court-adv-key--compact .court-adv-key__name {
+  color: rgb(255 255 255 / 82%);
+  font-size: 10px;
 }
 
 .court-adv-cell {

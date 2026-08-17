@@ -153,7 +153,7 @@ export const LeaderboardHeader = ({
           <ChevronLeft className="w-4 h-4" aria-hidden="true" />
         </a>
 
-        <h1 className="court-adv-title">Advanced Board</h1>
+        <h1 className="court-adv-title">Stat Sheet</h1>
 
         <div className="hidden md:block ml-3">
           <SectionTabs section={section} setSection={setSection} />

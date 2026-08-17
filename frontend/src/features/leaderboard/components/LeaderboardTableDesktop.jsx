@@ -6,6 +6,7 @@ import TeamLogo from '../../../components/TeamLogo';
 import PlayerHeadshot from '../../../components/PlayerHeadshot';
 import usePlayerHeadshots from '../hooks/usePlayerHeadshots';
 import { StandingsLegend, CallsLegend } from './LeaderboardLegend';
+import { AnswerKey } from './AnswerKey';
 
 const formatPoints = (value) => {
   const n = Number(value || 0);
@@ -159,7 +160,7 @@ export const LeaderboardTableDesktop = ({
   const fixedColWidth = isStandingsSection ? gripWidth + teamColWidth + rankColWidth : 340;
   const userColWidth = isStandingsSection ? 128 : 188;
 
-  const ROW_HEIGHT = isStandingsSection ? 46 : 58;
+  const ROW_HEIGHT = isStandingsSection ? 46 : 72;
   const HEADER_HEIGHT = 58;
 
   const nonStandingsCategoryKey = React.useMemo(
@@ -178,6 +179,9 @@ export const LeaderboardTableDesktop = ({
             id: p.question_id,
             text: p.question,
             is_finalized: p.is_finalized,
+            is_locked: p.is_locked,
+            correct_answer: p.correct_answer,
+            runner_up_answer: p.runner_up_answer,
             line: p.line,
             outcome_type: p.outcome_type,
           });
@@ -406,8 +410,11 @@ export const LeaderboardTableDesktop = ({
               {nonStandingsQuestions.map((q) => (
                 <div key={q.id} className="court-adv-row" style={{ height: ROW_HEIGHT }}>
                   <div className="court-adv-question" style={{ width: fixedColWidth }}>
-                    <span>{q.text}</span>
-                    {q.is_finalized && <Lock aria-label="Result final" />}
+                    <span className="court-adv-question__text">
+                      {q.text}
+                      {q.is_finalized && <Lock aria-label="Result final" />}
+                    </span>
+                    <AnswerKey prediction={q} />
                   </div>
                 </div>
               ))}

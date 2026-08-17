@@ -5,6 +5,7 @@ import TeamLogo from '../../../components/TeamLogo';
 import PlayerHeadshot from '../../../components/PlayerHeadshot';
 import usePlayerHeadshots from '../hooks/usePlayerHeadshots';
 import { StandingsLegend, CallsLegend } from './LeaderboardLegend';
+import { AnswerKey } from './AnswerKey';
 
 const formatPoints = (value) => {
   const n = Number(value || 0);
@@ -80,6 +81,9 @@ export const LeaderboardTableMobile = ({
           id: prediction.question_id,
           text: prediction.question,
           is_finalized: prediction.is_finalized,
+          is_locked: prediction.is_locked,
+          correct_answer: prediction.correct_answer,
+          runner_up_answer: prediction.runner_up_answer,
           line: prediction.line,
           outcome_type: prediction.outcome_type,
         });
@@ -327,6 +331,7 @@ export const LeaderboardTableMobile = ({
                   <div key={q.id} className="court-adv-mq">
                     <span className="court-adv-mq__index">Q{idx + 1}</span>
                     <span className="court-adv-mq__text" title={q.text}>{q.text}</span>
+                    <AnswerKey prediction={q} compact />
                   </div>
                 ))}
               </div>
