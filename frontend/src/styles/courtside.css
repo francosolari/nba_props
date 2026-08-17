@@ -950,8 +950,9 @@ button[type="submit"]:active {
   justify-content: space-between;
   gap: 12px;
   padding: 0 16px;
-  background: var(--court-carbon);
-  color: #fff;
+  background: var(--court-sheet-wash);
+  border-bottom: 1px solid var(--court-rule-soft);
+  color: var(--court-steel);
 }
 
 .court-breakdown-sheet__head h4,

@@ -47,9 +47,12 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
     { id: 'profile', shortLabel: 'Profile', label: 'Profile', icon: User, href: '/user/profile/' },
   ];
 
+  const breakdownItem = { id: 'breakdown', label: 'Advanced Board', icon: BarChart3, href: `/leaderboard/${currentSeasonSlug}/detailed/` };
+  const profileItem = primaryItems.find((item) => item.id === 'profile');
   const desktopItems = [
-    ...primaryItems,
-    { id: 'breakdown', label: 'Advanced Board', icon: BarChart3, href: `/leaderboard/${currentSeasonSlug}/detailed/` },
+    ...primaryItems.filter((item) => item.id !== 'profile'),
+    breakdownItem,
+    profileItem,
     ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Settings, href: '/admin-dashboard/' }] : []),
   ];
 
@@ -73,7 +76,7 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
     <>
       <aside className="court-desktop-nav" aria-label="Primary navigation">
         <a className="court-desktop-nav__brand" href="/" aria-label="Props Predictions home">
-          <img src="/static/img/nba_predictions_logo.png" alt="" />
+          <img src="/static/img/nba_predictions_logo.svg" alt="" />
           <span>Props<br />Predictions</span>
         </a>
         {/* Always rendered. An unresolved season holds its line with a hard

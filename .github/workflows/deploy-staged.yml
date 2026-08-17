@@ -115,12 +115,15 @@ jobs:
           CF_TURNSTILE_SECRET_KEY: ${{ secrets.CF_TURNSTILE_SECRET_KEY }}
           GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_SECRET: ${{ secrets.GOOGLE_OAUTH_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          envs: DOCKER_VERSION,SECRET_KEY,DATABASE_HOST,DATABASE_PORT,DATABASE_NAME,DATABASE_USER,DATABASE_PASSWORD,SENDGRID_API_KEY,DEFAULT_FROM_EMAIL,CF_TURNSTILE_SITE_KEY,CF_TURNSTILE_SECRET_KEY,GOOGLE_OAUTH_CLIENT_ID,GOOGLE_OAUTH_SECRET
+          envs: DOCKER_VERSION,SECRET_KEY,DATABASE_HOST,DATABASE_PORT,DATABASE_NAME,DATABASE_USER,DATABASE_PASSWORD,SENDGRID_API_KEY,DEFAULT_FROM_EMAIL,CF_TURNSTILE_SITE_KEY,CF_TURNSTILE_SECRET_KEY,GOOGLE_OAUTH_CLIENT_ID,GOOGLE_OAUTH_SECRET,STRIPE_SECRET_KEY,STRIPE_PUBLISHABLE_KEY,STRIPE_WEBHOOK_SECRET
           script: |
             cd /var/www/nba_props
             git pull origin main
@@ -138,6 +141,9 @@ jobs:
             export CF_TURNSTILE_SECRET_KEY="$CF_TURNSTILE_SECRET_KEY"
             export GOOGLE_OAUTH_CLIENT_ID="$GOOGLE_OAUTH_CLIENT_ID"
             export GOOGLE_OAUTH_SECRET="$GOOGLE_OAUTH_SECRET"
+            export STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY"
+            export STRIPE_PUBLISHABLE_KEY="$STRIPE_PUBLISHABLE_KEY"
+            export STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET"
 
             DEPLOY_IMAGE="fsolaric/nba_props_web:$DOCKER_VERSION"
 
@@ -193,6 +199,9 @@ jobs:
               -e CF_TURNSTILE_SECRET_KEY="$CF_TURNSTILE_SECRET_KEY" \
               -e GOOGLE_OAUTH_CLIENT_ID="$GOOGLE_OAUTH_CLIENT_ID" \
               -e GOOGLE_OAUTH_SECRET="$GOOGLE_OAUTH_SECRET" \
+              -e STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" \
+              -e STRIPE_PUBLISHABLE_KEY="$STRIPE_PUBLISHABLE_KEY" \
+              -e STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET" \
               "$DEPLOY_IMAGE" \
               sh -c "python manage.py migrate && gunicorn nba_predictions.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile -"
 
