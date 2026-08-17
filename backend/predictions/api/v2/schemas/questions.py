@@ -44,6 +44,7 @@ class PropQuestionSchema(QuestionBaseSchema):
     outcome_type: Literal["over_under", "yes_no"]
     related_player_id: Optional[int] = None
     related_player_name: Optional[str] = None
+    related_player_headshot_url: Optional[str] = None
     line: Optional[float] = None  # Only for over_under type
 
 

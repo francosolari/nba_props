@@ -313,19 +313,16 @@ def update_active_players(nba_players):
     for row in nba_players:
         print(row)
         name = row['full_name']
-
-        try:
-            player = Player.objects.get(name=name)
-            player.save()
-        except Player.DoesNotExist:
-            player = Player.objects.create(name=name)
+        nba_player_id = row.get('id')
 
         player_obj, created = Player.objects.get_or_create(
             name=name,
+            defaults={'nba_player_id': nba_player_id},
         )
         if not created:
-            # Update the existing TeamSeasonStats
-            player_obj.name = row['full_name']
+            player_obj.name = name
+            if nba_player_id and player_obj.nba_player_id != nba_player_id:
+                player_obj.nba_player_id = nba_player_id
             player_obj.save()
 
 

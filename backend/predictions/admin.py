@@ -196,7 +196,7 @@ class QuestionAdmin(PolymorphicParentModelAdmin):
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ('name',)  # Display the player name in the list view
+    list_display = ('name', 'nba_player_id')  # Display the player name and NBA.com ID in the list view
     search_fields = ('name',)  # Enable live search filtering by name
 
 

@@ -70,7 +70,17 @@ def get_all_players(request, search: Optional[str] = None):
         if search:
             players_queryset = players_queryset.filter(name__icontains=search.strip())
 
-        players_list = list(players_queryset.values('id', 'name'))
+        players_list = [
+            {
+                'id': player['id'],
+                'name': player['name'],
+                'headshot_url': (
+                    f"https://cdn.nba.com/headshots/nba/latest/260x190/{player['nba_player_id']}.png"
+                    if player['nba_player_id'] else None
+                ),
+            }
+            for player in players_queryset.values('id', 'name', 'nba_player_id')
+        ]
 
         return {'players': players_list}
 

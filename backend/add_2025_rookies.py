@@ -92,6 +92,14 @@ def add_rookies_to_database(rookies):
             if created:
                 added_count += 1
                 print(f"{idx:2d}. ✓ Added rookie: {name}")
+                try:
+                    from nba_api.stats.static import players as nba_players
+                    matches = nba_players.find_players_by_full_name(name)
+                    if matches:
+                        player.nba_player_id = matches[0]['id']
+                        player.save(update_fields=['nba_player_id'])
+                except Exception:
+                    pass  # Headshot ID backfill is best-effort; `backfill_player_nba_ids` can retry later.
             else:
                 updated_count += 1
                 print(f"{idx:2d}. - Already exists: {name}")

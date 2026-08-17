@@ -18,6 +18,7 @@ const SelectComponent = ({
   isSearchable = true,
   className = '',
   mode = 'dark',
+  components,
 }) => {
   const isLight = mode === 'light';
   const normalizedValue = useMemo(() => {
@@ -178,6 +179,7 @@ const SelectComponent = ({
         menuPortal: (provided) => ({ ...provided, zIndex: 9999 }),
       }}
       menuPortalTarget={document.body}
+      components={components}
     />
   );
 };

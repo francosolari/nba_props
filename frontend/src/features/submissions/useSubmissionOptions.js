@@ -5,6 +5,7 @@ import { getAxiosErrorMessage } from './submissionErrors';
 const mapPlayerOptions = (data) => data?.players?.map((player) => ({
   value: player.id,
   label: player.name,
+  headshotUrl: player.headshot_url || null,
 })) || [];
 
 const mapTeamOptions = (data) => data?.teams?.map((team) => ({

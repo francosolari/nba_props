@@ -258,6 +258,7 @@ def serialize_question(question: Question, real_questions_map: Optional[dict] = 
             "outcome_type": real_question.outcome_type,
             "related_player_id": real_question.related_player.id if real_question.related_player else None,
             "related_player_name": real_question.related_player.name if real_question.related_player else None,
+            "related_player_headshot_url": real_question.related_player.headshot_url if real_question.related_player else None,
             "line": real_question.line,
         }
     

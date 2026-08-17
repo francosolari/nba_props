@@ -1,5 +1,27 @@
 import React, { useEffect, useRef } from 'react';
+import { components as selectComponents } from 'react-select';
 import SelectComponent from '../../components/SelectComponent';
+import PlayerHeadshot from '../../components/PlayerHeadshot';
+
+const PlayerOption = (props) => (
+  <selectComponents.Option {...props}>
+    <span className="flex items-center gap-2">
+      <PlayerHeadshot headshotUrl={props.data.headshotUrl} name={props.data.label} size={32} />
+      {props.data.label}
+    </span>
+  </selectComponents.Option>
+);
+
+const PlayerSingleValue = (props) => (
+  <selectComponents.SingleValue {...props}>
+    <span className="flex items-center gap-2">
+      <PlayerHeadshot headshotUrl={props.data.headshotUrl} name={props.data.label} size={32} />
+      {props.data.label}
+    </span>
+  </selectComponents.SingleValue>
+);
+
+const playerSelectComponents = { Option: PlayerOption, SingleValue: PlayerSingleValue };
 
 const QuestionCard = ({
   question,
@@ -37,7 +59,14 @@ const QuestionCard = ({
   return (
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 sm:p-6 shadow-md hover:shadow-lg transition-all">
       <div className="mb-4">
-        <h3 ref={questionTextRef} className="text-slate-900 dark:text-white font-semibold text-lg mb-2">
+        <h3 ref={questionTextRef} className="text-slate-900 dark:text-white font-semibold text-lg mb-2 flex items-center gap-2">
+          {question.related_player_id && (
+            <PlayerHeadshot
+              headshotUrl={question.related_player_headshot_url}
+              name={question.related_player_name}
+              size={36}
+            />
+          )}
           {question.text}
         </h3>
         <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
@@ -86,6 +115,7 @@ const QuestionInput = ({
             placeholder={loadingAuxData ? 'Loading players...' : 'Select a player'}
             isDisabled={isReadOnly || loadingAuxData || sortedPlayerOptions.length === 0}
             mode="light"
+            components={playerSelectComponents}
           />
           <p className="text-xs text-slate-500 dark:text-slate-400">Runner-up selections earn half points.</p>
         </div>
