@@ -6,69 +6,70 @@ django.setup()
 from predictions.models import Player
 
 
-# 2025 NBA Draft - All 59 picks from https://www.nba.com/news/2025-nba-draft-order
-ROOKIES_2025 = [
+# 2026 NBA Draft - All 60 picks (Barclays Center, June 23-24, 2026)
+ROOKIES_2026 = [
     # First Round (1-30)
-    "Cooper Flagg",
-    "Dylan Harper",
-    "VJ Edgecombe",
-    "Kon Knueppel",
-    "Ace Bailey",
-    "Tre Johnson",
-    "Jeremiah Fears",
-    "Egor Demin",
-    "Collin Murray-Boyles",
-    "Khaman Maluach",
-    "Cedric Coward",
-    "Noa Essengue",
-    "Derik Queen",
-    "Carter Bryant",
-    "Thomas Sorber",
-    "Yang Hansen",
-    "Joan Beringer",
-    "Walter Clayton Jr.",
-    "Nolan Traoré",
-    "Kasparas Jakučionis",
-    "Will Riley",
-    "Drake Powell",
-    "Asa Newell",
-    "Nique Clifford",
-    "Jase Richardson",
-    "Ben Saraf",
-    "Danny Wolf",
-    "Hugo González",
-    "Liam McNeeley",
-    "Yanic Konan Niederhauser",
-    # Second Round (31-59)
-    "Rasheer Fleming",
-    "Noah Penda",
-    "Sion James",
-    "Ryan Kalkbrenner",
-    "Johni Broome",
-    "Adou Thiero",
-    "Chaz Lanier",
-    "Kam Jones",
-    "Alijah Martin",
-    "Micah Peavy",
-    "Koby Brea",
-    "Maxime Raynaud",
-    "Jamir Watkins",
-    "Brooks Barnhizer",
-    "Rocco Zikarsky",
-    "Amari Williams",
-    "Bogoljub Marković",
-    "Javon Small",
-    "Tyrese Proctor",
-    "Kobe Sanders",
-    "Mohamed Diawara",
-    "Alex Toohey",
-    "John Tonje",
-    "Taelon Peter",
-    "Lachlan Olbrich",
-    "Will Richard",
-    "Max Shulga",
-    "Saliou Niang",
-    "Jahmai Mashack",
+    "AJ Dybantsa",
+    "Darryn Peterson",
+    "Cameron Boozer",
+    "Caleb Wilson",
+    "Keaton Wagler",
+    "Mikel Brown Jr.",
+    "Darius Acuff Jr.",
+    "Kingston Flemings",
+    "Morez Johnson Jr.",
+    "Brayden Burries",
+    "Yaxel Lendeborg",
+    "Aday Mara",
+    "Nate Ament",
+    "Hannes Steinbach",
+    "Dailyn Swain",
+    "Bennett Stirtz",
+    "Ebuka Okorie",
+    "Christian Anderson",
+    "Allen Graves",
+    "Jayden Quaintance",
+    "Karim Lopez",
+    "Labaron Philon Jr.",
+    "Zuby Ejiofor",
+    "Cameron Carr",
+    "Sergio De Larrea",
+    "Tarris Reed Jr.",
+    "Chris Cenac Jr.",
+    "Joshua Jefferson",
+    "Alex Karaban",
+    "Koa Peat",
+    # Second Round (31-60)
+    "Bruce Thornton",
+    "Richie Saunders",
+    "Isaiah Evans",
+    "Meleek Thomas",
+    "Trevon Brazile",
+    "Baba Miller",
+    "Ryan Conwell",
+    "Braden Smith",
+    "Jack Kayil",
+    "Dillon Mitchell",
+    "Otega Oweh",
+    "Ja'Kobi Gillespie",
+    "Tyler Bilodeau",
+    "Maliq Brown",
+    "Emanuel Sharp",
+    "Felix Okpata",
+    "Tyler Nickel",
+    "Tobi Lawal",
+    "Bryce Hopkins",
+    "Jaden Bradley",
+    "Izaiyah Nelson",
+    "Henri Veesaar",
+    "Ugonna Onyenso",
+    "Lajae Jones",
+    "Nick Martinelli",
+    "Vsevolod Ishchenko",
+    "Narcisse Ngoy",
+    "Jaron Pierre Jr.",
+    "Trey Kaufman-Renn",
+    "Malique Lewis",
 ]
 
 
@@ -112,20 +113,20 @@ def add_rookies_to_database(rookies):
 
 def main():
     print("=" * 60)
-    print("2025 NBA Draft Rookies - Database Update Script")
+    print("2026 NBA Draft Rookies - Database Update Script")
     print("=" * 60)
-    print(f"Source: https://www.nba.com/news/2025-nba-draft-order")
-    print(f"Total rookies to add: {len(ROOKIES_2025)}")
+    print(f"Source: 2026 NBA Draft (Barclays Center, June 23-24, 2026)")
+    print(f"Total rookies to add: {len(ROOKIES_2026)}")
     print(f"{'=' * 60}")
 
     # Add to database
-    added, updated = add_rookies_to_database(ROOKIES_2025)
+    added, updated = add_rookies_to_database(ROOKIES_2026)
 
     print(f"\n{'=' * 60}")
     print(f"Summary:")
     print(f"  New rookies added: {added}")
     print(f"  Already existed: {updated}")
-    print(f"  Total processed: {len(ROOKIES_2025)}")
+    print(f"  Total processed: {len(ROOKIES_2026)}")
     print(f"{'=' * 60}")
 
 

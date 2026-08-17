@@ -5,6 +5,8 @@ import axios from 'axios';
 import { useLeaderboard } from '../hooks';
 import CourtSelect from '../components/CourtSelect';
 import TeamLogo from '../components/TeamLogo';
+import PlayerHeadshot from '../components/PlayerHeadshot';
+import usePlayerHeadshots from '../features/leaderboard/hooks/usePlayerHeadshots';
 import { ScorebookHeader, ScorebookNumber, ScorebookRow, ScorebookTable } from '../components/scorebook/ScorebookPrimitives';
 import {
   ChevronDown,
@@ -115,7 +117,7 @@ const getStandingResult = (prediction) => {
    SUB-COMPONENTS
    ───────────────────────────────────────────────────────────────────────────── */
 
-const StatusLedger = ({ groups, isStandings, sectionPrefix, expandedSections, toggleSection }) => (
+const StatusLedger = ({ groups, isStandings, isPlayerAwards, headshotsByName, sectionPrefix, expandedSections, toggleSection }) => (
   <div className="court-grade-ledger">
     {PREVIEW_STATUSES.map((status) => {
       const items = groups[status] || [];
@@ -163,6 +165,14 @@ const StatusLedger = ({ groups, isStandings, sectionPrefix, expandedSections, to
                       </span>
                     ) : (
                       <span className="court-grade-pick__detail">
+                        {isPlayerAwards && prediction.answer && headshotsByName?.[prediction.answer] && (
+                          <PlayerHeadshot
+                            headshotUrl={headshotsByName[prediction.answer]}
+                            name={prediction.answer}
+                            size={22}
+                            className="mr-1.5"
+                          />
+                        )}
                         {prediction.answer || 'Answer unavailable'}
                         {status !== 'pending' && <b>{Number(prediction.points || 0) > 0 ? `+${prediction.points}` : '0'}</b>}
                       </span>
@@ -181,7 +191,7 @@ const StatusLedger = ({ groups, isStandings, sectionPrefix, expandedSections, to
   </div>
 );
 
-const CategoryDetailCard = ({ icon: Icon, title, data, detailsHref }) => {
+const CategoryDetailCard = ({ icon: Icon, title, data, detailsHref, headshotsByName }) => {
   const pts = data?.points || 0;
   const max = data?.max_points || 0;
   const pct = max > 0 ? Math.round((pts / max) * 100) : 0;
@@ -243,6 +253,8 @@ const CategoryDetailCard = ({ icon: Icon, title, data, detailsHref }) => {
       ) : (
         <StatusLedger
           groups={groupedPredictions}
+          isPlayerAwards={title === 'Player Awards'}
+          headshotsByName={headshotsByName}
           sectionPrefix={title}
           expandedSections={expandedSections}
           toggleSection={toggleSection}
@@ -274,6 +286,7 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
   });
 
   const { data: leaderboardData, season: seasonInfo, error, isLoading } = useLeaderboard(selectedSeason);
+  const headshotsByName = usePlayerHeadshots(true);
   const [expandedUsers, setExpandedUsers] = useState(new Set());
   const [visibleCount, setVisibleCount] = useState(100);
   const loggedInUsername = getLoggedInUsername(providedUsername);
@@ -520,10 +533,11 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
                              data={getCategory(entry, 'Regular Season Standings')} 
                              detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=standings&user=${entry.user.id}`}
                            />
-                           <CategoryDetailCard 
-                             icon={Award} 
-                             title="Player Awards" 
-                             data={getCategory(entry, 'Player Awards')} 
+                           <CategoryDetailCard
+                             icon={Award}
+                             title="Player Awards"
+                             data={getCategory(entry, 'Player Awards')}
+                             headshotsByName={headshotsByName}
                              detailsHref={`/leaderboard/${selectedSeason}/detailed/?section=awards&user=${entry.user.id}`}
                            />
                            <CategoryDetailCard 

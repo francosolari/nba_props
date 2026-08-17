@@ -190,6 +190,14 @@ def save_to_database(all_award_data, season):
                 player, created = Player.objects.get_or_create(name=player_name)
                 if created:
                     print(f"    Created new player: {player_name}")
+                    try:
+                        from nba_api.stats.static import players as nba_players
+                        matches = nba_players.find_players_by_full_name(player_name)
+                        if matches:
+                            player.nba_player_id = matches[0]['id']
+                            player.save(update_fields=['nba_player_id'])
+                    except Exception:
+                        pass  # Headshot ID backfill is best-effort; `backfill_player_nba_ids` can retry later.
             except Exception as e:
                 print(f"    Error getting player '{player_name}': {e}")
                 continue

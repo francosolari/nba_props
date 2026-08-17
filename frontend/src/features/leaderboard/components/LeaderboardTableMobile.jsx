@@ -3,6 +3,8 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { ChevronDown, Pin } from 'lucide-react';
 import { standingPoints, fromSectionKey, extractLineValue } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
+import PlayerHeadshot from '../../../components/PlayerHeadshot';
+import usePlayerHeadshots from '../hooks/usePlayerHeadshots';
 
 export const LeaderboardTableMobile = ({
   section,
@@ -49,6 +51,8 @@ export const LeaderboardTableMobile = ({
     });
     return Array.from(qMap.values()).sort((a, b) => a.text.localeCompare(b.text));
   }, [displayedUsers, catKey]);
+  const isAwardsSection = section === 'awards';
+  const headshotsByName = usePlayerHeadshots(isAwardsSection);
   const formatPoints = (value) => {
     const n = Number(value || 0);
     if (!Number.isFinite(n)) return '0';
@@ -426,6 +430,9 @@ export const LeaderboardTableMobile = ({
                             }`}
                             title={isInteractive ? 'What-If: tap to toggle correct / incorrect / reset' : undefined}
                           >
+                            {isAwardsSection && ans !== '—' && headshotsByName[ans] && (
+                              <PlayerHeadshot headshotUrl={headshotsByName[ans]} name={ans} size={16} className="mr-1 -ml-0.5" />
+                            )}
                             {answerDisplay}
                           </button>
                         </div>

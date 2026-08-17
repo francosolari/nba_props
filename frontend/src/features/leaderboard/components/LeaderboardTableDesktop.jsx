@@ -3,6 +3,8 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Lock, Pin, GripVertical } from 'lucide-react';
 import { standingPoints, fromSectionKey, extractLineValue } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
+import PlayerHeadshot from '../../../components/PlayerHeadshot';
+import usePlayerHeadshots from '../hooks/usePlayerHeadshots';
 
 export const LeaderboardTableDesktop = ({
   section,
@@ -163,6 +165,8 @@ export const LeaderboardTableDesktop = ({
     });
     return Array.from(qMap.values()).sort((a, b) => a.text.localeCompare(b.text));
   }, [isStandingsSection, leaderboardData, nonStandingsCategoryKey]);
+  const isAwardsSection = section === 'awards';
+  const headshotsByName = usePlayerHeadshots(isAwardsSection);
 
   return (
     <div ref={tableRef} className="court-detail-desktop hidden md:block w-full">
@@ -442,6 +446,9 @@ export const LeaderboardTableDesktop = ({
                             }`}
                             title={isInteractive ? 'What-If: click to toggle correct / incorrect / reset' : undefined}
                           >
+                            {isAwardsSection && ans !== '—' && headshotsByName[ans] && (
+                              <PlayerHeadshot headshotUrl={headshotsByName[ans]} name={ans} size={18} className="mr-1 -ml-0.5" />
+                            )}
                             {answerDisplay}
                           </button>
                           {p && (

@@ -30,6 +30,11 @@ class PlayerSchema(Schema):
     """
     id: int = Field(..., description="Unique player identifier", example=1)
     name: str = Field(..., description="Player's full name", example="LeBron James")
+    headshot_url: Optional[str] = Field(
+        None,
+        description="NBA CDN headshot URL, present only when the player has a known NBA.com ID",
+        example="https://cdn.nba.com/headshots/nba/latest/260x190/2544.png",
+    )
 
 
 class TeamSchema(Schema):
