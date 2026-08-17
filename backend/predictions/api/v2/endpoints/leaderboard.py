@@ -202,7 +202,9 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
         standings = u_rec["categories"].get("Regular Season Standings")
         if standings:
             def _sort_key(d):
-                conf_key = 0 if d.get("conference", "").lower().startswith("w") else 1
+                # A team missing from the conference map stores None here, and
+                # a dict default does not cover a key that exists holding None.
+                conf_key = 0 if (d.get("conference") or "").lower().startswith("w") else 1
                 pos_key = d.get("actual_position") or 999
                 return (conf_key, pos_key)
 
