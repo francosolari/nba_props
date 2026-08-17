@@ -80,7 +80,7 @@ describe('LeaderboardPage', () => {
         renderWithProviders(<LeaderboardPage seasonSlug="2024-25" loggedInUsername="player2" />);
 
         await waitFor(() => {
-            expect(screen.getByText('Props Predictions Leaderboard')).toBeInTheDocument();
+            expect(screen.getByText('Leaderboard')).toBeInTheDocument();
         });
 
         expect(screen.getByText('Your rank')).toBeInTheDocument();

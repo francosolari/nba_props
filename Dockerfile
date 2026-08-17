@@ -11,6 +11,7 @@ RUN npm ci
 
 # Copy frontend source and build assets
 COPY frontend ./frontend
+COPY scripts ./scripts
 RUN npm run build
 
 

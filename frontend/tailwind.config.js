@@ -3,7 +3,7 @@ module.exports = {
     '../backend/predictions/templates/**/*.html',
     './src/**/*.{js,jsx,ts,tsx}', // Include React components for Tailwind
   ],
-  darkMode: 'media',
+  darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
       fontFamily: {

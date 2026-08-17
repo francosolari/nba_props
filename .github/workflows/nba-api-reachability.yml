@@ -1,0 +1,68 @@
+name: NBA API reachability probe
+
+# Answers one question: can a GitHub-hosted runner read the NBA stats feed?
+#
+# The DigitalOcean droplet cannot — stats.nba.com blocks its egress IP — so
+# standings can currently only be refreshed by hand from a laptop. That is not a
+# schedule anyone can rely on. If a runner can reach the feed, then the fetch
+# moves here and the droplet never has to talk to the NBA at all: the runner
+# pulls the data and pushes it to the app, and the same scheduled-workflow
+# mechanism also covers the weekly digest (nba_predictions-95).
+#
+# If this probe fails, the runner is blocked too and the answer is a residential
+# proxy in front of the fetch on the droplet instead. Either way this workflow
+# decides it in about a minute, for free.
+#
+# Run it with:  gh workflow run nba-api-reachability.yml
+# Then read it: gh run watch
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    name: Can a runner read stats.nba.com?
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Show the runner's egress IP
+        # Recorded so a failure can be checked against NBA's blocklist rather
+        # than guessed at.
+        run: curl -s --max-time 20 https://api.ipify.org || echo "(egress IP unavailable)"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install nba_api
+        run: pip install --quiet nba_api
+
+      - name: Read the standings feed
+        # The exact call update_season_standings makes. It either returns 30
+        # rows or it does not; there is no ambiguous outcome to interpret.
+        run: |
+          python - <<'PY'
+          import sys, time
+          from nba_api.stats.endpoints import leaguestandingsv3
+
+          started = time.time()
+          try:
+              data = leaguestandingsv3.LeagueStandingsV3(
+                  league_id='00', season='2025-26',
+                  season_type='Regular Season', timeout=60,
+              ).get_dict()
+          except Exception as exc:
+              print(f'BLOCKED after {time.time() - started:.1f}s: {exc!r}')
+              print('A runner cannot reach the feed either. Use a residential '
+                    'proxy on the droplet instead.')
+              sys.exit(1)
+
+          rows = data['resultSets'][0]['rowSet']
+          print(f'REACHABLE in {time.time() - started:.1f}s, {len(rows)} teams')
+          if len(rows) != 30:
+              print(f'Reachable but returned {len(rows)} rows, not 30 — '
+                    'the feed answered oddly; inspect before relying on it.')
+              sys.exit(1)
+          print('Runners can fetch standings. Scheduling the fetch here works.')
+          PY

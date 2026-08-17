@@ -11,10 +11,10 @@ export const LeaderboardPodium = ({ whatIfEnabled, withSimTotals, loggedInUserId
     : leaders;
 
   return (
-    <div className={`court-score-band shrink-0 w-full text-xs border-b-2 border-slate-900 bg-white ${whatIfEnabled ? 'is-simulating' : ''}`}>
+    <div className={`court-score-band shrink-0 w-full text-xs border-b-2 border-slate-900 dark:border-slate-100 bg-white dark:bg-slate-900 ${whatIfEnabled ? 'is-simulating' : ''}`}>
       <div className="flex items-stretch overflow-x-auto no-scrollbar">
-        <div className="court-score-band__status flex items-center gap-2 border-r-2 border-slate-900 px-3 shrink-0">
-          <Trophy className="w-4 h-4 text-amber-500" />
+        <div className="court-score-band__status flex items-center gap-2 border-r-2 border-slate-900 dark:border-slate-100 px-3 shrink-0">
+          <Trophy className="w-4 h-4 text-amber-500 dark:text-amber-400" />
           {whatIfEnabled && <span className="sr-only">SIM</span>}
           <span className="court-score-band__mode">{whatIfEnabled ? 'PRIVATE WHAT-IF' : 'LIVE TABLE'}</span>
         </div>
@@ -28,8 +28,8 @@ export const LeaderboardPodium = ({ whatIfEnabled, withSimTotals, loggedInUserId
               ? entry.user.total_points - entry.__orig_total_points
               : 0;
             return (
-              <div key={entry.user.id} className={`court-score-band__player flex min-w-[132px] items-center gap-2 border-r border-slate-300 px-3 py-2 ${isMe ? 'is-me' : ''}`}>
-                <div className="court-score-band__rank flex h-7 w-7 shrink-0 items-center justify-center border border-slate-900 text-xs font-black">
+              <div key={entry.user.id} className={`court-score-band__player flex min-w-[132px] items-center gap-2 border-r border-slate-300 dark:border-slate-700 px-3 py-2 ${isMe ? 'is-me' : ''}`}>
+                <div className="court-score-band__rank flex h-7 w-7 shrink-0 items-center justify-center border border-slate-900 dark:border-slate-100 text-xs font-black">
                   {overallRank || '—'}
                 </div>
                 <div className="flex min-w-0 flex-col leading-none">
@@ -39,7 +39,7 @@ export const LeaderboardPodium = ({ whatIfEnabled, withSimTotals, loggedInUserId
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span className="text-sm font-black">{entry.user.total_points} pts</span>
                     {delta !== 0 && (
-                      <span className={`text-[9px] font-black ${delta > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      <span className={`text-[9px] font-black ${delta > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
                         {delta > 0 ? '▲' : '▼'}{Math.abs(delta)}
                       </span>
                     )}

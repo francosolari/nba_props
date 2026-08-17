@@ -8,6 +8,7 @@ from predictions.models import (
     StandingPrediction,
     UserStats,
 )
+from predictions.services.standings_scoring import score_position
 from django.conf import settings
 
 
@@ -116,13 +117,10 @@ class Command(BaseCommand):
                         skipped_predictions += 1
                         continue
 
-                    # Calculate points
-                    if predicted_pos == actual_pos:
-                        points = 3
-                    elif abs(predicted_pos - actual_pos) == 1:
-                        points = 1
-                    else:
-                        points = 0
+                    # 3 on the nose, 1 either side. The rule lives in one place
+                    # because the projection has to score identically to the
+                    # grade, and a second copy would eventually drift from it.
+                    points = score_position(predicted_pos, actual_pos)
 
                     # Update points if there's a change
                     if prediction.points != points:

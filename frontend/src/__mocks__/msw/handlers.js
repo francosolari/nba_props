@@ -16,36 +16,56 @@ export const handlers = [
     const { season } = req.params;
 
     return res(
-      ctx.json([
-        {
-          rank: 1,
-          id: 1,
-          username: 'player1',
-          display_name: 'Player One',
-          avatar: null,
-          total_points: 150,
-          badges: [],
-          categories: {
-            'Regular Season Standings': { points: 50, max_points: 60, predictions: [] },
-            'Player Awards': { points: 60, max_points: 75, predictions: [] },
-            'Props & Yes/No': { points: 40, max_points: 50, predictions: [] },
+      ctx.json({
+        leaderboard: [
+          {
+            rank: 1,
+            id: 1,
+            username: 'player1',
+            display_name: 'Player One',
+            avatar: null,
+            total_points: 150,
+            badges: [],
+            categories: {
+              'Regular Season Standings': {
+                points: 50,
+                max_points: 60,
+                predictions: [{ correct: true }, { correct: true }, { correct: true }, { correct: true }, { correct: false }],
+              },
+              'Player Awards': {
+                points: 60,
+                max_points: 75,
+                predictions: [{ correct: true }, { correct: true }, { correct: false }],
+              },
+              'Props & Yes/No': {
+                points: 40,
+                max_points: 50,
+                predictions: [{ correct: true }, { correct: false }],
+              },
+            },
           },
-        },
-        {
-          rank: 2,
-          id: 2,
-          username: 'player2',
-          display_name: 'Player Two',
-          avatar: null,
-          total_points: 120,
-          badges: [],
-          categories: {
-            'Regular Season Standings': { points: 40, max_points: 60, predictions: [] },
-            'Player Awards': { points: 50, max_points: 75, predictions: [] },
-            'Props & Yes/No': { points: 30, max_points: 50, predictions: [] },
+          {
+            rank: 2,
+            id: 2,
+            username: 'player2',
+            display_name: 'Player Two',
+            avatar: null,
+            total_points: 120,
+            badges: [],
+            categories: {
+              'Regular Season Standings': { points: 40, max_points: 60, predictions: [] },
+              'Player Awards': { points: 50, max_points: 75, predictions: [] },
+              'Props & Yes/No': { points: 30, max_points: 50, predictions: [] },
+            },
           },
+        ],
+        season: {
+          slug: season,
+          year: '2024-25',
+          submissions_open: false,
+          submission_end_date: '2024-10-20T00:00:00Z',
         },
-      ])
+      })
     );
   }),
 

@@ -552,7 +552,7 @@ class TestHomepageEndpoints:
 
         assert response.status_code == 200, response.content
         entry = response.json()['mini_leaderboard'][0]
-        assert entry['user']['display_name'] == 'legacy-user'
+        assert entry['display_name'] == 'legacy-user'
         assert entry['points'] == 42.5
 
     def test_homepage_data_mini_standings_structure(self, api_client):

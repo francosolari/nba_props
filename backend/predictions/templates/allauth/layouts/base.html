@@ -1,100 +1,10 @@
-<!DOCTYPE html>
+{% extends "predictions/base.html" %}
 {% load i18n %}
-{% load static %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token }}">
-    <title>{% block head_title %}{% endblock %} - NBA Predictions</title>
-    <!-- Include Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <!-- Include jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Include Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- Tailwind CSS (runtime JIT for arbitrary values) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Project styles built via Webpack/Tailwind (overrides where needed) -->
-    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
-    <link rel="icon" href="{% static 'img/favicon.ico' %}">
-</head>
-<body class="court-body">
-    <!--
-    THESIS: NBA prediction data reads like a beautifully inked courtside album, refusing generic SaaS cards and desktop-first tables.
-    OWN-WORLD: Clean white stock, carbon outlines, flat NBA blue and red, restrained hardwood tan, sparse leader gold, ruled scorebook panels, condensed editorial type, and selective court geometry.
-    STORY: Participants enter the competition with clear authentication, payment, deadline, and recovery states before returning to their picks and rank.
-    FIRST VIEWPORT: Mobile presents one focused account task inside the same compact masthead and ruled white ledger used across the product; desktop adds breathing room, not a new shell.
-    FORM: Courtside Album with Fold-Out Comparison for advanced data; grounded direction 1, user-pinned over seed 876362a2.
-    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
-    -->
-    <!-- Global Site Layout (SideNav) -->
-    <div id="site-layout-root"
-         data-current-page="{% block current_page %}home{% endblock %}"
-         data-season-slug="{% block season_slug %}current{% endblock %}">
-    </div>
 
-    <!-- Header Section -->
-    <header id="main-header" class="court-topbar">
-        <!-- Navigation Bar -->
-        <nav>
-            <div class="court-topbar__inner">
-                <!-- Left: Navigation Links -->
-                <div class="court-topbar__admin">
-                    {% if user.is_authenticated %}
+{# django-allauth's account/auth templates extend this file and override
+   `head_title` (short page name) rather than the full `title` block that the
+   rest of the site uses — keep that convention working without duplicating
+   the entire <html> shell. #}
+{% block title %}{% block head_title %}{% endblock %} - NBA Predictions{% endblock %}
 
-                        {% if user.is_staff or user.username == 'francosolari' %}
-                            <a href="{% url 'predictions_views:admin_panel' %}"
-                               class="court-text-link">
-                                Admin
-                            </a>
-                        {% endif %}
-                    {% endif %}
-                </div>
-                <!-- Center: Logo -->
-                <a class="court-topbar__brand" href="/">
-                    <img src="{% static 'img/nba_predictions_logo.png' %}" alt="">
-                    <span>Props Predictions</span>
-                </a>
-
-                <!-- Right: User Info (Login/Logout) -->
-                <div class="court-topbar__account">
-                    {% if user.is_authenticated %}
-                        <span class="court-topbar__username">{{ user.username }}</span>
-                        <a href="{% url 'account_logout' %}" class="court-text-link">Log out</a>
-                    {% else %}
-                        <a href="{% url 'account_login' %}?next={{ request.path }}" class="court-text-link">Log in</a>
-                        <a href="{% url 'account_signup' %}?next={{ request.path }}" class="court-button court-button--small">Create account</a>
-                    {% endif %}
-                </div>
-            </div>
-        </nav>
-    </header>
-
-    <!-- Main Content -->
-    <main class="court-page-main {% block main_class %}court-page-main--account{% endblock %}">
-        {% block content %}
-        {% endblock content %}
-    </main>
-
-    <!-- Footer -->
-    <footer class="court-footer">
-        <p>&copy; 2024 NBA Predictions. All rights reserved.</p>
-    </footer>
-
-    {% block extra_body %}
-    {% endblock extra_body %}
-
-    <script>
-        window.onscroll = function() {
-            let header = document.getElementById('main-header');
-            let scrollPosition = window.scrollY;
-            if (scrollPosition > 50) {
-                header.classList.add('shrink');
-            } else {
-                header.classList.remove('shrink');
-            }
-        };
-    </script>
-</body>
-</html>
+{% block main_class %}court-page-main--account{% endblock %}

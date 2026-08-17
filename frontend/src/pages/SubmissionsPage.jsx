@@ -18,7 +18,8 @@ import { getAxiosErrorMessage } from '../features/submissions/submissionErrors';
 import useSubmissionOptions from '../features/submissions/useSubmissionOptions';
 import useSubmissionProgress from '../features/submissions/useSubmissionProgress';
 import useAnonymousSubmission from '../features/submissions/useAnonymousSubmission';
-import '../styles/SubmissionsPage.css';
+// Stylesheet lives in the entry: the templates load one stylesheet, so a CSS
+// import inside a lazily-loaded page would split off a chunk nothing fetches.
 
 const FALLBACK_LATEST_SEASON = '2025-26';
 

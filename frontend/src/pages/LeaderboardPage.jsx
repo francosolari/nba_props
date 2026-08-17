@@ -294,11 +294,11 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 flex flex-col items-center justify-center space-y-8">
+      <div className="min-h-screen bg-white dark:bg-[var(--court-paper)] p-6 flex flex-col items-center justify-center space-y-8">
         <div className="w-full max-w-4xl space-y-6 animate-pulse">
-           <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-3xl w-full"></div>
+           <div className="h-32 border-2 border-[var(--court-rule)] bg-[var(--court-sheet-wash)] w-full"></div>
            <div className="space-y-3">
-             {[...Array(5)].map((_,i) => <div key={i} className="h-20 bg-slate-200 dark:bg-slate-800 rounded-xl w-full" />)}
+             {[...Array(5)].map((_,i) => <div key={i} className="h-20 border border-[var(--court-rule-soft)] bg-[var(--court-sheet-wash)] w-full" />)}
            </div>
         </div>
       </div>
@@ -307,13 +307,13 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900 rounded-2xl p-8 shadow-xl text-center">
-          <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-500">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--court-paper)] p-4">
+        <div className="max-w-md w-full bg-[var(--court-paper)] border-2 border-[var(--court-rule)] border-l-[12px] border-l-[var(--court-danger)] p-8 text-center">
+          <div className="w-12 h-12 bg-[var(--court-red-soft)] flex items-center justify-center mx-auto mb-4 text-[var(--court-danger)]">
              <CircleX className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Something went wrong</h3>
-          <p className="text-slate-600 dark:text-slate-400">{String(error)}</p>
+          <h3 className="court-display text-lg mb-2">Something went wrong</h3>
+          <p className="text-[var(--court-steel)]">{String(error)}</p>
         </div>
       </div>
     );
@@ -324,30 +324,28 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
 
   if (submissionsOpen && submissionEndDate) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 flex items-center justify-center">
-        <div className="max-w-xl w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-8 text-center relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-4 opacity-10">
-              <Lock className="w-24 h-24 text-slate-900 dark:text-white" />
-           </div>
-           
-           <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-full text-amber-500 mb-6">
+      <div className="min-h-screen bg-[var(--court-paper)] p-4 flex items-center justify-center">
+        <div className="court-locked-sheet max-w-xl w-full text-center relative">
+           <Lock className="court-locked-sheet__watermark" aria-hidden="true" />
+
+           <div className="court-locked-sheet__badge">
               <Lock className="w-8 h-8" />
            </div>
-           
-           <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Leaderboard Locked</h1>
-           <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm mx-auto">
+
+           <h1 className="court-display text-2xl mb-2">Leaderboard Locked</h1>
+           <p className="text-[var(--court-steel)] mb-8 max-w-sm mx-auto">
              Rankings are hidden while predictions are open. Check back later!
            </p>
 
-           <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300">
+           <div className="court-locked-sheet__chip">
               <Calendar className="w-4 h-4" />
               <span>Reveals {formatDate(submissionEndDate)}</span>
            </div>
 
            {seasonsData && seasonsData.length > 1 && (
-              <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
+              <div className="court-locked-sheet__seasons">
                 <div className="flex justify-center items-center gap-2 text-sm">
-                  <span className="text-slate-500">Past seasons:</span>
+                  <span className="text-[var(--court-steel)]">Past seasons:</span>
                   <CourtSelect
                     label="Past season"
                     showLabel={false}
@@ -375,7 +373,7 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
         <div className="court-leaderboard-header max-w-7xl mx-auto px-4 sm:px-6">
           <div className="court-leaderboard-header__title">
             <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Props Predictions Leaderboard
+              Leaderboard
             </h1>
           </div>
 

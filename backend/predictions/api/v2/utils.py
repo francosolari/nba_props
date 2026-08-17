@@ -85,3 +85,37 @@ def get_user_context(request) -> dict:
         "first_name": user.first_name,
         "last_name": user.last_name,
     }
+
+
+def results_visible(season, user) -> bool:
+    """
+    Whether one participant may see other participants' picks and scores.
+
+    Entries stay private until the submission window closes. While it is open,
+    anyone who has already submitted would otherwise be exposed to whoever
+    submits after them, who could simply copy the leading entry. Once the window
+    shuts every entry is locked, so the comparison is fair and the leaderboard,
+    the Cup table, and other players' answers all open up.
+
+    Admins are exempt throughout: they grade, audit, and support during the
+    window and need to see the entries to do it.
+
+    Args:
+        season: Season object being read, or None
+        user: The requesting Django user
+
+    Returns:
+        True if other participants' entries may be returned
+    """
+    if is_admin_user(user):
+        return True
+    if not season:
+        return False
+
+    from django.utils import timezone
+    from predictions.utils.deadlines import _ensure_aware
+
+    submission_end = _ensure_aware(season.submission_end_date)
+    if not submission_end:
+        return False
+    return timezone.localtime(timezone.now()) > submission_end

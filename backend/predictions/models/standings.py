@@ -26,6 +26,11 @@ class BaseStandings(models.Model):
 class RegularSeasonStandings(BaseStandings):
     position = models.IntegerField(null=True, blank=True)
     season_type = models.CharField(max_length=50, choices=[('regular', 'Regular Season')], default='regular')
+    # Wins in the team's last ten games, as the standings feed reports them.
+    # Only the finish projection reads this — grading is on the real table — so
+    # it stays nullable and rows written before the column simply project
+    # without recency.
+    last_ten_wins = models.IntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'Regular Season Standings'

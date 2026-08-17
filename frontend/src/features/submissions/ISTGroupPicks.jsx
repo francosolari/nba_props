@@ -14,7 +14,7 @@ const TeamChoice = ({ question, team, answer, onAnswerChange, isReadOnly, compac
       type="button"
       onClick={() => onAnswerChange(question.id, team.id)}
       disabled={isReadOnly}
-      className={`${compact ? 'flex w-full items-center justify-between px-4 py-2.5' : 'flex min-h-[140px] flex-col items-center justify-center gap-3 px-4 py-5'} border text-sm font-semibold ${selected ? theme.selected : `border-slate-200 bg-white ${theme.idle}`}`}
+      className={`${compact ? 'flex w-full items-center justify-between px-4 py-2.5' : 'flex min-h-[140px] flex-col items-center justify-center gap-3 px-4 py-5'} border text-sm font-semibold ${selected ? theme.selected : `border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 ${theme.idle}`}`}
       aria-pressed={selected}
     >
       <span className={`flex ${compact ? 'flex-1' : 'flex-col'} items-center gap-3`}>
@@ -23,7 +23,7 @@ const TeamChoice = ({ question, team, answer, onAnswerChange, isReadOnly, compac
         </span>
         <span className={`${compact ? 'items-start' : 'items-center'} flex flex-col`}>
           <span>{team.name}</span>
-          {buildRecordSummary(team) && <small className="text-slate-500">{buildRecordSummary(team)}</small>}
+          {buildRecordSummary(team) && <small className="text-slate-500 dark:text-slate-400">{buildRecordSummary(team)}</small>}
         </span>
       </span>
       {selected && compact && <span className="text-xs uppercase">Selected</span>}
@@ -35,7 +35,7 @@ const GroupCard = ({ question, teams, answers, onAnswerChange, isReadOnly }) => 
   const meta = extractGroupMeta(question.ist_group);
   const markerTheme = getConferenceTheme(question.ist_group);
   return (
-    <div className="flex h-full flex-col border border-slate-200 bg-white p-5">
+    <div className="flex h-full flex-col border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
@@ -46,11 +46,11 @@ const GroupCard = ({ question, teams, answers, onAnswerChange, isReadOnly }) => 
           </div>
           <div><span className="text-xs font-semibold uppercase tracking-wide">{meta.conference || 'Group'}</span><h4 className="text-sm font-semibold">{question.text}</h4></div>
         </div>
-        <span className="bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">{question.point_value} pts</span>
+        <span className="bg-sky-100 dark:bg-sky-900/40 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">{question.point_value} pts</span>
       </div>
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {teams.map((team) => <TeamChoice key={team.id} question={question} team={team} answer={answers[question.id]} onAnswerChange={onAnswerChange} isReadOnly={isReadOnly} />)}
-        {teams.length === 0 && <p className="col-span-full text-sm text-slate-500">Team list unavailable right now.</p>}
+        {teams.length === 0 && <p className="col-span-full text-sm text-slate-500 dark:text-slate-400">Team list unavailable right now.</p>}
       </div>
     </div>
   );
@@ -59,14 +59,14 @@ const GroupCard = ({ question, teams, answers, onAnswerChange, isReadOnly }) => 
 const WildcardCard = ({ question, teams, answers, onAnswerChange, isReadOnly }) => {
   const conference = extractGroupMeta(question.ist_group).conference || question.ist_group || '';
   return (
-    <div className="flex h-full flex-col border border-slate-200 bg-white p-5">
+    <div className="flex h-full flex-col border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
       <div className="flex items-center justify-between gap-3">
         <div><span className="text-xs font-semibold uppercase tracking-wide">{conference} Wildcard</span><h4 className="text-sm font-semibold">{question.text}</h4></div>
-        <span className="bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">{question.point_value} pts</span>
+        <span className="bg-sky-100 dark:bg-sky-900/40 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">{question.point_value} pts</span>
       </div>
       <div className="mt-4 space-y-2">
         {teams.map((team) => <TeamChoice key={team.id} compact question={question} team={team} answer={answers[question.id]} onAnswerChange={onAnswerChange} isReadOnly={isReadOnly} />)}
-        {teams.length === 0 && <p className="text-sm text-slate-500">Team data unavailable for this conference.</p>}
+        {teams.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Team data unavailable for this conference.</p>}
       </div>
     </div>
   );

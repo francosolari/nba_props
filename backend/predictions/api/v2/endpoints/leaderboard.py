@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Union
 
 from ninja import Router
+
+from predictions.api.v2.utils import results_visible
 from django.utils import timezone
 from predictions.models import Answer, RegularSeasonStandings, Season
 from predictions.models.prediction import StandingPrediction
@@ -200,7 +202,9 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
         standings = u_rec["categories"].get("Regular Season Standings")
         if standings:
             def _sort_key(d):
-                conf_key = 0 if d.get("conference", "").lower().startswith("w") else 1
+                # A team missing from the conference map stores None here, and
+                # a dict default does not cover a key that exists holding None.
+                conf_key = 0 if (d.get("conference") or "").lower().startswith("w") else 1
                 pos_key = d.get("actual_position") or 999
                 return (conf_key, pos_key)
 
@@ -249,8 +253,10 @@ def leaderboard_view(request, season_slug: str):
         except Season.DoesNotExist:
             return {"error": f"Season '{season_slug}' not found", "leaderboard": [], "season": None}
 
-    # Build leaderboard data
-    leaderboard = _build_leaderboard(season.slug)
+    # Other entries stay sealed until the submission window closes, so nobody
+    # can copy a submitted entry while they still have time to change theirs.
+    visible = results_visible(season, request.user)
+    leaderboard = _build_leaderboard(season.slug) if visible else []
 
     # Serialize season metadata
     submission_end = None
@@ -263,6 +269,7 @@ def leaderboard_view(request, season_slug: str):
 
     return {
         "leaderboard": leaderboard,
+        "results_locked": not visible,
         "season": {
             "slug": season.slug,
             "year": season.year,

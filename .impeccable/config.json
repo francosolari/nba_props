@@ -1,3 +1,27 @@
 {
-  "buildPath": "comp"
+  "buildPath": "comp",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font-size",
+        "value": "10px",
+        "files": [
+          "frontend/src/features/leaderboard/components/LeaderboardPodium.jsx"
+        ],
+        "createdAt": "2026-08-16T02:47:42.289Z",
+        "reason": "pre-existing player-name microprint in LeaderboardPodium, unrelated to dark-mode task; out of scope to redesign here"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "9px",
+        "files": [
+          "frontend/src/features/leaderboard/components/LeaderboardPodium.jsx"
+        ],
+        "createdAt": "2026-08-16T02:47:42.356Z",
+        "reason": "pre-existing delta-badge microprint in LeaderboardPodium, unrelated to dark-mode task; out of scope to redesign here"
+      }
+    ]
+  }
 }

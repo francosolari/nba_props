@@ -1,0 +1,45 @@
+/* Legacy NBA color ramp.
+ *
+ * These predate the Courtside Album system in courtside.css and survive only
+ * because the submission surfaces still consume them: SubmissionsPage.css and
+ * the inline styles in features/submissions/istSubmissionUtils.js. Courtside
+ * tokens (--court-*) are the system of record for anything new.
+ *
+ * Imported from index.jsx so the ramp is defined before any consumer, rather
+ * than riding along with a page component's import. */
+
+:root {
+  --nba-blue-50: #e8f1ff;
+  --nba-blue-400: #3d7eff;
+  --nba-blue-500: #1f6bff;
+  --nba-blue-600: #1553cc;
+  --nba-blue-700: #0e3b99;
+
+  --nba-red-50: #ffecec;
+  --nba-red-400: #ff4747;
+  --nba-red-500: #ff2d2d;
+  --nba-red-600: #d42020;
+  --nba-red-700: #a31818;
+
+  --nba-slate-100: #f1f5f9;
+  --nba-slate-200: #e2e8f0;
+  --nba-slate-300: #cbd5f5;
+  --nba-slate-400: #94a3b8;
+  --nba-slate-500: #64748b;
+  --nba-slate-600: #475569;
+  --nba-slate-700: #334155;
+  --nba-slate-900: #0f172a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --nba-slate-100: #1e293b;
+    --nba-slate-200: #334155;
+    --nba-slate-300: #475569;
+    --nba-slate-400: #94a3b8;
+    --nba-slate-500: #cbd5e1;
+    --nba-slate-600: #e2e8f0;
+    --nba-slate-700: #cbd5e1;
+    --nba-slate-900: #f8fafc;
+  }
+}

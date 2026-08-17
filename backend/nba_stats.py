@@ -28,6 +28,19 @@ from predictions.models import Team, Season, Player, \
 
 # Nikola Jokić
 # career = playercareerstats.PlayerCareerStats(player_id='203999')
+def _last_ten_wins(value):
+    """
+    The feed reports the last ten games as a ``"7-3"`` string. Only the finish
+    projection reads it, so an unparseable or absent value returns None and the
+    projection simply falls back to the season-long rate.
+    """
+    try:
+        wins = int(str(value).split('-')[0])
+    except (AttributeError, ValueError, IndexError, TypeError):
+        return None
+    return wins if 0 <= wins <= 10 else None
+
+
 def update_standings(df_standings, season_slug):
     """
 
@@ -49,6 +62,8 @@ def update_standings(df_standings, season_slug):
                                        # abbreviation=abbreviation,
                                        conference=conference)
 
+        last_ten_wins = _last_ten_wins(row.get('L10'))
+
         stats, created = RegularSeasonStandings.objects.get_or_create(
             team=team,
             season=season,  # Reference the season year
@@ -56,6 +71,7 @@ def update_standings(df_standings, season_slug):
                 'wins': row['WINS'],
                 'losses': row['LOSSES'],
                 'position': row['PlayoffRank'],
+                'last_ten_wins': last_ten_wins,
             }
         )
         if not created:
@@ -63,6 +79,7 @@ def update_standings(df_standings, season_slug):
             stats.wins = row['WINS']
             stats.losses = row['LOSSES']
             stats.position = row['PlayoffRank']
+            stats.last_ten_wins = last_ten_wins
             stats.save()
 
 

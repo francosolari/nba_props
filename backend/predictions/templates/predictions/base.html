@@ -5,6 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Preload critical fonts so they start downloading immediately, ahead of
+         styles.css, minimizing the fallback-to-custom-font swap (FOUT). -->
+    <link rel="preload" href="{% static 'fonts/source-sans-3-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{% static 'fonts/barlow-condensed-latin-700-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+
+    <script>
+        (function () {
+            try {
+                var stored = localStorage.getItem('court-theme');
+                var theme = stored === 'dark' || stored === 'light'
+                    ? stored
+                    : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                /* localStorage unavailable (private mode, etc.) — fall back to system default via CSS */
+            }
+        })();
+    </script>
     <title>{% block title %}NBA Predictions - Make Your NBA Season Predictions{% endblock %}</title>
     <meta name="description" content="{% block description %}Submit your NBA predictions and compete on the leaderboard! Predict MVP, awards, player stats, and more throughout the NBA season.{% endblock %}">
 
@@ -36,6 +55,13 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- Tailwind CSS (runtime JIT for arbitrary values) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Keep the CDN runtime's dark: variant in sync with the toggle-driven
+        // data-theme attribute instead of its default OS-preference media query.
+        tailwind.config = {
+            darkMode: ['selector', '[data-theme="dark"]'],
+        };
+    </script>
     <!-- Project styles built via Webpack/Tailwind (overrides where needed) -->
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
 
@@ -108,6 +134,7 @@
 
                 <!-- Right: User Info (Login/Logout) -->
                 <div class="court-topbar__account">
+                    <div id="theme-toggle-root"></div>
                     {% if user.is_authenticated %}
                         <span class="court-topbar__username">{{ user.username }}</span>
                         <a href="{% url 'account_logout' %}" class="court-text-link">Log out</a>
@@ -128,7 +155,7 @@
     </header>
     
     <!-- Main Content -->
-    <main class="court-page-main">
+    <main class="court-page-main {% block main_class %}{% endblock %}">
         {% block content %}
         {% endblock %}
     </main>
@@ -137,7 +164,10 @@
     <footer class="court-footer">
         <p>&copy; 2024 NBA Predictions. All rights reserved.</p>
     </footer>
-    
+
+    {% block extra_body %}
+    {% endblock extra_body %}
+
     <script>
         window.onscroll = function() {
             let header = document.getElementById('main-header');

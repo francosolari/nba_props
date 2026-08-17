@@ -31,6 +31,8 @@ from .endpoints.players import router as players_router
 from .endpoints.teams import router as teams_router
 from .endpoints.standings import router as standings_router
 from .endpoints.homepage import router as homepage_router
+from .endpoints.schedule import router as schedule_router
+from .endpoints.user_insights import router as user_insights_router
 from .endpoints.answers import router as answers_router
 from .endpoints.leaderboard import router as leaderboards_router
 from .endpoints.ist_leaderboard import router as ist_leaderboard_router
@@ -236,6 +238,8 @@ api.add_router("/players", players_router)
 api.add_router("/teams", teams_router)
 api.add_router("/standings", standings_router)
 api.add_router("/homepage/", homepage_router)
+api.add_router("/nba/", schedule_router)
+api.add_router("/homepage/", user_insights_router)
 api.add_router("/answers/", answers_router)
 api.add_router("/leaderboards/", leaderboards_router)
 api.add_router("/leaderboards/ist", ist_leaderboard_router)
@@ -255,6 +259,7 @@ from typing import Optional
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 from predictions.models import Season, UserStats
+from predictions.api.v2.utils import results_visible
 
 @api.get(
     "/leaderboard/{season_slug}",
@@ -272,6 +277,10 @@ def get_leaderboard_temp(request, season_slug: str):
         else:
             season = get_object_or_404(Season, slug=season_slug)
         
+        # Entries stay sealed until the submission window closes.
+        if not results_visible(season, request.user):
+            return {'top_users': []}
+
         top_users = UserStats.objects.filter(season=season).order_by('-points')
         
         leaderboard_data = []

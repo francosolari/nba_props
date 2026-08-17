@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect, useRef, memo } from 'react';
+import LOGO_EXTENSIONS from '../generated/teamLogos.json';
 
 const TEAM_LOGO_SLUG_OVERRIDES = {
   'los-angeles-clippers': 'la-clippers',
@@ -27,25 +28,49 @@ const cacheLogoSrc = (slug, src) => {
   resolvedLogoSrcBySlug.set(slug, src);
 };
 
-const getSvgPath = (slug) => `/static/img/teams/${slug}.svg`;
-const getPngPath = (slug) => `/static/img/teams/${slug}.png`;
 const UNKNOWN_LOGO_PATH = '/static/img/teams/unknown.svg';
+const logoPath = (slug, extension) => `/static/img/teams/${slug}.${extension}`;
+
+/**
+ * The logo directory mixes SVG and PNG, so the extension is read from a
+ * manifest generated off the directory itself rather than guessed. Guessing
+ * costs a 404 per team on every page load — twenty of them on a standings
+ * board. A slug the manifest does not know still falls back through both
+ * extensions, so a newly added logo works before the manifest is regenerated.
+ */
+const logoCandidates = (slug) => {
+  if (!slug) return [UNKNOWN_LOGO_PATH];
+  const known = LOGO_EXTENSIONS[slug];
+  const order = known === 'png' ? ['png', 'svg'] : ['svg', 'png'];
+  return [...order.map((extension) => logoPath(slug, extension)), UNKNOWN_LOGO_PATH];
+};
 
 const TeamLogo = memo(({ teamName, slug, className, alt, ...props }) => {
   const calculatedSlug = slug || resolveTeamLogoSlug(teamName || '');
   const isAlreadyCached = calculatedSlug && resolvedLogoSrcBySlug.has(calculatedSlug);
   const [src, setSrc] = useState(
-    () => (calculatedSlug ? (resolvedLogoSrcBySlug.get(calculatedSlug) || getSvgPath(calculatedSlug)) : UNKNOWN_LOGO_PATH)
+    () => resolvedLogoSrcBySlug.get(calculatedSlug) || logoCandidates(calculatedSlug)[0]
   );
   const [errorCount, setErrorCount] = useState(0);
   const [loaded, setLoaded] = useState(isAlreadyCached);
+  const imgRef = useRef(null);
 
   useEffect(() => {
     const cached = resolvedLogoSrcBySlug.get(calculatedSlug);
-    setSrc(calculatedSlug ? (cached || getSvgPath(calculatedSlug)) : UNKNOWN_LOGO_PATH);
+    setSrc(cached || logoCandidates(calculatedSlug)[0]);
     setErrorCount(0);
     setLoaded(!!cached);
   }, [calculatedSlug]);
+
+  // The browser may already have this image in its HTTP cache (common on
+  // repeat views), in which case `onLoad` fires late relative to paint and
+  // the opacity-0 → 1 fade is visible as a pop. Checking `.complete`
+  // synchronously before paint catches that case and skips the fade.
+  useLayoutEffect(() => {
+    if (imgRef.current?.complete) {
+      setLoaded(true);
+    }
+  }, [src]);
 
   const handleLoad = useCallback(() => {
     if (!calculatedSlug || !src) return;
@@ -53,28 +78,24 @@ const TeamLogo = memo(({ teamName, slug, className, alt, ...props }) => {
     setLoaded(true);
   }, [calculatedSlug, src]);
 
+  // Walk the remaining candidates, ending on the placeholder. The last step is
+  // cached so a slug with no artwork is not re-probed on every remount.
   const handleError = useCallback(() => {
-    if (!calculatedSlug) {
-      setSrc(UNKNOWN_LOGO_PATH);
-      setErrorCount(2);
-      setLoaded(true);
+    const candidates = logoCandidates(calculatedSlug);
+    const next = errorCount + 1;
+    if (next < candidates.length) {
+      setSrc(candidates[next]);
+      setErrorCount(next);
+      if (candidates[next] === UNKNOWN_LOGO_PATH) setLoaded(true);
       return;
     }
-    if (errorCount === 0) {
-      setSrc(getPngPath(calculatedSlug));
-      setErrorCount(1);
-    } else if (errorCount === 1) {
-      setSrc(UNKNOWN_LOGO_PATH);
-      setErrorCount(2);
-      setLoaded(true);
-    } else if (calculatedSlug) {
-      cacheLogoSrc(calculatedSlug, UNKNOWN_LOGO_PATH);
-      setLoaded(true);
-    }
+    if (calculatedSlug) cacheLogoSrc(calculatedSlug, UNKNOWN_LOGO_PATH);
+    setLoaded(true);
   }, [calculatedSlug, errorCount]);
 
   return (
     <img
+      ref={imgRef}
       src={src}
       alt={alt || teamName || 'Team Logo'}
       className={className}
