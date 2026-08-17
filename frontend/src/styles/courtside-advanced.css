@@ -1,0 +1,1412 @@
+/* Courtside Album — Advanced Board (fold-out comparison + What-If)
+ *
+ * This file replaces the old `.court-detail-*` override layer, which painted a
+ * Courtside costume over generic Tailwind markup using `[class*="bg-sky"]`
+ * attribute hacks and ~90 `!important` declarations. The components in
+ * features/leaderboard now carry these classes natively, so nothing here needs
+ * to out-specify a utility class.
+ *
+ * Structure of the surface, top to bottom:
+ *   .court-adv                page shell, fixed height, three bands
+ *     .court-adv-masthead     identity, section tabs, workspace tools
+ *     .court-adv-band         top-3 + you score strip, What-If control
+ *     .court-adv-note         written What-If guidance (simulation only)
+ *     .court-adv-work         the ledger; owns the only vertical scroll
+ */
+
+:root {
+  --court-success-soft: #e7f2ea;
+  --court-warning-soft: #fbf1de;
+  --court-danger-soft: #fceceb;
+  --court-adv-masthead-h: 56px;
+  --court-adv-tabs-h: 46px;
+  --court-adv-band-h: 62px;
+  --court-adv-control-h: 36px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --court-success-soft: #12301f;
+    --court-warning-soft: #362a0e;
+    --court-danger-soft: #3a1a17;
+  }
+}
+
+:root[data-theme="dark"] {
+  --court-success-soft: #12301f;
+  --court-warning-soft: #362a0e;
+  --court-danger-soft: #3a1a17;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --court-adv-masthead-h: 60px;
+  }
+
+}
+
+/* ── Page shell ─────────────────────────────────────────────────────────────
+   The board is a workbench, not a document: chrome is fixed and the ledger
+   owns the only vertical scroll, so the score band stays readable however deep
+   into the standings you are. */
+
+/* Below 768px the persistent bottom navigation owns the thumb zone, so the
+   workbench stops above it rather than scrolling its last rows underneath. */
+.court-adv {
+  --court-adv-reserved-bottom: var(--court-nav-height);
+
+  display: flex;
+  height: calc(100dvh - var(--court-topbar-height) - var(--court-adv-reserved-bottom));
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--court-paper);
+  color: var(--court-ink);
+  font-family: var(--court-text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The desktop rail replaces the bottom bar, so the workbench reclaims that
+   height. Declared after the shell so it wins on equal specificity. */
+@media (min-width: 768px) {
+  .court-adv {
+    --court-adv-reserved-bottom: 0px;
+  }
+
+  /* The season control keeps the album's 48px touch frame on a phone; on a
+     pointer device it joins the rest of the control row. */
+  .court-adv-masthead .court-select__trigger {
+    min-height: var(--court-adv-control-h);
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+.court-adv ::selection {
+  background: var(--court-gold-soft);
+  color: var(--court-ink);
+}
+
+.court-adv :focus-visible {
+  outline: 3px solid var(--court-gold);
+  outline-offset: 3px;
+}
+
+.court-adv-state {
+  display: flex;
+  height: calc(100dvh - var(--court-topbar-height));
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  background: var(--court-paper);
+  text-align: center;
+}
+
+.court-adv-state strong {
+  font: 800 26px/1 var(--court-display);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.court-adv-state span {
+  max-width: 44ch;
+  color: var(--court-steel);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.court-adv-state--error strong {
+  color: var(--court-danger);
+}
+
+/* ── Masthead ─────────────────────────────────────────────────────────────── */
+
+.court-adv-masthead {
+  display: flex;
+  min-height: var(--court-adv-masthead-h);
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 0 var(--court-gutter);
+  border-bottom: 2px solid var(--court-rule);
+  background: var(--court-paper);
+}
+
+.court-adv-back {
+  display: grid;
+  width: var(--court-adv-control-h);
+  height: var(--court-adv-control-h);
+  flex: none;
+  place-items: center;
+  color: var(--court-ink);
+  border: 1px solid var(--court-rule);
+  border-radius: 4px;
+  transition: background-color 160ms ease-out;
+}
+
+.court-adv-back:hover {
+  background: var(--court-blue-soft);
+}
+
+.court-adv-title {
+  margin: 0;
+  overflow: hidden;
+  color: var(--court-ink);
+  font: 800 22px/1 var(--court-display);
+  letter-spacing: .02em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.court-adv-masthead__end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Search joins the tools rather than floating as its own rounded field, and
+   matches their height exactly so the masthead reads as one row of controls. */
+.court-adv-search {
+  display: flex;
+  height: var(--court-adv-control-h);
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  color: var(--court-muted);
+  border: 1px solid var(--court-rule);
+  border-radius: 4px;
+}
+
+/* The album gives every page-level input a 48px frame. Inside this control row
+   the field is the frame, so the input itself carries none of it. */
+.court-adv-search input:not([type="checkbox"]):not([type="radio"]) {
+  width: 132px;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  color: var(--court-ink);
+  font: 400 13px var(--court-text);
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: none;
+}
+
+.court-adv-search input::placeholder {
+  color: var(--court-muted);
+}
+
+/* Mobile keeps section choice and the ledger tools on one joined row. */
+.court-adv-mobilebar {
+  display: flex;
+  min-height: var(--court-adv-tabs-h);
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 0 var(--court-gutter);
+  border-bottom: 2px solid var(--court-rule);
+  background: var(--court-paper);
+}
+
+.court-adv-mobilebar > *:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
+/* ── Segmented ledgers (section tabs, tool cluster, conference switch) ─────── */
+
+.court-seg {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--court-rule);
+  border-radius: 4px;
+}
+
+.court-seg > * + * {
+  border-left: 1px solid var(--court-rule);
+}
+
+.court-seg--fill {
+  width: 100%;
+}
+
+.court-seg--fill > .court-seg__cell {
+  min-width: 0;
+  flex: 1;
+  padding: 0 4px;
+}
+
+.court-seg__cell {
+  display: inline-flex;
+  min-height: calc(var(--court-adv-control-h) - 2px);
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: var(--court-steel);
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--court-paper);
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+
+.court-seg__cell:hover:not(.is-active) {
+  color: var(--court-ink);
+  background: var(--court-blue-soft);
+}
+
+.court-seg__cell.is-active {
+  color: #fff;
+  background: var(--court-blue);
+}
+
+.court-seg__cell.is-active:hover {
+  background: var(--court-blue-dark);
+}
+
+.court-seg__count {
+  display: inline-grid;
+  min-width: 17px;
+  height: 17px;
+  place-items: center;
+  padding: 0 3px;
+  color: var(--court-paper);
+  font-size: 10px;
+  background: var(--court-ink);
+  border-radius: 1px;
+}
+
+.court-seg__cell.is-active .court-seg__count {
+  color: var(--court-blue);
+  background: #fff;
+}
+
+/* ── Sort menu ────────────────────────────────────────────────────────────── */
+
+.court-adv-menu {
+  position: relative;
+}
+
+.court-adv-menu__list {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 176px;
+  padding: 0;
+  background: var(--court-paper);
+  border: 2px solid var(--court-rule);
+  border-radius: 3px;
+  box-shadow: 4px 4px 0 var(--court-rule);
+}
+
+.court-adv-menu__option {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 12px;
+  color: var(--court-ink);
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .08em;
+  text-align: left;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--court-rule-soft);
+}
+
+.court-adv-menu__option:last-child {
+  border-bottom: 0;
+}
+
+.court-adv-menu__option:hover {
+  background: var(--court-blue-soft);
+}
+
+.court-adv-menu__option.is-active {
+  color: #fff;
+  background: var(--court-blue);
+}
+
+/* ── Score band — top 3 + you, always in view ──────────────────────────────── */
+
+/* The band is sheet-wash so that the run-off past the last leader reads as the
+   edge of the ledger rather than a hole in the page. */
+.court-adv-band {
+  display: flex;
+  min-height: var(--court-adv-band-h);
+  flex: none;
+  align-items: stretch;
+  border-bottom: 2px solid var(--court-rule);
+  background: var(--court-sheet-wash);
+  font-family: var(--court-display);
+}
+
+.court-adv-band.is-simulating {
+  box-shadow: inset 0 -5px 0 var(--court-gold);
+}
+
+.court-adv-band__scroll {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: stretch;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.court-adv-band__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.court-adv-entry {
+  display: flex;
+  min-width: 156px;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  text-align: left;
+  background: var(--court-paper);
+  border-right: 1px solid var(--court-rule-soft);
+}
+
+.court-adv-entry__rank {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  place-items: center;
+  color: var(--court-ink);
+  font: 800 14px/1 var(--court-display);
+  border: 1px solid var(--court-rule);
+  border-radius: 1px;
+}
+
+.court-adv-entry__rank.is-leader {
+  color: var(--court-carbon);
+  background: var(--court-gold);
+  border-color: var(--court-gold);
+}
+
+.court-adv-entry__body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.court-adv-entry__name {
+  overflow: hidden;
+  max-width: 108px;
+  color: var(--court-steel);
+  font: 800 10px/1 var(--court-display);
+  letter-spacing: .08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.court-adv-entry__score {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--court-ink);
+  font: 800 17px/1 var(--court-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.court-adv-entry__score small {
+  color: var(--court-muted);
+  font: 800 9px/1 var(--court-display);
+  letter-spacing: .1em;
+}
+
+/* The locked share of a total, drawn in the same language the tickets use: the
+   solid run is banked, the dashed remainder is still in play. The exact figures
+   stay available on hover and to screen readers rather than repeating as text
+   under every one of twenty-odd entries. */
+.court-adv-entry__banked {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin-top: 1px;
+  background:
+    linear-gradient(var(--court-steel), var(--court-steel)) left center / var(--locked-share) 3px no-repeat,
+    repeating-linear-gradient(90deg, var(--court-rule-soft) 0 2px, transparent 2px 5px) left center / 100% 1px no-repeat;
+}
+
+/* You: identity is league blue, not gold. In this competition gold means
+   winning — it belongs to the leader's rank stamp and to active simulation, so
+   marking your own row with it would read as a standing you have not earned.
+   The cell is a button: it pins you to the front of the comparison. */
+.court-adv-entry--me {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--court-blue-soft);
+  border-right: 2px solid var(--court-rule);
+  box-shadow: inset 0 -5px 0 var(--court-blue);
+}
+
+.court-adv-entry--me .court-adv-entry__name {
+  color: var(--court-blue);
+}
+
+.court-adv-entry--me .court-adv-entry__rank {
+  color: #fff;
+  background: var(--court-blue);
+  border-color: var(--court-blue);
+}
+
+.court-adv-entry__pin {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  place-items: center;
+  color: var(--court-muted);
+  border: 1px solid transparent;
+  border-radius: 1px;
+}
+
+.court-adv-entry--me[aria-pressed="true"] .court-adv-entry__pin {
+  color: #fff;
+  background: var(--court-blue);
+  border-color: var(--court-blue);
+}
+
+.court-adv-delta {
+  font: 800 11px/1 var(--court-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+}
+
+.court-adv-delta.is-up {
+  color: var(--court-success);
+}
+
+.court-adv-delta.is-down {
+  color: var(--court-danger);
+}
+
+/* What-If sits on the band because it changes the numbers on the band. */
+.court-adv-band__whatif {
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  border-left: 2px solid var(--court-rule);
+}
+
+.court-adv-whatif {
+  display: inline-flex;
+  min-width: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  color: var(--court-ink);
+  font: 800 11px/1.05 var(--court-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: var(--court-paper);
+  transition: background-color 160ms ease-out;
+}
+
+.court-adv-whatif:hover {
+  background: var(--court-blue-soft);
+}
+
+.court-adv-whatif.is-on {
+  color: var(--court-carbon);
+  background: var(--court-gold);
+}
+
+.court-adv-whatif.is-on:hover {
+  background: var(--court-gold);
+  filter: brightness(.95);
+}
+
+.court-adv-whatif--reset {
+  border-left: 1px solid var(--court-rule);
+}
+
+/* ── What-If guidance, attached rather than floating ──────────────────────── */
+
+.court-adv-note {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 7px var(--court-gutter);
+  color: var(--court-ink);
+  font-size: 12px;
+  line-height: 1.35;
+  background: var(--court-gold-soft);
+  border-bottom: 2px solid var(--court-rule);
+}
+
+.court-adv-note svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.court-adv-note b {
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* ── Workspace ────────────────────────────────────────────────────────────── */
+
+.court-adv-work {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  background: var(--court-paper);
+  -webkit-overflow-scrolling: touch;
+}
+
+.court-adv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 56px 24px;
+  text-align: center;
+}
+
+.court-adv-empty strong {
+  font: 800 22px/1 var(--court-display);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.court-adv-empty span {
+  max-width: 40ch;
+  color: var(--court-steel);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.court-adv-empty button {
+  min-height: 44px;
+  margin-top: 4px;
+  padding: 0 16px;
+  color: #fff;
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: var(--court-blue);
+  border: 1px solid var(--court-rule);
+  border-radius: 4px;
+}
+
+/* ── Ledger primitives shared by both orientations ────────────────────────── */
+
+.court-ledger-head {
+  position: sticky;
+  z-index: 30;
+  top: 0;
+  display: flex;
+  color: #fff;
+  background: var(--court-carbon);
+}
+
+.court-ledger-head__label {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font: 800 10px/1 var(--court-display);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.court-ledger-scroll {
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.court-ledger-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.court-ledger-fixed {
+  flex: none;
+  background: var(--court-paper);
+  border-right: 2px solid var(--court-rule);
+}
+
+/* Conference binding: red West, blue East — the album's only routine use of
+   league colour as a wayfinding cue. */
+.court-conf-head {
+  position: sticky;
+  z-index: 20;
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  color: var(--court-ink);
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  background: var(--court-sheet-wash);
+  border-bottom: 1px solid var(--court-rule);
+}
+
+.court-conf-head::before {
+  width: 3px;
+  height: 14px;
+  flex: none;
+  background: var(--court-blue);
+  content: "";
+}
+
+.court-conf-head--west::before {
+  background: var(--court-red);
+}
+
+.court-conf-head__hint {
+  margin-left: auto;
+  color: var(--court-muted);
+  font: 800 9px/1 var(--court-display);
+  letter-spacing: .1em;
+}
+
+/* ── Score tickets ────────────────────────────────────────────────────────── */
+
+.court-ticket {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--court-muted);
+  font-family: var(--court-text);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: var(--court-paper);
+  border: 1px solid var(--court-rule-soft);
+  border-radius: 1px;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
+}
+
+.court-ticket.is-hit {
+  color: var(--court-success);
+  background: var(--court-success-soft);
+  border-color: var(--court-success);
+}
+
+.court-ticket.is-near {
+  color: var(--court-warning);
+  background: var(--court-warning-soft);
+  border-color: var(--court-warning);
+}
+
+.court-ticket.is-miss {
+  color: var(--court-danger);
+  background: var(--court-danger-soft);
+  border-color: var(--court-danger);
+}
+
+.court-ticket.is-open {
+  color: var(--court-muted);
+  background: var(--court-paper);
+  border-style: dotted;
+}
+
+/* Settlement, carried in the border rather than a second colour system: a solid
+   ticket has banked its points, a dashed one is scored on where things stand
+   today and can still move. */
+.court-ticket.is-settled {
+  border-style: solid;
+}
+
+.court-ticket.is-inplay {
+  border-style: dashed;
+}
+
+.court-ticket.is-empty {
+  color: var(--court-medal-silver);
+  background: var(--court-sheet-wash);
+  border-color: transparent;
+}
+
+.court-ticket.is-live {
+  cursor: pointer;
+}
+
+.court-ticket.is-live:hover {
+  border-color: var(--court-rule);
+}
+
+/* A simulated call keeps its result colour and gains a written gold binding, so
+   "I changed this" never depends on hue alone. */
+.court-ticket.is-simulated {
+  box-shadow: inset 3px 0 0 var(--court-gold);
+}
+
+.court-pos-ticket {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.court-answer-ticket {
+  display: -webkit-box;
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 7px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.court-answer-ticket__figure {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
+
+/* ── Legend — replaces the hover-only points badge ────────────────────────── */
+
+.court-adv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  padding: 10px var(--court-gutter) 28px;
+  color: var(--court-steel);
+  font-size: 11px;
+  border-top: 1px solid var(--court-rule-soft);
+}
+
+.court-adv-legend dt {
+  display: inline-flex;
+  min-width: 26px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  font: 700 10px/1 var(--court-text);
+  border: 1px solid;
+  border-radius: 1px;
+}
+
+.court-adv-legend > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.court-adv-legend dd {
+  margin: 0;
+}
+
+.court-adv-legend__rule {
+  width: 1px;
+  height: 18px;
+  background: var(--court-rule-soft);
+}
+
+/* ── Participant column head (desktop) ────────────────────────────────────── */
+
+.court-adv-col {
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 6px;
+  border-right: 1px solid rgb(255 255 255 / 18%);
+  will-change: transform;
+}
+
+.court-adv-col__name {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  color: #fff;
+  font: 800 11px/1.1 var(--court-display);
+  letter-spacing: .05em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.court-adv-col__name > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.court-adv-col__score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: #fff;
+  font: 800 15px/1 var(--court-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.court-adv-pin {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  place-items: center;
+  color: rgb(255 255 255 / 45%);
+  border-radius: 1px;
+  transition: color 160ms ease-out, background-color 160ms ease-out;
+}
+
+.court-adv-pin:hover {
+  color: #fff;
+}
+
+.court-adv-pin.is-pinned {
+  color: #fff;
+  background: var(--court-blue);
+}
+
+.court-adv-drop:hover {
+  color: #fff;
+  background: var(--court-red);
+}
+
+/* A pinned participant holds the left edge of the scrolling pane, so their
+   column stays beside every team or question you swipe to. */
+.court-adv-col.is-sticky,
+.court-adv-cell.is-sticky {
+  position: sticky;
+  z-index: 6;
+  background: inherit;
+}
+
+.court-adv-col.is-sticky {
+  background: var(--court-carbon);
+}
+
+.court-adv-col.is-sticky::after,
+.court-adv-cell.is-sticky::after {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 2px;
+  background: var(--court-blue);
+  content: "";
+}
+
+/* ── Desktop ledger rows ──────────────────────────────────────────────────── */
+
+.court-adv-desktop {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .court-adv-desktop {
+    display: block;
+  }
+}
+
+.court-adv-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--court-rule-soft);
+  background: var(--court-paper);
+}
+
+.court-adv-row:hover {
+  background: var(--court-sheet-wash);
+}
+
+.court-adv-row.is-moved,
+.court-adv-row.is-moved:hover {
+  background: var(--court-gold-soft);
+}
+
+.court-adv-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+}
+
+.court-adv-team img {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  object-fit: contain;
+}
+
+.court-adv-team span {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.court-adv-grip {
+  display: grid;
+  width: 26px;
+  flex: none;
+  place-items: center;
+  color: var(--court-medal-silver);
+}
+
+.court-adv-row.is-moved .court-adv-grip {
+  color: var(--court-warning);
+}
+
+.court-adv-rank {
+  display: flex;
+  width: 62px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--court-steel);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.court-adv-rank del {
+  color: var(--court-medal-silver);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.court-adv-rank strong {
+  color: var(--court-ink);
+}
+
+.court-adv-question {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+}
+
+.court-adv-question span {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.court-adv-question svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  color: var(--court-warning);
+}
+
+.court-adv-cell {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border-right: 1px solid var(--court-rule-soft);
+  will-change: transform;
+}
+
+/* Exact points on hover. The legend below the ledger carries the same meaning
+   in writing, so this reveals detail for a pointer without being the only way
+   to read a score. */
+.court-adv-points {
+  position: absolute;
+  top: 3px;
+  right: 7px;
+  padding: 1px 4px;
+  color: #fff;
+  font: 700 10px/1.3 var(--court-text);
+  font-variant-numeric: tabular-nums;
+  background: var(--court-medal-silver);
+  border-radius: 1px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease-out;
+}
+
+.court-adv-cell:hover .court-adv-points {
+  opacity: 1;
+}
+
+.court-adv-points.is-hit {
+  background: var(--court-success);
+}
+
+.court-adv-points.is-near {
+  background: var(--court-warning);
+}
+
+.court-adv-points.is-miss {
+  background: var(--court-danger);
+}
+
+/* Drag feedback: a gold insertion rule, per the album's simulation vocabulary. */
+.court-drop-ledger.is-dragging-over {
+  box-shadow: inset 0 0 0 3px var(--court-gold);
+}
+
+.court-adv-row.is-dragging,
+.court-adv-colgrip.is-dragging {
+  background: var(--court-gold-soft);
+  outline: 3px solid var(--court-gold);
+  outline-offset: -3px;
+}
+
+.court-adv [data-rbd-placeholder-context-id] {
+  background: var(--court-gold-soft);
+  opacity: 1;
+}
+
+.court-adv-desktop [data-rbd-placeholder-context-id] {
+  background: linear-gradient(180deg, var(--court-gold) 0 5px, var(--court-gold-soft) 5px 100%);
+}
+
+.court-adv-mobile [data-rbd-placeholder-context-id] {
+  background: linear-gradient(90deg, var(--court-gold) 0 5px, var(--court-gold-soft) 5px 100%);
+}
+
+.court-adv [data-rbd-draggable-context-id] {
+  touch-action: none;
+}
+
+/* ── Mobile transposition ─────────────────────────────────────────────────── */
+
+.court-adv-mobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .court-adv-mobile {
+    display: none;
+  }
+}
+
+/* Conference switch replaces two stacked collapsibles: one conference at a
+   time keeps 15 swipable team columns in a single vertical field. */
+.court-adv-switch {
+  position: sticky;
+  z-index: 34;
+  top: 0;
+  display: flex;
+  background: var(--court-paper);
+  border-bottom: 1px solid var(--court-rule);
+}
+
+.court-adv-switch button {
+  min-height: 44px;
+  flex: 1;
+  color: var(--court-steel);
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: var(--court-paper);
+  border-right: 1px solid var(--court-rule-soft);
+}
+
+.court-adv-switch button:last-child {
+  border-right: 0;
+}
+
+.court-adv-switch button.is-active {
+  color: #fff;
+  background: var(--court-blue);
+}
+
+.court-adv-switch button.is-active[data-conf="West"] {
+  background: var(--court-red);
+}
+
+.court-adv-mrow {
+  display: flex;
+  align-items: stretch;
+  min-height: 52px;
+  border-bottom: 1px solid var(--court-rule-soft);
+  background: var(--court-paper);
+  will-change: transform;
+}
+
+/* The fixed zone carries rank, name and the score that What-If moves — the
+   three things worth keeping on screen while team columns swipe past. */
+.court-adv-mfixed {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  width: 132px;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  background: var(--court-paper);
+  border-right: 2px solid var(--court-rule);
+}
+
+/* Identity is blue here too — gold stays reserved for winning and simulation. */
+.court-adv-mrow.is-me .court-adv-mfixed {
+  background: var(--court-blue-soft);
+  box-shadow: inset 4px 0 0 var(--court-blue);
+}
+
+.court-adv-mfixed__rank {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  place-items: center;
+  color: var(--court-steel);
+  font: 800 12px/1 var(--court-display);
+  border: 1px solid var(--court-rule-soft);
+  border-radius: 1px;
+}
+
+.court-adv-mrow.is-me .court-adv-mfixed__rank {
+  color: #fff;
+  background: var(--court-blue);
+  border-color: var(--court-blue);
+}
+
+.court-adv-mfixed__body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.court-adv-mfixed__name {
+  overflow: hidden;
+  color: var(--court-ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.court-adv-mfixed__score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--court-blue);
+  font: 800 14px/1 var(--court-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.court-adv-mfixed__score small {
+  color: var(--court-muted);
+  font: 800 9px/1 var(--court-display);
+  letter-spacing: .08em;
+}
+
+.court-adv-mhead {
+  position: sticky;
+  z-index: 30;
+  top: 44px;
+  display: flex;
+  color: #fff;
+  background: var(--court-carbon);
+}
+
+.court-adv-mhead--flush {
+  top: 0;
+}
+
+.court-adv-mhead__fixed {
+  position: sticky;
+  left: 0;
+  z-index: 12;
+  display: flex;
+  width: 132px;
+  flex: none;
+  align-items: center;
+  padding: 0 8px;
+  color: #fff;
+  font: 800 10px/1 var(--court-display);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: var(--court-carbon);
+  border-right: 2px solid var(--court-paper);
+}
+
+.court-adv-mteam {
+  display: flex;
+  width: 48px;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 2px;
+  background: var(--court-carbon);
+  border-right: 1px solid rgb(255 255 255 / 16%);
+}
+
+.court-adv-mteam img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.court-adv-mteam__rank {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: rgb(255 255 255 / 72%);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.court-adv-mteam__rank del {
+  color: rgb(255 255 255 / 45%);
+  font-weight: 400;
+}
+
+.court-adv-mteam__rank strong {
+  color: var(--court-gold);
+}
+
+.court-adv-mteam.is-moved {
+  background: var(--court-warning);
+}
+
+.court-adv-mq {
+  display: flex;
+  width: 152px;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--court-carbon);
+  border-right: 1px solid rgb(255 255 255 / 16%);
+}
+
+.court-adv-mq__index {
+  align-self: flex-start;
+  padding: 2px 5px;
+  color: var(--court-carbon);
+  font: 800 9px/1 var(--court-display);
+  letter-spacing: .08em;
+  background: var(--court-paper);
+  border-radius: 1px;
+}
+
+.court-adv-mq__text {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.court-adv-mcell {
+  display: flex;
+  width: 48px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 3px;
+  border-right: 1px solid var(--court-rule-soft);
+}
+
+.court-adv-mcell.is-moved {
+  background: var(--court-gold-soft);
+}
+
+.court-adv-mcell--wide {
+  width: 152px;
+  padding: 5px 6px;
+}
+
+.court-adv-mcell .court-pos-ticket {
+  width: 30px;
+  height: 30px;
+}
+
+/* ── Roster sheet additions ───────────────────────────────────────────────── */
+
+.court-roster-scope {
+  display: flex;
+  border-bottom: 2px solid var(--court-rule);
+}
+
+.court-roster-scope button {
+  min-height: 44px;
+  flex: 1;
+  color: var(--court-steel);
+  font: 800 11px/1 var(--court-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: var(--court-paper);
+  border-right: 1px solid var(--court-rule-soft);
+}
+
+.court-roster-scope button:last-child {
+  border-right: 0;
+}
+
+.court-roster-scope button.is-active {
+  color: #fff;
+  background: var(--court-blue);
+}
+
+@media (max-width: 767px) {
+  /* The season control is a filter, not the page identity — it yields width
+     to the title rather than taking a third of the masthead. */
+  .court-adv-masthead .court-select {
+    max-width: 104px;
+  }
+
+  .court-adv-entry {
+    min-width: 138px;
+    padding: 8px 10px;
+  }
+
+  .court-adv-entry__name {
+    max-width: 100px;
+  }
+}
+
+.court-roster-scope__note {
+  padding: 8px 18px;
+  color: var(--court-steel);
+  font-size: 12px;
+  line-height: 1.4;
+  background: var(--court-sheet-wash);
+  border-bottom: 1px solid var(--court-rule-soft);
+}

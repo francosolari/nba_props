@@ -27,6 +27,23 @@ export const extractLineValue = (prediction, questionText = '') => {
   return null;
 };
 
+/** A prediction's points are locked when the result behind them can no longer
+ *  move: a mathematically settled conference seed, an award that has actually
+ *  been awarded, or any result from a season that is already over. Everything
+ *  else is still in play — graded against today's standings or today's odds,
+ *  and liable to change before the season ends.
+ *
+ *  The API decides this and reports `is_locked`; `is_finalized` describes the
+ *  award itself and is only a fallback for payloads that predate the field. */
+export const isLockedPrediction = (prediction) => (
+  prediction?.is_locked === true || prediction?.is_finalized === true
+);
+
+/** Points a participant has already banked, summed across every category. */
+export const lockedPoints = (entry) => Object.values(entry?.user?.categories || {})
+  .reduce((total, category) => total + (category?.predictions || [])
+    .reduce((sum, prediction) => sum + (isLockedPrediction(prediction) ? Number(prediction.points || 0) : 0), 0), 0);
+
 export const getInitials = (name) => {
   if (!name) return '??';
   const parts = name.trim().split(/\s+/);

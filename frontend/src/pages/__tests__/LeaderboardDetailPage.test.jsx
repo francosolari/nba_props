@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { useQuery } from '@tanstack/react-query';
 import { useLeaderboard } from '../../hooks';
 import LeaderboardDetailPage from '../LeaderboardDetailPage';
@@ -16,22 +16,12 @@ jest.mock('../../features/leaderboard/components/LeaderboardHeader', () => ({
   LeaderboardHeader: () => <div data-testid="leaderboard-header" />,
 }));
 
-jest.mock('../../features/leaderboard/components/LeaderboardControls', () => ({
-  LeaderboardControls: ({ loggedInUserId, isPinMePinned }) => (
-    <div
-      data-testid="leaderboard-controls"
-      data-logged-in-user-id={loggedInUserId || ''}
-      data-pin-me-pinned={String(isPinMePinned)}
-    />
-  ),
-}));
-
-jest.mock('../../features/leaderboard/components/LeaderboardShowcase', () => ({
-  LeaderboardShowcase: () => <div data-testid="leaderboard-showcase" />,
-}));
-
+let desktopProps = null;
 jest.mock('../../features/leaderboard/components/LeaderboardTableDesktop', () => ({
-  LeaderboardTableDesktop: () => <div data-testid="leaderboard-table-desktop" />,
+  LeaderboardTableDesktop: (props) => {
+    desktopProps = props;
+    return <div data-testid="leaderboard-table-desktop" />;
+  },
 }));
 
 jest.mock('../../features/leaderboard/components/LeaderboardTableMobile', () => ({
@@ -39,15 +29,25 @@ jest.mock('../../features/leaderboard/components/LeaderboardTableMobile', () => 
 }));
 
 jest.mock('../../features/leaderboard/components/LeaderboardPodium', () => ({
-  LeaderboardPodium: () => <div data-testid="leaderboard-podium" />,
+  LeaderboardPodium: ({ loggedInUserId, isPinMePinned }) => (
+    <div
+      data-testid="leaderboard-podium"
+      data-logged-in-user-id={loggedInUserId || ''}
+      data-pin-me-pinned={String(isPinMePinned)}
+    />
+  ),
 }));
 
 jest.mock('../../features/leaderboard/components/SimulationModal', () => ({
   SimulationModal: () => <div data-testid="simulation-modal" />,
 }));
 
+let rosterProps = null;
 jest.mock('../../features/leaderboard/components/PlayerSelectionModal', () => ({
-  PlayerSelectionModal: () => <div data-testid="player-selection-modal" />,
+  PlayerSelectionModal: (props) => {
+    rosterProps = props;
+    return <div data-testid="player-selection-modal" />;
+  },
 }));
 
 jest.mock('../../components/TeamLogo', () => ({
@@ -66,6 +66,7 @@ describe('LeaderboardDetailPage', () => {
 
     mockUseQuery.mockReturnValue({ data: [] });
     mockUseLeaderboard.mockReturnValue({
+      season: { submissions_open: false, submission_end_date: '2025-10-01T00:00:00Z' },
       data: [
         {
           rank: 1,
@@ -92,6 +93,31 @@ describe('LeaderboardDetailPage', () => {
             },
           },
         },
+        {
+          rank: 2,
+          user: {
+            id: 12,
+            username: 'rival',
+            display_name: 'Rival',
+            total_points: 80,
+            categories: {
+              'Regular Season Standings': {
+                points: 5,
+                predictions: [
+                  {
+                    team: 'Lakers',
+                    conference: 'West',
+                    actual_position: 1,
+                    predicted_position: 2,
+                    points: 1,
+                  },
+                ],
+              },
+              'Player Awards': { points: 35, predictions: [] },
+              'Props & Yes/No': { points: 40, predictions: [] },
+            },
+          },
+        },
       ],
       isLoading: false,
       error: null,
@@ -102,8 +128,69 @@ describe('LeaderboardDetailPage', () => {
     render(<LeaderboardDetailPage seasonSlug="2024-25" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('leaderboard-controls')).toHaveAttribute('data-pin-me-pinned', 'true');
+      expect(screen.getByTestId('leaderboard-podium')).toHaveAttribute('data-pin-me-pinned', 'true');
     });
-    expect(screen.getByTestId('leaderboard-controls')).toHaveAttribute('data-logged-in-user-id', '11');
+    expect(screen.getByTestId('leaderboard-podium')).toHaveAttribute('data-logged-in-user-id', '11');
+  });
+
+  describe('removing a participant from the column head', () => {
+    const idsOnBoard = () => desktopProps.displayedUsers.map((e) => String(e.user.id));
+
+    test('drops that player out of the comparison', async () => {
+      render(<LeaderboardDetailPage seasonSlug="2024-25" />);
+      await waitFor(() => expect(idsOnBoard()).toContain('11'));
+
+      await act(async () => desktopProps.removeUser(11));
+      expect(idsOnBoard()).not.toContain('11');
+      // The rest of the comparison is left alone.
+      expect(idsOnBoard()).toContain('12');
+    });
+
+    test('while everyone is shown it narrows to everyone-but-them, rather than doing nothing', async () => {
+      render(<LeaderboardDetailPage seasonSlug="2024-25" />);
+      await waitFor(() => expect(rosterProps).not.toBeNull());
+
+      // Switch the board to showing the whole field.
+      await act(async () => rosterProps.setShowAll(true));
+      await waitFor(() => expect(rosterProps.showAll).toBe(true));
+
+      await act(async () => desktopProps.removeUser(11));
+
+      await waitFor(() => expect(rosterProps.showAll).toBe(false));
+      expect(idsOnBoard()).not.toContain('11');
+      expect(idsOnBoard()).toContain('12');
+    });
+  });
+
+  describe('sealed entries', () => {
+    test('the board is withheld while the submission window is open', async () => {
+      mockUseLeaderboard.mockReturnValue({
+        season: { submissions_open: true, submission_end_date: '2025-10-01T00:00:00Z' },
+        data: [],
+        isLoading: false,
+        error: null,
+      });
+
+      render(<LeaderboardDetailPage seasonSlug="2024-25" />);
+
+      expect(await screen.findByText(/advanced board locked/i)).toBeInTheDocument();
+      expect(screen.getByText(/sealed while predictions are open/i)).toBeInTheDocument();
+      expect(screen.queryByTestId('leaderboard-table-desktop')).not.toBeInTheDocument();
+    });
+
+    test('the board opens once the window has closed', async () => {
+      render(<LeaderboardDetailPage seasonSlug="2024-25" />);
+
+      expect(await screen.findByTestId('leaderboard-table-desktop')).toBeInTheDocument();
+      expect(screen.queryByText(/advanced board locked/i)).not.toBeInTheDocument();
+    });
+  });
+
+  test('opens on the whole field rather than a preselected few', async () => {
+    render(<LeaderboardDetailPage seasonSlug="2024-25" />);
+
+    await waitFor(() => expect(rosterProps).not.toBeNull());
+    expect(rosterProps.showAll).toBe(true);
+    expect(desktopProps.displayedUsers.map((e) => String(e.user.id)).sort()).toEqual(['11', '12']);
   });
 });

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useLeaderboard } from '../hooks';
 import CourtSelect from '../components/CourtSelect';
+import LockedResultsSheet from '../components/LockedResultsSheet';
 import TeamLogo from '../components/TeamLogo';
 import PlayerHeadshot from '../components/PlayerHeadshot';
 import usePlayerHeadshots from '../features/leaderboard/hooks/usePlayerHeadshots';
@@ -337,44 +338,14 @@ function LeaderboardPage({ seasonSlug: initialSeasonSlug = 'current', loggedInUs
 
   if (submissionsOpen && submissionEndDate) {
     return (
-      <div className="min-h-screen bg-[var(--court-paper)] p-4 flex items-center justify-center">
-        <div className="court-locked-sheet max-w-xl w-full text-center relative">
-           <Lock className="court-locked-sheet__watermark" aria-hidden="true" />
-
-           <div className="court-locked-sheet__badge">
-              <Lock className="w-8 h-8" />
-           </div>
-
-           <h1 className="court-display text-2xl mb-2">Leaderboard Locked</h1>
-           <p className="text-[var(--court-steel)] mb-8 max-w-sm mx-auto">
-             Rankings are hidden while predictions are open. Check back later!
-           </p>
-
-           <div className="court-locked-sheet__chip">
-              <Calendar className="w-4 h-4" />
-              <span>Reveals {formatDate(submissionEndDate)}</span>
-           </div>
-
-           {seasonsData && seasonsData.length > 1 && (
-              <div className="court-locked-sheet__seasons">
-                <div className="flex justify-center items-center gap-2 text-sm">
-                  <span className="text-[var(--court-steel)]">Past seasons:</span>
-                  <CourtSelect
-                    label="Past season"
-                    showLabel={false}
-                    className="court-select--compact"
-                    value={selectedSeason}
-                    onChange={(e) => setSelectedSeason(e.target.value)}
-                  >
-                    {seasonsData.map((s) => (
-                      <option key={s.slug} value={s.slug}>{s.year}</option>
-                    ))}
-                  </CourtSelect>
-                </div>
-              </div>
-           )}
-        </div>
-      </div>
+      <LockedResultsSheet
+        title="Leaderboard Locked"
+        description="Rankings are hidden while predictions are open. Check back later!"
+        submissionEndDate={submissionEndDate}
+        seasonsData={seasonsData}
+        selectedSeason={selectedSeason}
+        setSelectedSeason={setSelectedSeason}
+      />
     );
   }
 

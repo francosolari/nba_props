@@ -670,12 +670,13 @@ button[type="submit"]:active {
   content: "";
 }
 
-/* Shared album pages */
+/* Shared album pages. The advanced board is deliberately absent: it is a
+   fixed-height workbench with its own shell in courtside-advanced.css, not a
+   scrolling album page. */
 .court-leaderboard-page,
 .court-submissions-page,
 .court-profile-page,
-.court-ist-page,
-.court-detail-page {
+.court-ist-page {
   min-height: calc(100dvh - var(--court-topbar-height));
   background: var(--court-paper) !important;
   color: var(--court-ink) !important;
@@ -685,8 +686,7 @@ button[type="submit"]:active {
 .court-leaderboard-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800),
 .court-submissions-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800),
 .court-profile-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800),
-.court-ist-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800),
-.court-detail-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800) {
+.court-ist-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800) {
   background-color: var(--court-paper) !important;
 }
 
@@ -1394,207 +1394,6 @@ button[type="submit"]:active {
   background-color: var(--court-red) !important;
 }
 
-/* Detailed fold-out comparison. */
-.court-detail-page {
-  height: calc(100dvh - var(--court-topbar-height)) !important;
-  overflow: hidden !important;
-}
-
-.court-detail-header {
-  position: relative !important;
-  top: auto !important;
-  border-bottom: 2px solid var(--court-rule) !important;
-  background: var(--court-paper) !important;
-}
-
-/* The fold-out workspace keeps a compact masthead so the ledger stays in the
-   first viewport, but its title sits on the same title step every other page
-   uses for a ruled section head. */
-.court-detail-header h1 {
-  color: var(--court-ink) !important;
-  font: var(--court-title-section) !important;
-  letter-spacing: .02em !important;
-}
-
-/* Section and mode tabs share the album label token: 11px is the readable floor
-   for a control, and inactive tabs use steel ink rather than a washed slate. */
-.court-detail-tab {
-  min-height: 44px;
-  border-radius: 3px;
-  color: var(--court-steel);
-  font: 800 11px/1 var(--court-display);
-  letter-spacing: .08em;
-}
-
-.court-detail-tab:hover { color: var(--court-ink); }
-
-.court-detail-tab.is-active {
-  color: #fff;
-  background: var(--court-blue);
-}
-
-.court-detail-header nav button,
-.court-detail-header [class*="bg-slate-100"] button,
-.court-detail-controls button {
-  min-height: 44px;
-  border: 1px solid var(--court-rule) !important;
-  border-radius: 3px !important;
-  background: var(--court-paper) !important;
-  font-family: var(--court-display);
-}
-
-.court-detail-header .court-detail-tab:not(.is-active) {
-  color: var(--court-steel) !important;
-}
-
-.court-detail-header .court-detail-tab:not(.is-active):hover {
-  color: var(--court-ink) !important;
-  background: var(--court-blue-soft) !important;
-}
-
-.court-detail-header .court-detail-tab.is-active,
-.court-detail-controls button[class*="bg-sky"],
-.court-detail-controls button[class*="bg-amber"] {
-  background: var(--court-blue) !important;
-  color: #fff !important;
-}
-
-.court-detail-controls button[class*="bg-amber"] {
-  background: var(--court-gold) !important;
-  color: var(--court-carbon) !important;
-}
-
-.court-detail-controls {
-  position: relative !important;
-  top: auto !important;
-  border-bottom: 2px solid var(--court-rule) !important;
-  background: var(--court-blue-soft) !important;
-  backdrop-filter: none !important;
-}
-
-.court-detail-controls [role="menu"],
-.court-detail-controls [aria-haspopup="menu"] + div {
-  border: 2px solid var(--court-rule) !important;
-  border-radius: 3px !important;
-  background: var(--court-paper) !important;
-  box-shadow: 4px 4px 0 var(--court-rule) !important;
-  backdrop-filter: none !important;
-}
-
-.court-detail-page > main {
-  background: var(--court-paper);
-}
-
-.court-score-band {
-  border-color: var(--court-rule) !important;
-  background: var(--court-paper) !important;
-  color: var(--court-ink);
-  font-family: var(--court-display);
-}
-
-.court-score-band__status {
-  min-height: 52px;
-  background: var(--court-carbon);
-  color: #fff;
-}
-
-.court-score-band__player {
-  min-height: 52px;
-  background: var(--court-paper);
-}
-
-.court-score-band__player.is-me {
-  background: var(--court-gold-soft);
-  box-shadow: inset 0 -5px 0 var(--court-gold);
-}
-
-.court-score-band__player.is-me .court-score-band__rank {
-  color: var(--court-carbon);
-  background: var(--court-gold);
-}
-
-.court-detail-page > main > div {
-  border-color: var(--court-rule) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-.court-detail-mobile,
-.court-detail-desktop {
-  background: var(--court-paper) !important;
-  color: var(--court-ink) !important;
-}
-
-.court-detail-mobile [class*="sticky"],
-.court-detail-desktop [class*="sticky"] {
-  top: 0 !important;
-  background-color: var(--court-paper) !important;
-  box-shadow: none !important;
-}
-
-.court-detail-mobile [class*="border-slate"],
-.court-detail-desktop [class*="border-slate"] {
-  border-color: var(--court-rule-soft) !important;
-}
-
-.court-detail-mobile [class*="bg-slate-50"],
-.court-detail-desktop [class*="bg-slate-50"] {
-  background-color: var(--court-sheet-wash) !important;
-}
-
-.court-detail-mobile [class*="bg-sky"],
-.court-detail-desktop [class*="bg-sky"] {
-  background-color: var(--court-blue-soft) !important;
-}
-
-.court-detail-mobile [class*="bg-amber"],
-.court-detail-desktop [class*="bg-amber"] {
-  background-color: var(--court-gold-soft) !important;
-}
-
-.court-detail-mobile [class*="text-sky"],
-.court-detail-desktop [class*="text-sky"] {
-  color: var(--court-blue) !important;
-}
-
-.court-detail-mobile [class*="cursor-grab"],
-.court-detail-desktop [class*="cursor-grab"] {
-  outline: 2px solid var(--court-gold);
-  outline-offset: -2px;
-  background: var(--court-gold-soft) !important;
-}
-
-.court-detail-mobile [data-rbd-draggable-context-id],
-.court-detail-desktop [data-rbd-draggable-context-id] {
-  touch-action: none;
-}
-
-.court-detail-mobile .court-drag-column.is-dragging,
-.court-detail-desktop .court-drag-row.is-dragging {
-  outline: 3px solid var(--court-gold) !important;
-  outline-offset: -3px;
-  background: var(--court-gold-soft) !important;
-}
-
-.court-detail-mobile .court-drag-column.is-moved,
-.court-detail-desktop .court-drag-row.is-moved {
-  background: var(--court-gold-soft) !important;
-}
-
-.court-detail-mobile [data-rbd-placeholder-context-id] {
-  background: linear-gradient(90deg, var(--court-gold) 0 5px, var(--court-gold-soft) 5px 100%) !important;
-  opacity: 1 !important;
-}
-
-.court-detail-desktop [data-rbd-placeholder-context-id] {
-  background: linear-gradient(180deg, var(--court-gold) 0 5px, var(--court-gold-soft) 5px 100%) !important;
-  opacity: 1 !important;
-}
-
-.court-detail-page [class*="rounded-full"] {
-  border-radius: 3px !important;
-}
-
 @media (min-width: 768px) {
   :root {
     /* The rail's brand block and the topbar share this height so their bottom
@@ -1725,27 +1524,6 @@ button[type="submit"]:active {
     padding-right: 24px !important;
     padding-left: 24px !important;
   }
-
-  .court-detail-page {
-    height: auto !important;
-    min-height: calc(100dvh - var(--court-topbar-height)) !important;
-    overflow: visible !important;
-  }
-
-  .court-detail-header {
-    position: sticky !important;
-    top: var(--court-topbar-height) !important;
-  }
-
-  .court-detail-controls {
-    position: sticky !important;
-    top: calc(var(--court-topbar-height) + 61px) !important;
-  }
-
-  .court-detail-page > main > div {
-    border: 2px solid var(--court-rule) !important;
-    border-radius: 5px !important;
-  }
 }
 
 @media (max-width: 767px) {
@@ -1857,18 +1635,6 @@ button[type="submit"]:active {
     padding-left: 12px !important;
   }
 
-  .court-detail-header > div {
-    padding-top: 5px !important;
-    padding-bottom: 4px !important;
-  }
-
-  .court-detail-header nav button {
-    min-height: 44px;
-  }
-
-  .court-detail-controls > div {
-    min-height: 50px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1922,6 +1688,17 @@ button[type="submit"]:active {
   font: 800 clamp(25px, 4vw, 38px)/.95 var(--court-display);
   letter-spacing: .02em;
   text-transform: uppercase;
+}
+
+/* The sheet masthead is a saturated blue field, so its title states white
+   rather than inheriting it — a bare `h3` colour rule otherwise wins over an
+   inherited value and drops the title to ink on blue. */
+.court-sheet-header h3 {
+  color: #fff;
+}
+
+.court-simulation-sheet h3 {
+  color: var(--court-ink);
 }
 
 .court-sheet-header p {
@@ -2295,38 +2072,6 @@ button[type="submit"]:active {
 .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid { gap: 0 !important; }
 .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid > div { border: 0 !important; border-right: 1px solid var(--court-rule) !important; border-radius: 0 !important; background: var(--court-paper) !important; }
 .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid > div:last-child { border-right: 0 !important; }
-.court-detail-page { background: var(--court-paper) !important; }
-.court-detail-header,
-.court-detail-controls { background: var(--court-paper) !important; backdrop-filter: none !important; }
-.court-detail-header button,
-.court-detail-header select,
-.court-detail-controls button,
-.court-detail-controls input { border-radius: 1px !important; box-shadow: none !important; }
-.court-detail-desktop table { color: var(--court-ink); }
-.court-detail-desktop th { min-width: 112px; color: #fff !important; font-size: 11px !important; line-height: 1.25 !important; background: var(--court-carbon) !important; border-color: #fff !important; }
-.court-detail-desktop td { border-color: var(--court-medal-silver) !important; }
-.court-detail-desktop td [class*="rounded-lg"],
-.court-detail-mobile [class*="rounded-lg"],
-.court-detail-mobile [class*="rounded-md"] { border-radius: 1px !important; box-shadow: none !important; }
-.court-detail-desktop td span[class*="px-"],
-.court-detail-desktop td div[class*="inline-flex"] { min-height: 30px; border-radius: 1px !important; font-size: 11px !important; line-height: 1.15 !important; box-shadow: none !important; }
-.court-detail-mobile { color: var(--court-ink); background: var(--court-paper); }
-.court-detail-mobile [class*="text-\[8px\]"] { font-size: 10px !important; }
-.court-detail-mobile [class*="text-\[9px\]"] { font-size: 10px !important; }
-.court-detail-mobile [class*="text-\[10px\]"] { font-size: 11px !important; line-height: 1.25 !important; }
-.court-position-ticket,
-.court-answer-ticket { border-radius: 1px !important; box-shadow: none !important; }
-.court-answer-ticket { min-height: 32px; padding-right: 8px !important; padding-left: 8px !important; font-size: 11px !important; line-height: 1.15 !important; }
-.court-question-head { width: 160px !important; min-height: 66px; color: #fff; background: var(--court-carbon) !important; border-color: #fff !important; }
-.court-question-number { display: inline-block; padding: 2px 5px; color: var(--court-ink); font: 800 10px var(--court-body); background: var(--court-paper); }
-.court-question-label { display: -webkit-box; height: 34px; overflow: hidden; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.15; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.court-score-band.is-simulating { border-bottom: 5px solid var(--court-gold) !important; }
-.court-score-band.is-simulating .court-score-band__status { color: var(--court-carbon); background: var(--court-gold) !important; }
-.court-score-band__mode { max-width: 72px; font-size: 10px; font-weight: 800; line-height: 1.05; letter-spacing: .08em; }
-.court-move-rank { gap: 3px; }
-.court-move-rank del { color: var(--court-medal-silver); font-size: 10px; font-weight: 600; }
-.court-move-rank strong { color: var(--court-ink); }
-.court-drop-ledger.is-dragging-over { box-shadow: inset 0 0 0 3px var(--court-gold) !important; }
 
 @media (max-width: 960px) {
   .court-profile-identity { grid-template-columns: 1fr; }
@@ -2421,15 +2166,6 @@ button[type="submit"]:active {
   .cup-leader-row.is-expanded .cup-pick-mark > span:nth-last-child(1) { grid-column: 1 / -1; padding-left: 19px; }
   .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid > div { border-right: 0 !important; border-bottom: 1px solid var(--court-rule) !important; }
   .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid > div:last-child { border-bottom: 0 !important; }
-  .court-score-band > div { overflow: hidden !important; }
-  .court-score-band__status { flex: 0 0 62px; padding-right: 7px !important; padding-left: 7px !important; }
-  .court-score-band__status svg { display: none; }
-  .court-score-band__mode { max-width: 50px; font-size: 9px; text-align: center; }
-  .court-score-band__player { min-width: 0 !important; flex: 1 1 0; gap: 5px !important; padding-right: 5px !important; padding-left: 5px !important; }
-  .court-score-band__rank { width: 24px !important; height: 30px !important; }
-  .court-score-band__player > div:last-child { min-width: 0; }
-  .court-score-band__player [class*="max-w"] { max-width: 58px !important; }
-  .court-score-band__player .text-sm { font-size: 12px !important; }
 }
 
 /* Submission completion ledger */

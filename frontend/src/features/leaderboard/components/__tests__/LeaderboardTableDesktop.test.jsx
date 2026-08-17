@@ -74,7 +74,7 @@ describe('LeaderboardTableDesktop', () => {
     rerender(<LeaderboardTableDesktop {...buildProps({ toggleWhatIfAnswer, whatIfEnabled: true, sortBy: 'section' })} />);
 
     const button = screen.getByRole('button', { name: /over 9\.5/i });
-    expect(button).toHaveAttribute('title', 'What-If: click to toggle correct / incorrect / reset');
+    expect(button).toHaveAttribute('title', 'What-If: click to give this the win; the current leader drops to runner-up');
 
     fireEvent.click(button);
     expect(toggleWhatIfAnswer).toHaveBeenCalledWith('q1', 'Over');
@@ -111,6 +111,63 @@ describe('LeaderboardTableDesktop', () => {
 
     render(<LeaderboardTableDesktop {...buildProps({ displayedUsers, leaderboardData: displayedUsers })} />);
 
-    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('amber');
+    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('is-near');
+  });
+});
+
+describe('LeaderboardTableDesktop — settlement and roster controls', () => {
+  const withSettlement = (overrides) => {
+    const users = buildDisplayedUsers();
+    users[0].user.categories['Player Awards'].predictions[0] = {
+      ...users[0].user.categories['Player Awards'].predictions[0],
+      ...overrides,
+    };
+    return users;
+  };
+
+  test('a settled result draws a solid ticket, an unsettled one a dashed ticket', () => {
+    const settled = withSettlement({ is_locked: true });
+    const { rerender } = render(
+      <LeaderboardTableDesktop {...buildProps({ displayedUsers: settled, leaderboardData: settled })} />
+    );
+    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('is-settled');
+
+    const open = withSettlement({ is_locked: false });
+    rerender(<LeaderboardTableDesktop {...buildProps({ displayedUsers: open, leaderboardData: open })} />);
+    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('is-inplay');
+  });
+
+  test('a scenario suppresses the settlement mark, since the numbers are hypothetical', () => {
+    const settled = withSettlement({ is_locked: true });
+    render(
+      <LeaderboardTableDesktop
+        {...buildProps({ displayedUsers: settled, leaderboardData: settled, whatIfEnabled: true, sortBy: 'section' })}
+      />
+    );
+    const ticket = screen.getByRole('button', { name: /over 9\.5/i }).className;
+    expect(ticket).not.toContain('is-settled');
+    expect(ticket).not.toContain('is-inplay');
+  });
+
+  test('exact points ride along with every cell for hover, not just the ticket colour', () => {
+    const { container } = render(<LeaderboardTableDesktop {...buildProps()} />);
+    expect(container.querySelector('.court-adv-points').textContent).toBe('+2');
+  });
+
+  test('a participant can be dropped straight from the column head', () => {
+    const removeUser = jest.fn();
+    render(<LeaderboardTableDesktop {...buildProps({ removeUser })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /remove alpha/i }));
+    expect(removeUser).toHaveBeenCalledWith(1);
+  });
+
+  test('a pinned participant sticks to the left edge of the scrolling columns', () => {
+    const { container, rerender } = render(<LeaderboardTableDesktop {...buildProps()} />);
+    expect(container.querySelectorAll('.is-sticky')).toHaveLength(0);
+
+    rerender(<LeaderboardTableDesktop {...buildProps({ pinnedUserIds: ['1'] })} />);
+    // The head cell and every body cell of that column travel together.
+    expect(container.querySelectorAll('.is-sticky').length).toBeGreaterThan(1);
   });
 });

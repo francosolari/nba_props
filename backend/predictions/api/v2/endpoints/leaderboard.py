@@ -16,6 +16,7 @@ from predictions.models.question import (
     PropQuestion,
 )
 from predictions.api.common.utils import resolve_answers_optimized
+from predictions.services.standings_scoring import score_position
 from predictions.api.common.services.leaderboard_insights import apply_leaderboard_insights
 
 router = Router(tags=["leaderboards"])
@@ -68,8 +69,74 @@ def _resolve_category(obj: Union[Answer, StandingPrediction]) -> Optional[str]:
     return None
 
 
+REGULAR_SEASON_GAMES = 82
+
+
+def _reachable_positions(standings_rows) -> Dict[str, range]:
+    """Every conference seed each team could still finish in.
+
+    The NBA's own clinch flags answer a different question than this pool does.
+    ``ClinchedPlayoffBirth`` and ``ClinchedDivisionTitle`` say which bucket a team
+    has secured; only ``ClinchedConferenceTitle`` pins an exact seed. Scoring here
+    is on exact conference rank, so the bound is computed from win totals instead.
+
+    A team must finish above another when its worst finish still beats the
+    other's best, and could finish above it whenever their ranges touch — ties
+    are counted against the team, since a tiebreaker could go either way. Once
+    every team in a conference has played its schedule out the recorded
+    positions are already final, so each range collapses to a single seed.
+    """
+    by_conference: Dict[str, List[Dict]] = defaultdict(list)
+    for name, position, conference, wins, losses in standings_rows:
+        if position is None:
+            continue
+        played = (wins or 0) + (losses or 0)
+        remaining = max(0, REGULAR_SEASON_GAMES - played)
+        by_conference[conference].append({
+            "name": name,
+            "position": position,
+            "remaining": remaining,
+            "floor": wins or 0,
+            "ceiling": (wins or 0) + remaining,
+        })
+
+    reachable: Dict[str, range] = {}
+    for teams in by_conference.values():
+        finished = all(team["remaining"] == 0 for team in teams)
+        for team in teams:
+            if finished:
+                reachable[team["name"]] = range(team["position"], team["position"] + 1)
+                continue
+            others = [o for o in teams if o["name"] != team["name"]]
+            must_be_above = sum(1 for o in others if o["floor"] > team["ceiling"])
+            could_be_above = sum(1 for o in others if o["ceiling"] >= team["floor"])
+            reachable[team["name"]] = range(must_be_above + 1, could_be_above + 2)
+    return reachable
+
+
+def _pick_is_locked(predicted_position, seeds: Optional[range]) -> bool:
+    """Whether a pick's points are settled, which is a weaker test than the seed.
+
+    A pick scores the same 0 whether a team finishes eleventh or fifteenth, so
+    its points can be final long before the seed is. That is the claim the board
+    makes, so it is the one measured here.
+    """
+    if not seeds:
+        return False
+    return len({score_position(predicted_position, seed) for seed in seeds}) == 1
+
+
 # ─────────── Aggregator ───────────
 def _build_leaderboard(season_slug: str) -> List[Dict]:
+    # Once a season is over nothing it produced can move again, whether or not an
+    # administrator ever flipped an award to finalized. Past seasons therefore
+    # read as fully locked rather than advertising points still in play.
+    season_over = (
+        Season.objects
+        .filter(slug=season_slug, end_date__lt=timezone.now().date())
+        .exists()
+    )
+
     # Standing predictions
     standing_qs = (
         StandingPrediction.objects
@@ -91,16 +158,14 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
     answer_list = list(answer_qs)
     resolved_answer_values_map = resolve_answers_optimized(answer_list)
 
-    actual_positions = dict(
+    standings_rows = list(
         RegularSeasonStandings.objects
         .filter(season__slug=season_slug, season_type="regular")
-        .values_list("team__name", "position")
+        .values_list("team__name", "position", "team__conference", "wins", "losses")
     )
-    team_conference = dict(
-        RegularSeasonStandings.objects
-        .filter(season__slug=season_slug, season_type="regular")
-        .values_list("team__name", "team__conference")
-    )
+    actual_positions = {name: position for name, position, _, _, _ in standings_rows}
+    team_conference = {name: conference for name, _, conference, _, _ in standings_rows}
+    reachable_seeds = _reachable_positions(standings_rows)
 
     # --- 1. fixed max_points for the standings category -----------------
     season_standings_total = (
@@ -138,7 +203,9 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
         u_rec = users[u.id]
         if u_rec["id"] is None:
             u_rec["id"], u_rec["username"] = u.id, u.username
-            u_rec["display_name"] = u.first_name + " " + u.last_name[0]
+            # Not every account carries both names — indexing the surname
+            # blindly took the whole board down for anyone signed up without one.
+            u_rec["display_name"] = f"{u.first_name} {u.last_name[:1]}".strip() or u.username
             u_rec["avatar"] = getattr(u, "avatar_url", None)
         c = u_rec["categories"][cat]
         c["points"] += sp.points
@@ -150,8 +217,35 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
             "actual_position": actual_pos,
             "correct": None,
             "points": sp.points,
+            # True when this pick's points can no longer move, either because the
+            # season is done or because every seed the team can still reach pays
+            # the same.
+            "is_locked": season_over or _pick_is_locked(
+                sp.predicted_position, reachable_seeds.get(sp.team.name)
+            ),
         })
         u_rec["total_points"] += sp.points
+
+    # `ans.question` resolves to the base Question, so subclass fields are not
+    # reachable through it. Superlative state is prefetched by id the same way
+    # prop line data is below.
+    #
+    # Superlatives pay first and second place, and while an award is unfinalized
+    # both are read off the latest odds scrape: the leader stands in as the
+    # provisional correct answer, the runner-up as the provisional partial. The
+    # board needs both so a What-If scenario knows who it is displacing.
+    superlative_meta: Dict[int, Dict] = {
+        q.id: {
+            "is_finalized": q.is_finalized,
+            "leader": q.current_leader.name if q.current_leader_id else None,
+            "runner_up": q.current_runner_up.name if q.current_runner_up_id else None,
+        }
+        for q in (
+            SuperlativeQuestion.objects
+            .filter(season__slug=season_slug)
+            .select_related("current_leader", "current_runner_up")
+        )
+    }
 
     # Prefetch prop question line data for over/under display
     prop_question_data: Dict[int, Dict] = {}
@@ -187,7 +281,20 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
             "points": score,
             "point_value": ans.question.point_value,
             "score_status": ans.question.score_status_for_points(score, ans.is_correct),
+            # Superlatives carry a real finalization flag: until an award is
+            # awarded, `correct_answer` is only the current odds leader, so the
+            # points it scores are provisional. Question types without the flag
+            # report None — unknown, never a promise that the result is settled.
+            "is_finalized": superlative_meta.get(ans.question_id, {}).get("is_finalized"),
+            # `is_finalized` stays a faithful report of the award itself. Whether
+            # the points can still move is the separate question the board asks,
+            # and a finished season settles it for everything.
+            "is_locked": season_over or superlative_meta.get(ans.question_id, {}).get("is_finalized") is True,
         }
+        if ans.question_id in superlative_meta:
+            meta = superlative_meta[ans.question_id]
+            pred["leader_answer"] = meta["leader"]
+            pred["runner_up_answer"] = meta["runner_up"]
         if ans.question_id in prop_question_data:
             pq_info = prop_question_data[ans.question_id]
             if pq_info["line"] is not None:
