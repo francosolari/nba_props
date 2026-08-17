@@ -47,7 +47,7 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
     { id: 'profile', shortLabel: 'Profile', label: 'Profile', icon: User, href: '/user/profile/' },
   ];
 
-  const breakdownItem = { id: 'breakdown', label: 'Advanced Board', icon: BarChart3, href: `/leaderboard/${currentSeasonSlug}/detailed/` };
+  const breakdownItem = { id: 'breakdown', label: 'Stat Sheet', icon: BarChart3, href: `/leaderboard/${currentSeasonSlug}/detailed/` };
   const profileItem = primaryItems.find((item) => item.id === 'profile');
   const desktopItems = [
     ...primaryItems.filter((item) => item.id !== 'profile'),

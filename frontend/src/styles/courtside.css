@@ -392,13 +392,13 @@ button[type="submit"]:active {
 }
 
 .court-theme-toggle[aria-pressed="true"] {
-  background: #101214;
+  background: var(--court-carbon);
   color: var(--court-gold);
-  border-color: #101214;
+  border-color: var(--court-carbon);
 }
 
 .court-theme-toggle[aria-pressed="true"]:hover {
-  background: #000000;
+  border-color: var(--court-gold);
 }
 
 .court-page-main {
@@ -670,12 +670,13 @@ button[type="submit"]:active {
   content: "";
 }
 
-/* Shared album pages */
+/* Shared album pages. The advanced board is deliberately absent: it is a
+   fixed-height workbench with its own shell in courtside-advanced.css, not a
+   scrolling album page. */
 .court-leaderboard-page,
 .court-submissions-page,
 .court-profile-page,
-.court-ist-page,
-.court-detail-page {
+.court-ist-page {
   min-height: calc(100dvh - var(--court-topbar-height));
   background: var(--court-paper) !important;
   color: var(--court-ink) !important;
@@ -685,8 +686,7 @@ button[type="submit"]:active {
 .court-leaderboard-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800),
 .court-submissions-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800),
 .court-profile-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800),
-.court-ist-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800),
-.court-detail-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800) {
+.court-ist-page :is(.dark\:bg-slate-950, .dark\:bg-slate-900, .dark\:bg-slate-800) {
   background-color: var(--court-paper) !important;
 }
 
@@ -1394,207 +1394,6 @@ button[type="submit"]:active {
   background-color: var(--court-red) !important;
 }
 
-/* Detailed fold-out comparison. */
-.court-detail-page {
-  height: calc(100dvh - var(--court-topbar-height)) !important;
-  overflow: hidden !important;
-}
-
-.court-detail-header {
-  position: relative !important;
-  top: auto !important;
-  border-bottom: 2px solid var(--court-rule) !important;
-  background: var(--court-paper) !important;
-}
-
-/* The fold-out workspace keeps a compact masthead so the ledger stays in the
-   first viewport, but its title sits on the same title step every other page
-   uses for a ruled section head. */
-.court-detail-header h1 {
-  color: var(--court-ink) !important;
-  font: var(--court-title-section) !important;
-  letter-spacing: .02em !important;
-}
-
-/* Section and mode tabs share the album label token: 11px is the readable floor
-   for a control, and inactive tabs use steel ink rather than a washed slate. */
-.court-detail-tab {
-  min-height: 44px;
-  border-radius: 3px;
-  color: var(--court-steel);
-  font: 800 11px/1 var(--court-display);
-  letter-spacing: .08em;
-}
-
-.court-detail-tab:hover { color: var(--court-ink); }
-
-.court-detail-tab.is-active {
-  color: #fff;
-  background: var(--court-blue);
-}
-
-.court-detail-header nav button,
-.court-detail-header [class*="bg-slate-100"] button,
-.court-detail-controls button {
-  min-height: 44px;
-  border: 1px solid var(--court-rule) !important;
-  border-radius: 3px !important;
-  background: var(--court-paper) !important;
-  font-family: var(--court-display);
-}
-
-.court-detail-header .court-detail-tab:not(.is-active) {
-  color: var(--court-steel) !important;
-}
-
-.court-detail-header .court-detail-tab:not(.is-active):hover {
-  color: var(--court-ink) !important;
-  background: var(--court-blue-soft) !important;
-}
-
-.court-detail-header .court-detail-tab.is-active,
-.court-detail-controls button[class*="bg-sky"],
-.court-detail-controls button[class*="bg-amber"] {
-  background: var(--court-blue) !important;
-  color: #fff !important;
-}
-
-.court-detail-controls button[class*="bg-amber"] {
-  background: var(--court-gold) !important;
-  color: var(--court-carbon) !important;
-}
-
-.court-detail-controls {
-  position: relative !important;
-  top: auto !important;
-  border-bottom: 2px solid var(--court-rule) !important;
-  background: var(--court-blue-soft) !important;
-  backdrop-filter: none !important;
-}
-
-.court-detail-controls [role="menu"],
-.court-detail-controls [aria-haspopup="menu"] + div {
-  border: 2px solid var(--court-rule) !important;
-  border-radius: 3px !important;
-  background: var(--court-paper) !important;
-  box-shadow: 4px 4px 0 var(--court-rule) !important;
-  backdrop-filter: none !important;
-}
-
-.court-detail-page > main {
-  background: var(--court-paper);
-}
-
-.court-score-band {
-  border-color: var(--court-rule) !important;
-  background: var(--court-paper) !important;
-  color: var(--court-ink);
-  font-family: var(--court-display);
-}
-
-.court-score-band__status {
-  min-height: 52px;
-  background: var(--court-carbon);
-  color: #fff;
-}
-
-.court-score-band__player {
-  min-height: 52px;
-  background: var(--court-paper);
-}
-
-.court-score-band__player.is-me {
-  background: var(--court-gold-soft);
-  box-shadow: inset 0 -5px 0 var(--court-gold);
-}
-
-.court-score-band__player.is-me .court-score-band__rank {
-  color: var(--court-carbon);
-  background: var(--court-gold);
-}
-
-.court-detail-page > main > div {
-  border-color: var(--court-rule) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-.court-detail-mobile,
-.court-detail-desktop {
-  background: var(--court-paper) !important;
-  color: var(--court-ink) !important;
-}
-
-.court-detail-mobile [class*="sticky"],
-.court-detail-desktop [class*="sticky"] {
-  top: 0 !important;
-  background-color: var(--court-paper) !important;
-  box-shadow: none !important;
-}
-
-.court-detail-mobile [class*="border-slate"],
-.court-detail-desktop [class*="border-slate"] {
-  border-color: var(--court-rule-soft) !important;
-}
-
-.court-detail-mobile [class*="bg-slate-50"],
-.court-detail-desktop [class*="bg-slate-50"] {
-  background-color: var(--court-sheet-wash) !important;
-}
-
-.court-detail-mobile [class*="bg-sky"],
-.court-detail-desktop [class*="bg-sky"] {
-  background-color: var(--court-blue-soft) !important;
-}
-
-.court-detail-mobile [class*="bg-amber"],
-.court-detail-desktop [class*="bg-amber"] {
-  background-color: var(--court-gold-soft) !important;
-}
-
-.court-detail-mobile [class*="text-sky"],
-.court-detail-desktop [class*="text-sky"] {
-  color: var(--court-blue) !important;
-}
-
-.court-detail-mobile [class*="cursor-grab"],
-.court-detail-desktop [class*="cursor-grab"] {
-  outline: 2px solid var(--court-gold);
-  outline-offset: -2px;
-  background: var(--court-gold-soft) !important;
-}
-
-.court-detail-mobile [data-rbd-draggable-context-id],
-.court-detail-desktop [data-rbd-draggable-context-id] {
-  touch-action: none;
-}
-
-.court-detail-mobile .court-drag-column.is-dragging,
-.court-detail-desktop .court-drag-row.is-dragging {
-  outline: 3px solid var(--court-gold) !important;
-  outline-offset: -3px;
-  background: var(--court-gold-soft) !important;
-}
-
-.court-detail-mobile .court-drag-column.is-moved,
-.court-detail-desktop .court-drag-row.is-moved {
-  background: var(--court-gold-soft) !important;
-}
-
-.court-detail-mobile [data-rbd-placeholder-context-id] {
-  background: linear-gradient(90deg, var(--court-gold) 0 5px, var(--court-gold-soft) 5px 100%) !important;
-  opacity: 1 !important;
-}
-
-.court-detail-desktop [data-rbd-placeholder-context-id] {
-  background: linear-gradient(180deg, var(--court-gold) 0 5px, var(--court-gold-soft) 5px 100%) !important;
-  opacity: 1 !important;
-}
-
-.court-detail-page [class*="rounded-full"] {
-  border-radius: 3px !important;
-}
-
 @media (min-width: 768px) {
   :root {
     /* The rail's brand block and the topbar share this height so their bottom
@@ -1725,27 +1524,6 @@ button[type="submit"]:active {
     padding-right: 24px !important;
     padding-left: 24px !important;
   }
-
-  .court-detail-page {
-    height: auto !important;
-    min-height: calc(100dvh - var(--court-topbar-height)) !important;
-    overflow: visible !important;
-  }
-
-  .court-detail-header {
-    position: sticky !important;
-    top: var(--court-topbar-height) !important;
-  }
-
-  .court-detail-controls {
-    position: sticky !important;
-    top: calc(var(--court-topbar-height) + 61px) !important;
-  }
-
-  .court-detail-page > main > div {
-    border: 2px solid var(--court-rule) !important;
-    border-radius: 5px !important;
-  }
 }
 
 @media (max-width: 767px) {
@@ -1857,18 +1635,6 @@ button[type="submit"]:active {
     padding-left: 12px !important;
   }
 
-  .court-detail-header > div {
-    padding-top: 5px !important;
-    padding-bottom: 4px !important;
-  }
-
-  .court-detail-header nav button {
-    min-height: 44px;
-  }
-
-  .court-detail-controls > div {
-    min-height: 50px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1922,6 +1688,17 @@ button[type="submit"]:active {
   font: 800 clamp(25px, 4vw, 38px)/.95 var(--court-display);
   letter-spacing: .02em;
   text-transform: uppercase;
+}
+
+/* The sheet masthead is a saturated blue field, so its title states white
+   rather than inheriting it — a bare `h3` colour rule otherwise wins over an
+   inherited value and drops the title to ink on blue. */
+.court-sheet-header h3 {
+  color: #fff;
+}
+
+.court-simulation-sheet h3 {
+  color: var(--court-ink);
 }
 
 .court-sheet-header p {
@@ -2152,7 +1929,7 @@ button[type="submit"]:active {
 .court-conference-sheet.is-east > header { background: var(--court-blue); }
 .court-conference-sheet.is-west > header { background: var(--court-red); }
 .court-conference-sheet h4 { margin: 0; color: inherit; font: 800 19px var(--court-display); letter-spacing: .03em; text-transform: uppercase; }
-.court-conference-sheet header span { font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.court-conference-sheet header span { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .court-standing-line { display: grid; grid-template-columns: 18px 32px 34px minmax(0, 1fr) 50px 28px; align-items: center; gap: 8px; min-height: 58px; padding: 7px 10px; border-bottom: 1px solid var(--court-medal-silver); }
 .court-standing-line:last-child { border-bottom: 0; }
 .court-standing-grip { width: 15px; color: var(--court-medal-silver); }
@@ -2194,8 +1971,13 @@ button[type="submit"]:active {
 .court-profile-page [class*="bg-gradient"],
 .court-profile-page [class*="backdrop-blur"] { background-image: none !important; backdrop-filter: none !important; }
 
-.court-locked-sheet { position: relative; overflow: visible; padding: 32px; color: var(--court-ink); background: var(--court-paper); border: 2px solid var(--court-rule); border-left: 12px solid var(--court-blue); box-shadow: none; }
-.court-locked-sheet__watermark { position: absolute; top: 16px; right: 16px; width: 88px; height: 88px; color: var(--court-ink); opacity: 0.06; pointer-events: none; }
+.court-locked-sheet { position: relative; overflow: visible; padding: 0; color: var(--court-ink); background: var(--court-paper); border: 2px solid var(--court-rule); box-shadow: none; }
+/* League colour arrives as an attached top band in the flow of the sheet, the
+   same way the account sheet carries it — not as a thick edge down one side and
+   not as a stripe laid over the corner. */
+.court-locked-sheet::before { display: block; height: 10px; background: var(--court-blue); border-bottom: 2px solid var(--court-rule); content: ""; }
+.court-locked-sheet__body { padding: 32px; }
+.court-locked-sheet__watermark { position: absolute; top: 28px; right: 16px; width: 88px; height: 88px; color: var(--court-ink); opacity: 0.06; pointer-events: none; }
 .court-locked-sheet__badge { display: inline-flex; width: 64px; height: 64px; align-items: center; justify-content: center; margin: 0 auto 24px; color: var(--court-gold); background: var(--court-gold-soft); border: 2px solid var(--court-rule); border-radius: 4px; }
 .court-locked-sheet__chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; color: var(--court-ink); font-size: 0.875rem; font-weight: 700; background: var(--court-sheet-wash); border: 1px solid var(--court-rule-soft); border-radius: 4px; }
 .court-locked-sheet__seasons { position: relative; z-index: 1; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--court-rule-soft); }
@@ -2295,38 +2077,6 @@ button[type="submit"]:active {
 .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid { gap: 0 !important; }
 .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid > div { border: 0 !important; border-right: 1px solid var(--court-rule) !important; border-radius: 0 !important; background: var(--court-paper) !important; }
 .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid > div:last-child { border-right: 0 !important; }
-.court-detail-page { background: var(--court-paper) !important; }
-.court-detail-header,
-.court-detail-controls { background: var(--court-paper) !important; backdrop-filter: none !important; }
-.court-detail-header button,
-.court-detail-header select,
-.court-detail-controls button,
-.court-detail-controls input { border-radius: 1px !important; box-shadow: none !important; }
-.court-detail-desktop table { color: var(--court-ink); }
-.court-detail-desktop th { min-width: 112px; color: #fff !important; font-size: 11px !important; line-height: 1.25 !important; background: var(--court-carbon) !important; border-color: #fff !important; }
-.court-detail-desktop td { border-color: var(--court-medal-silver) !important; }
-.court-detail-desktop td [class*="rounded-lg"],
-.court-detail-mobile [class*="rounded-lg"],
-.court-detail-mobile [class*="rounded-md"] { border-radius: 1px !important; box-shadow: none !important; }
-.court-detail-desktop td span[class*="px-"],
-.court-detail-desktop td div[class*="inline-flex"] { min-height: 30px; border-radius: 1px !important; font-size: 11px !important; line-height: 1.15 !important; box-shadow: none !important; }
-.court-detail-mobile { color: var(--court-ink); background: var(--court-paper); }
-.court-detail-mobile [class*="text-\[8px\]"] { font-size: 10px !important; }
-.court-detail-mobile [class*="text-\[9px\]"] { font-size: 10px !important; }
-.court-detail-mobile [class*="text-\[10px\]"] { font-size: 11px !important; line-height: 1.25 !important; }
-.court-position-ticket,
-.court-answer-ticket { border-radius: 1px !important; box-shadow: none !important; }
-.court-answer-ticket { min-height: 32px; padding-right: 8px !important; padding-left: 8px !important; font-size: 11px !important; line-height: 1.15 !important; }
-.court-question-head { width: 160px !important; min-height: 66px; color: #fff; background: var(--court-carbon) !important; border-color: #fff !important; }
-.court-question-number { display: inline-block; padding: 2px 5px; color: var(--court-ink); font: 800 10px var(--court-body); background: var(--court-paper); }
-.court-question-label { display: -webkit-box; height: 34px; overflow: hidden; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.15; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.court-score-band.is-simulating { border-bottom: 5px solid var(--court-gold) !important; }
-.court-score-band.is-simulating .court-score-band__status { color: var(--court-carbon); background: var(--court-gold) !important; }
-.court-score-band__mode { max-width: 72px; font-size: 10px; font-weight: 800; line-height: 1.05; letter-spacing: .08em; }
-.court-move-rank { gap: 3px; }
-.court-move-rank del { color: var(--court-medal-silver); font-size: 10px; font-weight: 600; }
-.court-move-rank strong { color: var(--court-ink); }
-.court-drop-ledger.is-dragging-over { box-shadow: inset 0 0 0 3px var(--court-gold) !important; }
 
 @media (max-width: 960px) {
   .court-profile-identity { grid-template-columns: 1fr; }
@@ -2421,15 +2171,6 @@ button[type="submit"]:active {
   .cup-leader-row.is-expanded .cup-pick-mark > span:nth-last-child(1) { grid-column: 1 / -1; padding-left: 19px; }
   .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid > div { border-right: 0 !important; border-bottom: 1px solid var(--court-rule) !important; }
   .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid > div:last-child { border-bottom: 0 !important; }
-  .court-score-band > div { overflow: hidden !important; }
-  .court-score-band__status { flex: 0 0 62px; padding-right: 7px !important; padding-left: 7px !important; }
-  .court-score-band__status svg { display: none; }
-  .court-score-band__mode { max-width: 50px; font-size: 9px; text-align: center; }
-  .court-score-band__player { min-width: 0 !important; flex: 1 1 0; gap: 5px !important; padding-right: 5px !important; padding-left: 5px !important; }
-  .court-score-band__rank { width: 24px !important; height: 30px !important; }
-  .court-score-band__player > div:last-child { min-width: 0; }
-  .court-score-band__player [class*="max-w"] { max-width: 58px !important; }
-  .court-score-band__player .text-sm { font-size: 12px !important; }
 }
 
 /* Submission completion ledger */
@@ -2602,6 +2343,7 @@ button[type="submit"]:active {
 .submission-conference-ledger.is-west > header { background: var(--court-red); }
 .court-submissions-page .submission-conference-ledger > header h3 {
   overflow: hidden;
+  flex: 0 1 auto;
   margin: 0;
   color: inherit;
   font: 800 16px/1 var(--court-display);
@@ -2610,11 +2352,22 @@ button[type="submit"]:active {
   text-transform: uppercase;
   white-space: nowrap;
 }
+/* Which conference this is outranks the caption beside it, so the caption is
+   what gives way — and below 640px it goes entirely rather than clipping the
+   name to an initial. */
 .submission-conference-ledger > header span {
-  flex: 0 0 auto;
+  display: none;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
   font: 800 11px/1 var(--court-body);
   letter-spacing: .07em;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+@media (min-width: 640px) {
+  .submission-conference-ledger > header span { display: block; }
 }
 .submission-conference-list {
   min-height: 690px;
@@ -2626,6 +2379,8 @@ button[type="submit"]:active {
   display: grid;
   min-width: 0;
   min-height: 46px;
+  /* Four columns below 640px: the record stacks under the name, so a fifth
+     track would only spend a gap the team names need. */
   grid-template-columns: 12px 20px 24px minmax(0, 1fr);
   align-items: center;
   gap: 3px;
@@ -2658,6 +2413,46 @@ button[type="submit"]:active {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Last season's finish, carried beside each team so an order is picked against
+   evidence rather than memory. It is reference, not the pick, so it sits a clear
+   step below the team name in weight. */
+.submission-standing-row__last {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  color: var(--court-medal-silver);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.submission-standing-row__last b {
+  color: var(--court-steel);
+  font: 700 11px/1 var(--court-text);
+}
+.submission-standing-row__last i {
+  color: var(--court-muted);
+  font: 600 9px/1 var(--court-display);
+  font-style: normal;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.submission-standing-row:hover .submission-standing-row__last { color: var(--court-steel); }
+
+/* Below 640px the row has no width to spare, so the record drops to a second
+   line and every team name stays whole. From 640px it rejoins the row on the
+   right, where there is room for it and for the finish. */
+.submission-standing-row { grid-template-rows: auto auto; row-gap: 0; }
+.submission-standing-row__grip,
+.submission-standing-row__seed,
+.submission-standing-row__logo { grid-row: 1 / 3; }
+.submission-standing-row__team { grid-column: 4; grid-row: 1; }
+.submission-standing-row__last {
+  grid-column: 4;
+  grid-row: 2;
+  justify-content: flex-start;
+}
+
 .submission-standings-empty { margin: 0; padding: 24px 8px; color: var(--court-steel); font-size: 11px; text-align: center; }
 .submission-standings-actions {
   display: grid;
@@ -2693,9 +2488,19 @@ button[type="submit"]:active {
   .court-submissions-page .submission-conference-ledger > header h3 { font-size: 28px; }
   .submission-standing-row {
     min-height: 52px;
-    grid-template-columns: 18px 30px 32px minmax(0, 1fr);
+    grid-template-columns: 18px 30px 32px minmax(0, 1fr) auto;
+    grid-template-rows: auto;
     gap: 7px;
     padding: 6px 10px;
+  }
+  .submission-standing-row__grip,
+  .submission-standing-row__seed,
+  .submission-standing-row__logo { grid-row: 1; }
+  .submission-standing-row__team { grid-column: 4; grid-row: 1; }
+  .submission-standing-row__last {
+    grid-column: 5;
+    grid-row: 1;
+    justify-content: flex-end;
   }
   .submission-standing-row__grip { width: 15px; }
   .submission-standing-row__seed { font-size: 28px; }

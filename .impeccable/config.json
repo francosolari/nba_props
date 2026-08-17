@@ -21,6 +21,39 @@
         ],
         "createdAt": "2026-08-16T02:47:42.356Z",
         "reason": "pre-existing delta-badge microprint in LeaderboardPodium, unrelated to dark-mode task; out of scope to redesign here"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "10px",
+        "createdAt": "2026-08-17T18:25:00.287Z",
+        "reason": "DESIGN.md Readable Ledger Rule sanctions the intentional 9-13px dense-data scale; 14px is the existing sheet body step already used across courtside.css"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "12px",
+        "createdAt": "2026-08-17T18:25:00.332Z",
+        "reason": "DESIGN.md Readable Ledger Rule sanctions the intentional 9-13px dense-data scale; 14px is the existing sheet body step already used across courtside.css"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "13px",
+        "createdAt": "2026-08-17T18:25:00.373Z",
+        "reason": "DESIGN.md Readable Ledger Rule sanctions the intentional 9-13px dense-data scale; 14px is the existing sheet body step already used across courtside.css"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "14px",
+        "createdAt": "2026-08-17T18:25:00.411Z",
+        "reason": "DESIGN.md Readable Ledger Rule sanctions the intentional 9-13px dense-data scale; 14px is the existing sheet body step already used across courtside.css"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "frontend/src/styles/courtside-advanced.css"
+        ],
+        "createdAt": "2026-08-17T18:37:03.395Z",
+        "reason": "DESIGN.md Elevation & Depth documents the Participant Identity Inset (inset 0 -5px 0 gold) and reserves gold for participant identity and active simulation; these four insets are that committed vocabulary, not a decorative accent border"
       }
     ]
   }

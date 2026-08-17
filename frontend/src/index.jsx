@@ -16,6 +16,7 @@ import '@fontsource/source-sans-3/latin-600.css';
 import '@fontsource/source-sans-3/latin-700.css';
 import './styles/tokens.css';
 import './styles/courtside.css';
+import './styles/courtside-advanced.css';
 import './styles/prop-choice.css';
 import './styles/SubmissionsPage.css';
 

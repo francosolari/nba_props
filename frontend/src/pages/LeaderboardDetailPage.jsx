@@ -7,18 +7,21 @@ import { standingPoints, fromSectionKey } from '../features/leaderboard/utils/he
 
 // Components
 import { LeaderboardHeader } from '../features/leaderboard/components/LeaderboardHeader';
-import { LeaderboardControls } from '../features/leaderboard/components/LeaderboardControls';
-import { LeaderboardShowcase } from '../features/leaderboard/components/LeaderboardShowcase';
 import { LeaderboardTableDesktop } from '../features/leaderboard/components/LeaderboardTableDesktop';
 import { LeaderboardTableMobile } from '../features/leaderboard/components/LeaderboardTableMobile';
 import { LeaderboardPodium } from '../features/leaderboard/components/LeaderboardPodium';
 import { SimulationModal } from '../features/leaderboard/components/SimulationModal';
 import { PlayerSelectionModal } from '../features/leaderboard/components/PlayerSelectionModal';
 import { resolveTeamLogoSlug } from '../components/TeamLogo';
+import LockedResultsSheet from '../components/LockedResultsSheet';
 
 const WHAT_IF_INTRO_SESSION_KEY = 'leaderboard-what-if-intro-seen';
 
 const toAnswerKey = (answer) => String(answer ?? '').trim().toLowerCase();
+
+// A prop has two sides and exactly one of them is true, so ruling one out is the
+// same statement as handing the result to the other.
+const OPPOSITE_ANSWER = { over: 'under', under: 'over', yes: 'no', no: 'yes' };
 
 /* ─────────────────────────────────────────────────────────────────────────────
    MAIN COMPONENT
@@ -41,11 +44,10 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: leaderboardData, isLoading, error } = useLeaderboard(selectedSeason);
+  const { data: leaderboardData, season: seasonInfo, isLoading, error } = useLeaderboard(selectedSeason);
 
   const [section, setSection] = useState(initialSection);
-  const [mode, setMode] = useState('compare'); 
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
   const [selectedUserIds, setSelectedUserIds] = useState(() => {
     const top = leaderboardData?.slice(0, 4).map(e => String(e.user.id)) || [];
     return Array.from(new Set([initialUserId, ...top])).filter(Boolean);
@@ -62,19 +64,6 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const [pinnedUserIds, setPinnedUserIds] = useState([]);
   const [showManagePlayers, setShowManagePlayers] = useState(false);
   const [manageQuery, setManageQuery] = useState('');
-
-  const usersMap = useMemo(() => {
-    const m = new Map();
-    (leaderboardData || []).forEach(e => m.set(String(e.user.id), e));
-    return m;
-  }, [leaderboardData]);
-
-  const primaryUserId = useMemo(() => {
-    if (selectedUserIds.length > 0) return String(selectedUserIds[0]);
-    if (leaderboardData?.length > 0) return String(leaderboardData[0].user.id);
-    return '';
-  }, [selectedUserIds, leaderboardData]);
-  const primaryUser = primaryUserId ? usersMap.get(String(primaryUserId)) : undefined;
 
   const loggedInEntry = useMemo(() => {
     if (!loggedInUsername) return undefined;
@@ -121,7 +110,14 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
       const cat = e.user.categories?.[catKey];
       cat?.predictions?.forEach(p => {
         if (!p.team) return;
-        const prev = byTeam.get(p.team) || { team: p.team, conference: p.conference, actual_position: p.actual_position };
+        const prev = byTeam.get(p.team) || {
+          team: p.team,
+          conference: p.conference,
+          actual_position: p.actual_position,
+          wins: p.wins,
+          losses: p.losses,
+          seed_range: p.seed_range,
+        };
         if (prev.actual_position == null || (p.actual_position && p.actual_position < prev.actual_position)) {
           prev.actual_position = p.actual_position;
         }
@@ -159,10 +155,10 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const defaultStandingsOrders = useMemo(() => {
     const west = standingsTeams
       .filter(r => (r.conference || '').toLowerCase().startsWith('w'))
-      .map(r => ({ id: `W-${r.team}`, team: r.team, conference: 'West', actual_position: r.actual_position }));
+      .map(r => ({ id: `W-${r.team}`, team: r.team, conference: 'West', actual_position: r.actual_position, wins: r.wins, losses: r.losses, seed_range: r.seed_range }));
     const east = standingsTeams
       .filter(r => (r.conference || '').toLowerCase().startsWith('e'))
-      .map(r => ({ id: `E-${r.team}`, team: r.team, conference: 'East', actual_position: r.actual_position }));
+      .map(r => ({ id: `E-${r.team}`, team: r.team, conference: 'East', actual_position: r.actual_position, wins: r.wins, losses: r.losses, seed_range: r.seed_range }));
     return { west, east };
   }, [standingsTeams]);
 
@@ -192,6 +188,60 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
       });
     });
     return pointByQuestion;
+  }, [leaderboardData]);
+
+  // Superlatives pay second place too. The runner-up award isn't published as a
+  // field, so it's read back off the graded data: the largest partial score any
+  // participant earned on that question. Questions that have never paid partial
+  // credit fall back to half the full value.
+  const questionPartialValues = useMemo(() => {
+    const partialByQuestion = new Map();
+    (leaderboardData || []).forEach((entry) => {
+      ['Player Awards', 'Props & Yes/No'].forEach((catKey) => {
+        entry.user.categories?.[catKey]?.predictions?.forEach((prediction) => {
+          if (!prediction?.question_id || prediction.score_status !== 'partial') return;
+          const key = String(prediction.question_id);
+          const candidate = Number(prediction.points || 0);
+          if (!Number.isFinite(candidate) || candidate <= 0) return;
+          partialByQuestion.set(key, Math.max(partialByQuestion.get(key) || 0, candidate));
+        });
+      });
+    });
+    return partialByQuestion;
+  }, [leaderboardData]);
+
+  // Where each question actually stands: the current leader and, on superlatives,
+  // the current runner-up. Both come off the latest odds while an award is
+  // unfinalized; the graded rows are the fallback for anything that reports
+  // neither. A scenario starts from this, so promoting a new winner knows who it
+  // is pushing down rather than wiping the question clean.
+  const realOutcomes = useMemo(() => {
+    const outcomes = new Map();
+    (leaderboardData || []).forEach((entry) => {
+      ['Player Awards', 'Props & Yes/No'].forEach((catKey) => {
+        entry.user.categories?.[catKey]?.predictions?.forEach((prediction) => {
+          if (!prediction?.question_id) return;
+          const qid = String(prediction.question_id);
+          const current = outcomes.get(qid) || { winner: null, partial: null, hasRunnerUp: false, answers: new Set() };
+          const key = toAnswerKey(prediction.answer);
+          if (key) current.answers.add(key);
+
+          if (prediction.leader_answer) current.winner = toAnswerKey(prediction.leader_answer);
+          else if (!current.winner && prediction.score_status === 'correct') current.winner = key;
+
+          if (prediction.runner_up_answer) {
+            current.partial = toAnswerKey(prediction.runner_up_answer);
+            current.hasRunnerUp = true;
+          } else if (!current.partial && prediction.score_status === 'partial') {
+            current.partial = key;
+            current.hasRunnerUp = true;
+          }
+
+          outcomes.set(qid, current);
+        });
+      });
+    });
+    return outcomes;
   }, [leaderboardData]);
 
   const resetWhatIfState = useCallback(() => {
@@ -240,22 +290,61 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     const answerKey = toAnswerKey(answerValue);
     if (!answerKey || answerKey === '—') return;
 
+    // An award pays two places, so tapping one of its answers walks it round:
+    // winner -> out -> runner-up -> winner, with the leader it displaces dropping
+    // to second rather than out of the running.
+    //
+    // A prop pays one, and exactly one of its answers is true — "nobody is
+    // right" is not an outcome it has. So it flips instead: tapping a side hands
+    // it the result, and tapping the side that already holds it gives the result
+    // to the other. Walking a prop round the award's cycle left it stuck,
+    // because the runner-up step has nothing to move.
     setWhatIfAnswerOverrides((prev) => {
       const qid = String(questionId);
+      const real = realOutcomes.get(qid) || { winner: null, partial: null, hasRunnerUp: false, answers: new Set() };
+      const current = prev[qid] || { winner: real.winner, partial: real.partial, touched: [] };
+      const touched = current.touched || [];
+
+      const shown = current.winner === answerKey ? 'winner'
+        : current.partial === answerKey ? 'partial'
+          : 'out';
+
+      const target = !real.hasRunnerUp
+        ? (shown === 'winner' ? 'flip' : 'winner')
+        // First tap hands the win over — unless the answer already holds it, in
+        // which case there is nothing to promote and the tap walks the cycle on.
+        : (!touched.includes(answerKey) && shown !== 'winner') ? 'winner'
+          : shown === 'winner' ? 'out'
+            : shown === 'out' ? 'partial'
+              : 'winner';
+
+      let winner = current.winner;
+      let partial = current.partial;
+      if (target === 'flip') {
+        // Ruling out one side of a prop hands the result to the other, so the
+        // tap always says something rather than quietly doing nothing.
+        const others = [...(real.answers || [])].filter((a) => a !== answerKey);
+        winner = OPPOSITE_ANSWER[answerKey] || (others.length === 1 ? others[0] : real.winner);
+        partial = real.partial;
+      } else if (target === 'winner') {
+        // Promoting displaces the sitting leader to second; whoever held second
+        // is pushed out.
+        partial = real.hasRunnerUp && winner && winner !== answerKey ? winner : null;
+        winner = answerKey;
+      } else if (target === 'partial') {
+        if (winner === answerKey) winner = null;
+        partial = answerKey;
+      } else {
+        if (winner === answerKey) winner = null;
+        if (partial === answerKey) partial = null;
+      }
+
       const next = { ...prev };
-      const perQuestion = { ...(next[qid] || {}) };
-      const current = perQuestion[answerKey];
-      const nextState = current === 'correct' ? 'incorrect' : current === 'incorrect' ? undefined : 'correct';
-
-      if (nextState) perQuestion[answerKey] = nextState;
-      else delete perQuestion[answerKey];
-
-      if (Object.keys(perQuestion).length === 0) delete next[qid];
-      else next[qid] = perQuestion;
-
+      if (winner === real.winner && partial === real.partial) delete next[qid];
+      else next[qid] = { winner, partial, touched: touched.includes(answerKey) ? touched : [...touched, answerKey] };
       return next;
     });
-  }, [whatIfEnabled, requestEnableWhatIf]);
+  }, [whatIfEnabled, requestEnableWhatIf, realOutcomes]);
 
   const withSimTotals = useMemo(() => {
     if (!leaderboardData) return [];
@@ -267,24 +356,38 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
       let categoryPoints = 0;
       const predictions = category.predictions.map((prediction) => {
         const qid = prediction?.question_id ? String(prediction.question_id) : null;
-        const override = qid ? whatIfAnswerOverrides[qid]?.[toAnswerKey(prediction.answer)] : undefined;
-        const pointValue = Number(prediction.point_value || questionPointValues.get(qid) || prediction.points || 0) || 0;
-        let points = Number(prediction.points || 0);
-        let correct = prediction.correct;
-        let scoreStatus = prediction.score_status || (correct === true ? 'correct' : points > 0 ? 'partial' : correct === false ? 'incorrect' : 'pending');
+        const override = qid ? whatIfAnswerOverrides[qid] : undefined;
+        const realPoints = Number(prediction.points || 0);
+        const realStatus = prediction.score_status
+          || (prediction.correct === true ? 'correct' : realPoints > 0 ? 'partial' : prediction.correct === false ? 'incorrect' : 'pending');
 
-        if (override === 'correct') {
-          points = pointValue;
-          correct = true;
-          scoreStatus = 'correct';
-        } else if (override === 'incorrect') {
-          points = 0;
-          correct = false;
-          scoreStatus = 'incorrect';
+        if (!override) {
+          categoryPoints += realPoints;
+          return { ...prediction, score_status: realStatus, __what_if_state: undefined };
         }
 
+        const pointValue = Number(prediction.point_value || questionPointValues.get(qid) || prediction.points || 0) || 0;
+        const partialValue = Number(questionPartialValues.get(qid) ?? pointValue / 2) || 0;
+        const answerKey = toAnswerKey(prediction.answer);
+        const isWinner = answerKey === override.winner;
+        const isRunnerUp = !isWinner && answerKey === override.partial;
+
+        const points = isWinner ? pointValue : isRunnerUp ? partialValue : 0;
+        const scoreStatus = isWinner ? 'correct' : isRunnerUp ? 'partial' : 'incorrect';
+
         categoryPoints += points;
-        return { ...prediction, points, correct, score_status: scoreStatus, __what_if_state: override || 'unchanged' };
+        return {
+          ...prediction,
+          points,
+          correct: isWinner,
+          score_status: scoreStatus,
+          // Only cells the scenario actually moved are marked, so the gold
+          // binding stays a record of the change rather than a wash over the
+          // whole question.
+          __what_if_state: isWinner ? 'winner'
+            : isRunnerUp ? 'partial'
+              : (scoreStatus === realStatus ? undefined : 'changed'),
+        };
       });
 
       return { ...category, points: categoryPoints, predictions };
@@ -330,7 +433,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         },
       };
     }).sort((a, b) => (b.user.total_points || 0) - (a.user.total_points || 0));
-  }, [leaderboardData, whatIfEnabled, simActualMap, whatIfAnswerOverrides, questionPointValues]);
+  }, [leaderboardData, whatIfEnabled, simActualMap, whatIfAnswerOverrides, questionPointValues, questionPartialValues]);
 
   const displayedUsers = useMemo(() => {
     const base = showAll ? withSimTotals : selectedUserIds.map(id => withSimTotals.find(e => String(e.user.id) === String(id))).filter(Boolean);
@@ -355,6 +458,23 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   }, [withSimTotals, selectedUserIds, showAll, sortBy, query, pinnedUserIds, section]);
 
   const addUser = (id) => setSelectedUserIds(prev => Array.from(new Set([...prev, String(id)])));
+
+  // Removing straight from the column head. While the board is showing everyone,
+  // dropping one player means "everyone except them", so the scope narrows to a
+  // real selection rather than silently doing nothing.
+  const removeUser = useCallback((id) => {
+    const target = String(id);
+    setPinnedUserIds(prev => prev.filter(x => String(x) !== target));
+    if (showAll) {
+      setSelectedUserIds((withSimTotals || [])
+        .map(e => String(e.user.id))
+        .filter(x => x !== target));
+      setShowAll(false);
+      return;
+    }
+    setSelectedUserIds(prev => prev.filter(x => String(x) !== target));
+  }, [showAll, withSimTotals]);
+
   const togglePin = (id) => {
     setPinnedUserIds(prev => prev.includes(String(id)) ? prev.filter(x => String(x) !== String(id)) : [...prev, String(id)]);
   };
@@ -373,68 +493,88 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     sp.set('section', section);
-    sp.set('mode', mode);
     if (selectedUserIds.length) sp.set('users', selectedUserIds.join(',')); else sp.delete('users');
     sp.set('sortBy', sortBy);
     if (query) sp.set('q', query); else sp.delete('q');
     sp.set('wi', whatIfEnabled ? '1' : '0');
     sp.set('all', showAll ? '1' : '0');
     window.history.replaceState(null, '', `${window.location.pathname}?${sp.toString()}`);
-  }, [section, mode, selectedUserIds, sortBy, query, whatIfEnabled, showAll]);
+  }, [section, selectedUserIds, sortBy, query, whatIfEnabled, showAll]);
 
-  if (isLoading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 flex items-center justify-center text-slate-400 animate-pulse font-bold">Loading Rankings…</div>;
-  if (error) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 flex items-center justify-center text-rose-500 font-bold">{String(error)}</div>;
+  if (isLoading) {
+    return (
+      <div className="court-adv-state">
+        <strong>Opening the board</strong>
+        <span>Pulling every prediction for {selectedSeason === 'current' ? 'this season' : selectedSeason}.</span>
+      </div>
+    );
+  }
+
+  // Entries stay sealed until the submission window closes. The API already
+  // returns nothing while it is open; this is what the participant reads instead
+  // of an empty comparison.
+  if (seasonInfo?.submissions_open && seasonInfo?.submission_end_date) {
+    return (
+      <LockedResultsSheet
+        title="Stat Sheet Locked"
+        description="Other players' picks stay sealed while predictions are open. Check back later!"
+        submissionEndDate={seasonInfo.submission_end_date}
+        seasonsData={seasonsData}
+        selectedSeason={selectedSeason}
+        setSelectedSeason={setSelectedSeason}
+      />
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="court-adv-state court-adv-state--error">
+        <strong>The board did not load</strong>
+        <span>{String(error?.message || error)}</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="court-detail-page h-screen md:min-h-screen md:h-auto overflow-hidden md:overflow-visible bg-slate-50 dark:bg-slate-950 font-sans selection:bg-sky-500/30 text-sm flex flex-col">
-
+    <div className="court-adv">
       <LeaderboardHeader
         selectedSeason={selectedSeason}
         seasonsData={seasonsData}
         setSelectedSeason={setSelectedSeason}
         section={section}
         setSection={setSection}
-        mode={mode}
-        setMode={setMode}
-      />
-
-      <LeaderboardControls
         query={query}
         setQuery={setQuery}
         sortBy={sortBy}
         setSortBy={setSortBy}
-        mode={mode}
+        selectedCount={selectedUserIds.length}
         showAll={showAll}
-        setShowAll={setShowAll}
-        section={section}
+        onOpenRoster={() => setShowManagePlayers(true)}
+      />
+
+      <LeaderboardPodium
         whatIfEnabled={whatIfEnabled}
-        onToggleWhatIf={handleWhatIfToggle}
-        setShowManagePlayers={setShowManagePlayers}
+        withSimTotals={withSimTotals}
         loggedInUserId={canPinLoggedInUser ? pinTargetUserId : null}
         isPinMePinned={isPinMePinned}
         onTogglePinMe={handleTogglePinMe}
+        onToggleWhatIf={handleWhatIfToggle}
+        section={section}
       />
 
-      {mode === 'compare' && (
-        <LeaderboardPodium
-          whatIfEnabled={whatIfEnabled}
-          withSimTotals={withSimTotals}
-          loggedInUserId={pinTargetUserId}
-        />
-      )}
-
-      {/* ─── 3. Main Content ─── */}
-      <main className="flex-1 min-h-0 w-full px-0 md:px-4 py-0 md:pb-20 overflow-hidden md:overflow-visible">
-
-        {/* Showcase Mode */}
-        {mode === 'showcase' && (
-          <LeaderboardShowcase primaryUser={primaryUser} />
-        )}
-
-        {/* Compare Mode */}
-        {mode === 'compare' && (
-          <div className="h-full md:h-auto bg-white dark:bg-slate-900 border-y md:border border-slate-200 dark:border-slate-800 md:rounded-2xl shadow-sm overflow-hidden md:overflow-visible flex flex-col">
-            
+      <main className="court-adv-work">
+        {displayedUsers.length === 0 ? (
+          <div className="court-adv-empty">
+            <strong>No players on the sheet</strong>
+            <span>
+              {query.trim()
+                ? `Nobody in the comparison matches “${query.trim()}”.`
+                : 'Pick the players you want to compare column by column.'}
+            </span>
+            <button type="button" onClick={() => setShowManagePlayers(true)}>Open roster</button>
+          </div>
+        ) : (
+          <>
             <LeaderboardTableDesktop
               section={section}
               sortBy={sortBy}
@@ -450,6 +590,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               toggleWhatIfAnswer={toggleWhatIfAnswer}
               simActualMap={simActualMap}
               leaderboardData={leaderboardData}
+              removeUser={removeUser}
             />
 
             <LeaderboardTableMobile
@@ -466,14 +607,15 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
               requestEnableWhatIf={requestEnableWhatIf}
               toggleWhatIfAnswer={toggleWhatIfAnswer}
               sortBy={sortBy}
+              loggedInUserId={canPinLoggedInUser ? pinTargetUserId : null}
             />
-          </div>
+          </>
         )}
       </main>
 
-      <SimulationModal 
-        show={showWhatIfConfirm} 
-        onClose={() => setShowWhatIfConfirm(false)} 
+      <SimulationModal
+        show={showWhatIfConfirm}
+        onClose={() => setShowWhatIfConfirm(false)}
         onEnable={handleEnableWhatIf}
         section={section}
       />
@@ -487,6 +629,8 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         selectedUserIds={selectedUserIds}
         setSelectedUserIds={setSelectedUserIds}
         addUser={addUser}
+        showAll={showAll}
+        setShowAll={setShowAll}
       />
     </div>
   );

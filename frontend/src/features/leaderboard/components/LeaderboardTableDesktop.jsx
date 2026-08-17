@@ -1,11 +1,63 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { Lock, Pin, GripVertical } from 'lucide-react';
-import { standingPoints, fromSectionKey, extractLineValue } from '../utils/helpers';
+import { Lock, Pin, GripVertical, X } from 'lucide-react';
+import { standingPoints, fromSectionKey, extractLineValue, isLockedPrediction } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 import PlayerHeadshot from '../../../components/PlayerHeadshot';
 import usePlayerHeadshots from '../hooks/usePlayerHeadshots';
+import { StandingsLegend, CallsLegend } from './LeaderboardLegend';
+import { AnswerKey } from './AnswerKey';
 
+const formatPoints = (value) => {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return '0';
+  return Number.isInteger(n) ? n.toLocaleString() : n.toFixed(1).replace(/\.0$/, '');
+};
+
+const positionState = (points, hasPrediction) => {
+  if (!hasPrediction) return 'is-empty';
+  if (points === 3) return 'is-hit';
+  if (points === 1) return 'is-near';
+  return 'is-miss';
+};
+
+const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th',
+  '9th', '10th', '11th', '12th', '13th', '14th', '15th'];
+
+const ordinal = (n) => ORDINALS[n] || `${n}th`;
+
+/** How much room a seed has left, said in words for the record's tooltip. */
+const describeRoom = (row) => {
+  const range = row?.seed_range;
+  if (!range) return `${row.team}: ${row.wins}\u2013${row.losses}`;
+  const [best, worst] = range;
+  const room = best === worst
+    ? `seed settled at ${ordinal(best)}`
+    : `can still finish ${ordinal(best)} to ${ordinal(worst)}`;
+  return `${row.team}: ${row.wins}\u2013${row.losses}, ${room}`;
+};
+
+const answerState = (status) => {
+  if (status === 'correct') return 'is-hit';
+  if (status === 'partial') return 'is-near';
+  if (status === 'incorrect') return 'is-miss';
+  return 'is-open';
+};
+
+/* Whether the result behind a cell can still move. Suppressed during a scenario:
+   the numbers on screen are hypothetical, so claiming any of them are locked
+   would be a lie. */
+const settlementState = (prediction, simulating) => {
+  if (simulating || !prediction) return '';
+  return isLockedPrediction(prediction) ? 'is-settled' : 'is-inplay';
+};
+
+/**
+ * Desktop orientation: teams (or questions) are rows, participants are columns.
+ * The fixed left ledger and the swipable participant columns are two panes with
+ * a synchronised scrollLeft, which is what lets a row keep its drag handle in
+ * place while the score columns move.
+ */
 export const LeaderboardTableDesktop = ({
   section,
   sortBy,
@@ -20,15 +72,17 @@ export const LeaderboardTableDesktop = ({
   requestEnableWhatIf,
   toggleWhatIfAnswer,
   simActualMap,
-  leaderboardData
+  leaderboardData,
+  removeUser,
 }) => {
-  const headerScrollRef = React.useRef(null);
-  const westScrollRef = React.useRef(null);
-  const eastScrollRef = React.useRef(null);
-  const nonStandingsScrollRef = React.useRef(null);
+  const headerScrollRef = useRef(null);
+  const westScrollRef = useRef(null);
+  const eastScrollRef = useRef(null);
+  const nonStandingsScrollRef = useRef(null);
   const [draggingId, setDraggingId] = useState(null);
 
-  // FLIP animation: track header column positions, animate entire column (header + body cells)
+  // FLIP: when sorting or pinning reorders the columns, carry the header cell
+  // and every body cell of that participant across the gap instead of snapping.
   const tableRef = useRef(null);
   const colRefs = useRef(new Map());
   const prevColPositions = useRef(new Map());
@@ -44,7 +98,6 @@ export const LeaderboardTableDesktop = ({
     const nextPositions = new Map();
     const deltas = new Map();
 
-    // 1. Compute deltaX from header refs
     colRefs.current.forEach((node, key) => {
       if (!node) return;
       const rect = node.getBoundingClientRect();
@@ -58,7 +111,6 @@ export const LeaderboardTableDesktop = ({
 
     if (deltas.size === 0) return;
 
-    // 2. Bulk-query all body cells once, then group by userId
     const cellsByUser = new Map();
     container.querySelectorAll('[data-col-user]').forEach((node) => {
       const uid = node.getAttribute('data-col-user');
@@ -68,7 +120,6 @@ export const LeaderboardTableDesktop = ({
       }
     });
 
-    // 3. For each user with a delta, animate header + all body cells
     deltas.forEach((deltaX, userId) => {
       const headerNode = colRefs.current.get(userId);
       const bodyCells = cellsByUser.get(userId) || [];
@@ -90,9 +141,7 @@ export const LeaderboardTableDesktop = ({
 
   const isStandingsSection = section === 'standings';
 
-  const handleDragStart = (start) => {
-    setDraggingId(start.draggableId);
-  };
+  const handleDragStart = (start) => setDraggingId(start.draggableId);
 
   const handleDragEnd = (result, conf) => {
     setDraggingId(null);
@@ -107,46 +156,35 @@ export const LeaderboardTableDesktop = ({
       arr.splice(to, 0, rem);
       return arr;
     };
-    if (conf === 'West') setWestOrder(prev => reorder(prev, result.source.index, result.destination.index));
-    else setEastOrder(prev => reorder(prev, result.source.index, result.destination.index));
+    if (conf === 'West') setWestOrder((prev) => reorder(prev, result.source.index, result.destination.index));
+    else setEastOrder((prev) => reorder(prev, result.source.index, result.destination.index));
   };
 
   const syncHorizontalScroll = (sourceEl) => {
     const scrollLeft = sourceEl?.scrollLeft ?? 0;
-    [
-      headerScrollRef.current,
-      westScrollRef.current,
-      eastScrollRef.current,
-      nonStandingsScrollRef.current
-    ].forEach((el) => {
-      if (el && el !== sourceEl && el.scrollLeft !== scrollLeft) {
-        el.scrollLeft = scrollLeft;
-      }
-    });
+    [headerScrollRef.current, westScrollRef.current, eastScrollRef.current, nonStandingsScrollRef.current]
+      .forEach((el) => {
+        if (el && el !== sourceEl && el.scrollLeft !== scrollLeft) el.scrollLeft = scrollLeft;
+      });
   };
 
-  const handleBodyScroll = (event) => {
-    syncHorizontalScroll(event.currentTarget);
-  };
+  const handleScroll = (event) => syncHorizontalScroll(event.currentTarget);
 
-  const handleHeaderScroll = (event) => {
-    syncHorizontalScroll(event.currentTarget);
-  };
+  const gripWidth = whatIfEnabled && isStandingsSection ? 26 : 0;
+  const teamColWidth = 264;
+  const rankColWidth = 62;
+  const fixedColWidth = isStandingsSection ? gripWidth + teamColWidth + rankColWidth : 340;
+  const userColWidth = isStandingsSection ? 128 : 188;
 
-  // Calculate total width for proper alignment
-  const fixedColWidth = isStandingsSection ? 220 : 320;
-  const rankColWidth = isStandingsSection ? 55 : 0;
-  const userColWidth = isStandingsSection ? 125 : 190;
+  const ROW_HEIGHT = isStandingsSection ? 54 : 72;
+  const HEADER_HEIGHT = 58;
 
-  // Fixed row height for perfect alignment
-  const ROW_HEIGHT = isStandingsSection ? 44 : 56;
-  const CONF_HEIGHT = 36;
-  const HEADER_HEIGHT = 52;
   const nonStandingsCategoryKey = React.useMemo(
     () => (isStandingsSection ? null : fromSectionKey(section)),
     [isStandingsSection, section]
   );
   const headerCategoryKey = React.useMemo(() => fromSectionKey(section), [section]);
+
   const nonStandingsQuestions = React.useMemo(() => {
     if (isStandingsSection) return [];
     const qMap = new Map();
@@ -157,6 +195,9 @@ export const LeaderboardTableDesktop = ({
             id: p.question_id,
             text: p.question,
             is_finalized: p.is_finalized,
+            is_locked: p.is_locked,
+            correct_answer: p.correct_answer,
+            runner_up_answer: p.runner_up_answer,
             line: p.line,
             outcome_type: p.outcome_type,
           });
@@ -165,300 +206,301 @@ export const LeaderboardTableDesktop = ({
     });
     return Array.from(qMap.values()).sort((a, b) => a.text.localeCompare(b.text));
   }, [isStandingsSection, leaderboardData, nonStandingsCategoryKey]);
+
   const isAwardsSection = section === 'awards';
   const headshotsByName = usePlayerHeadshots(isAwardsSection);
+  const isTotalSort = sortBy === 'total';
+
+  // Pinned participants already sort to the front, so the leading run of pinned
+  // columns can stick to the left edge of the scrolling pane: pin someone and
+  // they stay beside every team you swipe to.
+  const pinnedPrefix = React.useMemo(() => {
+    let count = 0;
+    for (const e of displayedUsers) {
+      if (!pinnedUserIds.includes(String(e.user.id))) break;
+      count += 1;
+    }
+    return count;
+  }, [displayedUsers, pinnedUserIds]);
+
+  const stickyColProps = (index) => (index < pinnedPrefix
+    ? { className: 'is-sticky', style: { left: index * userColWidth } }
+    : { className: '', style: undefined });
 
   return (
-    <div ref={tableRef} className="court-detail-desktop hidden md:block w-full">
-      {/* Sticky Header Row */}
-      <div className="sticky top-[109px] z-[35] bg-white dark:bg-slate-900 shadow-sm">
-        <div className="flex" style={{ height: HEADER_HEIGHT }}>
-          {/* Fixed left columns in header */}
-          <div className="flex-shrink-0 flex bg-slate-50 dark:bg-slate-800 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
-            <div className="px-6 flex items-center border-b border-r border-slate-200 dark:border-slate-700" style={{ width: fixedColWidth }}>
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                {section === 'standings' ? 'NBA Team' : 'Prediction'}
-              </span>
-            </div>
-            {isStandingsSection && (
-              <div className="w-[55px] flex items-center justify-center border-b border-r border-slate-200 dark:border-slate-700">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">#</span>
-              </div>
-            )}
-          </div>
+    <div ref={tableRef} className="court-adv-desktop">
+      {/* Column head — the participants being compared, stamped on carbon. */}
+      <div className="court-ledger-head" style={{ height: HEADER_HEIGHT }}>
+        <div
+          className="court-ledger-head__label flex-none px-4"
+          style={{ width: fixedColWidth, borderRight: '2px solid var(--court-paper)' }}
+        >
+          {isStandingsSection ? 'NBA Team' : 'Prediction'}
+        </div>
 
-          {/* Scrollable user columns in header */}
-          <div
-            ref={headerScrollRef}
-            onScroll={handleHeaderScroll}
-            className="flex-1 overflow-x-auto no-scrollbar bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700"
-          >
-            <div className="flex h-full" style={{ minWidth: displayedUsers.length * userColWidth }}>
-              {displayedUsers.map((e) => {
-                const isPinned = pinnedUserIds.includes(String(e.user.id));
-                const isTotalSort = sortBy === 'total';
-                const pointsDisplay = isTotalSort
-                  ? (e.user.total_points || 0)
-                  : (e.user.categories?.[headerCategoryKey]?.points || 0);
-                return (
-                  <div
-                    key={e.user.id}
-                    ref={setColRef(e.user.id)}
-                    className="flex-shrink-0 px-2 flex items-center justify-center group overflow-hidden will-change-transform"
-                    style={{ width: userColWidth }}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <span
-                          className={`text-[11px] font-bold text-slate-700 dark:text-slate-200 ${
-                            isStandingsSection ? 'truncate max-w-[75px]' : 'leading-tight text-center max-w-[160px] line-clamp-2'
-                          }`}
-                        >
-                          {e.user.display_name || e.user.username}
-                        </span>
-                        <button
-                          onClick={() => togglePin(e.user.id)}
-                          className={`transition-all duration-200 ${isPinned ? 'text-sky-500 scale-110' : 'text-slate-300 opacity-0 group-hover:opacity-100 hover:text-sky-400 hover:scale-110 active:scale-95'}`}
-                        >
-                          <Pin className="w-3 h-3" />
-                        </button>
-                      </div>
-                      {(() => {
-                        const delta = isTotalSort && whatIfEnabled && e.__orig_total_points != null
-                          ? (e.user.total_points - e.__orig_total_points)
-                          : 0;
-                        return (
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm font-black text-sky-600 dark:text-sky-400">{pointsDisplay}</span>
-                            {delta !== 0 && (
-                              <span className={`text-[9px] font-black ${delta > 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
-                                {delta > 0 ? '▲' : '▼'}{Math.abs(delta)}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        <div ref={headerScrollRef} onScroll={handleScroll} className="court-ledger-scroll">
+          <div className="flex h-full" style={{ minWidth: displayedUsers.length * userColWidth }}>
+            {displayedUsers.map((e, index) => {
+              const isPinned = pinnedUserIds.includes(String(e.user.id));
+              const sticky = stickyColProps(index);
+              const pointsDisplay = isTotalSort
+                ? (e.user.total_points || 0)
+                : (e.user.categories?.[headerCategoryKey]?.points || 0);
+              const delta = isTotalSort && whatIfEnabled && e.__orig_total_points != null
+                ? (e.user.total_points - e.__orig_total_points)
+                : 0;
+              return (
+                <div
+                  key={e.user.id}
+                  ref={setColRef(e.user.id)}
+                  className={`court-adv-col ${sticky.className}`}
+                  style={{ flex: `1 0 ${userColWidth}px`, ...sticky.style }}
+                >
+                  <span className="court-adv-col__name">
+                    <span>{e.user.display_name || e.user.username}</span>
+                    <button
+                      type="button"
+                      onClick={() => togglePin(e.user.id)}
+                      className={`court-adv-pin ${isPinned ? 'is-pinned' : ''}`}
+                      aria-pressed={isPinned}
+                      aria-label={`${isPinned ? 'Unpin' : 'Pin'} ${e.user.display_name || e.user.username}`}
+                    >
+                      <Pin className="w-3 h-3" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeUser?.(e.user.id)}
+                      className="court-adv-pin court-adv-drop"
+                      aria-label={`Remove ${e.user.display_name || e.user.username} from the comparison`}
+                      title="Remove from comparison"
+                    >
+                      <X className="w-3 h-3" strokeWidth={3} aria-hidden="true" />
+                    </button>
+                  </span>
+                  <span className="court-adv-col__score">
+                    {formatPoints(pointsDisplay)}
+                    {delta !== 0 && (
+                      <span className={`court-adv-delta ${delta > 0 ? 'is-up' : 'is-down'}`}>
+                        {delta > 0 ? '+' : '−'}{formatPoints(Math.abs(delta))}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Table Body */}
       {isStandingsSection ? (
-        // Standings section with drag-drop support
-        ['West', 'East'].map(conf => {
-          const teams = conf === 'West' ? westOrder : eastOrder;
-          return (
-            <DragDropContext
-              key={conf}
-              onDragStart={handleDragStart}
-              onDragEnd={(res) => handleDragEnd(res, conf)}
-            >
-              {/* Conference Header */}
-              <div className="flex w-full">
+        <>
+          {['West', 'East'].map((conf) => {
+            const teams = conf === 'West' ? westOrder : eastOrder;
+            return (
+              <DragDropContext
+                key={conf}
+                onDragStart={handleDragStart}
+                onDragEnd={(res) => handleDragEnd(res, conf)}
+              >
                 <div
-                  className="flex-shrink-0 px-6 flex items-center border-y border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10"
-                  style={{ width: fixedColWidth + rankColWidth, height: CONF_HEIGHT }}
+                  className={`court-conf-head ${conf === 'West' ? 'court-conf-head--west' : ''}`}
+                  style={{ top: HEADER_HEIGHT }}
                 >
-                  <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${conf === 'West' ? 'text-rose-500' : 'text-sky-500'}`}>
-                    {conf}ern Conference
-                  </span>
-                  {whatIfEnabled && (
-                    <span className="ml-auto text-[9px] text-slate-400 italic">Drag to reorder</span>
-                  )}
+                  {conf}ern Conference
+                  {whatIfEnabled && <span className="court-conf-head__hint">Drag to reorder</span>}
                 </div>
-                <div className="flex-1 border-y border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50" style={{ height: CONF_HEIGHT }} />
-              </div>
 
-              {/* Team Rows with Drag-Drop */}
-              <div className="flex w-full">
-                {/* Fixed left columns - contains Droppable */}
-                <Droppable droppableId={`${conf.toLowerCase()}-fixed`}>
-                  {(provided, dropSnapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`court-drop-ledger flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10 ${dropSnapshot.isDraggingOver ? 'is-dragging-over' : ''}`}
-                      style={{ width: fixedColWidth + rankColWidth }}
-                    >
-                      {teams.map((row, idx) => (
-                        <Draggable key={row.id} draggableId={row.id} index={idx} isDragDisabled={!whatIfEnabled}>
-                          {(prov, snap) => {
-                            const isMoved = whatIfEnabled && simActualMap.has(row.team) && simActualMap.get(row.team) !== row.actual_position;
-                            return (
-                            <div
-                              ref={prov.innerRef}
-                              {...prov.draggableProps}
-                              {...prov.dragHandleProps}
-                              className={`court-drag-row flex border-b border-slate-100 dark:border-slate-800/50 transition-all ${snap.isDragging ? 'is-dragging' : ''} ${isMoved ? 'is-moved' : ''} ${
-                                snap.isDragging
-                                  ? 'bg-sky-100 dark:bg-sky-900/40 shadow-lg ring-2 ring-sky-400 rounded-lg z-50'
-                                  : draggingId === row.id
-                                  ? 'bg-sky-50 dark:bg-sky-900/20'
-                                  : isMoved
-                                  ? 'bg-amber-50 dark:bg-amber-900/15 border-l-[3px] border-amber-300 cursor-grab'
-                                  : whatIfEnabled
-                                  ? 'hover:bg-amber-50/40 dark:hover:bg-amber-900/10 cursor-grab'
-                                  : ''
-                              }`}
-                              style={{ height: ROW_HEIGHT, ...prov.draggableProps.style }}
-                            >
-                              {whatIfEnabled && (
-                                <div className="w-6 flex items-center justify-center ml-1">
-                                  <GripVertical className={`w-4 h-4 ${snap.isDragging ? 'text-sky-500' : isMoved ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600'}`} />
-                                </div>
-                              )}
-                              <div className={`${whatIfEnabled ? 'w-[194px]' : 'w-[220px]'} px-4 flex items-center gap-3`}>
-                                <TeamLogo className="w-5 h-5 object-contain" teamName={row.team} />
-                                <span className="text-[13px] font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">{row.team}</span>
-                              </div>
-                              <div className="court-move-rank w-[55px] flex items-center justify-center text-sm font-bold text-slate-400">
-                                {isMoved ? <><del>{row.actual_position}</del><span>→</span><strong>{simActualMap.get(row.team)}</strong></> : (row.actual_position || '—')}
-                              </div>
-                            </div>
-                          ); }}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-
-                {/* Scrollable data columns - synced with drag state */}
-                <div
-                  ref={conf === 'West' ? westScrollRef : eastScrollRef}
-                  onScroll={handleBodyScroll}
-                  className="flex-1 overflow-x-auto no-scrollbar"
-                >
-                  <div style={{ minWidth: displayedUsers.length * userColWidth }}>
-                    {teams.map((row) => {
-                      const isMoved = whatIfEnabled && simActualMap.has(row.team) && simActualMap.get(row.team) !== row.actual_position;
-                      return (
+                <div className="flex w-full">
+                  <Droppable droppableId={`${conf.toLowerCase()}-fixed`}>
+                    {(provided, dropSnapshot) => (
                       <div
-                        key={row.id}
-                        className={`flex border-b border-slate-100 dark:border-slate-800/50 transition-colors ${
-                          draggingId === row.id ? 'bg-sky-50 dark:bg-sky-900/20' : isMoved ? 'bg-amber-50 dark:bg-amber-900/15' : ''
-                        }`}
-                        style={{ height: ROW_HEIGHT }}
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`court-ledger-fixed court-drop-ledger ${dropSnapshot.isDraggingOver ? 'is-dragging-over' : ''}`}
+                        style={{ width: fixedColWidth }}
                       >
-                        {displayedUsers.map(e => {
-                          const p = e.user.categories?.['Regular Season Standings']?.predictions?.find(x => x.team === row.team);
-                          const pts = whatIfEnabled ? standingPoints(p?.predicted_position, simActualMap.get(row.team)) : (p?.points || 0);
-                          const predPos = p?.predicted_position ?? '—';
-
-                          let colorClass = "text-slate-400 dark:text-slate-500";
-                          if (pts === 3) colorClass = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30";
-                          if (pts === 1) colorClass = "bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30";
-                          if (pts === 0 && p) colorClass = "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
-
-                          return (
-                            <div key={e.user.id} data-col-user={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative will-change-transform" style={{ width: userColWidth }}>
-                              <div className={`court-position-ticket inline-flex items-center justify-center w-8 h-8 text-xs font-bold transition-all duration-200 ${colorClass}`}>
-                                {predPos}
-                              </div>
-                              {p && (
-                                <div className="absolute -top-0.5 right-1 transition-opacity pointer-events-none z-20 opacity-0 group-hover/cell:opacity-100">
-                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm ${
-                                    pts >= 3 ? 'bg-emerald-500 text-white' : pts >= 1 ? 'bg-amber-500 text-white' : 'bg-slate-400 text-white'
-                                  }`}>
-                                    {pts > 0 ? `+${pts}` : '0'}
-                                  </span>
+                        {teams.map((row, idx) => (
+                          <Draggable key={row.id} draggableId={row.id} index={idx} isDragDisabled={!whatIfEnabled}>
+                            {(prov, snap) => {
+                              const simRank = simActualMap.get(row.team);
+                              const isMoved = whatIfEnabled && simActualMap.has(row.team) && simRank !== row.actual_position;
+                              const settledSeed = row.seed_range && row.seed_range[0] === row.seed_range[1];
+                              return (
+                                <div
+                                  ref={prov.innerRef}
+                                  {...prov.draggableProps}
+                                  {...prov.dragHandleProps}
+                                  className={`court-adv-row ${snap.isDragging ? 'is-dragging' : ''} ${isMoved ? 'is-moved' : ''}`}
+                                  style={{
+                                    height: ROW_HEIGHT,
+                                    cursor: whatIfEnabled ? 'grab' : 'default',
+                                    ...prov.draggableProps.style,
+                                  }}
+                                >
+                                  {whatIfEnabled && (
+                                    <span className="court-adv-grip" aria-hidden="true">
+                                      <GripVertical className="w-4 h-4" />
+                                    </span>
+                                  )}
+                                  <div className="court-adv-team" style={{ width: teamColWidth }}>
+                                    <TeamLogo teamName={row.team} />
+                                    <span className="court-adv-team__body">
+                                      <span className="court-adv-team__name">{row.team}</span>
+                                      {/* The record reads under the name rather than
+                                          beside the rank, so the row carries one
+                                          number per line. It stays through What-If:
+                                          how much room a team has is exactly what
+                                          decides whether a move is plausible. */}
+                                      {row.wins != null && (
+                                        <span
+                                          className={`court-adv-record ${settledSeed ? 'is-settled' : ''}`}
+                                          title={describeRoom(row)}
+                                        >
+                                          {row.wins}&#8211;{row.losses}
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="court-adv-rank">
+                                    {isMoved ? (
+                                      <>
+                                        <del>{row.actual_position}</del>
+                                        <span aria-hidden="true">→</span>
+                                        <strong>{simRank}</strong>
+                                        <span className="sr-only">moved from {row.actual_position} to {simRank}</span>
+                                      </>
+                                    ) : (row.actual_position || '—')}
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                              );
+                            }}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
                       </div>
-                      );
-                    })}
+                    )}
+                  </Droppable>
+
+                  <div
+                    ref={conf === 'West' ? westScrollRef : eastScrollRef}
+                    onScroll={handleScroll}
+                    className="court-ledger-scroll"
+                  >
+                    <div className="flex flex-col" style={{ minWidth: displayedUsers.length * userColWidth }}>
+                      {teams.map((row) => {
+                        const simRank = simActualMap.get(row.team);
+                        const isMoved = whatIfEnabled && simActualMap.has(row.team) && simRank !== row.actual_position;
+                        return (
+                          <div
+                            key={row.id}
+                            className={`court-adv-row ${draggingId === row.id || isMoved ? 'is-moved' : ''}`}
+                            style={{ height: ROW_HEIGHT }}
+                          >
+                            {displayedUsers.map((e, index) => {
+                              const sticky = stickyColProps(index);
+                              const p = e.user.categories?.['Regular Season Standings']?.predictions?.find((x) => x.team === row.team);
+                              const pts = whatIfEnabled ? standingPoints(p?.predicted_position, simRank) : (p?.points || 0);
+                              const predPos = p?.predicted_position ?? '—';
+                              return (
+                                <div
+                                  key={e.user.id}
+                                  data-col-user={e.user.id}
+                                  className={`court-adv-cell ${sticky.className}`}
+                                  style={{ flex: `1 0 ${userColWidth}px`, ...sticky.style }}
+                                >
+                                  <span
+                                    className={`court-ticket court-pos-ticket ${positionState(pts, Boolean(p))} ${settlementState(p, whatIfEnabled)}`}
+                                    title={p
+                                      ? `Predicted ${predPos} · ${pts} ${pts === 1 ? 'point' : 'points'}${whatIfEnabled ? '' : isLockedPrediction(p) ? ' · locked' : ' · in play'}`
+                                      : 'No prediction'}
+                                  >
+                                    {predPos}
+                                  </span>
+                                  {p && (
+                                    <span className={`court-adv-points ${positionState(pts, true)}`} aria-hidden="true">
+                                      {pts > 0 ? `+${formatPoints(pts)}` : '0'}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </DragDropContext>
-          );
-        })
+              </DragDropContext>
+            );
+          })}
+          <StandingsLegend />
+        </>
       ) : (
-        // Non-standings sections (awards, props) - no drag-drop
-        <div className="relative">
+        <>
           <div className="flex w-full">
-            {/* Fixed left columns */}
-            <div className="flex-shrink-0 bg-white dark:bg-slate-900 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] z-10" style={{ width: fixedColWidth }}>
+            <div className="court-ledger-fixed" style={{ width: fixedColWidth }}>
               {nonStandingsQuestions.map((q) => (
-                <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50 transition-colors duration-150" style={{ height: ROW_HEIGHT }}>
-                  <div className="px-6 flex items-center" style={{ width: fixedColWidth }}>
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 leading-tight line-clamp-2">
+                <div key={q.id} className="court-adv-row" style={{ height: ROW_HEIGHT }}>
+                  <div className="court-adv-question" style={{ width: fixedColWidth }}>
+                    <span className="court-adv-question__text">
                       {q.text}
-                      {q.is_finalized && <Lock className="w-3 h-3 text-amber-500 inline ml-1" />}
+                      {q.is_finalized && <Lock aria-label="Result final" />}
                     </span>
+                    <AnswerKey prediction={q} isAward={isAwardsSection} />
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Scrollable data columns */}
-            <div
-              ref={nonStandingsScrollRef}
-              onScroll={handleBodyScroll}
-              className="flex-1 overflow-x-auto no-scrollbar"
-            >
-              <div style={{ minWidth: displayedUsers.length * userColWidth }}>
+            <div ref={nonStandingsScrollRef} onScroll={handleScroll} className="court-ledger-scroll">
+              <div className="flex flex-col" style={{ minWidth: displayedUsers.length * userColWidth }}>
                 {nonStandingsQuestions.map((q) => (
-                  <div key={q.id} className="flex border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors duration-150" style={{ height: ROW_HEIGHT }}>
-                    {displayedUsers.map(e => {
-                      const p = e.user.categories?.[nonStandingsCategoryKey]?.predictions?.find(x => x.question_id === q.id);
+                  <div key={q.id} className="court-adv-row" style={{ height: ROW_HEIGHT }}>
+                    {displayedUsers.map((e, index) => {
+                      const sticky = stickyColProps(index);
+                      const p = e.user.categories?.[nonStandingsCategoryKey]?.predictions?.find((x) => x.question_id === q.id);
                       const ans = p?.answer || '—';
                       const pts = p?.points || 0;
-                      const scoreStatus = p?.score_status || (p?.correct === true ? 'correct' : pts > 0 ? 'partial' : p?.correct === false ? 'incorrect' : 'pending');
-                      const isCorrect = scoreStatus === 'correct';
-                      const isPartial = scoreStatus === 'partial';
-                      const isWrong = scoreStatus === 'incorrect';
+                      const scoreStatus = p?.score_status
+                        || (p?.correct === true ? 'correct' : pts > 0 ? 'partial' : p?.correct === false ? 'incorrect' : 'pending');
                       const lineValue = extractLineValue(p, q.text);
                       const answerDisplay = lineValue && ans !== '—'
                         ? (String(ans).toLowerCase() === 'over' || String(ans).toLowerCase() === 'under'
                           ? `${ans} ${lineValue}`
                           : `${ans} (${lineValue})`)
                         : ans;
-
-                      let color = "text-slate-400 dark:text-slate-500";
-                      if (isCorrect) color = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30";
-                      if (isPartial) color = "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30";
-                      if (isWrong) color = "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
                       const isInteractive = whatIfEnabled && p?.question_id && ans !== '—';
                       const simulatedState = p?.__what_if_state;
 
                       return (
-                        <div key={e.user.id} data-col-user={e.user.id} className="flex-shrink-0 flex items-center justify-center group/cell relative px-2 will-change-transform" style={{ width: userColWidth }}>
+                        <div
+                          key={e.user.id}
+                          data-col-user={e.user.id}
+                          className={`court-adv-cell ${sticky.className}`}
+                          style={{ flex: `1 0 ${userColWidth}px`, ...sticky.style }}
+                        >
                           <button
                             type="button"
                             onClick={() => isInteractive && toggleWhatIfAnswer(p.question_id, p.answer)}
-                            className={`court-answer-ticket inline-flex items-center justify-center px-2.5 py-1.5 text-[10px] font-bold leading-tight text-center whitespace-normal break-words line-clamp-2 max-w-[170px] transition-all ${color} ${
-                              isInteractive ? 'cursor-pointer hover:brightness-95 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.35)] active:scale-[0.98]' : 'cursor-default'
-                            } ${
-                              simulatedState === 'correct'
-                                ? 'ring-2 ring-emerald-400/50'
-                                : simulatedState === 'incorrect'
-                                ? 'ring-2 ring-rose-400/40'
-                                : ''
-                            }`}
-                            title={isInteractive ? 'What-If: click to toggle correct / incorrect / reset' : undefined}
+                            disabled={!isInteractive}
+                            className={`court-ticket court-answer-ticket ${answerState(scoreStatus)} ${settlementState(p, whatIfEnabled)} ${
+                              isInteractive ? 'is-live' : ''
+                            } ${simulatedState ? 'is-simulated' : ''}`}
+                            title={isInteractive
+                              ? 'What-If: click to give this the win; the current leader drops to runner-up'
+                              : (p ? `${pts} ${pts === 1 ? 'point' : 'points'}${isLockedPrediction(p) ? ' · locked' : ' · in play'}` : undefined)}
                           >
-                            {isAwardsSection && ans !== '—' && headshotsByName[ans] && (
-                              <PlayerHeadshot headshotUrl={headshotsByName[ans]} name={ans} size={18} className="mr-1 -ml-0.5" />
-                            )}
-                            {answerDisplay}
+                            <span className="court-answer-ticket__figure">
+                              {isAwardsSection && ans !== '—' && headshotsByName[ans] && (
+                                <PlayerHeadshot headshotUrl={headshotsByName[ans]} name={ans} size={18} />
+                              )}
+                              {answerDisplay}
+                            </span>
                           </button>
                           {p && (
-                            <div className="absolute -top-0.5 right-1 opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none z-20">
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm ${
-                                isCorrect ? 'bg-emerald-500 text-white' : isPartial ? 'bg-amber-500 text-white' : 'bg-slate-400 text-white'
-                              }`}>
-                                {pts > 0 ? `+${pts}` : '0'}
-                              </span>
-                            </div>
+                            <span className={`court-adv-points ${answerState(scoreStatus)}`} aria-hidden="true">
+                              {pts > 0 ? `+${formatPoints(pts)}` : '0'}
+                            </span>
                           )}
                         </div>
                       );
@@ -468,7 +510,8 @@ export const LeaderboardTableDesktop = ({
               </div>
             </div>
           </div>
-        </div>
+          <CallsLegend />
+        </>
       )}
     </div>
   );

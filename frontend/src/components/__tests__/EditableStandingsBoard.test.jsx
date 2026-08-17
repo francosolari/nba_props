@@ -45,3 +45,36 @@ describe('EditableStandingsBoard', () => {
     expect(screen.getByText('Team order saved')).toBeInTheDocument();
   });
 });
+
+describe('EditableStandingsBoard — last season', () => {
+  const withRecords = (eastPrevious, westPrevious = null) => renderBoard({
+    eastStandings: [{ team_id: 1, team_name: 'Boston Celtics', previous_season: eastPrevious }],
+    westStandings: [{ team_id: 2, team_name: 'Oklahoma City Thunder', previous_season: westPrevious }],
+  });
+
+  it("carries last season's record so an order is picked against evidence", () => {
+    withRecords({ wins: 56, losses: 26, position: 1 });
+
+    const record = screen.getByText('56–26');
+    expect(record).toBeInTheDocument();
+    expect(record.closest('.submission-standing-row__last'))
+      .toHaveAttribute('title', 'Last season: 56–26, finished 1st');
+  });
+
+  it('stays quiet about a finish that matches the seat the team is already in', () => {
+    // The board opens in last season's order, so printing both would say the
+    // same number twice on every row.
+    withRecords({ wins: 56, losses: 26, position: 1 });
+    expect(screen.queryByText(/^Finished /)).not.toBeInTheDocument();
+  });
+
+  it('names the finish once it disagrees with where the team has been put', () => {
+    withRecords({ wins: 20, losses: 62, position: 12 });
+    expect(screen.getByText('Finished 12th')).toBeInTheDocument();
+  });
+
+  it('shows nothing for a team with no previous season on record', () => {
+    const { container } = withRecords(null, null);
+    expect(container.querySelectorAll('.submission-standing-row__last')).toHaveLength(0);
+  });
+});

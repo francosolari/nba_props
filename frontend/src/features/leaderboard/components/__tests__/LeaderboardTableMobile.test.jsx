@@ -67,7 +67,7 @@ describe('LeaderboardTableMobile', () => {
     expect(screen.getByRole('button', { name: /over 9\.5/i })).toBeInTheDocument();
   });
 
-  test('shows what-if hint and toggles answers when what-if mode is enabled', () => {
+  test('toggles answers when what-if mode is enabled', () => {
     const toggleWhatIfAnswer = jest.fn();
     render(
       <LeaderboardTableMobile
@@ -79,10 +79,8 @@ describe('LeaderboardTableMobile', () => {
       />
     );
 
-    expect(screen.getByText(/tap any answer to toggle correct \/ incorrect \/ reset/i)).toBeInTheDocument();
-
     const answerButton = screen.getByRole('button', { name: /over 9\.5/i });
-    expect(answerButton).toHaveAttribute('title', 'What-If: tap to toggle correct / incorrect / reset');
+    expect(answerButton).toHaveAttribute('title', 'What-If: tap to give this the win; the current leader drops to runner-up');
 
     fireEvent.click(answerButton);
     expect(toggleWhatIfAnswer).toHaveBeenCalledWith('q1', 'Over');
@@ -107,32 +105,32 @@ describe('LeaderboardTableMobile', () => {
 
     render(<LeaderboardTableMobile {...buildProps({ displayedUsers })} />);
 
-    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('amber');
+    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('is-near');
   });
 
-  test('renders mobile-optimized flex layout with explicit column widths', () => {
-    // FAANG-standard: Verify the structural fix for alignment/glitchiness (the "Why" of the change).
-    // We expect explicit width classes that match the header to prevent misalignment.
+  test('keeps rank, name and score in one fixed zone while columns swipe', () => {
+    // The transposition depends on a flex layout with a single sticky fixed
+    // zone; a table element would reintroduce the alignment drift this replaced.
+    const { container } = render(<LeaderboardTableMobile {...buildProps()} />);
+
+    expect(container.querySelector('table')).not.toBeInTheDocument();
+
+    const fixedZone = screen.getByText('Alpha').closest('.court-adv-mfixed');
+    expect(fixedZone).toBeInTheDocument();
+    // Rank, name and the score What-If moves all live in that one cell.
+    expect(fixedZone).toHaveTextContent('1');
+    expect(fixedZone).toHaveTextContent('Alpha');
+    expect(fixedZone).toHaveTextContent('120');
+
+    const answerCell = screen.getByRole('button', { name: /over 9\.5/i }).closest('.court-adv-mcell');
+    expect(answerCell).toHaveClass('court-adv-mcell--wide');
+  });
+
+  test('the fixed participant cell pins that player in the comparison', () => {
     const props = buildProps();
-    const { container } = render(<LeaderboardTableMobile {...props} />);
+    render(<LeaderboardTableMobile {...props} />);
 
-    // Verify migration away from table to avoid layout engine inconsistencies
-    const table = container.querySelector('table');
-    expect(table).not.toBeInTheDocument();
-
-    // Verify Sticky Player Column (100px)
-    const playerCell = screen.getByText('Alpha').closest('div');
-    expect(playerCell).toHaveClass('sticky', 'left-0', 'w-[100px]');
-
-    // Verify Sticky Points Column (42px)
-    // The points cell is the next sibling or close by. We can find it by value '120' (Total) or '45' (Pts)
-    // In default buildProps, sortBy is 'total', so it shows 120.
-    const pointsCell = screen.getByText('120').closest('div');
-    expect(pointsCell).toHaveClass('sticky', 'left-[100px]', 'w-[42px]');
-
-    // Verify Data/Question Column (160px)
-    const answerButton = screen.getByRole('button', { name: /over 9\.5/i });
-    const answerCell = answerButton.closest('div');
-    expect(answerCell).toHaveClass('w-[160px]');
+    fireEvent.click(screen.getByRole('button', { name: /pin alpha/i }));
+    expect(props.togglePin).toHaveBeenCalledWith(1);
   });
 });

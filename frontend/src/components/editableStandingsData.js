@@ -110,6 +110,34 @@ const applyLocalDraft = (standings, draftStorageKey) => {
   }
 };
 
+/** Last season's record and finish for every team, keyed by team id.
+ *
+ *  Picking a finishing order without it means picking from memory; the board
+ *  already knows the previous season, it just was not showing it. */
+const loadPreviousSeasonRecords = async (seasonSlug) => {
+  const previousSlug = await fetchPreviousSeasonSlug(seasonSlug);
+  if (!previousSlug) return new Map();
+  try {
+    const { data } = await axios.get(`/api/v2/standings/${previousSlug}`);
+    const rows = [...(data?.east || []), ...(data?.west || [])];
+    return new Map(rows.map((team) => [String(team.id), {
+      season: previousSlug,
+      wins: team.wins,
+      losses: team.losses,
+      position: team.position,
+    }]));
+  } catch (error) {
+    // The board is still usable without it, so a missing previous season is
+    // not worth failing the page over.
+    return new Map();
+  }
+};
+
+const withPreviousSeason = (teams = [], records) => teams.map((team) => {
+  const previous = records.get(String(team.team_id));
+  return previous ? { ...team, previous_season: previous } : team;
+});
+
 export const loadEditableStandings = async ({ seasonSlug, localOnly, username, draftStorageKey }) => {
   let body = {};
   if (!localOnly) {
@@ -128,7 +156,13 @@ export const loadEditableStandings = async ({ seasonSlug, localOnly, username, d
   };
   standings = await fillFromPreviousSeason(seasonSlug, standings);
   standings = await fillFromTeams(standings);
-  return applyLocalDraft(standings, draftStorageKey);
+  standings = applyLocalDraft(standings, draftStorageKey);
+
+  const records = await loadPreviousSeasonRecords(seasonSlug);
+  return {
+    east: withPreviousSeason(standings.east, records),
+    west: withPreviousSeason(standings.west, records),
+  };
 };
 
 export const standingsPayload = (east, west) => [

@@ -74,7 +74,7 @@ describe('LeaderboardTableDesktop', () => {
     rerender(<LeaderboardTableDesktop {...buildProps({ toggleWhatIfAnswer, whatIfEnabled: true, sortBy: 'section' })} />);
 
     const button = screen.getByRole('button', { name: /over 9\.5/i });
-    expect(button).toHaveAttribute('title', 'What-If: click to toggle correct / incorrect / reset');
+    expect(button).toHaveAttribute('title', 'What-If: click to give this the win; the current leader drops to runner-up');
 
     fireEvent.click(button);
     expect(toggleWhatIfAnswer).toHaveBeenCalledWith('q1', 'Over');
@@ -111,6 +111,197 @@ describe('LeaderboardTableDesktop', () => {
 
     render(<LeaderboardTableDesktop {...buildProps({ displayedUsers, leaderboardData: displayedUsers })} />);
 
-    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('amber');
+    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('is-near');
+  });
+});
+
+describe('LeaderboardTableDesktop — settlement and roster controls', () => {
+  const withSettlement = (overrides) => {
+    const users = buildDisplayedUsers();
+    users[0].user.categories['Player Awards'].predictions[0] = {
+      ...users[0].user.categories['Player Awards'].predictions[0],
+      ...overrides,
+    };
+    return users;
+  };
+
+  test('a settled result draws a solid ticket, an unsettled one a dashed ticket', () => {
+    const settled = withSettlement({ is_locked: true });
+    const { rerender } = render(
+      <LeaderboardTableDesktop {...buildProps({ displayedUsers: settled, leaderboardData: settled })} />
+    );
+    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('is-settled');
+
+    const open = withSettlement({ is_locked: false });
+    rerender(<LeaderboardTableDesktop {...buildProps({ displayedUsers: open, leaderboardData: open })} />);
+    expect(screen.getByRole('button', { name: /over 9\.5/i }).className).toContain('is-inplay');
+  });
+
+  test('a scenario suppresses the settlement mark, since the numbers are hypothetical', () => {
+    const settled = withSettlement({ is_locked: true });
+    render(
+      <LeaderboardTableDesktop
+        {...buildProps({ displayedUsers: settled, leaderboardData: settled, whatIfEnabled: true, sortBy: 'section' })}
+      />
+    );
+    const ticket = screen.getByRole('button', { name: /over 9\.5/i }).className;
+    expect(ticket).not.toContain('is-settled');
+    expect(ticket).not.toContain('is-inplay');
+  });
+
+  test('exact points ride along with every cell for hover, not just the ticket colour', () => {
+    const { container } = render(<LeaderboardTableDesktop {...buildProps()} />);
+    expect(container.querySelector('.court-adv-points').textContent).toBe('+2');
+  });
+
+  test('a participant can be dropped straight from the column head', () => {
+    const removeUser = jest.fn();
+    render(<LeaderboardTableDesktop {...buildProps({ removeUser })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /remove alpha/i }));
+    expect(removeUser).toHaveBeenCalledWith(1);
+  });
+
+  test('a pinned participant sticks to the left edge of the scrolling columns', () => {
+    const { container, rerender } = render(<LeaderboardTableDesktop {...buildProps()} />);
+    expect(container.querySelectorAll('.is-sticky')).toHaveLength(0);
+
+    rerender(<LeaderboardTableDesktop {...buildProps({ pinnedUserIds: ['1'] })} />);
+    // The head cell and every body cell of that column travel together.
+    expect(container.querySelectorAll('.is-sticky').length).toBeGreaterThan(1);
+  });
+});
+
+describe('LeaderboardTableDesktop — the answer key', () => {
+  const withResult = (overrides) => {
+    const users = buildDisplayedUsers();
+    users[0].user.categories['Player Awards'].predictions[0] = {
+      ...users[0].user.categories['Player Awards'].predictions[0],
+      ...overrides,
+    };
+    return users;
+  };
+
+  const renderWith = (overrides) => {
+    const users = withResult(overrides);
+    return render(<LeaderboardTableDesktop {...buildProps({ displayedUsers: users, leaderboardData: users })} />);
+  };
+
+  test('shows the result even when nobody picked it', () => {
+    // Nobody in this comparison chose Wembanyama, so without the key the actual
+    // outcome appears nowhere on the board.
+    const { container } = renderWith({ correct_answer: 'Victor Wembanyama', is_locked: true });
+
+    const key = container.querySelector('.court-adv-key');
+    expect(key).toHaveTextContent('Victor Wembanyama');
+    expect(screen.queryByRole('button', { name: /victor wembanyama/i })).not.toBeInTheDocument();
+  });
+
+  test('an award is leading until it is won', () => {
+    const { container, rerender } = renderWith({ correct_answer: 'Leader', is_locked: false, is_finalized: false });
+    expect(container.querySelector('.court-adv-key')).toHaveTextContent('Leading');
+
+    const settled = withResult({ correct_answer: 'Leader', is_finalized: true });
+    rerender(<LeaderboardTableDesktop {...buildProps({ displayedUsers: settled, leaderboardData: settled })} />);
+    expect(container.querySelector('.court-adv-key')).toHaveTextContent('Won');
+  });
+
+  test('a prop is never won — it is just correct, or correct so far', () => {
+    // Nothing wins a prop, so borrowing the award's language would be wrong.
+    const asProp = (overrides) => {
+      const users = buildDisplayedUsers();
+      users[0].user.categories['Props & Yes/No'] = {
+        points: 2,
+        predictions: [{
+          question_id: 'p1',
+          question: 'Rebounds over/under 9.5',
+          answer: 'Over',
+          line: 9.5,
+          points: 2,
+          correct: true,
+          is_finalized: null,
+          ...overrides,
+        }],
+      };
+      return users;
+    };
+
+    const renderProp = (overrides) => {
+      const users = asProp(overrides);
+      return buildProps({ section: 'props', displayedUsers: users, leaderboardData: users });
+    };
+
+    const { container, rerender } = render(<LeaderboardTableDesktop {...renderProp({ correct_answer: 'Under 14.5', is_locked: false })} />);
+    expect(container.querySelector('.court-adv-key')).toHaveTextContent('So far');
+    expect(container.querySelector('.court-adv-key')).not.toHaveTextContent('Leading');
+
+    rerender(<LeaderboardTableDesktop {...renderProp({ correct_answer: 'Under 14.5', is_locked: true })} />);
+    expect(container.querySelector('.court-adv-key')).toHaveTextContent('Correct');
+    expect(container.querySelector('.court-adv-key')).not.toHaveTextContent('Won');
+  });
+
+  test('the runner-up is named alongside the winner', () => {
+    const { container } = renderWith({ correct_answer: 'Leader', runner_up_answer: 'Second' });
+    const key = container.querySelector('.court-adv-key');
+    expect(key).toHaveTextContent('Leader');
+    expect(key).toHaveTextContent('2nd');
+    expect(key).toHaveTextContent('Second');
+  });
+
+  test('an ungraded question shows no key rather than an empty one', () => {
+    const { container } = renderWith({ correct_answer: null, runner_up_answer: null });
+    expect(container.querySelector('.court-adv-key')).not.toBeInTheDocument();
+  });
+});
+
+describe('LeaderboardTableDesktop — team records', () => {
+  const westOrder = [
+    { id: 'W-Thunder', team: 'Thunder', conference: 'West', actual_position: 1, wins: 64, losses: 18, seed_range: [1, 1] },
+    { id: 'W-Lakers', team: 'Lakers', conference: 'West', actual_position: 4, wins: 53, losses: 29, seed_range: [3, 6] },
+  ];
+
+  const standingsProps = (overrides = {}) => buildProps({
+    section: 'standings',
+    westOrder,
+    eastOrder: [],
+    ...overrides,
+  });
+
+  test('a record rides beside each team, saying how much room the seed has left', () => {
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps()} />);
+
+    const records = [...container.querySelectorAll('.court-adv-record')];
+    expect(records.map((e) => e.textContent)).toEqual(['64–18', '53–29']);
+    expect(records[0]).toHaveAttribute('title', 'Thunder: 64–18, seed settled at 1st');
+    expect(records[1]).toHaveAttribute('title', 'Lakers: 53–29, can still finish 3rd to 6th');
+  });
+
+  test('a seed with no room left reads firmer than one still in play', () => {
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps()} />);
+    const records = [...container.querySelectorAll('.court-adv-record')];
+
+    expect(records[0].className).toContain('is-settled');
+    expect(records[1].className).not.toContain('is-settled');
+  });
+
+  test('records stay through a scenario, since they are what makes a move plausible', () => {
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps({ whatIfEnabled: true })} />);
+    expect([...container.querySelectorAll('.court-adv-record')].map((e) => e.textContent))
+      .toEqual(['64–18', '53–29']);
+  });
+
+  test('the record reads under the team name, never beside the rank digit', () => {
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps()} />);
+
+    const record = container.querySelector('.court-adv-record');
+    // Same stacked cell as the name; the rank is a separate column entirely.
+    expect(record.closest('.court-adv-team__body')).toBeInTheDocument();
+    expect(record.closest('.court-adv-rank')).toBeNull();
+  });
+
+  test('a team with no recorded result shows no record rather than a blank dash', () => {
+    const unplayed = [{ id: 'W-New', team: 'New', conference: 'West', actual_position: 1 }];
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps({ westOrder: unplayed })} />);
+    expect(container.querySelectorAll('.court-adv-record')).toHaveLength(0);
   });
 });
