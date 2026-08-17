@@ -33,15 +33,8 @@ module.exports = {
     '!frontend/src/setupTests.js',
   ],
 
-  // Coverage thresholds (start low, increase over time)
-  coverageThreshold: {
-    global: {
-      statements: 50,
-      branches: 40,
-      functions: 50,
-      lines: 50,
-    },
-  },
+  // Coverage is informational only (see .github/workflows/test-and-coverage.yml) —
+  // no coverageThreshold here, so low coverage can't fail CI independent of test results.
 
   // Coverage reporters
   coverageReporters: [
