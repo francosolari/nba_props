@@ -76,9 +76,16 @@ function SideNav({ currentPage = 'home', seasonSlug: propSeasonSlug = 'latest' }
           <img src="/static/img/nba_predictions_logo.png" alt="" />
           <span>Props<br />Predictions</span>
         </a>
-        {PLACEHOLDER_SLUGS.has(currentSeasonSlug) ? null : (
-          <div className="court-desktop-nav__season">{currentSeasonSlug.replace('-', '–')} Season</div>
-        )}
+        {/* Always rendered. An unresolved season holds its line with a hard
+            space, so the label arriving cannot push the nav down. */}
+        <div
+          className="court-desktop-nav__season"
+          aria-hidden={PLACEHOLDER_SLUGS.has(currentSeasonSlug) || undefined}
+        >
+          {PLACEHOLDER_SLUGS.has(currentSeasonSlug)
+            ? '\u00A0'
+            : `${currentSeasonSlug.replace('-', '–')} Season`}
+        </div>
         <nav>{desktopItems.map((item) => renderLink(item))}</nav>
       </aside>
 

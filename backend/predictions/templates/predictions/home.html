@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
+{# The nav reads the season from here. Without it the base default ("current")
+   sends SideNav to the API and the label lands late, shifting the nav. #}
+{% block season_slug %}{{ season_slug }}{% endblock %}
 {% block content %}
 <div
   id="home-root"
