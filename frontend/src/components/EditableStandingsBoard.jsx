@@ -3,6 +3,32 @@ import { GripVertical } from 'lucide-react';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import TeamLogo from './TeamLogo';
 
+const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th',
+  '9th', '10th', '11th', '12th', '13th', '14th', '15th'];
+
+/** Last season's record, so an order is picked against evidence rather than
+ *  memory. It is reference, not the pick, so it stays a step down in weight.
+ *
+ *  The finish shows only once it disagrees with the seat the team is now in.
+ *  The board opens in last season's order, so printing both on every row would
+ *  say the same number twice; after a drag it becomes the useful half — this
+ *  team finished 5th and you have them 1st. */
+const PreviousSeason = ({ team, index }) => {
+  const previous = team?.previous_season;
+  if (!previous || previous.wins == null) return null;
+  const finish = previous.position ? ORDINALS[previous.position] || `${previous.position}th` : null;
+  const moved = previous.position && previous.position !== index + 1;
+  return (
+    <span
+      className="submission-standing-row__last"
+      title={`Last season: ${previous.wins}\u2013${previous.losses}${finish ? `, finished ${finish}` : ''}`}
+    >
+      <b>{previous.wins}&#8211;{previous.losses}</b>
+      {moved && <i>was {finish}</i>}
+    </span>
+  );
+};
+
 const StandingRow = ({ team, index, conference, isEditable, provided, snapshot }) => {
   const { style: draggableStyle, ...draggableProps } = provided.draggableProps;
   const itemStyle = {
@@ -25,6 +51,7 @@ const StandingRow = ({ team, index, conference, isEditable, provided, snapshot }
       <strong className="submission-standing-row__seed">{index + 1}</strong>
       <TeamLogo className="submission-standing-row__logo" teamName={team.team_name} />
       <span className="submission-standing-row__team" title={team.team_name}>{team.team_name}</span>
+      <PreviousSeason team={team} index={index} />
     </div>
   );
 };
@@ -35,7 +62,7 @@ const ConferenceStandings = memo(({ conference, teams, isEditable }) => {
     <section className={`submission-conference-ledger is-${key}`} aria-labelledby={`${key}-standings-title`}>
       <header>
         <h3 id={`${key}-standings-title`}>{conference}ern</h3>
-        <span>Seed 1–15</span>
+        <span>Seed 1–15 · last season</span>
       </header>
       <Droppable droppableId={`${conference}-standings`} direction="vertical">
         {(provided, snapshot) => (

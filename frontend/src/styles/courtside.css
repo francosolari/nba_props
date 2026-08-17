@@ -2362,6 +2362,8 @@ button[type="submit"]:active {
   display: grid;
   min-width: 0;
   min-height: 46px;
+  /* Four columns below 640px: the record stacks under the name, so a fifth
+     track would only spend a gap the team names need. */
   grid-template-columns: 12px 20px 24px minmax(0, 1fr);
   align-items: center;
   gap: 3px;
@@ -2394,6 +2396,42 @@ button[type="submit"]:active {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Last season's finish, carried beside each team so an order is picked against
+   evidence rather than memory. It is reference, not the pick, so it sits a clear
+   step below the team name in weight. */
+.submission-standing-row__last {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  color: var(--court-medal-silver);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.submission-standing-row__last b { font-size: 11px; font-weight: 600; }
+.submission-standing-row__last i {
+  font: 800 9px/1 var(--court-display);
+  font-style: normal;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.submission-standing-row:hover .submission-standing-row__last { color: var(--court-steel); }
+
+/* Below 640px the row has no width to spare, so the record drops to a second
+   line and every team name stays whole. From 640px it rejoins the row on the
+   right, where there is room for it and for the finish. */
+.submission-standing-row { grid-template-rows: auto auto; row-gap: 0; }
+.submission-standing-row__grip,
+.submission-standing-row__seed,
+.submission-standing-row__logo { grid-row: 1 / 3; }
+.submission-standing-row__team { grid-column: 4; grid-row: 1; }
+.submission-standing-row__last {
+  grid-column: 4;
+  grid-row: 2;
+  justify-content: flex-start;
+}
+
 .submission-standings-empty { margin: 0; padding: 24px 8px; color: var(--court-steel); font-size: 11px; text-align: center; }
 .submission-standings-actions {
   display: grid;
@@ -2429,9 +2467,19 @@ button[type="submit"]:active {
   .court-submissions-page .submission-conference-ledger > header h3 { font-size: 28px; }
   .submission-standing-row {
     min-height: 52px;
-    grid-template-columns: 18px 30px 32px minmax(0, 1fr);
+    grid-template-columns: 18px 30px 32px minmax(0, 1fr) auto;
+    grid-template-rows: auto;
     gap: 7px;
     padding: 6px 10px;
+  }
+  .submission-standing-row__grip,
+  .submission-standing-row__seed,
+  .submission-standing-row__logo { grid-row: 1; }
+  .submission-standing-row__team { grid-column: 4; grid-row: 1; }
+  .submission-standing-row__last {
+    grid-column: 5;
+    grid-row: 1;
+    justify-content: flex-end;
   }
   .submission-standing-row__grip { width: 15px; }
   .submission-standing-row__seed { font-size: 28px; }
