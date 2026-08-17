@@ -3169,6 +3169,19 @@ button[type="submit"]:active {
 .next-play-ledger__next > div > strong { display: block; font: 800 17px/1 var(--court-display); letter-spacing: .04em; text-transform: uppercase; }
 .next-play-ledger__next > div > small { display: block; margin-top: 4px; color: var(--court-steel); font-size: 11px; line-height: 1.3; }
 
+/* A forecast, not a score. It carries a dashed rule and half the numeral size
+   of the graded tiles above it precisely so the glance that reads the ledger
+   cannot come away with this number as the one that pays. */
+.next-play-forecast {
+  padding: 12px 14px;
+  background: var(--court-paper-cool);
+  border-top: 2px dashed var(--court-rule-soft);
+}
+.next-play-forecast__tag { color: var(--court-steel); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.next-play-forecast__line { margin-top: 5px; color: var(--court-steel); font-size: 13px; }
+.next-play-forecast__line strong { font: 800 22px/1 var(--court-display); color: var(--court-ink); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.next-play-forecast small { display: block; margin-top: 6px; color: var(--court-steel); font-size: 11px; line-height: 1.35; }
+
 /* A filled ruled bar, not a ring: the entry is a count of saved picks. */
 .next-play-progress__track {
   display: block;

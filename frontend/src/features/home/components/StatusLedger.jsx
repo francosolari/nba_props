@@ -1,8 +1,37 @@
 import React from 'react';
 import ActionLink from './ActionLink';
 
+/**
+ * Where the entry lands if the season keeps going the way it is going.
+ *
+ * Deliberately not shaped like the tiles above it. The graded score is the one
+ * that pays; this is a forecast that will be wrong, and the two must never be
+ * mistaken for each other on a glance — so it sits apart, in smaller type, and
+ * says what it is on its own line.
+ */
+function ForecastStrip({ forecast }) {
+  if (!forecast) return null;
+
+  return (
+    <div className="next-play-forecast" aria-label="Projected finish">
+      <span className="next-play-forecast__tag">Projected finish</span>
+      <p className="next-play-forecast__line">
+        <strong>{forecast.points.toLocaleString()}</strong> pts
+        {forecast.rank ? <> · <strong>#{forecast.rank}</strong></> : null}
+      </p>
+      <small>
+        If the season plays out on current form. Not your score — the pool is
+        graded on the real final standings.
+        {forecast.live
+          ? ` ${forecast.live} of your ${forecast.live + forecast.settled} standings calls can still change.`
+          : ' Every standings call is decided.'}
+      </small>
+    </div>
+  );
+}
+
 /** Once picks lock, rank and score are the whole story and get the ledger back. */
-export function StatusLedger({ me, action, hasSubmission, seasonLabel, projecting = false }) {
+export function StatusLedger({ me, action, hasSubmission, seasonLabel, projecting = false, forecast = null }) {
   const totalPoints = me?.user?.total_points;
   const swing = projecting ? me?.standingsDelta || 0 : 0;
   const categories = me?.user?.categories || {};
@@ -41,6 +70,7 @@ export function StatusLedger({ me, action, hasSubmission, seasonLabel, projectin
           <small>{hasSubmission ? 'Picks are final for the season' : 'The window has closed'}</small>
         </div>
       </div>
+      <ForecastStrip forecast={forecast} />
       <div className="next-play-ledger__next">
         <div>
           <strong>Your picks</strong>

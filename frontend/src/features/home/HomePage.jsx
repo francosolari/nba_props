@@ -14,6 +14,7 @@ import Podium from './components/Podium';
 import CupHonour from './components/CupHonour';
 import { LeaderboardLedger, StandingsPulse } from './components/SeasonTables';
 import { buildPredictionIndex, projectLeaderboard, projectStandings } from './whatIf';
+import { projectBoard, projectFinish, projectLeaderboardFinish } from './projection';
 import {
   DEFAULT_SEASON,
   ENTRY_FEE,
@@ -152,6 +153,35 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
     return shownLeaderboard.find((entry) => String(entry.user?.id) === String(me.user?.id)) || me;
   }, [projecting, shownLeaderboard, me]);
 
+  /**
+   * Where the board lands if the season keeps behaving like this. Read off the
+   * table currently on screen, so calling tonight's games moves the forecast
+   * too. It is a projection and is labelled as one: the pool is still graded on
+   * the real final standings and nothing here feeds that.
+   */
+  const forecast = useMemo(() => {
+    const hasBoard = predictionIndex.east.size || predictionIndex.west.size;
+    if (!liveSeason || !hasBoard || !shownStandings) return null;
+
+    const finish = projectFinish(shownStandings);
+    if (!finish.size) return null;
+
+    // Rank only means anything against the rest of the pool, and the projected
+    // total has to be the whole entry so it is comparable with the score beside
+    // it — both come from re-scoring every board, not just this one.
+    const mine = me && projectLeaderboardFinish(leaderboard, finish)
+      .find((entry) => String(entry.user?.id) === String(me.user?.id));
+    if (!mine) return null;
+
+    const board = projectBoard(predictionIndex, finish);
+    return {
+      points: Math.round(mine.projectedTotal),
+      rank: mine.projectedRank,
+      live: board.live,
+      settled: board.settled,
+    };
+  }, [liveSeason, shownStandings, predictionIndex, leaderboard, me]);
+
   const superlativeCount = useMemo(() => (
     (submissionData?.sections || []).find((section) => section.label === 'Superlatives')?.total || 0
   ), [submissionData]);
@@ -208,7 +238,14 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
             loading={submissionLoading}
           />
         ) : (
-          <StatusLedger me={shownMe} action={action} hasSubmission={rootProps.hasSubmission} seasonLabel={seasonLabel} projecting={projecting} />
+          <StatusLedger
+            me={shownMe}
+            action={action}
+            hasSubmission={rootProps.hasSubmission}
+            seasonLabel={seasonLabel}
+            projecting={projecting}
+            forecast={forecast}
+          />
         )}
       </section>
 
