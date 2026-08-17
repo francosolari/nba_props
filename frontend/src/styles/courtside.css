@@ -392,13 +392,13 @@ button[type="submit"]:active {
 }
 
 .court-theme-toggle[aria-pressed="true"] {
-  background: #101214;
+  background: var(--court-carbon);
   color: var(--court-gold);
-  border-color: #101214;
+  border-color: var(--court-carbon);
 }
 
 .court-theme-toggle[aria-pressed="true"]:hover {
-  background: #000000;
+  border-color: var(--court-gold);
 }
 
 .court-page-main {
@@ -1929,7 +1929,7 @@ button[type="submit"]:active {
 .court-conference-sheet.is-east > header { background: var(--court-blue); }
 .court-conference-sheet.is-west > header { background: var(--court-red); }
 .court-conference-sheet h4 { margin: 0; color: inherit; font: 800 19px var(--court-display); letter-spacing: .03em; text-transform: uppercase; }
-.court-conference-sheet header span { font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.court-conference-sheet header span { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .court-standing-line { display: grid; grid-template-columns: 18px 32px 34px minmax(0, 1fr) 50px 28px; align-items: center; gap: 8px; min-height: 58px; padding: 7px 10px; border-bottom: 1px solid var(--court-medal-silver); }
 .court-standing-line:last-child { border-bottom: 0; }
 .court-standing-grip { width: 15px; color: var(--court-medal-silver); }
@@ -1971,8 +1971,13 @@ button[type="submit"]:active {
 .court-profile-page [class*="bg-gradient"],
 .court-profile-page [class*="backdrop-blur"] { background-image: none !important; backdrop-filter: none !important; }
 
-.court-locked-sheet { position: relative; overflow: visible; padding: 32px; color: var(--court-ink); background: var(--court-paper); border: 2px solid var(--court-rule); border-left: 12px solid var(--court-blue); box-shadow: none; }
-.court-locked-sheet__watermark { position: absolute; top: 16px; right: 16px; width: 88px; height: 88px; color: var(--court-ink); opacity: 0.06; pointer-events: none; }
+.court-locked-sheet { position: relative; overflow: visible; padding: 0; color: var(--court-ink); background: var(--court-paper); border: 2px solid var(--court-rule); box-shadow: none; }
+/* League colour arrives as an attached top band in the flow of the sheet, the
+   same way the account sheet carries it — not as a thick edge down one side and
+   not as a stripe laid over the corner. */
+.court-locked-sheet::before { display: block; height: 10px; background: var(--court-blue); border-bottom: 2px solid var(--court-rule); content: ""; }
+.court-locked-sheet__body { padding: 32px; }
+.court-locked-sheet__watermark { position: absolute; top: 28px; right: 16px; width: 88px; height: 88px; color: var(--court-ink); opacity: 0.06; pointer-events: none; }
 .court-locked-sheet__badge { display: inline-flex; width: 64px; height: 64px; align-items: center; justify-content: center; margin: 0 auto 24px; color: var(--court-gold); background: var(--court-gold-soft); border: 2px solid var(--court-rule); border-radius: 4px; }
 .court-locked-sheet__chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; color: var(--court-ink); font-size: 0.875rem; font-weight: 700; background: var(--court-sheet-wash); border: 1px solid var(--court-rule-soft); border-radius: 4px; }
 .court-locked-sheet__seasons { position: relative; z-index: 1; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--court-rule-soft); }
