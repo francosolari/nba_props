@@ -59,6 +59,61 @@ describe('projectFinish', () => {
   });
 });
 
+describe('recency', () => {
+  const rateFor = (lastTenWins) => {
+    const rows = conference(6, 50);
+    rows[3] = { ...rows[3], last_ten_wins: lastTenWins };
+    return projectFinish({ eastern: rows, western: [] }).get(teamKey(rows[3].team)).rate;
+  };
+
+  test('a hot streak raises the projected rate and a cold streak lowers it', () => {
+    expect(rateFor(9)).toBeGreaterThan(rateFor(undefined));
+    expect(rateFor(1)).toBeLessThan(rateFor(undefined));
+  });
+
+  test('is deliberately mild — ten games cannot drag a .500 team to .900', () => {
+    expect(rateFor(9) - rateFor(undefined)).toBeLessThan(0.1);
+  });
+
+  test('falls back to the season rate when the feed carries no last ten', () => {
+    const finish = projectFinish({
+      eastern: [{ position: 1, team: 'A', wins: 30, losses: 20 }],
+      western: [],
+    });
+    // 30 wins in 50, shrunk toward .500 by the 12-game prior.
+    expect(finish.get(teamKey('A')).rate).toBeCloseTo((30 + 6) / (50 + 12), 9);
+  });
+
+  test('down-weighting history costs effective sample size', () => {
+    const finish = projectFinish({
+      eastern: [{ position: 1, team: 'A', wins: 30, losses: 20, last_ten_wins: 6 }],
+      western: [],
+    });
+    expect(finish.get(teamKey('A')).weight).toBeLessThan(50);
+  });
+
+  test('a hot team is projected to finish higher', () => {
+    const cold = conference(8, 50).map((row) => ({ ...row, last_ten_wins: 2 }));
+    const hot = cold.map((row, i) => (i === 5 ? { ...row, last_ten_wins: 9 } : row));
+    const place = (rows) => projectFinish({ eastern: rows, western: [] })
+      .get(teamKey(rows[5].team)).expectedPosition;
+
+    expect(place(hot)).toBeLessThan(place(cold));
+  });
+
+  test('matches the Python twin on a shared fixture', () => {
+    // Pinned from backend/predictions/services/standings_projection.py. The two
+    // models must agree: the homepage and the digest describe the same season.
+    const finish = projectFinish({
+      eastern: [{ position: 1, team: 'A', wins: 30, losses: 20, last_ten_wins: 8 }],
+      western: [],
+    });
+    // 8 of the last 10, 22 of the 40 before at 0.6 weight: (8 + 13.2 + 6) / (34 + 12).
+    expect(finish.get(teamKey('A')).rate).toBeCloseTo(0.591304, 6);
+    expect(finish.get(teamKey('A')).weight).toBeCloseTo(47.377, 3);
+  });
+});
+
 describe('expectedPoints', () => {
   const settled = { chance: [0, 0, 1, 0] };
 

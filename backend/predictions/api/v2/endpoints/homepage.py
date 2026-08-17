@@ -168,6 +168,10 @@ class HomepageStandingSchema(BaseModel):
     wins: int
     losses: int
     position: Optional[int] = None
+    # Feeds the homepage's finish projection, which weights recent games more
+    # heavily than the season-long record. Null on rows written before the
+    # column existed; the projection falls back to the season rate.
+    last_ten_wins: Optional[int] = None
 
 
 class HomepageStandingsSchema(BaseModel):
@@ -302,6 +306,7 @@ def get_homepage_data(request, season_slug: str = None):
                     wins=standing.wins,
                     losses=standing.losses,
                     position=standing.position,
+                    last_ten_wins=standing.last_ten_wins,
                 )
                 # The whole conference, not a top five: home shows each entry's
                 # board against the real ladder, and a truncated table would

@@ -48,6 +48,21 @@ const DRAWS = 4000;
 const PRIOR_GAMES = 12;
 const PRIOR_RATE = 0.5;
 
+/**
+ * How much a game before the last ten counts, relative to a game inside it.
+ *
+ * The recency knob, deliberately mild. Recent form feels far more informative
+ * than it is: ten games is a very small sample, and a season-long record is
+ * built on many more. Weighting the last ten heavily makes projections *worse*
+ * on average — it trades real signal for noise. Recency earns its place only
+ * because team strength genuinely does change during a season (trades,
+ * injuries, a rookie arriving), and .6 is about the most that justifies.
+ *
+ * Kept in step with HISTORY_WEIGHT in
+ * `backend/predictions/services/standings_projection.py`.
+ */
+const HISTORY_WEIGHT = 0.6;
+
 /** mulberry32 — small, fast, and good enough for ranking noise. */
 function makeRandom(seed) {
   let state = seed >>> 0;
@@ -68,7 +83,7 @@ function makeRandom(seed) {
 function seedFrom(rows) {
   let hash = 0x811c9dc5;
   rows.forEach((row) => {
-    const source = `${row.team}|${row.wins}|${row.losses}`;
+    const source = `${row.team}|${row.wins}|${row.losses}|${row.last_ten_wins}`;
     for (let i = 0; i < source.length; i += 1) {
       hash ^= source.charCodeAt(i);
       hash = Math.imul(hash, 0x01000193);
@@ -83,12 +98,50 @@ function standardNormal(random) {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * random());
 }
 
+/**
+ * A team's win rate with recent games counted more heavily, and the effective
+ * sample size that rate is worth.
+ *
+ * The last ten games carry full weight and everything before them carries
+ * HISTORY_WEIGHT. Down-weighting history buys recency at the cost of sample:
+ * `weight` is the effective number of games behind the estimate, strictly fewer
+ * than were actually played whenever recency is on. The caller needs that,
+ * because a rate estimated from less means a *wider* projection, not a
+ * narrower one.
+ */
+function weightedRate(wins, played, lastTenWins) {
+  if (played <= 0) return { rate: PRIOR_RATE, weight: 0 };
+
+  const recentGames = Math.min(10, played);
+  const olderGames = played - recentGames;
+
+  let effectiveWins = wins;
+  let effectiveGames = played;
+  let sumSquares = played;
+
+  if (Number.isFinite(lastTenWins) && olderGames > 0) {
+    // Clamp: a feed that disagrees with itself must not produce a negative win
+    // count for the older stretch.
+    const recentWins = Math.max(0, Math.min(lastTenWins, recentGames, wins));
+    const olderWins = Math.max(0, wins - recentWins);
+    effectiveWins = recentWins + HISTORY_WEIGHT * olderWins;
+    effectiveGames = recentGames + HISTORY_WEIGHT * olderGames;
+    // n_eff = (sum of weights)^2 / (sum of squared weights).
+    sumSquares = recentGames + olderGames * HISTORY_WEIGHT * HISTORY_WEIGHT;
+  }
+
+  return {
+    rate: (effectiveWins + PRIOR_RATE * PRIOR_GAMES) / (effectiveGames + PRIOR_GAMES),
+    weight: sumSquares ? (effectiveGames * effectiveGames) / sumSquares : 0,
+  };
+}
+
 function outlookFor(row) {
   const wins = row.wins || 0;
   const losses = row.losses || 0;
   const played = Math.min(wins + losses, SEASON_GAMES);
   const remaining = Math.max(0, SEASON_GAMES - played);
-  const rate = (wins + PRIOR_RATE * PRIOR_GAMES) / (played + PRIOR_GAMES);
+  const { rate, weight } = weightedRate(wins, played, row.last_ten_wins);
 
   return {
     team: row.team,
@@ -98,6 +151,7 @@ function outlookFor(row) {
     losses,
     remaining,
     rate,
+    weight,
     projectedWins: Math.round(wins + remaining * rate),
   };
 }
@@ -125,9 +179,17 @@ function distributionFor(rows) {
     // Remaining wins are a sum of independent games, so the normal approximation
     // is well behaved for anything but the last handful of a season — and by
     // then the spread is small enough that the shape hardly matters.
-    const spread = teams.map((team) => (
-      Math.sqrt(team.remaining * team.rate * (1 - team.rate))
-    ));
+    const spread = teams.map((team) => {
+      let variance = team.remaining * team.rate * (1 - team.rate);
+      // The rate itself is an estimate, and an estimate off by a little
+      // compounds across every remaining game. Ignoring that understates the
+      // spread badly in November, which is exactly when the projection most
+      // needs to be honest about what it does not know.
+      if (team.weight > 0) {
+        variance += (team.remaining ** 2) * team.rate * (1 - team.rate) / team.weight;
+      }
+      return Math.sqrt(variance);
+    });
     const draw = teams.map(() => ({ index: 0, finalWins: 0, position: 0 }));
 
     for (let d = 0; d < DRAWS; d += 1) {

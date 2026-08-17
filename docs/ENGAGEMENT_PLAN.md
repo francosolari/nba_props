@@ -116,6 +116,47 @@ first:
 
 Recommend option 1 unless a later item needs sub-hourly granularity.
 
+### Scheduling is also blocked on a second problem: the NBA API blocks the droplet
+
+Discovered 2026-08-16 while working item 2. This is not only a digest problem —
+**standings themselves are not on a schedule**, because `update_season_standings`
+can only run where the NBA feed is reachable, and that is not production. Its own
+docstring already says so: *"Run this command LOCALLY and sync your database."*
+A laptop is not a schedule.
+
+Measured:
+
+- `stats.nba.com` via `nba_api` from a local machine: **works, 0.2s.**
+- `stats.nba.com` from the DigitalOcean droplet: **blocked** (the egress IP is on
+  NBA's list).
+- `cdn.nba.com` — the obvious "use the unprotected CDN instead" idea —
+  **403s from Akamai even locally.** It is not the escape hatch it looks like, so
+  do not spend time on it.
+
+The unknown that decides the architecture is whether a **GitHub Actions runner**
+can read the feed. Runners are Azure IPs; reports go both ways and it has to be
+measured rather than assumed. `.github/workflows/nba-api-reachability.yml`
+answers it in about a minute:
+
+```
+gh workflow run nba-api-reachability.yml && gh run watch
+```
+
+**If the runner can reach it** — invert the flow. The droplet never talks to the
+NBA at all. A scheduled workflow fetches on the runner and pushes the payload to
+an authenticated ingest endpoint on the app, which writes its own database. This
+is better than having production fetch even if production *could* fetch: the
+credentials stay one-way, the runner needs no database access (so no opening the
+Postgres firewall to GitHub's rotating IP ranges), and the same scheduled-workflow
+mechanism covers the digest. That makes items `-95` and this problem one job.
+
+**If the runner is blocked too** — a residential proxy in front of the fetch on
+the droplet, configured through `nba_api`'s `proxy` argument. Costs money
+(roughly $10-50/month) and is the only option that keeps everything in one place.
+
+Rejected: a laptop cron (not always on, which is the whole problem), and a
+home Raspberry Pi (same availability issue in a different box).
+
 ### Season shape
 
 `backend/predictions/models/season.py:5-11` — `Season` has `year`, `slug`,
@@ -228,16 +269,39 @@ quieter ground.
   table currently on screen, so calling tonight's games moves the forecast too.
 - 14 unit tests in `__tests__/projection.test.js`.
 
+**Backend port (2026-08-16).** `backend/predictions/services/standings_projection.py`
+is the Python twin, for the digest. `standings_scoring.py` now holds the 3/1/0
+rule alone, and `grade_standing_predictions.py` calls it instead of inlining the
+bands. A shared fixture is pinned in both test suites so the two models cannot
+drift.
+
+**Recency weighting (2026-08-16).** A team winning far more lately than it did in
+October is genuinely more likely to finish well, so the rate is no longer the
+flat season record: the last ten games carry full weight and everything earlier
+carries `HISTORY_WEIGHT = 0.6`. `L10` already ships in the standings feed, so
+this needed a column (`RegularSeasonStandings.last_ten_wins`, migration 0048),
+not a new fetch.
+
+Two things worth knowing before anyone turns the knob up:
+
+- **Over-weighting recent form makes projections worse, not better.** Ten games
+  is a very small sample. Recency earns its place only because team strength
+  genuinely changes during a season — trades, injuries, a rookie arriving — and
+  0.6 is about as far as that justifies. A 9-1 stretch moves a 50-game .500
+  team's rate by under .10, and a test pins that.
+- **Recency costs sample size, and the projection has to widen for it.**
+  Down-weighting history means the rate rests on fewer effective games, so the
+  model now carries an effective-sample-size term and adds rate uncertainty
+  (`remaining² × p(1-p) / n_eff`) on top of the binomial spread. The first cut
+  omitted this and understated the spread in November, which is exactly when the
+  projection most needs to be honest about what it does not know.
+
 **Not done.**
 
 - The leaderboard surface. It has its own what-if machinery
   (`__orig_total_points`, `whatIfEnabled`) threaded through a transposed desktop
   table, a mobile table, the podium, and the showcase — a separate piece of work
   rather than an add-on, and it interacts with that existing mode.
-- Any backend equivalent. The digest (item 1) will need this in Python; the
-  cleanest port is the same module, and the 3/1/0 rule should be extracted from
-  `grade_standing_predictions.py` into a shared helper at that point rather than
-  becoming a fourth copy.
 - The settled/live counts (item 4) are already computed by `projectBoard` and
   currently only appear as one sentence in the forecast strip.
 
