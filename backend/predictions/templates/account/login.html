@@ -9,7 +9,7 @@
         {% element h1 %}
             {% trans "Welcome Back" %}
         {% endelement %}
-        <p class="text-gray-600 mt-2">Sign in to make your NBA predictions for the 2024-25 season</p>
+        <p class="text-gray-600 mt-2">Sign in to make your NBA predictions{% if current_season %} for the {{ current_season.year }} season{% endif %}</p>
     </div>
 
     {% if SOCIALACCOUNT_ENABLED %}

@@ -133,29 +133,45 @@ Measured:
   **403s from Akamai even locally.** It is not the escape hatch it looks like, so
   do not spend time on it.
 
-The unknown that decides the architecture is whether a **GitHub Actions runner**
-can read the feed. Runners are Azure IPs; reports go both ways and it has to be
-measured rather than assumed. `.github/workflows/nba-api-reachability.yml`
-answers it in about a minute:
+The unknown that decided the architecture was whether a **GitHub Actions runner**
+could read the feed. `.github/workflows/nba-api-reachability.yml` answers it:
 
 ```
 gh workflow run nba-api-reachability.yml && gh run watch
 ```
 
-**If the runner can reach it** — invert the flow. The droplet never talks to the
-NBA at all. A scheduled workflow fetches on the runner and pushes the payload to
-an authenticated ingest endpoint on the app, which writes its own database. This
-is better than having production fetch even if production *could* fetch: the
-credentials stay one-way, the runner needs no database access (so no opening the
-Postgres firewall to GitHub's rotating IP ranges), and the same scheduled-workflow
-mechanism covers the digest. That makes items `-95` and this problem one job.
+**Measured 2026-08-17, after merging #35: blocked.** Same `ReadTimeout` after
+60s as the droplet. The "invert the flow" plan above is dead — GitHub's runner
+IPs are on the same blocklist as DigitalOcean's, so the runner cannot fetch on
+the droplet's behalf.
 
-**If the runner is blocked too** — a residential proxy in front of the fetch on
-the droplet, configured through `nba_api`'s `proxy` argument. Costs money
-(roughly $10-50/month) and is the only option that keeps everything in one place.
+Also tried and also blocked, same timeout signature, before settling on the
+proxy path:
 
-Rejected: a laptop cron (not always on, which is the whole problem), and a
-home Raspberry Pi (same availability issue in a different box).
+- **NordVPN, dedicated/fixed IP.** VPN server IPs are published ranges; the
+  same blocklists that catch datacenter IPs catch well-known VPN providers too.
+- **A home device as a self-hosted proxy** (Tailscale + a SOCKS proxy, or direct
+  port-forward — a Verizon FiOS home connection isn't behind CGNAT, so this is
+  plumbing-wise viable). The home IP itself isn't blocked — that's *why* "run
+  locally" has always worked. But the spare hardware on hand (a TP-Link router,
+  "Archer BE550" under its BE6500 speed-class branding) can't run either
+  Tailscale or a proxy: OpenWrt support for that model landed in
+  `openwrt/openwrt` only in the last few weeks and isn't stable yet. This is the
+  same "not always on / not reliable" objection the doc already raised against
+  a home Raspberry Pi — revisit only once there's an always-on home device that
+  can actually run the tunnel.
+
+**Decided: a residential proxy in front of the fetch on the droplet**,
+configured through `nba_api`'s `proxy` argument (confirmed present —
+`nba_api/library/http.py:89`, takes a plain `"http://user:pass@host:port"`
+string, or a list for rotation). Costs money (roughly $10-50/month) and is the
+only validated option that keeps everything in one place. Provider not yet
+chosen.
+
+Rejected: a laptop cron (not always on, which is the whole problem), a home
+Raspberry Pi or router (same availability issue, and today's spare router
+specifically can't run the tunnel software yet), and NordVPN (blocked
+outright, not just an availability concern).
 
 ### Season shape
 

@@ -4,7 +4,7 @@ import { ENTRY_FEE } from '../entryState';
 export function GuestEntryLedger({ seasonLabel }) {
   const steps = [
     ['Rank the East and West', 'Place all 30 teams 1 through 15 in each conference.'],
-    ['Call the season', 'MVP and the superlatives, plus props, over/unders, and yes/no.'],
+    ['Call the season', 'MVP and the rest of the awards, plus every prop on the board.'],
     ['Score all season', 'Each call earns points as real NBA results are graded.'],
   ];
 
@@ -26,7 +26,7 @@ export function GuestEntryLedger({ seasonLabel }) {
         ))}
       </ol>
       <footer className="next-play-ledger__foot">
-        Entry fee {ENTRY_FEE}, paid once. One entry per player, per season.
+        {ENTRY_FEE} entry fee, paid once — one entry per player each season.
       </footer>
     </aside>
   );
