@@ -34,8 +34,9 @@ const Leaderboard = memo(({ seasonSlug }) => {
         try {
           const resV2 = await axios.get(`/api/v2/leaderboards/${seasonSlug}`);
           const raw = resV2.data;
-          if (Array.isArray(raw)) {
-            items = raw.map((u) => ({
+          const rows = Array.isArray(raw) ? raw : Array.isArray(raw?.leaderboard) ? raw.leaderboard : [];
+          if (rows.length) {
+            items = rows.map((u) => ({
               id: u.id ?? u.user?.id,
               name: u.display_name || u.username || u.user?.display_name || u.user?.username,
               points: u.total_points ?? u.points ?? u.user?.total_points ?? 0,

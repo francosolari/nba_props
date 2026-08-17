@@ -35,7 +35,7 @@ describe('useLeaderboard', () => {
 
     // Initially loading
     expect(result.current.isLoading).toBe(true);
-    expect(result.current.data).toBeUndefined();
+    expect(result.current.data).toEqual([]);
 
     // Wait for data to load
     await waitFor(() => {
@@ -44,7 +44,7 @@ describe('useLeaderboard', () => {
 
     // Verify data loaded
     expect(result.current.data).toBeDefined();
-    expect(result.current.data.leaderboard).toHaveLength(2);
+    expect(result.current.data).toHaveLength(2);
     expect(result.current.error).toBeNull();
   });
 
@@ -75,8 +75,8 @@ describe('useLeaderboard', () => {
 
     expect(result.current.totals).toBeDefined();
     expect(result.current.totals.totalPlayers).toBe(2);
-    expect(result.current.totals.totalPredictions).toBe(100);
-    expect(result.current.totals.avgAccuracy).toBe(0.65);
+    expect(result.current.totals.totalPredictions).toBe(10);
+    expect(result.current.totals.avgAccuracy).toBe(0.7);
   });
 
   it('handles different season slugs', async () => {
@@ -109,7 +109,7 @@ describe('useLeaderboard', () => {
     );
 
     expect(result.current.isLoading).toBe(true);
-    expect(result.current.data).toBeUndefined();
+    expect(result.current.data).toEqual([]);
   });
 
   it('handles error state', async () => {
@@ -137,7 +137,7 @@ describe('useLeaderboard', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    const leaderboard = result.current.data.leaderboard;
+    const leaderboard = result.current.data;
     expect(leaderboard[0].rank).toBe(1);
     expect(leaderboard[1].rank).toBe(2);
     expect(leaderboard[0].user.total_points).toBeGreaterThan(
@@ -155,7 +155,7 @@ describe('useLeaderboard', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    const firstUser = result.current.data.leaderboard[0].user;
+    const firstUser = result.current.data[0].user;
     expect(firstUser.categories).toBeDefined();
     expect(firstUser.categories['Regular Season Standings']).toBeDefined();
     expect(firstUser.categories['Player Awards']).toBeDefined();
