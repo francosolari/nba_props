@@ -250,9 +250,19 @@ describe('LeaderboardTableDesktop — team records', () => {
     expect(records[1].className).not.toContain('is-settled');
   });
 
-  test('records stand down during a scenario, where the finish is invented', () => {
+  test('records stay through a scenario, since they are what makes a move plausible', () => {
     const { container } = render(<LeaderboardTableDesktop {...standingsProps({ whatIfEnabled: true })} />);
-    expect(container.querySelectorAll('.court-adv-record')).toHaveLength(0);
+    expect([...container.querySelectorAll('.court-adv-record')].map((e) => e.textContent))
+      .toEqual(['64–18', '53–29']);
+  });
+
+  test('the record reads under the team name, never beside the rank digit', () => {
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps()} />);
+
+    const record = container.querySelector('.court-adv-record');
+    // Same stacked cell as the name; the rank is a separate column entirely.
+    expect(record.closest('.court-adv-team__body')).toBeInTheDocument();
+    expect(record.closest('.court-adv-rank')).toBeNull();
   });
 
   test('a team with no recorded result shows no record rather than a blank dash', () => {

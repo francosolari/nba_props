@@ -176,7 +176,7 @@ export const LeaderboardTableDesktop = ({
   const fixedColWidth = isStandingsSection ? gripWidth + teamColWidth + rankColWidth : 340;
   const userColWidth = isStandingsSection ? 128 : 188;
 
-  const ROW_HEIGHT = isStandingsSection ? 46 : 72;
+  const ROW_HEIGHT = isStandingsSection ? 54 : 72;
   const HEADER_HEIGHT = 58;
 
   const nonStandingsCategoryKey = React.useMemo(
@@ -324,6 +324,7 @@ export const LeaderboardTableDesktop = ({
                             {(prov, snap) => {
                               const simRank = simActualMap.get(row.team);
                               const isMoved = whatIfEnabled && simActualMap.has(row.team) && simRank !== row.actual_position;
+                              const settledSeed = row.seed_range && row.seed_range[0] === row.seed_range[1];
                               return (
                                 <div
                                   ref={prov.innerRef}
@@ -343,19 +344,22 @@ export const LeaderboardTableDesktop = ({
                                   )}
                                   <div className="court-adv-team" style={{ width: teamColWidth }}>
                                     <TeamLogo teamName={row.team} />
-                                    <span className="court-adv-team__name">{row.team}</span>
-                                    {/* The record stands down during a scenario: the
-                                        row already carries a grip and an old-to-new
-                                        rank, and a real record beside a hypothetical
-                                        finish is the wrong thing to read. */}
-                                    {!whatIfEnabled && row.wins != null && (
-                                      <span
-                                        className={`court-adv-record ${row.seed_range && row.seed_range[0] === row.seed_range[1] ? 'is-settled' : ''}`}
-                                        title={describeRoom(row)}
-                                      >
-                                        {row.wins}&#8211;{row.losses}
-                                      </span>
-                                    )}
+                                    <span className="court-adv-team__body">
+                                      <span className="court-adv-team__name">{row.team}</span>
+                                      {/* The record reads under the name rather than
+                                          beside the rank, so the row carries one
+                                          number per line. It stays through What-If:
+                                          how much room a team has is exactly what
+                                          decides whether a move is plausible. */}
+                                      {row.wins != null && (
+                                        <span
+                                          className={`court-adv-record ${settledSeed ? 'is-settled' : ''}`}
+                                          title={describeRoom(row)}
+                                        >
+                                          {row.wins}&#8211;{row.losses}
+                                        </span>
+                                      )}
+                                    </span>
                                   </div>
                                   <div className="court-adv-rank">
                                     {isMoved ? (
