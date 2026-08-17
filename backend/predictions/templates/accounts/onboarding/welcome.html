@@ -31,7 +31,7 @@
                     Welcome to NBA Predictions!
                 </h1>
                 <p class="text-lg text-gray-600 mb-2">
-                    Get ready for the 2024-25 NBA season
+                    Get ready for the{% if current_season %} {{ current_season.year }}{% endif %} NBA season
                 </p>
                 <p class="text-gray-500">
                     Predict player stats, team standings, and compete with friends for the top spot on the leaderboard.

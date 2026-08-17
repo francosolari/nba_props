@@ -3087,6 +3087,15 @@ button[type="submit"]:active {
 .next-play-steps__copy strong { font: 800 19px/1 var(--court-display); letter-spacing: .025em; text-transform: uppercase; }
 .next-play-steps__copy small { max-width: 38ch; margin-top: 5px; color: var(--court-steel); font-size: 12px; line-height: 1.35; }
 
+.next-play-ledger__foot {
+  padding: 11px 14px;
+  color: var(--court-steel);
+  font: 700 11px/1.4 var(--court-body);
+  letter-spacing: .03em;
+  background: var(--court-paper-cool);
+  border-top: 1px solid var(--court-rule-soft);
+}
+
 .next-play-ledger__footer { display: grid; grid-template-columns: 1fr 1.35fr; }
 .next-play-ledger__footer a {
   display: flex;

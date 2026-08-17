@@ -200,7 +200,7 @@ export default function HomePage({ seasonSlug: seasonSlugProp = DEFAULT_SEASON }
             : 'Your entry isn’t in yet.';
 
   const standfirst = phase === 'guest'
-    ? `Rank all 30 teams, call the superlatives, settle the props. One ${ENTRY_FEE} entry, scored from opening night to the Finals.`
+    ? `Rank all 30 teams, call the awards, settle the props. One ${ENTRY_FEE} entry, scored from opening night to the Finals.`
     : phase === 'season'
       ? seasonComplete
         ? `Every call is graded and the table is final.${me?.rank ? ` You finished ${ordinal(me.rank)}${leaderboard.length ? ` of ${leaderboard.length}` : ''}.` : ''}`

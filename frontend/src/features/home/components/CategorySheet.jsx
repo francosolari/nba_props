@@ -21,7 +21,7 @@ export function CategorySheet({ superlativeCount }) {
       <header className="next-play-section-head">
         <div>
           <h2 id="categories-title">What one entry covers</h2>
-          <p>Each call is worth points, and your score updates as real NBA results are graded.</p>
+          <p>Five categories, one score. Every call below is worth points.</p>
         </div>
       </header>
       <div className="next-play-categories__rows">
