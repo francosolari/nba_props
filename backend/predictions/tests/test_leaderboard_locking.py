@@ -299,3 +299,42 @@ class TestAnswerKey:
         AnswerFactory(user=UserFactory(), question=question, answer='A Guess', points_earned=0, is_correct=None)
 
         assert award_predictions(_build_leaderboard(season.slug))[0]['correct_answer'] is None
+
+
+@pytest.mark.django_db
+class TestTeamRecord:
+    def test_a_standings_pick_carries_the_record_and_the_room_left(self):
+        season = CurrentSeasonFactory(slug='lock-11', year='lock-11')
+        teams = []
+        for i in range(1, 4):
+            team = EasternTeamFactory(name=f'Rec {i}', abbreviation=f'R{i}', conference='East')
+            RegularSeasonStandings.objects.create(
+                team=team, season=season, season_type='regular',
+                position=i, wins=40 - (i * 4), losses=22 + (i * 4),
+            )
+            teams.append(team)
+        StandingPredictionFactory(
+            user=UserFactory(first_name='A', last_name='B'),
+            season=season, team=teams[0], predicted_position=1, points=3,
+        )
+
+        standing = _build_leaderboard(season.slug)[0]['categories']['Regular Season Standings']['predictions'][0]
+        assert standing['wins'] == 36
+        assert standing['losses'] == 26
+        best, worst = standing['seed_range']
+        assert best <= 1 <= worst
+        assert worst > best  # twenty games left, so the seed can still move
+
+    def test_a_finished_season_leaves_no_room_to_move(self):
+        season = PastSeasonFactory(slug='lock-12', year='lock-12')
+        team = EasternTeamFactory(name='Done', abbreviation='DN1', conference='East')
+        RegularSeasonStandings.objects.create(
+            team=team, season=season, season_type='regular', position=4, wins=50, losses=32,
+        )
+        StandingPredictionFactory(
+            user=UserFactory(first_name='A', last_name='B'),
+            season=season, team=team, predicted_position=4, points=3,
+        )
+
+        standing = _build_leaderboard(season.slug)[0]['categories']['Regular Season Standings']['predictions'][0]
+        assert standing['seed_range'] == [4, 4]

@@ -21,6 +21,22 @@ const positionState = (points, hasPrediction) => {
   return 'is-miss';
 };
 
+const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th',
+  '9th', '10th', '11th', '12th', '13th', '14th', '15th'];
+
+const ordinal = (n) => ORDINALS[n] || `${n}th`;
+
+/** How much room a seed has left, said in words for the record's tooltip. */
+const describeRoom = (row) => {
+  const range = row?.seed_range;
+  if (!range) return `${row.team}: ${row.wins}\u2013${row.losses}`;
+  const [best, worst] = range;
+  const room = best === worst
+    ? `seed settled at ${ordinal(best)}`
+    : `can still finish ${ordinal(best)} to ${ordinal(worst)}`;
+  return `${row.team}: ${row.wins}\u2013${row.losses}, ${room}`;
+};
+
 const answerState = (status) => {
   if (status === 'correct') return 'is-hit';
   if (status === 'partial') return 'is-near';
@@ -155,7 +171,7 @@ export const LeaderboardTableDesktop = ({
   const handleScroll = (event) => syncHorizontalScroll(event.currentTarget);
 
   const gripWidth = whatIfEnabled && isStandingsSection ? 26 : 0;
-  const teamColWidth = 214;
+  const teamColWidth = 264;
   const rankColWidth = 62;
   const fixedColWidth = isStandingsSection ? gripWidth + teamColWidth + rankColWidth : 340;
   const userColWidth = isStandingsSection ? 128 : 188;
@@ -327,7 +343,19 @@ export const LeaderboardTableDesktop = ({
                                   )}
                                   <div className="court-adv-team" style={{ width: teamColWidth }}>
                                     <TeamLogo teamName={row.team} />
-                                    <span>{row.team}</span>
+                                    <span className="court-adv-team__name">{row.team}</span>
+                                    {/* The record stands down during a scenario: the
+                                        row already carries a grip and an old-to-new
+                                        rank, and a real record beside a hypothetical
+                                        finish is the wrong thing to read. */}
+                                    {!whatIfEnabled && row.wins != null && (
+                                      <span
+                                        className={`court-adv-record ${row.seed_range && row.seed_range[0] === row.seed_range[1] ? 'is-settled' : ''}`}
+                                        title={describeRoom(row)}
+                                      >
+                                        {row.wins}&#8211;{row.losses}
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="court-adv-rank">
                                     {isMoved ? (

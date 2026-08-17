@@ -961,12 +961,35 @@
   object-fit: contain;
 }
 
-.court-adv-team span {
+.court-adv-team__name {
+  min-width: 0;
   overflow: hidden;
+  flex: 1;
   font-size: 13px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The record, quiet enough to read only when looked for. It answers how much
+   room a seed has left to move, so it sits with the team rather than with the
+   picks — and it is absent during a scenario, where the finish is invented. */
+.court-adv-record {
+  flex: none;
+  color: var(--court-medal-silver);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+/* A seed with no room left reads a shade firmer than one still in play. */
+.court-adv-record.is-settled {
+  color: var(--court-steel);
+}
+
+.court-adv-row:hover .court-adv-record {
+  color: var(--court-steel);
 }
 
 .court-adv-grip {

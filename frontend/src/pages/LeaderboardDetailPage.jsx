@@ -106,7 +106,14 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
       const cat = e.user.categories?.[catKey];
       cat?.predictions?.forEach(p => {
         if (!p.team) return;
-        const prev = byTeam.get(p.team) || { team: p.team, conference: p.conference, actual_position: p.actual_position };
+        const prev = byTeam.get(p.team) || {
+          team: p.team,
+          conference: p.conference,
+          actual_position: p.actual_position,
+          wins: p.wins,
+          losses: p.losses,
+          seed_range: p.seed_range,
+        };
         if (prev.actual_position == null || (p.actual_position && p.actual_position < prev.actual_position)) {
           prev.actual_position = p.actual_position;
         }
@@ -144,10 +151,10 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
   const defaultStandingsOrders = useMemo(() => {
     const west = standingsTeams
       .filter(r => (r.conference || '').toLowerCase().startsWith('w'))
-      .map(r => ({ id: `W-${r.team}`, team: r.team, conference: 'West', actual_position: r.actual_position }));
+      .map(r => ({ id: `W-${r.team}`, team: r.team, conference: 'West', actual_position: r.actual_position, wins: r.wins, losses: r.losses, seed_range: r.seed_range }));
     const east = standingsTeams
       .filter(r => (r.conference || '').toLowerCase().startsWith('e'))
-      .map(r => ({ id: `E-${r.team}`, team: r.team, conference: 'East', actual_position: r.actual_position }));
+      .map(r => ({ id: `E-${r.team}`, team: r.team, conference: 'East', actual_position: r.actual_position, wins: r.wins, losses: r.losses, seed_range: r.seed_range }));
     return { west, east };
   }, [standingsTeams]);
 

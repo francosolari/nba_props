@@ -126,6 +126,19 @@ def _pick_is_locked(predicted_position, seeds: Optional[range]) -> bool:
     return len({score_position(predicted_position, seed) for seed in seeds}) == 1
 
 
+def _seed_range(seeds: Optional[range], season_over: bool, actual_position) -> Optional[List[int]]:
+    """The best and worst seed a team can still finish in, as a pair.
+
+    A finished season leaves no room to move, so the range collapses onto the
+    recorded position regardless of what the win arithmetic would allow.
+    """
+    if season_over and actual_position:
+        return [actual_position, actual_position]
+    if not seeds:
+        return None
+    return [seeds.start, seeds.stop - 1]
+
+
 # ─────────── Aggregator ───────────
 def _build_leaderboard(season_slug: str) -> List[Dict]:
     # Once a season is over nothing it produced can move again, whether or not an
@@ -165,6 +178,7 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
     )
     actual_positions = {name: position for name, position, _, _, _ in standings_rows}
     team_conference = {name: conference for name, _, conference, _, _ in standings_rows}
+    team_records = {name: (wins or 0, losses or 0) for name, _, _, wins, losses in standings_rows}
     reachable_seeds = _reachable_positions(standings_rows)
 
     # --- 1. fixed max_points for the standings category -----------------
@@ -223,6 +237,11 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
             "is_locked": season_over or _pick_is_locked(
                 sp.predicted_position, reachable_seeds.get(sp.team.name)
             ),
+            # The record, and the seeds this team can still reach. Together they
+            # answer how much room a position has left to move.
+            "wins": team_records.get(sp.team.name, (None, None))[0],
+            "losses": team_records.get(sp.team.name, (None, None))[1],
+            "seed_range": _seed_range(reachable_seeds.get(sp.team.name), season_over, actual_pos),
         })
         u_rec["total_points"] += sp.points
 

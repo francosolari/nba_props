@@ -219,3 +219,45 @@ describe('LeaderboardTableDesktop — the answer key', () => {
     expect(container.querySelector('.court-adv-key')).not.toBeInTheDocument();
   });
 });
+
+describe('LeaderboardTableDesktop — team records', () => {
+  const westOrder = [
+    { id: 'W-Thunder', team: 'Thunder', conference: 'West', actual_position: 1, wins: 64, losses: 18, seed_range: [1, 1] },
+    { id: 'W-Lakers', team: 'Lakers', conference: 'West', actual_position: 4, wins: 53, losses: 29, seed_range: [3, 6] },
+  ];
+
+  const standingsProps = (overrides = {}) => buildProps({
+    section: 'standings',
+    westOrder,
+    eastOrder: [],
+    ...overrides,
+  });
+
+  test('a record rides beside each team, saying how much room the seed has left', () => {
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps()} />);
+
+    const records = [...container.querySelectorAll('.court-adv-record')];
+    expect(records.map((e) => e.textContent)).toEqual(['64–18', '53–29']);
+    expect(records[0]).toHaveAttribute('title', 'Thunder: 64–18, seed settled at 1st');
+    expect(records[1]).toHaveAttribute('title', 'Lakers: 53–29, can still finish 3rd to 6th');
+  });
+
+  test('a seed with no room left reads firmer than one still in play', () => {
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps()} />);
+    const records = [...container.querySelectorAll('.court-adv-record')];
+
+    expect(records[0].className).toContain('is-settled');
+    expect(records[1].className).not.toContain('is-settled');
+  });
+
+  test('records stand down during a scenario, where the finish is invented', () => {
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps({ whatIfEnabled: true })} />);
+    expect(container.querySelectorAll('.court-adv-record')).toHaveLength(0);
+  });
+
+  test('a team with no recorded result shows no record rather than a blank dash', () => {
+    const unplayed = [{ id: 'W-New', team: 'New', conference: 'West', actual_position: 1 }];
+    const { container } = render(<LeaderboardTableDesktop {...standingsProps({ westOrder: unplayed })} />);
+    expect(container.querySelectorAll('.court-adv-record')).toHaveLength(0);
+  });
+});
