@@ -24,7 +24,7 @@ const PreviousSeason = ({ team, index }) => {
       title={`Last season: ${previous.wins}\u2013${previous.losses}${finish ? `, finished ${finish}` : ''}`}
     >
       <b>{previous.wins}&#8211;{previous.losses}</b>
-      {moved && <i>was {finish}</i>}
+      {moved && <i>Finished {finish}</i>}
     </span>
   );
 };

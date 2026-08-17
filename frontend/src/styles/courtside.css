@@ -2338,6 +2338,7 @@ button[type="submit"]:active {
 .submission-conference-ledger.is-west > header { background: var(--court-red); }
 .court-submissions-page .submission-conference-ledger > header h3 {
   overflow: hidden;
+  flex: 0 1 auto;
   margin: 0;
   color: inherit;
   font: 800 16px/1 var(--court-display);
@@ -2346,11 +2347,22 @@ button[type="submit"]:active {
   text-transform: uppercase;
   white-space: nowrap;
 }
+/* Which conference this is outranks the caption beside it, so the caption is
+   what gives way — and below 640px it goes entirely rather than clipping the
+   name to an initial. */
 .submission-conference-ledger > header span {
-  flex: 0 0 auto;
+  display: none;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
   font: 800 11px/1 var(--court-body);
   letter-spacing: .07em;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+@media (min-width: 640px) {
+  .submission-conference-ledger > header span { display: block; }
 }
 .submission-conference-list {
   min-height: 690px;
@@ -2409,11 +2421,15 @@ button[type="submit"]:active {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.submission-standing-row__last b { font-size: 11px; font-weight: 600; }
+.submission-standing-row__last b {
+  color: var(--court-steel);
+  font: 700 11px/1 var(--court-text);
+}
 .submission-standing-row__last i {
-  font: 800 9px/1 var(--court-display);
+  color: var(--court-muted);
+  font: 600 9px/1 var(--court-display);
   font-style: normal;
-  letter-spacing: .06em;
+  letter-spacing: .05em;
   text-transform: uppercase;
 }
 .submission-standing-row:hover .submission-standing-row__last { color: var(--court-steel); }

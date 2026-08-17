@@ -65,12 +65,12 @@ describe('EditableStandingsBoard — last season', () => {
     // The board opens in last season's order, so printing both would say the
     // same number twice on every row.
     withRecords({ wins: 56, losses: 26, position: 1 });
-    expect(screen.queryByText(/^was /)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Finished /)).not.toBeInTheDocument();
   });
 
   it('names the finish once it disagrees with where the team has been put', () => {
     withRecords({ wins: 20, losses: 62, position: 12 });
-    expect(screen.getByText('was 12th')).toBeInTheDocument();
+    expect(screen.getByText('Finished 12th')).toBeInTheDocument();
   });
 
   it('shows nothing for a team with no previous season on record', () => {
