@@ -260,7 +260,13 @@ class TestUserJourneyIntegration:
             assert grade_resp.status_code == 200
             assert grade_resp.json()["success"] is True
 
-        # 5. Leaderboard reflects graded user
+        # 5. Leaderboard reflects graded user.
+        # The pool's table stays sealed until entries lock, so nobody can copy a
+        # leading entry while they still have time to change theirs. The journey
+        # only reaches the leaderboard after the window shuts, so close it.
+        season.submission_end_date = timezone.now() - timedelta(days=1)
+        season.save(update_fields=["submission_end_date"])
+
         leaderboard_resp = auth_client.get(f"/api/v2/leaderboards/{season.slug}")
         assert leaderboard_resp.status_code == 200
         leaderboard = leaderboard_resp.json()["leaderboard"]
@@ -371,8 +377,10 @@ class TestUserJourneyIntegration:
         assert data["username"] == auth_client.user.username
         assert len(data["predictions"]) == 2
 
-    def test_leaderboard_orders_users_by_points(self, open_season):
-        season = open_season
+    def test_leaderboard_orders_users_by_points(self):
+        # Ordering has nothing to do with the submission window, and a season
+        # still taking entries keeps its table sealed, so this reads a locked one.
+        season = CurrentSeasonFactory()
         award = AwardFactory(name="Order Test Award")
         question = SuperlativeQuestionFactory(season=season, award=award, point_value=5)
 

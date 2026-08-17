@@ -28,6 +28,7 @@ from predictions.models import (
     PaymentStatus,
 )
 from datetime import date, timedelta
+from django.utils import timezone
 from decimal import Decimal
 from django.utils import timezone
 
@@ -72,8 +73,30 @@ class PremiumUserFactory(UserFactory):
 # NBA Data Factories
 # ============================================================================
 
+def _days_from_now(days):
+    """
+    An aware datetime, for the submission window.
+
+    ``submission_start_date`` and ``submission_end_date`` are DateTimeFields.
+    Handing them plain dates made Django coerce a naive datetime on every save,
+    which both raised warnings and left the window's exact moment ambiguous —
+    and the results-privacy gate compares against it.
+    """
+    return factory.LazyFunction(lambda: timezone.now() + timedelta(days=days))
+
+
 class SeasonFactory(DjangoModelFactory):
-    """Factory for creating NBA seasons."""
+    """
+    A season being played: picks locked, results public.
+
+    That is the state a season is in for all but a few weeks of its life, and
+    it is the state most tests mean by "a season". It matters because
+    ``results_visible`` seals every other entrant's picks and scores until the
+    submission window closes, so a factory that left the window open would hide
+    the leaderboard, the podium, and the Cup from every test that reads them.
+
+    Use :class:`OpenSubmissionSeasonFactory` for the weeks before lock.
+    """
 
     class Meta:
         model = Season
@@ -83,8 +106,25 @@ class SeasonFactory(DjangoModelFactory):
     year = factory.LazyAttribute(lambda obj: obj.slug)
     start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=30))
     end_date = factory.LazyFunction(lambda: date.today() + timedelta(days=150))
-    submission_start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=30))
-    submission_end_date = factory.LazyFunction(lambda: date.today() + timedelta(days=7))
+    # Entries opened two months ago and locked the day before tip-off.
+    submission_start_date = _days_from_now(-60)
+    submission_end_date = _days_from_now(-31)
+
+
+class OpenSubmissionSeasonFactory(SeasonFactory):
+    """
+    A season still taking entries, for tests about the window itself.
+
+    While this window is open, other entrants' picks and scores are sealed —
+    that is the point of it — so expect empty leaderboards here.
+    """
+
+    slug = factory.Sequence(lambda n: f'25-{26+n:02d}')
+    year = factory.LazyAttribute(lambda obj: obj.slug)
+    start_date = factory.LazyFunction(lambda: date.today() + timedelta(days=8))
+    end_date = factory.LazyFunction(lambda: date.today() + timedelta(days=200))
+    submission_start_date = _days_from_now(-7)
+    submission_end_date = _days_from_now(7)
 
 
 class CurrentSeasonFactory(SeasonFactory):
@@ -102,8 +142,8 @@ class PastSeasonFactory(SeasonFactory):
     year = factory.LazyAttribute(lambda obj: obj.slug)
     start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=365))
     end_date = factory.LazyFunction(lambda: date.today() - timedelta(days=180))
-    submission_start_date = factory.LazyFunction(lambda: date.today() - timedelta(days=400))
-    submission_end_date = factory.LazyFunction(lambda: date.today() - timedelta(days=200))
+    submission_start_date = _days_from_now(-400)
+    submission_end_date = _days_from_now(-200)
 
 
 class TeamFactory(DjangoModelFactory):
