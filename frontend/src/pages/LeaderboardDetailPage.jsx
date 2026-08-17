@@ -19,6 +19,10 @@ const WHAT_IF_INTRO_SESSION_KEY = 'leaderboard-what-if-intro-seen';
 
 const toAnswerKey = (answer) => String(answer ?? '').trim().toLowerCase();
 
+// A prop has two sides and exactly one of them is true, so ruling one out is the
+// same statement as handing the result to the other.
+const OPPOSITE_ANSWER = { over: 'under', under: 'over', yes: 'no', no: 'yes' };
+
 /* ─────────────────────────────────────────────────────────────────────────────
    MAIN COMPONENT
    ───────────────────────────────────────────────────────────────────────────── */
@@ -218,8 +222,9 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
         entry.user.categories?.[catKey]?.predictions?.forEach((prediction) => {
           if (!prediction?.question_id) return;
           const qid = String(prediction.question_id);
-          const current = outcomes.get(qid) || { winner: null, partial: null, hasRunnerUp: false };
+          const current = outcomes.get(qid) || { winner: null, partial: null, hasRunnerUp: false, answers: new Set() };
           const key = toAnswerKey(prediction.answer);
+          if (key) current.answers.add(key);
 
           if (prediction.leader_answer) current.winner = toAnswerKey(prediction.leader_answer);
           else if (!current.winner && prediction.score_status === 'correct') current.winner = key;
@@ -285,36 +290,50 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     const answerKey = toAnswerKey(answerValue);
     if (!answerKey || answerKey === '—') return;
 
-    // First tap on an answer hands it the win, and the leader it displaces drops
-    // to runner-up rather than out of the running. Tapping the same answer again
-    // walks it round: winner -> out -> runner-up -> winner. Each slot is held by
-    // one answer, so taking a slot takes it off whoever had it.
+    // An award pays two places, so tapping one of its answers walks it round:
+    // winner -> out -> runner-up -> winner, with the leader it displaces dropping
+    // to second rather than out of the running.
+    //
+    // A prop pays one, and exactly one of its answers is true — "nobody is
+    // right" is not an outcome it has. So it flips instead: tapping a side hands
+    // it the result, and tapping the side that already holds it gives the result
+    // to the other. Walking a prop round the award's cycle left it stuck,
+    // because the runner-up step has nothing to move.
     setWhatIfAnswerOverrides((prev) => {
       const qid = String(questionId);
-      const real = realOutcomes.get(qid) || { winner: null, partial: null, hasRunnerUp: false };
+      const real = realOutcomes.get(qid) || { winner: null, partial: null, hasRunnerUp: false, answers: new Set() };
       const current = prev[qid] || { winner: real.winner, partial: real.partial, touched: [] };
       const touched = current.touched || [];
 
       const shown = current.winner === answerKey ? 'winner'
         : current.partial === answerKey ? 'partial'
           : 'out';
-      // First tap hands the win over — unless the answer already holds it, in
-      // which case there is nothing to promote and the tap walks the cycle on.
-      const target = (!touched.includes(answerKey) && shown !== 'winner') ? 'winner'
-        : shown === 'winner' ? 'out'
-          : shown === 'out' ? 'partial'
-            : 'winner';
+
+      const target = !real.hasRunnerUp
+        ? (shown === 'winner' ? 'flip' : 'winner')
+        // First tap hands the win over — unless the answer already holds it, in
+        // which case there is nothing to promote and the tap walks the cycle on.
+        : (!touched.includes(answerKey) && shown !== 'winner') ? 'winner'
+          : shown === 'winner' ? 'out'
+            : shown === 'out' ? 'partial'
+              : 'winner';
 
       let winner = current.winner;
       let partial = current.partial;
-      if (target === 'winner') {
+      if (target === 'flip') {
+        // Ruling out one side of a prop hands the result to the other, so the
+        // tap always says something rather than quietly doing nothing.
+        const others = [...(real.answers || [])].filter((a) => a !== answerKey);
+        winner = OPPOSITE_ANSWER[answerKey] || (others.length === 1 ? others[0] : real.winner);
+        partial = real.partial;
+      } else if (target === 'winner') {
         // Promoting displaces the sitting leader to second; whoever held second
         // is pushed out.
         partial = real.hasRunnerUp && winner && winner !== answerKey ? winner : null;
         winner = answerKey;
       } else if (target === 'partial') {
         if (winner === answerKey) winner = null;
-        partial = real.hasRunnerUp ? answerKey : null;
+        partial = answerKey;
       } else {
         if (winner === answerKey) winner = null;
         if (partial === answerKey) partial = null;

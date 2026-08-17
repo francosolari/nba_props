@@ -446,7 +446,7 @@ export const LeaderboardTableDesktop = ({
                       {q.text}
                       {q.is_finalized && <Lock aria-label="Result final" />}
                     </span>
-                    <AnswerKey prediction={q} />
+                    <AnswerKey prediction={q} isAward={isAwardsSection} />
                   </div>
                 </div>
               ))}

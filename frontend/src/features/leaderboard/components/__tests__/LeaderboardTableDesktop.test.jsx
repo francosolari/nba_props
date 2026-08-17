@@ -197,13 +197,47 @@ describe('LeaderboardTableDesktop — the answer key', () => {
     expect(screen.queryByRole('button', { name: /victor wembanyama/i })).not.toBeInTheDocument();
   });
 
-  test('a provisional result is labelled as leading, a settled one as won', () => {
+  test('an award is leading until it is won', () => {
     const { container, rerender } = renderWith({ correct_answer: 'Leader', is_locked: false, is_finalized: false });
     expect(container.querySelector('.court-adv-key')).toHaveTextContent('Leading');
 
     const settled = withResult({ correct_answer: 'Leader', is_finalized: true });
     rerender(<LeaderboardTableDesktop {...buildProps({ displayedUsers: settled, leaderboardData: settled })} />);
     expect(container.querySelector('.court-adv-key')).toHaveTextContent('Won');
+  });
+
+  test('a prop is never won — it is just correct, or correct so far', () => {
+    // Nothing wins a prop, so borrowing the award's language would be wrong.
+    const asProp = (overrides) => {
+      const users = buildDisplayedUsers();
+      users[0].user.categories['Props & Yes/No'] = {
+        points: 2,
+        predictions: [{
+          question_id: 'p1',
+          question: 'Rebounds over/under 9.5',
+          answer: 'Over',
+          line: 9.5,
+          points: 2,
+          correct: true,
+          is_finalized: null,
+          ...overrides,
+        }],
+      };
+      return users;
+    };
+
+    const renderProp = (overrides) => {
+      const users = asProp(overrides);
+      return buildProps({ section: 'props', displayedUsers: users, leaderboardData: users });
+    };
+
+    const { container, rerender } = render(<LeaderboardTableDesktop {...renderProp({ correct_answer: 'Under 14.5', is_locked: false })} />);
+    expect(container.querySelector('.court-adv-key')).toHaveTextContent('So far');
+    expect(container.querySelector('.court-adv-key')).not.toHaveTextContent('Leading');
+
+    rerender(<LeaderboardTableDesktop {...renderProp({ correct_answer: 'Under 14.5', is_locked: true })} />);
+    expect(container.querySelector('.court-adv-key')).toHaveTextContent('Correct');
+    expect(container.querySelector('.court-adv-key')).not.toHaveTextContent('Won');
   });
 
   test('the runner-up is named alongside the winner', () => {

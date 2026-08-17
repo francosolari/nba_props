@@ -12,6 +12,8 @@ import { isLockedPrediction, lockedPoints } from '../utils/helpers';
  */
 const toAnswerKey = (answer) => String(answer ?? '').trim().toLowerCase();
 
+const OPPOSITE_ANSWER = { over: 'under', under: 'over', yes: 'no', no: 'yes' };
+
 const FULL = 5;
 const PARTIAL = 2.5;
 
@@ -24,19 +26,26 @@ const cast = (override, answerKey, real) => {
   const shown = current.winner === answerKey ? 'winner'
     : current.partial === answerKey ? 'partial'
       : 'out';
-  const target = (!touched.includes(answerKey) && shown !== 'winner') ? 'winner'
-    : shown === 'winner' ? 'out'
-      : shown === 'out' ? 'partial'
-        : 'winner';
+
+  const target = !real.hasRunnerUp
+    ? (shown === 'winner' ? 'flip' : 'winner')
+    : (!touched.includes(answerKey) && shown !== 'winner') ? 'winner'
+      : shown === 'winner' ? 'out'
+        : shown === 'out' ? 'partial'
+          : 'winner';
 
   let winner = current.winner;
   let partial = current.partial;
-  if (target === 'winner') {
+  if (target === 'flip') {
+    const others = [...(real.answers || [])].filter((a) => a !== answerKey);
+    winner = OPPOSITE_ANSWER[answerKey] || (others.length === 1 ? others[0] : real.winner);
+    partial = real.partial;
+  } else if (target === 'winner') {
     partial = real.hasRunnerUp && winner && winner !== answerKey ? winner : null;
     winner = answerKey;
   } else if (target === 'partial') {
     if (winner === answerKey) winner = null;
-    partial = real.hasRunnerUp ? answerKey : null;
+    partial = answerKey;
   } else {
     if (winner === answerKey) winner = null;
     if (partial === answerKey) partial = null;
@@ -137,16 +146,43 @@ describe('what-if outcome cycle', () => {
     expect(result.filter((p) => p.score_status === 'partial')).toHaveLength(1);
   });
 
-  test('questions with no runner-up award never hand out partial credit', () => {
-    const prop = { winner: 'over', partial: null, hasRunnerUp: false };
+  test('tapping the side that already holds a prop gives the result to the other', () => {
+    // The bug this covers: tapping the answer that was already correct did
+    // nothing at all, because reverting to reality was a no-op.
+    const prop = { winner: 'under', partial: null, hasRunnerUp: false, answers: new Set(['under', 'over']) };
+
     let override = cast(null, 'under', prop);
-    expect(override).toMatchObject({ winner: 'under', partial: null });
+    expect(override).toMatchObject({ winner: 'over' });
 
-    override = cast(override, 'under', prop);   // out
-    expect(override).toMatchObject({ winner: null, partial: null });
+    override = cast(override, 'under', prop);
+    expect(override).toBeNull(); // under is right again, which is reality
 
-    override = cast(override, 'under', prop);   // would be runner-up, but there is no such award
-    expect(override).toMatchObject({ winner: null, partial: null });
+    override = cast(override, 'under', prop);
+    expect(override).toMatchObject({ winner: 'over' }); // and it flips back
+  });
+
+  test('a prop toggles from either side', () => {
+    const prop = { winner: 'under', partial: null, hasRunnerUp: false, answers: new Set(['under', 'over']) };
+
+    let override = cast(null, 'over', prop);
+    expect(override).toMatchObject({ winner: 'over' });
+
+    override = cast(override, 'over', prop);
+    expect(override).toBeNull();
+  });
+
+  test('a yes/no prop flips the same way', () => {
+    const prop = { winner: 'yes', partial: null, hasRunnerUp: false, answers: new Set(['yes', 'no']) };
+    expect(cast(null, 'yes', prop)).toMatchObject({ winner: 'no' });
+  });
+
+  test('a prop never hands out partial credit', () => {
+    const prop = { winner: 'over', partial: null, hasRunnerUp: false, answers: new Set(['over', 'under']) };
+    let override = cast(null, 'under', prop);
+    for (let i = 0; i < 5; i += 1) {
+      override = cast(override, 'under', prop);
+      expect(override?.partial ?? null).toBeNull();
+    }
   });
 
   test('only the cells the scenario moved carry the simulated mark', () => {

@@ -331,7 +331,7 @@ export const LeaderboardTableMobile = ({
                   <div key={q.id} className="court-adv-mq">
                     <span className="court-adv-mq__index">Q{idx + 1}</span>
                     <span className="court-adv-mq__text" title={q.text}>{q.text}</span>
-                    <AnswerKey prediction={q} compact />
+                    <AnswerKey prediction={q} isAward={isAwardsSection} compact />
                   </div>
                 ))}
               </div>
