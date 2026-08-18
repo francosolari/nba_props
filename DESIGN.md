@@ -218,6 +218,27 @@ The palette reads as ink, stamps, and selective league color on a white season s
 - **Label** (800, 11px, 0.08em letter-spacing, uppercase): Navigation, controls, ranks, sheet headings, and compact states.
 - **Microprint** (800, 9–10px, 0.08–0.16em letter-spacing, uppercase): Auxiliary kickers, abbreviations, and annotations only. It never carries a question, answer, score, or action by itself.
 
+### Open question — sizes in use that this ramp does not name
+
+The shipped CSS uses 22 literal sizes the hierarchy above does not cover, and
+the design detector reports each of them (40 findings in `courtside.css`). They
+are listed here rather than silently changed: most look deliberate, and the
+honest resolution for those is to name them here, not to bend the CSS to a ramp
+that is incomplete. **Undecided — pick a column for each group.**
+
+| Size | Uses | Where | Reads like |
+|---|---|---|---|
+| 9px | 10 | `.court-conference-sheet header span`, `.court-moment-row small`, `.court-profile-rank-stamp` | Already sanctioned as Microprint (9–10px); the ramp names it, the tokens do not. |
+| 15px, 18px, 19px | 4 | `.court-roster-name strong`, `.court-season-select`, `.court-breakdown-card__title` | A gap between Body (16px) and Title (28px) that the ramp has no step for. |
+| 20px, 21px, 23px, 24px, 26px, 27px | 9 | `.court-basic-participant h3`, `.court-breakdown-card__score`, `.court-profile-rank-stamp strong` | Sub-title scores and stamps — the largest cluster, and the strongest case for a real step. |
+| 31px, 34px, 40px, 44px, 56px | 9 | `.court-profile-copy h1`, `.next-play-hero h1`, `.court-basic-rank` | Fixed page identities that sit below the fluid Display/Headline range. |
+| 0.75, 0.875, 0.9, 0.9375, 1.2, 1.25, 2.3rem | 8 | `.court-nav-link`, `.court-topbar__brand`, `.court-desktop-nav__brand` | Not a scale question but a unit one: rem in a file that is otherwise px. |
+
+Three options per group: name the step in **Hierarchy** above and add it to the
+token block, fold the use onto an existing step, or record it as a deliberate
+one-off. The rem values are worth settling either way — mixing units in one
+file makes the ramp harder to hold in mind than any single size does.
+
 ### Named Rules
 
 **The Scorebook Voice Rule.** Use Barlow Condensed for identity, navigation, score, and state; use Source Sans 3 for reading and decision support.
