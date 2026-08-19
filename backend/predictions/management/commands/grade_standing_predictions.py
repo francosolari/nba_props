@@ -9,6 +9,7 @@ from predictions.models import (
     UserStats,
 )
 from predictions.services.standings_scoring import score_position
+from predictions.api.v2.cache_utils import invalidate_leaderboard_caches
 from django.conf import settings
 
 
@@ -231,6 +232,8 @@ class Command(BaseCommand):
             self.stdout.write("=" * 60)
             logger.info("Grading process completed successfully.")
             logger.info(summary)
+
+            invalidate_leaderboard_caches(season.slug)
 
         except IntegrityError as e:
             error_msg = f'Database integrity error occurred: {str(e)}'

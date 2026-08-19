@@ -15,6 +15,7 @@ Note: This command requires nba_api library and should only be run locally.
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from predictions.models import Season
+from predictions.api.v2.cache_utils import invalidate_leaderboard_caches
 import sys
 import os
 
@@ -100,6 +101,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(
                 f'✓ Completed at {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}'
             ))
+
+            invalidate_leaderboard_caches(season_slug)
 
         except Exception as e:
             raise CommandError(f'Failed to update standings: {str(e)}')

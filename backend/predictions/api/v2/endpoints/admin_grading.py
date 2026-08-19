@@ -28,6 +28,7 @@ from predictions.models import (
     NBAFinalsPredictionQuestion, Player
 )
 from predictions.api.common.utils import resolve_answers_optimized
+from predictions.api.v2.cache_utils import invalidate_leaderboard_caches
 from ..schemas.admin_grading import (
     GradingAuditResponse,
     UserGradingBreakdown,
@@ -400,6 +401,8 @@ def manual_grade_answer(request, payload: ManualGradeRequest):
     if not created:
         user_stat.points = total_points
         user_stat.save()
+
+    invalidate_leaderboard_caches(season.slug)
 
     logger.info(f"Admin {request.user.username} manually graded answer {answer.id} for user {user.username}")
 

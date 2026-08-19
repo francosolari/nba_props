@@ -31,8 +31,9 @@ router = Router(tags=["User Insights"])
 def get_interesting_stats(request, username: str, season_slug: str = None):
     """Get interesting prediction stats for a user"""
     try:
+        from collections import defaultdict
         from django.contrib.auth import get_user_model
-        from django.db.models import Count, Q, F, Case, When, IntegerField
+        from django.db.models import Count, Q
 
         User = get_user_model()
 
@@ -56,33 +57,44 @@ def get_interesting_stats(request, username: str, season_slug: str = None):
             return JsonResponse({'error': 'No active season'}, status=404)
 
         # Get user's correct answers
-        user_correct_answers = Answer.objects.filter(
-            user=user,
-            question__season=season,
-            is_correct=True
-        ).select_related('question')
+        user_correct_answers = list(
+            Answer.objects.filter(
+                user=user,
+                question__season=season,
+                is_correct=True
+            ).select_related('question')
+        )
 
         unique_wins = []
         rare_wins = []
 
+        # Correctness totals for every question the user got right, computed
+        # in one bulk aggregate query instead of two queries per answer.
+        question_ids = [answer.question_id for answer in user_correct_answers]
+        totals_by_question = {
+            row['question_id']: row
+            for row in (
+                Answer.objects.filter(question_id__in=question_ids)
+                .exclude(is_correct__isnull=True)
+                .values('question_id')
+                .annotate(
+                    total_answers=Count('id'),
+                    total_correct=Count('id', filter=Q(is_correct=True)),
+                )
+            )
+        }
+
         # Find unique and rare wins
         for answer in user_correct_answers:
             question = answer.question
+            totals = totals_by_question.get(question.id)
 
-            # Count total correct answers for this question
-            total_correct = Answer.objects.filter(
-                question=question,
-                is_correct=True
-            ).count()
-
-            total_answers = Answer.objects.filter(
-                question=question
-            ).exclude(is_correct__isnull=True).count()
-
-            if total_answers == 0:
+            if not totals or totals['total_answers'] == 0:
                 continue
 
-            correct_percentage = (total_correct / total_answers) * 100 if total_answers > 0 else 0
+            total_correct = totals['total_correct']
+            total_answers = totals['total_answers']
+            correct_percentage = (total_correct / total_answers) * 100
 
             stat_item = {
                 'question': question.text,
@@ -104,33 +116,43 @@ def get_interesting_stats(request, username: str, season_slug: str = None):
         from predictions.models import PropQuestion
 
         close_calls = []
-        prop_questions = PropQuestion.objects.filter(
-            season=season,
-            outcome_type__in=['yes_no', 'over_under']
+        prop_questions = list(
+            PropQuestion.objects.filter(
+                season=season,
+                outcome_type__in=['yes_no', 'over_under']
+            )
         )
+        prop_question_ids = [q.id for q in prop_questions]
+
+        # One bulk fetch for every candidate question's answers, instead of a
+        # count + distribution + user-lookup query per question.
+        answers_by_question = defaultdict(list)
+        for prop_answer in Answer.objects.filter(
+            question_id__in=prop_question_ids
+        ).exclude(answer='').only('question_id', 'user_id', 'answer', 'is_correct'):
+            answers_by_question[prop_answer.question_id].append(prop_answer)
 
         for question in prop_questions:
-            answers_query = Answer.objects.filter(question=question).exclude(answer='')
-            total_count = answers_query.count()
+            question_answers = answers_by_question.get(question.id, [])
+            total_count = len(question_answers)
 
             if total_count < 5:  # Need at least 5 answers for meaningful split
                 continue
 
             # Get answer distribution
-            answer_counts = answers_query.values('answer').annotate(
-                count=Count('id')
-            )
+            answer_counts = defaultdict(int)
+            for prop_answer in question_answers:
+                answer_counts[prop_answer.answer] += 1
 
             if len(answer_counts) == 2:
-                counts = [ac['count'] for ac in answer_counts]
+                counts = list(answer_counts.values())
                 split_percentage = min(counts) / total_count * 100
 
                 # If split is between 40-60%, it's a close call
                 if 40 <= split_percentage <= 60:
-                    user_answer = Answer.objects.filter(
-                        question=question,
-                        user=user
-                    ).first()
+                    user_answer = next(
+                        (a for a in question_answers if a.user_id == user.id), None
+                    )
 
                     if user_answer:
                         close_calls.append({
@@ -139,7 +161,7 @@ def get_interesting_stats(request, username: str, season_slug: str = None):
                             'is_correct': user_answer.is_correct,
                             'split_percentage': round(split_percentage, 1),
                             'total_responses': total_count,
-                            'distribution': {ac['answer']: ac['count'] for ac in answer_counts}
+                            'distribution': dict(answer_counts)
                         })
 
         return {
