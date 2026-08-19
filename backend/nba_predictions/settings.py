@@ -34,6 +34,10 @@ if IS_DEVELOPMENT:
             'PASSWORD': os.getenv('DATABASE_PASSWORD'),
             'HOST': os.getenv('DATABASE_HOST', '134.209.213.185'),
             'PORT': os.getenv('DATABASE_PORT', '5432'),
+            # Reuse the TCP/auth handshake across requests within a Gunicorn
+            # worker instead of paying for it on every single request.
+            'CONN_MAX_AGE': int(os.getenv('DATABASE_CONN_MAX_AGE', '60')),
+            'CONN_HEALTH_CHECKS': True,
         }
     }
 
@@ -52,6 +56,13 @@ else:
             'PASSWORD': os.getenv('DATABASE_PASSWORD', 'mypassword'),
             'HOST': os.getenv('DATABASE_HOST', 'propspredictions.com'),
             'PORT': os.getenv('DATABASE_PORT', '5432'),
+            # Reuse the TCP/auth handshake across requests within a Gunicorn
+            # worker instead of paying for it on every single request.
+            # CONN_HEALTH_CHECKS pings a reused connection before handing it
+            # back out, so a blue/green switch or a DB restart doesn't leave
+            # a worker holding a dead connection.
+            'CONN_MAX_AGE': int(os.getenv('DATABASE_CONN_MAX_AGE', '60')),
+            'CONN_HEALTH_CHECKS': True,
         }
     }
 
@@ -102,6 +113,10 @@ AUTHENTICATION_BACKENDS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    # WhiteNoise already serves static files pre-compressed, so this only
+    # does work for the API/HTML responses that reach it -- notably the
+    # leaderboard and homepage JSON payloads.
+    'django.middleware.gzip.GZipMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'nba_predictions.middleware.ThrottledSessionMiddleware',  # Throttle session updates to reduce DB writes
     'django.middleware.common.CommonMiddleware',
