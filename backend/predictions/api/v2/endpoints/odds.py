@@ -72,15 +72,21 @@ def get_current_odds(request, season_slug: str):
         odds__scraped_at=latest_time
     ).distinct()
 
+    # Fetch every award's odds in one query and group in Python, rather than
+    # issuing a top-10 query per award inside the loop below.
+    odds_by_award = {}
+    for odd in (
+        Odds.objects
+        .filter(season=season, scraped_at=latest_time)
+        .order_by('rank')
+        .select_related('player')
+    ):
+        odds_by_award.setdefault(odd.award_id, []).append(odd)
+
     awards_data = []
 
     for award in awards_with_odds:
-        # Get top odds for this award
-        top_odds = Odds.objects.filter(
-            award=award,
-            season=season,
-            scraped_at=latest_time
-        ).order_by('rank').select_related('player')[:10]  # Top 10
+        top_odds = odds_by_award.get(award.id, [])[:10]  # Top 10
 
         players_odds = [
             {

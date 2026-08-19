@@ -473,15 +473,39 @@ def submit_standing_predictions(request, season_slug: str, payload: StandingPred
             season=season
         ).exclude(team_id__in=team_ids).delete()
 
-        for entry in predictions_payload:
-            team = teams[entry.team_id]
-            StandingPrediction.objects.update_or_create(
-                user=request.user,
-                season=season,
-                team=team,
-                defaults={"predicted_position": entry.predicted_position},
+        # A board is submitted whole -- 15 teams per conference, 30 in all --
+        # so the rows are resolved and written in bulk rather than one
+        # update_or_create round-trip per team.
+        existing = {
+            prediction.team_id: prediction
+            for prediction in StandingPrediction.objects.filter(
+                user=request.user, season=season, team_id__in=team_ids
             )
-            saved_count += 1
+        }
+
+        to_create = []
+        to_update = []
+        for entry in predictions_payload:
+            current = existing.get(entry.team_id)
+            if current is None:
+                to_create.append(
+                    StandingPrediction(
+                        user=request.user,
+                        season=season,
+                        team=teams[entry.team_id],
+                        predicted_position=entry.predicted_position,
+                    )
+                )
+            elif current.predicted_position != entry.predicted_position:
+                current.predicted_position = entry.predicted_position
+                to_update.append(current)
+
+        if to_create:
+            StandingPrediction.objects.bulk_create(to_create)
+        if to_update:
+            StandingPrediction.objects.bulk_update(to_update, ["predicted_position"])
+
+        saved_count = len(predictions_payload)
 
     return {
         "status": "success",
@@ -600,28 +624,66 @@ def submit_answers(request, season_slug: str, payload: BulkAnswerSubmitSchema):
 
     saved_count = 0
     errors = {}
-    
+
+    # This is the deadline-rush path: every participant posts a full board at
+    # once, in the same few minutes. Resolving and writing one answer at a
+    # time turned a single submission into hundreds of round-trips held open
+    # inside one transaction, so the whole payload is resolved and written in
+    # a fixed number of queries instead.
     with transaction.atomic():
+        requested_ids = [answer_data.question_id for answer_data in payload.answers]
+
+        # Validate every question in one query. Only id and season are needed,
+        # so the non-polymorphic queryset avoids walking each subclass table.
+        base_queryset = Question.objects
+        if hasattr(base_queryset, "non_polymorphic"):
+            base_queryset = base_queryset.non_polymorphic()
+        valid_ids = set(
+            base_queryset
+            .filter(id__in=requested_ids, season=season)
+            .values_list("id", flat=True)
+        )
+
+        # A repeated question_id keeps the last value, matching the behaviour
+        # of the previous per-answer update_or_create loop.
+        desired = {}
         for answer_data in payload.answers:
-            question_id = answer_data.question_id
-            answer_value = answer_data.answer
-            
-            try:
-                # Get question and verify it belongs to this season
-                question = get_object_or_404(Question, id=question_id, season=season)
-                
-                # Create or update answer
-                Answer.objects.update_or_create(
-                    user=request.user,
-                    question=question,
-                    defaults={'answer': answer_value}
+            if answer_data.question_id in valid_ids:
+                desired[answer_data.question_id] = answer_data.answer
+            else:
+                errors[str(answer_data.question_id)] = "No Question matches the given query."
+
+        existing = {
+            answer.question_id: answer
+            for answer in Answer.objects.filter(
+                user=request.user, question_id__in=desired.keys()
+            )
+        }
+
+        to_create = []
+        to_update = []
+        for question_id, answer_value in desired.items():
+            current = existing.get(question_id)
+            if current is None:
+                to_create.append(
+                    Answer(user=request.user, question_id=question_id, answer=answer_value)
                 )
-                
-                saved_count += 1
-                
-            except Exception as e:
-                errors[str(question_id)] = str(e)
-    
+            elif current.answer != answer_value:
+                current.answer = answer_value
+                to_update.append(current)
+
+        if to_create:
+            Answer.objects.bulk_create(to_create)
+        if to_update:
+            Answer.objects.bulk_update(to_update, ["answer"])
+
+        # Counted per submitted entry rather than per stored row, so a payload
+        # that repeats a question still reports what the old loop reported.
+        saved_count = sum(
+            1 for answer_data in payload.answers if answer_data.question_id in valid_ids
+        )
+
+
     if errors:
         return {
             "status": "partial_success" if saved_count > 0 else "error",

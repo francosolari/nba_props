@@ -5,7 +5,10 @@ from typing import Callable, Dict, List, Optional, Union
 
 from ninja import Router
 
+from django.core.cache import cache
+
 from predictions.api.v2.utils import results_visible
+from predictions.api.v2.cache_utils import LEADERBOARD_CACHE_KEY, LEADERBOARD_CACHE_TTL
 from django.utils import timezone
 from predictions.models import Answer, RegularSeasonStandings, Season
 from predictions.models.prediction import StandingPrediction
@@ -141,6 +144,38 @@ def _seed_range(seeds: Optional[range], season_over: bool, actual_position) -> O
 
 # ─────────── Aggregator ───────────
 def _build_leaderboard(season_slug: str) -> List[Dict]:
+    """
+    Cached entry point for the leaderboard computation.
+
+    The computation itself does not depend on who is asking -- only whether
+    they are *allowed to see it* does (handled separately via
+    ``results_visible`` by the caller) -- so it is safe to cache briefly and
+    share across requests. This is the same short-TTL, in-process caching
+    pattern already used for the submissions questions cache.
+    """
+    cache_key = LEADERBOARD_CACHE_KEY.format(season_slug=season_slug)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    # _compute_leaderboard builds its rows out of defaultdicts (for the
+    # convenient auto-vivifying assembly above); those hold an unpicklable
+    # lambda as their default_factory, so flatten to plain dicts/lists before
+    # handing the result to the cache backend.
+    leaderboard = _to_plain(_compute_leaderboard(season_slug))
+    cache.set(cache_key, leaderboard, timeout=LEADERBOARD_CACHE_TTL)
+    return leaderboard
+
+
+def _to_plain(value):
+    if isinstance(value, dict):
+        return {k: _to_plain(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_to_plain(v) for v in value]
+    return value
+
+
+def _compute_leaderboard(season_slug: str) -> List[Dict]:
     # Once a season is over nothing it produced can move again, whether or not an
     # administrator ever flipped an award to finalized. Past seasons therefore
     # read as fully locked rather than advertising points still in play.
@@ -267,11 +302,18 @@ def _build_leaderboard(season_slug: str) -> List[Dict]:
     }
 
     # Prefetch prop question line data for over/under display
+    #
+    # `polymorphic_ctype_id` must be in this .only() list even though nothing
+    # here reads it: PropQuestion inherits it from the base Question table via
+    # multi-table inheritance, and django-polymorphic touches it on every
+    # instance during iteration. Leaving it deferred turns this queryset into
+    # a query-per-row N+1 (one extra SELECT per PropQuestion to re-fetch just
+    # that column) instead of the single query `.only()` is meant to produce.
     prop_question_data: Dict[int, Dict] = {}
     for pq in (
         PropQuestion.objects
         .filter(season__slug=season_slug)
-        .only("id", "line", "outcome_type")
+        .only("id", "line", "outcome_type", "polymorphic_ctype")
     ):
         prop_question_data[pq.id] = {
             "line": pq.line,

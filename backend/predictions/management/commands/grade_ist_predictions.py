@@ -8,6 +8,7 @@ from predictions.models import (
     InSeasonTournamentQuestion,
     UserStats,
 )
+from predictions.api.v2.cache_utils import invalidate_leaderboard_caches
 
 
 class Command(BaseCommand):
@@ -248,3 +249,5 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f'Successfully graded IST answers for season "{season.slug}".')
         )
+
+        invalidate_leaderboard_caches(season.slug)

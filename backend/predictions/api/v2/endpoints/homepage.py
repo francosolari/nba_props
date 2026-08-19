@@ -19,10 +19,11 @@ The NBA schedule feed lives in `schedule.py`; the crawler itself is
 
 import logging
 import random
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from ninja import Router
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.utils import timezone
@@ -33,6 +34,7 @@ from predictions.models import (
     RegularSeasonStandings, InSeasonTournamentStandings
 )
 from predictions.api.v2.utils import results_visible
+from predictions.api.v2.cache_utils import HOMEPAGE_CACHE_KEY, HOMEPAGE_CACHE_TTL
 from predictions.api.v2.schemas import (
     RandomPredictionsResponseSchema, RandomPropsResponseSchema,
     ErrorSchema
@@ -270,6 +272,54 @@ def _cup_result(season):
     )
 
 
+def _compute_homepage_bundle(season) -> Dict:
+    """
+    Do the actual DB work behind the homepage payload: ranked players,
+    conference standings, and the Cup result. None of this depends on who is
+    asking -- only whether the response is allowed to include it does (that
+    gating happens in the view) -- so it's safe to cache briefly and share
+    across requests.
+    """
+    players = [player.model_dump() for player in _ranked_players(season)]
+
+    standings: Dict[str, List[Dict]] = {}
+    for key, conference in (('eastern', 'East'), ('western', 'West')):
+        standings[key] = [
+            {
+                "team": standing.team.name,
+                "wins": standing.wins,
+                "losses": standing.losses,
+                "position": standing.position,
+                "last_ten_wins": standing.last_ten_wins,
+            }
+            # The whole conference, not a top five: home shows each entry's
+            # board against the real ladder, and a truncated table would
+            # hide exactly the misses further down that cost the most.
+            for standing in RegularSeasonStandings.objects.filter(
+                season=season, team__conference=conference
+            ).select_related('team').order_by('position')
+        ]
+
+    cup = _cup_result(season)
+
+    return {
+        "players": players,
+        "standings": standings,
+        "cup": cup.model_dump() if cup else None,
+    }
+
+
+def _build_homepage_bundle(season) -> Dict:
+    cache_key = HOMEPAGE_CACHE_KEY.format(season_slug=season.slug)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    bundle = _compute_homepage_bundle(season)
+    cache.set(cache_key, bundle, timeout=HOMEPAGE_CACHE_TTL)
+    return bundle
+
+
 @router.get(
     "/data",
     response={200: HomepageDataSchema, 500: ErrorSchema},
@@ -295,33 +345,18 @@ def get_homepage_data(request, season_slug: str = None):
         # pool's table, podium, and Cup winner are other people's entries and
         # stay sealed until the submission window closes.
         visible = results_visible(season, request.user)
-        players = _ranked_players(season) if visible else []
         complete = season.end_date < timezone.localdate()
 
-        standings = {}
-        for key, conference in (('eastern', 'East'), ('western', 'West')):
-            standings[key] = [
-                HomepageStandingSchema(
-                    team=standing.team.name,
-                    wins=standing.wins,
-                    losses=standing.losses,
-                    position=standing.position,
-                    last_ten_wins=standing.last_ten_wins,
-                )
-                # The whole conference, not a top five: home shows each entry's
-                # board against the real ladder, and a truncated table would
-                # hide exactly the misses further down that cost the most.
-                for standing in RegularSeasonStandings.objects.filter(
-                    season=season, team__conference=conference
-                ).select_related('team').order_by('position')
-            ]
+        bundle = _build_homepage_bundle(season)
+        players = [HomepagePlayerSchema(**p) for p in bundle["players"]] if visible else []
+        cup = HomepageCupSchema(**bundle["cup"]) if (visible and bundle["cup"]) else None
 
         return HomepageDataSchema(
             season=HomepageSeasonSchema(slug=season.slug, year=season.year, complete=complete),
             mini_leaderboard=players[:5],
-            mini_standings=HomepageStandingsSchema(**standings),
+            mini_standings=HomepageStandingsSchema(**bundle["standings"]),
             podium=players[:3] if complete else [],
-            cup=_cup_result(season) if visible else None,
+            cup=cup,
             results_locked=not visible,
         )
 

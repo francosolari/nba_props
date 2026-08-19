@@ -28,6 +28,7 @@ from predictions.models import (
     NBAFinalsPredictionQuestion, Player
 )
 from predictions.api.common.utils import resolve_answers_optimized
+from predictions.api.v2.cache_utils import invalidate_leaderboard_caches
 from ..schemas.admin_grading import (
     GradingAuditResponse,
     UserGradingBreakdown,
@@ -299,13 +300,24 @@ def get_answers_for_review(
     if pending_only:
         query &= Q(is_correct__isnull=True) | Q(question__correct_answer__isnull=True) | Q(question__correct_answer='')
 
-    answers = Answer.objects.filter(query).select_related(
-        'user', 'question', 'question__polymorphic_ctype'
-    ).order_by('-submission_date')[:500]  # Limit to 500 for performance
+    answers = list(
+        Answer.objects.filter(query).select_related(
+            'user', 'question', 'question__polymorphic_ctype'
+        ).order_by('-submission_date')[:500]  # Limit to 500 for performance
+    )
+
+    # Resolve the polymorphic subclasses in bulk. Calling
+    # answer.question.get_real_instance() inside the loop below cost one query
+    # per answer -- up to 500 on a single review page. Fetching through the
+    # polymorphic manager instead resolves every subclass in one query per
+    # question type present (at most a handful), regardless of answer count.
+    real_questions = Question.objects.filter(
+        id__in={answer.question_id for answer in answers}
+    ).in_bulk()
 
     items = []
     for answer in answers:
-        question = answer.question.get_real_instance()
+        question = real_questions.get(answer.question_id) or answer.question
         is_finalized = getattr(question, 'is_finalized', False)
 
         items.append({
@@ -400,6 +412,8 @@ def manual_grade_answer(request, payload: ManualGradeRequest):
     if not created:
         user_stat.points = total_points
         user_stat.save()
+
+    invalidate_leaderboard_caches(season.slug)
 
     logger.info(f"Admin {request.user.username} manually graded answer {answer.id} for user {user.username}")
 
