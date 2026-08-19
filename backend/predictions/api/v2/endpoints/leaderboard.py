@@ -302,11 +302,18 @@ def _compute_leaderboard(season_slug: str) -> List[Dict]:
     }
 
     # Prefetch prop question line data for over/under display
+    #
+    # `polymorphic_ctype_id` must be in this .only() list even though nothing
+    # here reads it: PropQuestion inherits it from the base Question table via
+    # multi-table inheritance, and django-polymorphic touches it on every
+    # instance during iteration. Leaving it deferred turns this queryset into
+    # a query-per-row N+1 (one extra SELECT per PropQuestion to re-fetch just
+    # that column) instead of the single query `.only()` is meant to produce.
     prop_question_data: Dict[int, Dict] = {}
     for pq in (
         PropQuestion.objects
         .filter(season__slug=season_slug)
-        .only("id", "line", "outcome_type")
+        .only("id", "line", "outcome_type", "polymorphic_ctype")
     ):
         prop_question_data[pq.id] = {
             "line": pq.line,
