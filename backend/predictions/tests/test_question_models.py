@@ -76,6 +76,19 @@ class TestPropQuestion:
         assert isinstance(real_instance, PropQuestion)
         assert real_instance.__class__.__name__ == 'PropQuestion'
 
+    @pytest.mark.parametrize("correct, yes_pts, no_pts", [("Yes", 3, 0), ("No", 0, 1)])
+    def test_points_if_correct_pays_only_the_correct_side(self, correct, yes_pts, no_pts):
+        """'3 if yes, 1 if no' pays the winning side its own value and the losing side nothing."""
+        question = PropQuestion(
+            outcome_type='yes_no',
+            point_value=3,
+            points_if_correct={"Yes": 3, "No": 1},
+            correct_answer=correct,
+        )
+
+        assert question.points_for_answer("yes") == yes_pts
+        assert question.points_for_answer("No") == no_pts
+
 
 @pytest.mark.django_db
 class TestSuperlativeQuestion:

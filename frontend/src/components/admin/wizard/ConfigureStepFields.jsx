@@ -83,43 +83,6 @@ const ConfigureStepFields = ({ draft, awardOptions, playerOptions, teamOptions, 
           />
         </div>
       );
-    case 'player_stat':
-      return (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className={`flex flex-col gap-2 text-sm ${labelTextClass}`}>
-              Stat type
-              <input
-                value={draft.data.statType}
-                onChange={(event) => onUpdateDraftData(draft.id, { statType: event.target.value })}
-                placeholder="assists"
-                className="court-admin-input w-full text-sm"
-              />
-            </label>
-            <label className={`flex flex-col gap-2 text-sm ${labelTextClass}`}>
-              Player stat ID
-              <input
-                type="number"
-                value={draft.data.playerStatId}
-                onChange={(event) => onUpdateDraftData(draft.id, { playerStatId: event.target.value })}
-                placeholder="24589"
-                className="court-admin-input w-full text-sm"
-              />
-            </label>
-          </div>
-          <label className={`flex flex-col gap-2 text-sm ${labelTextClass}`}>
-            Fixed value (optional)
-            <input
-              type="number"
-              step="0.1"
-              value={draft.data.fixedValue}
-              onChange={(event) => onUpdateDraftData(draft.id, { fixedValue: event.target.value })}
-              placeholder="10"
-              className="court-admin-input w-full text-sm"
-            />
-          </label>
-        </>
-      );
     case 'ist':
       return (
         <>

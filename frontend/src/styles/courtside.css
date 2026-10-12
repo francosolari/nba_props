@@ -2128,6 +2128,16 @@ button[type="submit"]:active {
 .court-button--secondary { color: var(--court-ink); background: var(--court-paper); }
 .court-button--secondary:hover { color: var(--court-ink); background: var(--court-blue-soft); }
 
+.court-admin-type-picker button:last-child:nth-child(3n+2) { grid-column: span 2; border-right: 0; }
+.court-admin-warning { margin: 0; padding: 10px 12px; color: var(--court-warning); background: var(--court-warning-soft); font-size: 14px; font-weight: 700; line-height: 1.4; }
+.court-admin-points { display: grid; gap: 10px; margin: 0; padding: 12px; border: 1px solid var(--court-rule-soft); min-width: 0; }
+.court-admin-points legend { padding: 0 4px; color: var(--court-steel); font: 800 11px var(--court-body); letter-spacing: .06em; text-transform: uppercase; }
+.court-admin-points__single { max-width: 140px; }
+.court-admin-points__sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.court-admin-points__toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--court-ink); font-size: 15px; cursor: pointer; }
+.court-admin-points__toggle input { width: 20px; height: 20px; accent-color: var(--court-blue); }
+.court-submissions-page .pick-answer-points { font: 700 12px/1 var(--court-body); letter-spacing: 0; text-transform: none; opacity: .85; }
+
 /* Grading queue */
 .court-admin-grading-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: end; }
 .court-admin-grading-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }

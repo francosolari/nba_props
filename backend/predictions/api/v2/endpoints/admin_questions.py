@@ -7,8 +7,10 @@ Protected by @admin_required decorator - only accessible to authorized users.
 from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from django.db.models import Count
 from typing import List
 from predictions.models import (
+    Answer,
     Season, Question, Award, Player, Team, PlayerStat,
     SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion,
     HeadToHeadQuestion, InSeasonTournamentQuestion, NBAFinalsPredictionQuestion
@@ -50,8 +52,20 @@ def admin_list_questions(request, season_slug: str):
     season = get_object_or_404(Season, slug=season_slug)
     
     questions, real_questions_map = build_questions_with_real_map(season)
-    
-    return [serialize_question(q, real_questions_map=real_questions_map) for q in questions]
+    # Pick counts let the editor warn before an answer-type change orphans picks.
+    answer_counts = dict(
+        Answer.objects.filter(question__season=season)
+        .values_list("question_id")
+        .annotate(n=Count("id"))
+    )
+
+    return [
+        {
+            **serialize_question(q, real_questions_map=real_questions_map),
+            "answer_count": answer_counts.get(q.id, 0),
+        }
+        for q in questions
+    ]
 
 
 @router.post(
@@ -108,9 +122,11 @@ def create_prop_question(request, payload: PropQuestionCreateSchema):
             text=payload.text,
             point_value=payload.point_value,
             answer_point_values=payload.answer_point_values or {},
+            points_if_correct=payload.points_if_correct or {},
             outcome_type=payload.outcome_type,
             related_player=related_player,
             line=payload.line,
+            stat=payload.stat or "",
         )
         
         return {
@@ -277,6 +293,8 @@ def update_question(request, question_id: int, payload: QuestionUpdateSchema):
             real_question.point_value = payload.point_value
         if payload.answer_point_values is not None:
             real_question.answer_point_values = payload.answer_point_values
+        if payload.points_if_correct is not None:
+            real_question.points_if_correct = payload.points_if_correct
 
         # Update type-specific fields
         question_type = real_question.__class__.__name__
@@ -289,6 +307,8 @@ def update_question(request, question_id: int, payload: QuestionUpdateSchema):
         elif question_type == "PropQuestion":
             if payload.outcome_type is not None:
                 real_question.outcome_type = payload.outcome_type
+            if payload.stat is not None:
+                real_question.stat = payload.stat
             if payload.related_player_id is not None:
                 player = get_object_or_404(Player, id=payload.related_player_id)
                 real_question.related_player = player

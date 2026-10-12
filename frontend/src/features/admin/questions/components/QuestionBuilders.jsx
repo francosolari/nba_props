@@ -2,18 +2,17 @@ import React, { useState } from 'react';
 import { Layers } from 'lucide-react';
 import SuperlativeForm from './SuperlativeForm';
 import PropForm from './PropForm';
-import PlayerStatForm from './PlayerStatForm';
 import HeadToHeadForm from './HeadToHeadForm';
 import ISTForm from './ISTForm';
 import NBAFinalsForm from './NBAFinalsForm';
-import { QUESTION_TYPES } from '../questionTypes';
+import { COMPOSER_TYPES } from '../questionTypes';
 
 const LAST_TYPE_KEY = 'admin.composer.type';
 
 const readLastType = () => {
   try {
     const saved = window.localStorage.getItem(LAST_TYPE_KEY);
-    return QUESTION_TYPES.some((type) => type.value === saved) ? saved : 'superlative';
+    return COMPOSER_TYPES.some((type) => type.value === saved) ? saved : 'superlative';
   } catch {
     return 'superlative';
   }
@@ -69,15 +68,6 @@ const QuestionBuilders = ({
             createProp={mutations.createProp}
           />
         );
-      case 'player_stat':
-        return (
-          <PlayerStatForm
-            {...shared}
-            form={forms.playerStatForm}
-            setForm={setters.setPlayerStatForm}
-            createPlayerStat={mutations.createPlayerStat}
-          />
-        );
       case 'head_to_head':
         return (
           <HeadToHeadForm
@@ -129,7 +119,7 @@ const QuestionBuilders = ({
         </button>
       </header>
       <div className="court-admin-type-picker" role="radiogroup" aria-label="Question type">
-        {QUESTION_TYPES.map((type) => (
+        {COMPOSER_TYPES.map((type) => (
           <button
             key={type.value}
             type="button"

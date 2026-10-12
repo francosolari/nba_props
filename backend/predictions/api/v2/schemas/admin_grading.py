@@ -123,6 +123,7 @@ class QuestionForGradingItem(Schema):
     runner_up_player_id: Optional[int] = None
     point_value: float
     answer_point_values: Dict[str, float] = {}
+    points_if_correct: Dict[str, float] = {}
     is_finalized: bool
     submission_count: int  # Number of user submissions for this question
     has_correct_answer: bool  # Whether correct_answer is set

@@ -44,6 +44,7 @@ from predictions.tests.factories import (
     HeadToHeadQuestionFactory,
     InSeasonTournamentQuestionFactory,
     NBAFinalsPredictionQuestionFactory,
+    AnswerFactory,
 )
 
 
@@ -97,6 +98,21 @@ class TestAdminListQuestions:
         question_texts = {q['text'] for q in data}
         assert "Who wins MVP?" in question_texts
         assert "Will Lakers make playoffs?" in question_texts
+        counts = {q['id']: q['answer_count'] for q in data}
+        assert counts[q2.id] == 0
+
+    def test_admin_list_questions_counts_picks(self, admin_client):
+        """Each question reports how many picks it has, for the type-change warning."""
+        client, admin = admin_client
+        season = SeasonFactory(slug='24-25')
+        prop = PropQuestionFactory(season=season, outcome_type='yes_no')
+        AnswerFactory.create_batch(3, question=prop, answer='yes')
+
+        response = client.get('/api/v2/admin/seasons/24-25/questions')
+
+        assert response.status_code == 200
+        [question] = response.json()
+        assert question['answer_count'] == 3
 
     def test_admin_list_questions_permission_required(self, regular_user_client):
         """Test non-admin cannot list questions."""
@@ -268,6 +284,37 @@ class TestCreatePropQuestion:
             text="Will any team go undefeated in the regular season?"
         )
         assert question.related_player is None
+
+    def test_create_player_stat_prop_with_split_points(self, admin_client):
+        """A player stat prop saves as an over/under with its stat and per-answer points."""
+        client, admin = admin_client
+        SeasonFactory(slug='24-25')
+        player = PlayerFactory()
+
+        payload = {
+            "season_slug": "24-25",
+            "text": "Luka technical fouls (season)",
+            "point_value": 2,
+            "outcome_type": "over_under",
+            "related_player_id": player.id,
+            "line": 15.5,
+            "stat": "technicals",
+            "points_if_correct": {"Over": 1, "Under": 2},
+        }
+
+        response = client.post(
+            '/api/v2/admin/questions/prop',
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        question = PropQuestion.objects.get(text="Luka technical fouls (season)")
+        assert question.stat == "technicals"
+        assert question.points_if_correct == {"Over": 1, "Under": 2}
+        body = response.json()['question']
+        assert body['stat'] == "technicals"
+        assert body['points_if_correct'] == {"Over": 1.0, "Under": 2.0}
 
 
 # ============================================================================

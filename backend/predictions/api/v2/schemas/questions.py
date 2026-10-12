@@ -20,6 +20,8 @@ class QuestionBaseSchema(Schema):
     text: str
     point_value: float
     answer_point_values: Dict[str, float] = {}
+    points_if_correct: Dict[str, float] = {}
+    answer_count: int = 0
     is_manual: bool
     last_updated: datetime
     question_type: str  # Discriminator field
@@ -46,6 +48,7 @@ class PropQuestionSchema(QuestionBaseSchema):
     related_player_name: Optional[str] = None
     related_player_headshot_url: Optional[str] = None
     line: Optional[float] = None  # Only for over_under type
+    stat: str = ""
 
 
 class PlayerStatPredictionQuestionSchema(QuestionBaseSchema):
@@ -219,9 +222,11 @@ class PropQuestionCreateSchema(Schema):
     text: str
     point_value: float = 0.5
     answer_point_values: Optional[Dict[str, float]] = None
+    points_if_correct: Optional[Dict[str, float]] = None
     outcome_type: Literal["over_under", "yes_no"]
     related_player_id: Optional[int] = None
     line: Optional[float] = None
+    stat: Optional[str] = None
 
 
 class PlayerStatPredictionQuestionCreateSchema(Schema):
@@ -271,6 +276,7 @@ class QuestionUpdateSchema(Schema):
     text: Optional[str] = None
     point_value: Optional[float] = None
     answer_point_values: Optional[Dict[str, float]] = None
+    points_if_correct: Optional[Dict[str, float]] = None
 
     # Superlative question fields
     award_id: Optional[int] = None
@@ -279,6 +285,7 @@ class QuestionUpdateSchema(Schema):
     outcome_type: Optional[Literal["over_under", "yes_no"]] = None
     related_player_id: Optional[int] = None
     line: Optional[float] = None
+    stat: Optional[str] = None
 
     # Player stat question fields
     player_stat_id: Optional[int] = None

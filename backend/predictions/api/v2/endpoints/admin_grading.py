@@ -648,6 +648,7 @@ def get_questions_for_grading(request, season_slug: str):
             'runner_up_player_id': runner_up_player_id,
             'point_value': question_real.point_value or 0,
             'answer_point_values': question_real.answer_point_values or {},
+            'points_if_correct': question_real.points_if_correct or {},
             'is_finalized': is_finalized,
             'submission_count': submission_count,
             'has_correct_answer': has_correct_answer,

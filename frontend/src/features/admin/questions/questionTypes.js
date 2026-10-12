@@ -8,6 +8,10 @@ export const QUESTION_TYPES = [
   { value: 'nba_finals', label: 'Finals' },
 ];
 
+// Player stat props are created from the Prop form now; the old standalone
+// type only remains so any legacy questions still get a label.
+export const COMPOSER_TYPES = QUESTION_TYPES.filter((type) => type.value !== 'player_stat');
+
 export const questionTypeLabel = (value) => (
   QUESTION_TYPES.find((type) => type.value === value)?.label || value
 );

@@ -236,6 +236,7 @@ def serialize_question(question: Question, real_questions_map: Optional[dict] = 
         "text": real_question.text,
         "point_value": real_question.point_value,
         "answer_point_values": real_question.answer_point_values or {},
+        "points_if_correct": real_question.points_if_correct or {},
         "is_manual": real_question.is_manual,
         "last_updated": real_question.last_updated,
         "question_type": question_type,
@@ -260,6 +261,7 @@ def serialize_question(question: Question, real_questions_map: Optional[dict] = 
             "related_player_name": real_question.related_player.name if real_question.related_player else None,
             "related_player_headshot_url": real_question.related_player.headshot_url if real_question.related_player else None,
             "line": real_question.line,
+            "stat": real_question.stat,
         }
     
     # Player Stat Prediction Question

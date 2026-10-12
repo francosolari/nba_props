@@ -70,7 +70,7 @@ const QuestionCard = ({
           {question.text}
         </h3>
         <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
-          <span className="bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 px-3 py-1 rounded-full">{question.point_value} pts</span>
+          <span className="bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 px-3 py-1 rounded-full">{pointsChipText(question)}</span>
           <span className="capitalize">
             {question.question_type === 'head_to_head' ? 'Head to Head' : question.question_type.replace(/_/g, ' ')}
           </span>
@@ -88,6 +88,20 @@ const QuestionCard = ({
       />
     </div>
   );
+};
+
+// "3 pts", or "Up to 3 pts" when each answer pays differently.
+const pointsChipText = (question) => {
+  const split = Object.values(question.points_if_correct || {});
+  if (!split.length) return `${question.point_value} pts`;
+  return `Up to ${Math.max(...split.map(Number))} pts`;
+};
+
+// Shown under an answer only when the question pays answers differently.
+const AnswerPoints = ({ question, answer }) => {
+  const points = (question.points_if_correct || {})[answer];
+  if (points == null) return null;
+  return <span className="pick-answer-points">{points} pt{Number(points) === 1 ? '' : 's'}</span>;
 };
 
 // Question Input Component (handles different question types)
@@ -155,6 +169,7 @@ const QuestionInput = ({
               aria-label={`Under ${formattedLine}`}
             >
               <span className="overunder-choice-label">Under</span>
+              <AnswerPoints question={question} answer="Under" />
             </button>
             <div className="overunder-divider">
               <span className="overunder-divider-label">Line</span>
@@ -170,6 +185,7 @@ const QuestionInput = ({
               aria-label={`Over ${formattedLine}`}
             >
               <span className="overunder-choice-label">Over</span>
+              <AnswerPoints question={question} answer="Over" />
             </button>
           </div>
         );
@@ -197,6 +213,7 @@ const QuestionInput = ({
               aria-pressed={answer === 'yes'}
             >
               Yes
+              <AnswerPoints question={question} answer="Yes" />
             </button>
             <button
               type="button"
@@ -206,6 +223,7 @@ const QuestionInput = ({
               aria-pressed={answer === 'no'}
             >
               No
+              <AnswerPoints question={question} answer="No" />
             </button>
           </div>
         );

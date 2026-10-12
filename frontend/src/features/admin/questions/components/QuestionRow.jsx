@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { ADMIN_STYLES } from '../adminPanelStyles';
 import { questionTypeLabel } from '../questionTypes';
+import { PROP_KINDS, outcomeForKind, propKind, statLabel } from '../statProps';
+import { pointsPayload } from './AnswerPoints';
 import QuestionEditFields from './QuestionEditFields';
 
 const QuestionRow = ({
@@ -21,7 +23,11 @@ const QuestionRow = ({
 
   const getInitialDraft = useCallback(() => {
     const initial = { ...question };
-    initial.answer_point_values_json = JSON.stringify(initial.answer_point_values || {}, null, 2);
+    initial.kind = propKind(question);
+    // Inputs hold strings; the API returns numbers.
+    initial.points_if_correct = Object.fromEntries(
+      Object.entries(question.points_if_correct || {}).map(([answer, points]) => [answer, String(points)]),
+    );
     if (initial.award_id !== undefined) initial.award = initial.award_id;
     if (initial.related_player_id !== undefined) initial.related_player = initial.related_player_id;
     if (initial.team1_id !== undefined) initial.team1 = initial.team1_id;
@@ -39,24 +45,18 @@ const QuestionRow = ({
   }, [question, isEditing, getInitialDraft]);
 
   const handleSave = async () => {
+    if (question.question_type === "prop" && draft.kind === "player_stat" && (!draft.related_player || !draft.stat)) {
+      setSaveError("Pick the player and the stat.");
+      return;
+    }
     setBusy(true);
     setSaveError("");
 
-    let answerPointValues = {};
-    try {
-      answerPointValues = draft.answer_point_values_json?.trim()
-        ? JSON.parse(draft.answer_point_values_json)
-        : {};
-    } catch {
-      setSaveError('Answer point values must be valid JSON, e.g. {"No": 1, "Runner Up": 2.5}.');
-      setBusy(false);
-      return;
-    }
-
+    // Partial credit (answer_point_values) is managed on the Grading tab, so
+    // it is left untouched here.
     const basePayload = {
       text: draft.text.trim(),
       point_value: Number(draft.point_value),
-      answer_point_values: answerPointValues,
     };
 
     let specificPayload = {};
@@ -65,20 +65,21 @@ const QuestionRow = ({
       case "superlative":
         specificPayload = { award_id: draft.award ? Number(draft.award) : Number(draft.award_id) };
         break;
-      case "prop":
+      case "prop": {
+        const outcome = outcomeForKind(draft.kind);
         specificPayload = {
-          outcome_type: draft.outcome_type,
+          outcome_type: outcome,
+          stat: draft.kind === "player_stat" ? draft.stat : "",
+          points_if_correct: pointsPayload(draft.points_if_correct),
           related_player_id: draft.related_player
             ? Number(draft.related_player)
             : draft.related_player_id
               ? Number(draft.related_player_id)
               : null,
-          line:
-            draft.outcome_type === "over_under" && draft.line !== "" && draft.line != null
-              ? Number(draft.line)
-              : null,
+          line: outcome === "over_under" && draft.line !== "" && draft.line != null ? Number(draft.line) : null,
         };
         break;
+      }
       case "player_stat":
         specificPayload = {
           player_stat_id: draft.player_stat ? Number(draft.player_stat) : Number(draft.player_stat_id),
@@ -126,8 +127,11 @@ const QuestionRow = ({
     setDraft(getInitialDraft());
   };
 
-  const hasCustomScoring =
-    question.answer_point_values && Object.keys(question.answer_point_values).length > 0;
+  const isProp = question.question_type === "prop";
+  const split = Object.entries(question.points_if_correct || {});
+  const pointsText = split.length
+    ? split.map(([answer, points]) => `${answer} ${points}`).join(" · ")
+    : `${question.point_value} pt${Number(question.point_value) === 1 ? "" : "s"}`;
 
   return (
     <li
@@ -140,9 +144,12 @@ const QuestionRow = ({
         <span className="court-admin-badge court-admin-badge--neutral">
           {questionTypeLabel(question.question_type)}
         </span>
+        {isProp && <span>{PROP_KINDS.find((kind) => kind.value === propKind(question))?.label}</span>}
         <span>#{question.id}</span>
-        <span>{question.point_value} pt{Number(question.point_value) === 1 ? "" : "s"}</span>
-        {hasCustomScoring && <span>Custom scoring</span>}
+        <span>{pointsText}</span>
+        {isProp && question.line != null && question.outcome_type === "over_under" && <span>Line {question.line}</span>}
+        {isProp && question.stat && <span>{statLabel(question.stat)}</span>}
+        {question.answer_count > 0 && <span>{question.answer_count} pick{question.answer_count === 1 ? "" : "s"}</span>}
       </div>
 
       {isEditing ? (
@@ -157,6 +164,7 @@ const QuestionRow = ({
               autoFocus
             />
           </label>
+          {!isProp && (
           <label className="court-admin-field court-admin-field--narrow">
             Points
             <input
@@ -169,6 +177,7 @@ const QuestionRow = ({
               className={inputClass}
             />
           </label>
+          )}
           <QuestionEditFields
             questionType={question.question_type}
             draft={draft}
@@ -179,23 +188,6 @@ const QuestionRow = ({
             inputClass={inputClass}
             themeStyles={themeStyles}
           />
-          <details className="court-admin-disclosure" open={hasCustomScoring || Boolean(saveError)}>
-            <summary>Custom answer points</summary>
-            <label className="court-admin-field">
-              <span className={themeStyles.subtle}>
-                JSON of answer to points. Matching answers earn these points instead of the default.
-              </span>
-              <textarea
-                value={draft.answer_point_values_json || "{}"}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, answer_point_values_json: e.target.value }))
-                }
-                className={`${inputClass} h-auto py-3 font-mono text-xs`}
-                rows={4}
-                placeholder='{"No": 1, "Runner Up": 2.5}'
-              />
-            </label>
-          </details>
           {saveError && <p className="text-sm text-[var(--court-danger)]" role="alert">{saveError}</p>}
           <div className="court-admin-qrow__actions">
             <button type="button" onClick={handleSave} disabled={busy} className={primaryButtonClass}>

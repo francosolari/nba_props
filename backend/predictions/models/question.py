@@ -12,6 +12,11 @@ class Question(PolymorphicModel):
         blank=True,
         help_text="Optional mapping of answer text to points, e.g. {'yes': 3, 'no': 1}.",
     )
+    # Points paid only when that answer turns out correct, e.g. {"Yes": 3, "No": 1}
+    # for "3 if yes, 1 if no". Unlike answer_point_values (partial credit for
+    # giving an answer regardless of the outcome), these are set before the
+    # outcome is known.
+    points_if_correct = models.JSONField(default=dict, blank=True)
     correct_answer = models.CharField(max_length=100, null=True, blank=True)
     is_manual = models.BooleanField(default=False)
     last_updated = models.DateTimeField(auto_now=True)
@@ -35,6 +40,13 @@ class Question(PolymorphicModel):
 
     def points_for_answer(self, resolved_answer_text):
         normalized_answer = self.normalize_answer_key(resolved_answer_text)
+        if self.is_primary_correct_answer(resolved_answer_text):
+            for answer, points in (self.points_if_correct or {}).items():
+                if self.normalize_answer_key(answer) == normalized_answer:
+                    try:
+                        return float(points)
+                    except (TypeError, ValueError):
+                        break
         answer_points = {
             self.normalize_answer_key(answer): points
             for answer, points in (self.answer_point_values or {}).items()
@@ -180,7 +192,9 @@ class PropQuestion(Question):
     outcome_type = models.CharField(max_length=20, choices=[('over_under', 'Over/Under'), ('yes_no', 'Yes/No')])
     related_player = models.ForeignKey(Player, on_delete=models.CASCADE, null=True, blank=True)
     line = models.FloatField(null=True, blank=True)  # Only for 'over_under' type
-    # description = models.TextField()  # Additional details, if anyW
+    # Which stat a player prop is about, e.g. "points" (per game). Shown with
+    # the line on the pick card; the question text stays the admin's own.
+    stat = models.CharField(max_length=40, blank=True, default="")
 
 
 class PlayerStatPredictionQuestion(Question):
