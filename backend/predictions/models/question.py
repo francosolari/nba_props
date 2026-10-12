@@ -284,7 +284,29 @@ class InSeasonTournamentQuestion(Question):
         return self.text
 
 class NBAFinalsPredictionQuestion(Question):
+    # The question's role in the Finals bracket: east_finalist, west_finalist,
+    # champion or series_score. Older seasons left it blank or mislabeled, so
+    # `role` falls back to the wording (mirrors frontend finalsRoles.js).
     group_name = models.CharField(max_length=50, null=True, blank=True)
+
+    ROLES = ('east_finalist', 'west_finalist', 'champion', 'series_score')
+    SERIES_SCORES = ('4-0', '4-1', '4-2', '4-3')
+
+    @property
+    def role(self):
+        if self.group_name in self.ROLES:
+            return self.group_name
+        text = (self.text or '').lower()
+        if 'series' in text or 'score' in text:
+            return 'series_score'
+        if 'win the nba finals' in text or 'champion' in text:
+            return 'champion'
+        if 'east' in text:
+            return 'east_finalist'
+        if 'west' in text:
+            return 'west_finalist'
+        return 'champion'
+
     def create_playoff_predictions(self, user, season):
         """
         Create two PlayoffPrediction objects for the predicted east and west teams

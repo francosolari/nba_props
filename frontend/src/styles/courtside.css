@@ -2320,6 +2320,37 @@ button[type="submit"]:active {
   .court-leaderboard-page main [class*="max-h-\[1200px\]"] .grid > div:last-child { border-bottom: 0 !important; }
 }
 
+/* NBA Finals: one small bracket on a ruled sheet. Numbered steps, each with
+   its points; the champion is picked between the two chosen finalists. */
+.finals-bracket { display: grid; gap: 12px; }
+.finals-bracket__how { margin: 0; max-width: 62ch; color: var(--court-steel); font-size: 15px; line-height: 1.45; }
+.finals-steps { display: grid; margin: 0; padding: 0; list-style: none; border: 2px solid var(--court-rule); border-radius: 2px; background: var(--court-paper); }
+.finals-step { display: grid; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--court-rule-soft); }
+.finals-step:last-child { border-bottom: 0; }
+.finals-step > header { display: flex; align-items: center; gap: 10px; }
+.finals-step h4 { flex: 1; margin: 0; color: var(--court-ink); font: 800 20px/1 var(--court-display); letter-spacing: .03em; text-transform: uppercase; }
+.finals-step__number { display: grid; place-items: center; width: 28px; height: 28px; color: #fff; font: 800 15px/1 var(--court-display); background: var(--court-carbon); border-radius: 2px; }
+.finals-step__chip { padding: 4px 8px; color: var(--court-blue); font: 800 11px var(--court-body); letter-spacing: .06em; text-transform: uppercase; background: var(--court-blue-soft); border-radius: 2px; white-space: nowrap; }
+.finals-step__body { display: grid; gap: 10px; min-width: 0; }
+.finals-step__hint { margin: 0; color: var(--court-steel); font-size: 14px; line-height: 1.4; }
+.finals-step.is-muted h4, .finals-step.is-muted .finals-step__number { opacity: .55; }
+.finals-champion, .finals-series { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border: 2px solid var(--court-rule); border-radius: 4px; overflow: hidden; }
+.finals-champion button, .finals-series button { min-height: 48px; color: var(--court-ink); background: var(--court-paper); font: 800 15px/1.1 var(--court-display); letter-spacing: .04em; text-transform: uppercase; transition: background-color 120ms ease-out, color 120ms ease-out; }
+.finals-champion button + button, .finals-series button + button { border-left: 2px solid var(--court-rule); }
+.finals-champion button { display: grid; justify-items: center; gap: 6px; padding: 12px 8px; }
+.finals-champion__logo { width: 44px; height: 44px; object-fit: contain; }
+.finals-champion button:hover:not(:disabled):not(.is-selected), .finals-series button:hover:not(:disabled):not(.is-selected) { background: var(--court-blue-soft); }
+.finals-champion button.is-selected, .finals-series button.is-selected { color: #fff; background: var(--court-blue); }
+.finals-champion button:focus-visible, .finals-series button:focus-visible { outline: 3px solid var(--court-gold); outline-offset: -5px; }
+.finals-champion button:disabled, .finals-series button:disabled { cursor: not-allowed; }
+.finals-series button { font-size: 18px; font-variant-numeric: tabular-nums; }
+@media (min-width: 768px) {
+  .finals-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .finals-step:nth-child(odd) { border-right: 1px solid var(--court-rule-soft); }
+  .finals-step:nth-last-child(-n+2) { border-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .finals-champion button, .finals-series button { transition: none; } }
+
 /* Submission completion ledger */
 .court-submissions-page { overflow-x: clip; }
 

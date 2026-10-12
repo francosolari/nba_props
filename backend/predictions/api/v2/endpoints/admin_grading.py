@@ -556,6 +556,7 @@ def get_questions_for_grading(request, season_slug: str):
     teams_cache = {t.id: t for t in Team.objects.filter(id__in=team_ids)} if team_ids else {}
 
     questions_list = []
+    all_team_names = None  # loaded once, only if a Finals question needs it
     for question_real in questions_real:
         question_type = type(question_real).__name__
 
@@ -643,6 +644,15 @@ def get_questions_for_grading(request, season_slug: str):
 
         elif isinstance(question_real, PlayerStatPredictionQuestion):
             input_type = 'player_search'
+
+        elif isinstance(question_real, NBAFinalsPredictionQuestion):
+            input_type = 'team_choice'
+            if question_real.role == 'series_score':
+                choices = list(NBAFinalsPredictionQuestion.SERIES_SCORES)
+            else:
+                if all_team_names is None:
+                    all_team_names = list(Team.objects.order_by('name').values_list('name', flat=True))
+                choices = all_team_names
 
         questions_list.append({
             'question_id': question_real.id,

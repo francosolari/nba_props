@@ -97,7 +97,8 @@ const TeamLogo = memo(({ teamName, slug, className, alt, ...props }) => {
     <img
       ref={imgRef}
       src={src}
-      alt={alt || teamName || 'Team Logo'}
+      // alt="" marks a logo as decorative (the team name is already written beside it).
+      alt={alt ?? (teamName || 'Team Logo')}
       className={className}
       onLoad={handleLoad}
       onError={handleError}
