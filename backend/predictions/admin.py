@@ -163,8 +163,8 @@ class PropQuestionAdmin(PolymorphicChildModelAdmin):
 @admin.register(HeadToHeadQuestion)
 class HeadToHeadQuestionAdmin(PolymorphicChildModelAdmin):
     base_model = HeadToHeadQuestion
-    list_display = ('text', 'team1', 'team2')
-    list_filter = ('team1', 'team2')
+    list_display = ('text', 'team1', 'team2', 'conference_matchup')
+    list_filter = ('team1', 'team2', 'conference_matchup')
     search_fields = ('text',)
     # Define your admin options here
 

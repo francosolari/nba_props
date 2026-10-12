@@ -275,12 +275,17 @@ def serialize_question(question: Question, real_questions_map: Optional[dict] = 
     
     # Head-to-Head Question
     elif isinstance(real_question, HeadToHeadQuestion):
+        def side_name(team):
+            if real_question.conference_matchup:
+                return f"{team.conference}ern Conference"
+            return team.name
+
         return {
             **base_data,
             "team1_id": real_question.team1.id,
-            "team1_name": real_question.team1.name,
+            "team1_name": side_name(real_question.team1),
             "team2_id": real_question.team2.id,
-            "team2_name": real_question.team2.name,
+            "team2_name": side_name(real_question.team2),
         }
     
     # In-Season Tournament Question

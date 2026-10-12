@@ -197,6 +197,10 @@ class HeadToHeadQuestion(Question):
     """
     team1 = models.ForeignKey(Team, related_name='h2h_team1', on_delete=models.CASCADE)
     team2 = models.ForeignKey(Team, related_name='h2h_team2', on_delete=models.CASCADE)
+    # East vs West questions: each team stands in for its conference, so pickers
+    # show "Eastern Conference" / "Western Conference" while answers stay team ids.
+    conference_matchup = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.text} ({self.team1.name} vs {self.team2.name})"
 
