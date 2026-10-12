@@ -65,6 +65,7 @@ class HeadToHeadQuestionSchema(QuestionBaseSchema):
     team1_name: str
     team2_id: int
     team2_name: str
+    conference_matchup: bool = False
 
 
 class InSeasonTournamentQuestionSchema(QuestionBaseSchema):
@@ -242,6 +243,7 @@ class HeadToHeadQuestionCreateSchema(Schema):
     answer_point_values: Optional[Dict[str, float]] = None
     team1_id: int
     team2_id: int
+    conference_matchup: bool = False
 
 
 class InSeasonTournamentQuestionCreateSchema(Schema):
@@ -286,6 +288,7 @@ class QuestionUpdateSchema(Schema):
     # Head-to-head question fields
     team1_id: Optional[int] = None
     team2_id: Optional[int] = None
+    conference_matchup: Optional[bool] = None
 
     # IST question fields
     prediction_type: Optional[Literal["group_winner", "wildcard", "conference_winner", "champion", "tiebreaker"]] = None

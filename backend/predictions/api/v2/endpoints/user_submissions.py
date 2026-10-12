@@ -286,6 +286,7 @@ def serialize_question(question: Question, real_questions_map: Optional[dict] = 
             "team1_name": side_name(real_question.team1),
             "team2_id": real_question.team2.id,
             "team2_name": side_name(real_question.team2),
+            "conference_matchup": real_question.conference_matchup,
         }
     
     # In-Season Tournament Question

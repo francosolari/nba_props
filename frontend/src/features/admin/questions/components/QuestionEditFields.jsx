@@ -89,6 +89,15 @@ const QuestionEditFields = ({
             isClearable
             mode={themeStyles.mode}
           />
+          <label className={`flex items-center gap-2 text-xs ${themeStyles.subtle}`}>
+            <input
+              type="checkbox"
+              checked={draft.conference_matchup || false}
+              onChange={(e) => setDraft((prev) => ({ ...prev, conference_matchup: e.target.checked }))}
+              className="h-4 w-4 rounded-[2px] border-2 border-[var(--court-rule)] bg-[var(--court-paper)] text-[var(--court-blue)] focus:ring-0"
+            />
+            Conference matchup (show Eastern / Western Conference)
+          </label>
         </div>
       );
     case "player_stat":

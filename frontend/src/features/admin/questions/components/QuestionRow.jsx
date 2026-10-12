@@ -90,6 +90,7 @@ const QuestionRow = ({
         specificPayload = {
           team1_id: draft.team1 ? Number(draft.team1) : Number(draft.team1_id),
           team2_id: draft.team2 ? Number(draft.team2) : Number(draft.team2_id),
+          conference_matchup: Boolean(draft.conference_matchup),
         };
         break;
       case "ist":
