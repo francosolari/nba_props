@@ -12,7 +12,7 @@ export function CategorySheet({ superlativeCount }) {
       ? `${superlativeCount} calls this season: MVP, Rookie of the Year, and the rest of the hardware.`
       : 'MVP, Rookie of the Year, and the rest of the hardware.'],
     [Target, 'Props and over/unders', 'Team win totals, player milestones, and yes/no outcomes.'],
-    [Medal, 'NBA Cup', 'Call the in-season tournament. It carries its own mid-season payout.'],
+    [Medal, 'NBA Cup', 'Call the NBA Cup. The prediction winner gets a $50 mid-season payout.'],
     [Users, 'Playoffs and Finals', 'Who comes out of each conference, and who lifts the trophy.'],
   ];
 
@@ -21,7 +21,7 @@ export function CategorySheet({ superlativeCount }) {
       <header className="next-play-section-head">
         <div>
           <h2 id="categories-title">What one entry covers</h2>
-          <p>Five categories, one score. Every call below is worth points.</p>
+          <p>Earn points as the season plays out. The most points wins the pool.</p>
         </div>
       </header>
       <div className="next-play-categories__rows">

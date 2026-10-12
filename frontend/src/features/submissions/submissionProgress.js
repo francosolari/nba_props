@@ -5,9 +5,9 @@ export const QUESTION_GROUP_META = {
     description: 'Pick the season award winners and standout performers.',
   },
   prop: {
-    title: 'Prop Bets',
+    title: 'Season Props',
     shortTitle: 'Props',
-    description: 'Forecast over/under lines and yes/no season outcomes.',
+    description: 'Pick over/under and yes/no outcomes to earn pool points.',
   },
   player_stat: {
     title: 'Player Stat Challenges',
@@ -20,9 +20,9 @@ export const QUESTION_GROUP_META = {
     description: 'Pick a side in each head-to-head.',
   },
   ist: {
-    title: 'In Season Tournament: NBA Cup',
+    title: 'NBA Cup',
     shortTitle: 'NBA Cup',
-    description: 'Make your picks for the NBA In-Season Tournament.',
+    description: 'Pick group winners, wildcards and the champion for the $50 mid-season pool.',
   },
   nba_finals: {
     title: 'NBA Finals Predictions',

@@ -8,7 +8,7 @@ const QUESTION_CATEGORIES = {
   player_stat: 'Props & Totals',
   head_to_head: 'Props & Totals',
   nba_finals: 'Props & Totals',
-  ist: 'In-Season Tournament',
+  ist: 'NBA Cup',
 };
 
 const useUserSubmissions = (seasonSlug, isAuthenticated) => {

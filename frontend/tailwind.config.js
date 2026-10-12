@@ -1,8 +1,11 @@
 module.exports = {
-  content: [
-    '../backend/predictions/templates/**/*.html',
-    './src/**/*.{js,jsx,ts,tsx}', // Include React components for Tailwind
-  ],
+  content: {
+    relative: true,
+    files: [
+      '../backend/predictions/templates/**/*.html',
+      './src/**/*.{js,jsx,ts,tsx}', // Include React components for Tailwind
+    ],
+  },
   darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {

@@ -32,7 +32,7 @@ export const TYPE_CONFIG = {
     isValid: ({ data }) => Boolean(data.team1Id && data.team2Id && data.team1Id !== data.team2Id),
   },
   ist: {
-    label: 'In-Season Tournament',
+    label: 'NBA Cup',
     description: 'Group predictions & tiebreakers',
     defaults: (defaultPointValue) => ({
       pointValue: defaultPointValue,
