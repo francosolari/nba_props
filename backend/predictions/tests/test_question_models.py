@@ -373,6 +373,17 @@ class TestNBAFinalsPredictionQuestion:
         assert isinstance(real_instance, NBAFinalsPredictionQuestion)
 
 
+    @pytest.mark.parametrize("group_name, text, role", [
+        ("east_finalist", "Anything", "east_finalist"),
+        ("series_score", "Anything", "series_score"),
+        # 2025-26 wording, including its two mislabeled group names
+        (None, "Which Eastern Conference team will appear in the NBA Finals?", "east_finalist"),
+        ("finals_west", "Which Western Conference team will appear in the NBA Finals", "west_finalist"),
+        ("finals_east", "Which team will win the NBA Finals?", "champion"),
+    ])
+    def test_role_from_group_name_or_wording(self, group_name, text, role):
+        assert NBAFinalsPredictionQuestion(group_name=group_name, text=text).role == role
+
 @pytest.mark.django_db
 class TestPolymorphicQueries:
     """Tests for polymorphic query behavior across all Question types."""

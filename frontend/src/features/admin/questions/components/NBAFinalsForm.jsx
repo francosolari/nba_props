@@ -1,5 +1,7 @@
 import React from 'react';
-import { GlassFormCard, Textarea, NumberInput, TextInput } from './AdminFormPrimitives';
+import CourtSelect from '../../../../components/CourtSelect';
+import { GlassFormCard, Textarea, NumberInput } from './AdminFormPrimitives';
+import { FINALS_ROLES } from '../../../submissions/finalsRoles';
 
 const NBAFinalsForm = ({
   form,
@@ -55,14 +57,24 @@ const NBAFinalsForm = ({
         labelClass={classes.labelClass}
         inputClass={classes.inputClass}
       />
-      <TextInput
-        label="Grouping (optional)"
-        value={form.groupName}
-        onChange={(value) => setForm((prev) => ({ ...prev, groupName: value }))}
-        placeholder="Finals"
-        labelClass={classes.labelClass}
-        inputClass={classes.inputClass}
-      />
+      <div className="court-admin-field">
+        Role
+        <CourtSelect
+          label="Role"
+          showLabel={false}
+          value={form.groupName || ''}
+          onChange={(e) => {
+            const role = FINALS_ROLES.find((r) => r.value === e.target.value);
+            // Fill the standard wording for the role unless something was typed.
+            setForm((prev) => ({ ...prev, groupName: e.target.value, text: prev.text.trim() ? prev.text : (role ? role.text : '') }));
+          }}
+        >
+          <option value="">Pick a role</option>
+          {FINALS_ROLES.map((role) => (
+            <option key={role.value} value={role.value}>{role.label}</option>
+          ))}
+        </CourtSelect>
+      </div>
     </div>
   </GlassFormCard>
 );
