@@ -31,15 +31,6 @@ export const TYPE_CONFIG = {
     }),
     isValid: ({ data }) => Boolean(data.team1Id && data.team2Id && data.team1Id !== data.team2Id),
   },
-  player_stat: {
-    label: 'Player Stat',
-    description: 'Stat benchmarks & projections',
-    defaults: (defaultPointValue) => ({
-      pointValue: defaultPointValue,
-      data: { playerStatId: '', statType: '', fixedValue: '' },
-    }),
-    isValid: ({ data }) => Boolean(data.playerStatId && data.statType.trim()),
-  },
   ist: {
     label: 'In-Season Tournament',
     description: 'Group predictions & tiebreakers',
@@ -105,11 +96,6 @@ export const summarizeDraft = (draft, lookup) => {
       const team2 = data.team2Id ? lookup.teams[data.team2Id]?.name : '—';
       return `${team1} vs ${team2}`;
     }
-    case 'player_stat': {
-      const stat = data.statType || 'stat';
-      const fixed = data.fixedValue !== '' && data.fixedValue !== null ? ` • fixed ${data.fixedValue}` : '';
-      return `Stat: ${stat}${fixed}`;
-    }
     case 'ist': {
       const typeLabel = istTypeOptions.find((option) => option.value === data.predictionType)?.label ?? data.predictionType;
       const group = data.istGroup ? ` • ${data.istGroup}` : '';
@@ -153,17 +139,6 @@ export const mapDraftToPayload = (draft, seasonSlug) => {
         team1_id: Number(draft.data.team1Id),
         team2_id: Number(draft.data.team2Id),
       };
-    case 'player_stat': {
-      const payload = {
-        ...base,
-        player_stat_id: Number(draft.data.playerStatId),
-        stat_type: draft.data.statType.trim(),
-      };
-      if (draft.data.fixedValue !== '' && draft.data.fixedValue !== null) {
-        payload.fixed_value = Number(draft.data.fixedValue);
-      }
-      return payload;
-    }
     case 'ist':
       return {
         ...base,

@@ -207,7 +207,11 @@ const GradingQuestionRow = ({ question, editor, playerOptions }) => {
         {question.is_finalized && (
           <span className="court-admin-badge court-admin-badge--neutral"><Lock aria-hidden="true" className="h-3 w-3" />Finalized</span>
         )}
-        <span>{question.point_value} pt{Number(question.point_value) === 1 ? '' : 's'}</span>
+        <span>
+          {Object.keys(question.points_if_correct || {}).length
+            ? Object.entries(question.points_if_correct).map(([answer, pts]) => `${answer} ${pts}`).join(' · ')
+            : `${question.point_value} pt${Number(question.point_value) === 1 ? '' : 's'}`}
+        </span>
         <span>{question.submission_count} picks</span>
         {question.line != null && question.input_type === 'over_under' && <span>Line {question.line}</span>}
         {question.related_player_name && <span>{question.related_player_name}</span>}

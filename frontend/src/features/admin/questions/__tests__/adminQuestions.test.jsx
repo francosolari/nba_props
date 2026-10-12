@@ -65,3 +65,73 @@ describe('QuestionRow', () => {
     expect(screen.getByLabelText('Question')).toHaveValue('Who wins MVP this year?');
   });
 });
+
+describe('Prop questions', () => {
+  const PropForm = require('../components/PropForm').default;
+  const { defaultPropForm } = require('../components/PropForm');
+  const QuestionCard = require('../../../submissions/QuestionCard').default;
+
+  test('a player stat prop is saved as an over/under with its stat and split points', async () => {
+    const handleMutation = jest.fn().mockResolvedValue(true);
+    render(
+      <PropForm
+        form={{
+          ...defaultPropForm(1),
+          kind: 'player_stat',
+          text: 'Luka Dončić technical fouls (season)',
+          relatedPlayerId: 7,
+          stat: 'technicals',
+          line: '15.5',
+          pointsIfCorrect: { Over: '1', Under: '2' },
+        }}
+        setForm={jest.fn()}
+        playerOptions={[{ value: 7, label: 'Luka Doncic' }]}
+        defaultPointValue={1}
+        activeSeason="2026-27"
+        ensureSeasonSelected={() => true}
+        setError={jest.fn()}
+        handleMutation={handleMutation}
+        createProp={{ isPending: false }}
+        classes={{ labelClass: '', textareaClass: '', primaryButtonClass: '' }}
+        themeStyles={{ subtle: '', mode: 'light' }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create question' }));
+
+    await waitFor(() => expect(handleMutation).toHaveBeenCalled());
+    expect(handleMutation.mock.calls[0][1]).toMatchObject({
+      outcome_type: 'over_under',
+      stat: 'technicals',
+      related_player_id: 7,
+      line: 15.5,
+      points_if_correct: { Over: 1, Under: 2 },
+    });
+  });
+
+  test('warns that existing picks will not match after switching Yes/No to Over/Under', () => {
+    renderRow({
+      question: {
+        id: 9, question_type: 'prop', text: 'Will the Bills make the Super Bowl?', point_value: 3,
+        outcome_type: 'yes_no', answer_count: 4, points_if_correct: { Yes: 3, No: 1 },
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'Over / Under' }));
+    expect(screen.getByRole('status')).toHaveTextContent('4 picks were made as Yes/No');
+  });
+
+  test('the pick card shows each answer its points only when they differ', () => {
+    const base = { id: 1, question_type: 'prop', outcome_type: 'yes_no', text: 'Will the Bills make the Super Bowl?', point_value: 3 };
+    const { rerender } = render(<QuestionCard question={{ ...base, points_if_correct: { Yes: 3, No: 1 } }} answer="" onChange={jest.fn()} />);
+    expect(screen.getByText('Up to 3 pts')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Yes\s*3 pts/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /No\s*1 pt$/ })).toBeInTheDocument();
+
+    rerender(<QuestionCard question={{ ...base, points_if_correct: {} }} answer="" onChange={jest.fn()} />);
+    expect(screen.getByText('3 pts')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Yes' })).toBeInTheDocument();
+  });
+});

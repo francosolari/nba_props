@@ -1,5 +1,8 @@
 import React from 'react';
 import SelectComponent from '../../../../components/SelectComponent';
+import CourtSelect from '../../../../components/CourtSelect';
+import AnswerPoints from './AnswerPoints';
+import { PROP_KINDS, STAT_OPTIONS, outcomeForKind } from '../statProps';
 
 // Type-specific edit fields for an existing question, rendered inside
 // QuestionRow's inline edit mode. Split out to keep QuestionRow under the
@@ -28,44 +31,94 @@ const QuestionEditFields = ({
           mode={themeStyles.mode}
         />
       );
-    case "prop":
+    case "prop": {
+      const outcome = outcomeForKind(draft.kind);
+      const isStat = draft.kind === "player_stat";
+      const pickCount = draft.answer_count || 0;
+      const orphansPicks = pickCount > 0 && outcome !== draft.outcome_type;
       return (
         <div className="space-y-4">
-          <label className={`text-xs ${themeStyles.subtle}`}>
-            Outcome type
-            <select
-              value={draft.outcome_type}
-              onChange={(e) => setDraft((prev) => ({ ...prev, outcome_type: e.target.value }))}
-              className={`${inputClass} mt-2 w-full`}
-            >
-              <option value="over_under">Over / Under</option>
-              <option value="yes_no">Yes / No</option>
-            </select>
-          </label>
-          {draft.outcome_type === "over_under" && (
-            <label className={`text-xs ${themeStyles.subtle}`}>
-              Line
-              <input
-                type="number"
-                value={draft.line || ""}
-                step="0.1"
-                onChange={(e) => setDraft((prev) => ({ ...prev, line: e.target.value }))}
-                className={`${inputClass} mt-2 w-full`}
-              />
-            </label>
+          <div className="court-admin-choice" role="radiogroup" aria-label="Prop type">
+            {PROP_KINDS.map((kind) => (
+              <button
+                key={kind.value}
+                type="button"
+                role="radio"
+                aria-checked={draft.kind === kind.value}
+                className={draft.kind === kind.value ? "is-selected" : ""}
+                onClick={() => setDraft((prev) => ({
+                  ...prev,
+                  kind: kind.value,
+                  points_if_correct: outcomeForKind(kind.value) === outcomeForKind(prev.kind) ? prev.points_if_correct : {},
+                }))}
+              >
+                {kind.label}
+              </button>
+            ))}
+          </div>
+          {orphansPicks && (
+            <p className="court-admin-warning" role="status">
+              {pickCount} pick{pickCount === 1 ? " was" : "s were"} made as{" "}
+              {draft.outcome_type === "yes_no" ? "Yes/No" : "Over/Under"}. After this change{" "}
+              {pickCount === 1 ? "it" : "they"} can't match the correct answer and will score 0.
+            </p>
           )}
-          <SelectComponent
-            options={playerOptions}
-            value={playerOptions.find((option) => option.value === draft.related_player) || null}
-            onChange={(option) =>
-              setDraft((prev) => ({ ...prev, related_player: option ? option.value : null }))
+          <div className="court-admin-field">
+            {isStat ? "Player" : "Player (optional)"}
+            <SelectComponent
+              options={playerOptions}
+              value={playerOptions.find((option) => option.value === draft.related_player) || null}
+              onChange={(option) =>
+                setDraft((prev) => ({ ...prev, related_player: option ? option.value : null }))
+              }
+              placeholder="Search players..."
+              isClearable
+              mode={themeStyles.mode}
+            />
+          </div>
+          {outcome === "over_under" && (
+            <div className={isStat ? "grid grid-cols-[minmax(0,1fr)_120px] gap-3" : "max-w-[160px]"}>
+              {isStat && (
+                <div className="court-admin-field">
+                  Stat
+                  <CourtSelect
+                    label="Stat"
+                    showLabel={false}
+                    value={draft.stat || ""}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, stat: e.target.value }))}
+                  >
+                    <option value="">Pick a stat</option>
+                    {STAT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </CourtSelect>
+                </div>
+              )}
+              <label className="court-admin-field">
+                Line
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={draft.line ?? ""}
+                  step="0.5"
+                  onChange={(e) => setDraft((prev) => ({ ...prev, line: e.target.value }))}
+                  className={inputClass}
+                />
+              </label>
+            </div>
+          )}
+          <AnswerPoints
+            idPrefix={`edit-${draft.id}`}
+            outcomeType={outcome}
+            pointValue={draft.point_value}
+            pointsIfCorrect={draft.points_if_correct}
+            onChange={({ pointValue, pointsIfCorrect }) =>
+              setDraft((prev) => ({ ...prev, point_value: pointValue, points_if_correct: pointsIfCorrect }))
             }
-            placeholder="Search related player"
-            isClearable
-            mode={themeStyles.mode}
           />
         </div>
       );
+    }
     case "head_to_head":
       return (
         <div className="space-y-4">

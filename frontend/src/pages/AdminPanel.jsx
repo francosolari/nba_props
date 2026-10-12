@@ -8,7 +8,6 @@ import {
   useCreateSuperlativeQuestion,
   useCreatePropQuestion,
   useCreateHeadToHeadQuestion,
-  useCreatePlayerStatQuestion,
   useCreateISTQuestion,
   useCreateNBAFinalsQuestion,
   useUpdateQuestion,
@@ -25,6 +24,7 @@ import { ScreenMessage } from "../features/admin/questions/components/AdminFormP
 import SeasonPanel from "../features/admin/questions/components/SeasonPanel";
 import QuestionBuilders from "../features/admin/questions/components/QuestionBuilders";
 import QuestionList from "../features/admin/questions/components/QuestionList";
+import { defaultPropForm } from "../features/admin/questions/components/PropForm";
 
 const AdminPanel = ({ seasonSlug }) => {
   const { data: userContext, isLoading: userLoading } = useUserContext();
@@ -57,7 +57,6 @@ const AdminPanel = ({ seasonSlug }) => {
   const createSuperlative = useCreateSuperlativeQuestion();
   const createProp = useCreatePropQuestion();
   const createHeadToHead = useCreateHeadToHeadQuestion();
-  const createPlayerStat = useCreatePlayerStatQuestion();
   const createIST = useCreateISTQuestion();
   const createNBAFinals = useCreateNBAFinalsQuestion();
   const updateQuestion = useUpdateQuestion();
@@ -69,39 +68,24 @@ const AdminPanel = ({ seasonSlug }) => {
       superlative: createSuperlative,
       prop: createProp,
       head_to_head: createHeadToHead,
-      player_stat: createPlayerStat,
       ist: createIST,
       nba_finals: createNBAFinals,
     }),
-    [createSuperlative, createProp, createHeadToHead, createPlayerStat, createIST, createNBAFinals],
+    [createSuperlative, createProp, createHeadToHead, createIST, createNBAFinals],
   );
   const builderMutations = useMemo(
     () => ({
       createSuperlative,
       createProp,
       createHeadToHead,
-      createPlayerStat,
       createIST,
       createNBAFinals,
     }),
-    [createSuperlative, createProp, createHeadToHead, createPlayerStat, createIST, createNBAFinals],
+    [createSuperlative, createProp, createHeadToHead, createIST, createNBAFinals],
   );
 
   const [superForm, setSuperForm] = useState({ text: "", awardId: "", pointValue: defaultPointValue });
-  const [propForm, setPropForm] = useState({
-    text: "",
-    pointValue: defaultPointValue,
-    outcomeType: "over_under",
-    line: "",
-    relatedPlayerId: null,
-  });
-  const [playerStatForm, setPlayerStatForm] = useState({
-    text: "",
-    pointValue: defaultPointValue,
-    playerStatId: "",
-    statType: "",
-    fixedValue: "",
-  });
+  const [propForm, setPropForm] = useState(() => defaultPropForm(defaultPointValue));
   const [headToHeadForm, setHeadToHeadForm] = useState({
     text: "",
     pointValue: defaultPointValue,
@@ -265,11 +249,10 @@ const AdminPanel = ({ seasonSlug }) => {
       <div className="court-admin-workbench">
         <QuestionBuilders
           onLaunchBatchWizard={handleLaunchBatchWizard}
-          forms={{ superForm, propForm, playerStatForm, headToHeadForm, istForm, nbaFinalsForm }}
+          forms={{ superForm, propForm, headToHeadForm, istForm, nbaFinalsForm }}
           setters={{
             setSuperForm,
             setPropForm,
-            setPlayerStatForm,
             setHeadToHeadForm,
             setIstForm,
             setNbaFinalsForm,
