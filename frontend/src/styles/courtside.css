@@ -1198,13 +1198,13 @@ button[type="submit"]:active {
 
 /* The legacy sliding indicator and rounded per-side wash paint red under the
    flat fill and read as an inset outline; the fill alone marks the pick. */
-.court-submissions-page .head-to-head-scale::after,
-.court-submissions-page .head-to-head-indicator,
-.court-submissions-page .head-to-head-choice::before {
+.court-submissions-page :is(.overunder-scale, .yesno-scale, .head-to-head-scale)::after,
+.court-submissions-page :is(.overunder-indicator, .yesno-indicator, .head-to-head-indicator),
+.court-submissions-page :is(.overunder-choice, .yesno-choice, .head-to-head-choice)::before {
   display: none;
 }
 
-.court-submissions-page .head-to-head-choice.is-selected {
+.court-submissions-page :is(.overunder-choice, .yesno-choice, .head-to-head-choice).is-selected {
   transform: none;
 }
 
