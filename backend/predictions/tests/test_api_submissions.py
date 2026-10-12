@@ -234,6 +234,22 @@ class TestGetQuestionsEndpoint:
 
         assert data['questions'] == []
 
+    def test_conference_matchup_names_conferences(self, api_client, open_season):
+        """Conference matchups show the conferences, not the stand-in teams."""
+        HeadToHeadQuestionFactory(
+            season=open_season,
+            team1=EasternTeamFactory(),
+            team2=WesternTeamFactory(),
+            conference_matchup=True,
+        )
+
+        response = api_client.get(f'/api/v2/submissions/questions/{open_season.slug}')
+
+        assert response.status_code == 200
+        [question] = response.json()['questions']
+        assert question['team1_name'] == 'Eastern Conference'
+        assert question['team2_name'] == 'Western Conference'
+
 
 # ============================================================================
 # Tests: GET /submissions/answers/{season_slug}
