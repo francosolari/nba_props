@@ -13,7 +13,7 @@ const ISTForm = ({
   themeStyles,
 }) => (
   <GlassFormCard
-    title="In-Season Tournament"
+    title="NBA Cup"
     subtitle="Group predictions & tiebreakers"
     isSubmitting={createIST.isPending}
     onSubmit={(event) => {

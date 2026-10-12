@@ -1,72 +1,53 @@
 import React from 'react';
+import { Check } from 'lucide-react';
 import TeamLogo from '../../components/TeamLogo';
-import {
-  buildRecordSummary,
-  extractGroupMeta,
-  getConferenceTheme,
-} from './istSubmissionUtils';
+import SelectComponent from '../../components/SelectComponent';
+import { buildRecordSummary, extractGroupMeta, getConferenceTheme } from './istSubmissionUtils';
 
-const TeamChoice = ({ question, team, answer, onAnswerChange, isReadOnly, compact = false }) => {
-  const selected = String(answer) === String(team.id);
-  const theme = getConferenceTheme(question.ist_group);
-  return (
-    <button
-      type="button"
-      onClick={() => onAnswerChange(question.id, team.id)}
-      disabled={isReadOnly}
-      className={`${compact ? 'flex w-full items-center justify-between px-4 py-2.5' : 'flex min-h-[140px] flex-col items-center justify-center gap-3 px-4 py-5'} border text-sm font-semibold ${selected ? theme.selected : `border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 ${theme.idle}`}`}
-      aria-pressed={selected}
-    >
-      <span className={`flex ${compact ? 'flex-1' : 'flex-col'} items-center gap-3`}>
-        <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center bg-white">
-          <TeamLogo teamName={team.name} alt={`${team.name} logo`} className="h-10 w-10 object-contain" />
-        </span>
-        <span className={`${compact ? 'items-start' : 'items-center'} flex flex-col`}>
-          <span>{team.name}</span>
-          {buildRecordSummary(team) && <small className="text-slate-500 dark:text-slate-400">{buildRecordSummary(team)}</small>}
-        </span>
-      </span>
-      {selected && compact && <span className="text-xs uppercase">Selected</span>}
-    </button>
-  );
-};
-
+/** Compact, touch-friendly rows keep every team in a Cup group together. */
 const GroupCard = ({ question, teams, answers, onAnswerChange, isReadOnly }) => {
   const meta = extractGroupMeta(question.ist_group);
-  const markerTheme = getConferenceTheme(question.ist_group);
+  const theme = getConferenceTheme(question.ist_group);
   return (
-    <div className="flex h-full flex-col border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div
-            aria-label={`${meta.label || 'NBA Cup group'} marker`}
-            className={`ist-group-marker flex h-10 w-10 items-center justify-center text-base font-bold ${markerTheme.marker}`}
-          >
-            {meta.short || '?'}
-          </div>
-          <div><span className="text-xs font-semibold uppercase tracking-wide">{meta.conference || 'Group'}</span><h4 className="text-sm font-semibold">{question.text}</h4></div>
-        </div>
-        <span className="bg-sky-100 dark:bg-sky-900/40 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">{question.point_value} pts</span>
-      </div>
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {teams.map((team) => <TeamChoice key={team.id} question={question} team={team} answer={answers[question.id]} onAnswerChange={onAnswerChange} isReadOnly={isReadOnly} />)}
-        {teams.length === 0 && <p className="col-span-full text-sm text-slate-500 dark:text-slate-400">Team list unavailable right now.</p>}
+    <div className="cup-pick-sheet">
+      <header className="cup-pick-sheet__header">
+        <span aria-label={`${meta.label || 'NBA Cup group'} marker`} className={`ist-group-marker ${theme.marker}`}>{meta.short || '?'}</span>
+        <h4>{meta.label || question.text}<small>Pick the group winner</small></h4>
+        <span className="finals-step__chip">{question.point_value} {Number(question.point_value) === 1 ? 'pt' : 'pts'}</span>
+      </header>
+      <div className="cup-team-list" role="group" aria-label={question.text}>
+        {teams.map((team) => {
+          const selected = String(answers[question.id]) === String(team.id);
+          return (
+            <button key={team.id} type="button" disabled={isReadOnly} aria-pressed={selected}
+              className={`cup-team-choice ${selected ? theme.selected : theme.idle}`}
+              onClick={() => onAnswerChange(question.id, team.id)}>
+              <TeamLogo teamName={team.name} alt="" className="cup-team-choice__logo" />
+              <span className="cup-team-choice__name">{team.name}</span>
+              {buildRecordSummary(team) && <small>{buildRecordSummary(team)}</small>}
+              <span className="cup-team-choice__check" aria-hidden="true">{selected && <Check size={16} />}</span>
+            </button>
+          );
+        })}
+        {teams.length === 0 && <p className="cup-pick-empty">Group teams are unavailable right now. Try reloading the page.</p>}
       </div>
     </div>
   );
 };
 
+/** Search the conference instead of scrolling through fifteen large tiles. */
 const WildcardCard = ({ question, teams, answers, onAnswerChange, isReadOnly }) => {
   const conference = extractGroupMeta(question.ist_group).conference || question.ist_group || '';
+  const options = teams.map((team) => ({ value: team.id, label: team.name }));
+  const selected = options.find((option) => String(option.value) === String(answers[question.id])) || null;
   return (
-    <div className="flex h-full flex-col border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div><span className="text-xs font-semibold uppercase tracking-wide">{conference} Wildcard</span><h4 className="text-sm font-semibold">{question.text}</h4></div>
-        <span className="bg-sky-100 dark:bg-sky-900/40 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">{question.point_value} pts</span>
-      </div>
-      <div className="mt-4 space-y-2">
-        {teams.map((team) => <TeamChoice key={team.id} compact question={question} team={team} answer={answers[question.id]} onAnswerChange={onAnswerChange} isReadOnly={isReadOnly} />)}
-        {teams.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Team data unavailable for this conference.</p>}
+    <div className="cup-pick-sheet cup-wildcard-pick">
+      <header className="cup-pick-sheet__header"><h4>{conference} wildcard<small>One extra team advances from each conference</small></h4><span className="finals-step__chip">{question.point_value} {Number(question.point_value) === 1 ? 'pt' : 'pts'}</span></header>
+      <div className="cup-pick-sheet__body">
+        <SelectComponent options={options} value={selected} onChange={(option) => onAnswerChange(question.id, option ? option.value : '')}
+          placeholder={`Pick the ${conference.toLowerCase()} wildcard`} aria-label={`${conference} wildcard`}
+          isDisabled={isReadOnly || options.length === 0} mode="light" />
+        {teams.length === 0 && <p className="cup-pick-empty">Conference teams are unavailable right now.</p>}
       </div>
     </div>
   );
@@ -74,16 +55,12 @@ const WildcardCard = ({ question, teams, answers, onAnswerChange, isReadOnly }) 
 
 const ISTGroupPicks = ({ groupQuestions, wildcardQuestions, teamsForQuestion, answers, onAnswerChange, isReadOnly }) => (
   <>
-    {groupQuestions.length > 0 && (
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        {groupQuestions.map((question) => <GroupCard key={question.id} question={question} teams={teamsForQuestion(question)} answers={answers} onAnswerChange={onAnswerChange} isReadOnly={isReadOnly} />)}
-      </div>
-    )}
-    {wildcardQuestions.length > 0 && (
-      <div className="space-y-6"><h3 className="text-lg font-semibold">Wildcards</h3><div className="grid gap-5 md:grid-cols-2">
-        {wildcardQuestions.map((question) => <WildcardCard key={question.id} question={question} teams={teamsForQuestion(question)} answers={answers} onAnswerChange={onAnswerChange} isReadOnly={isReadOnly} />)}
-      </div></div>
-    )}
+    {groupQuestions.length > 0 && <section className="cup-pick-stage"><h3>Group winners</h3><p>Choose one team from each group to reach the knockout round.</p><div className="cup-group-picks">
+      {groupQuestions.map((question) => <GroupCard key={question.id} question={question} teams={teamsForQuestion(question)} answers={answers} onAnswerChange={onAnswerChange} isReadOnly={isReadOnly} />)}
+    </div></section>}
+    {wildcardQuestions.length > 0 && <section className="cup-pick-stage"><h3>Wildcards</h3><p>Pick the best remaining team in each conference.</p><div className="cup-wildcard-picks">
+      {wildcardQuestions.map((question) => <WildcardCard key={question.id} question={question} teams={teamsForQuestion(question)} answers={answers} onAnswerChange={onAnswerChange} isReadOnly={isReadOnly} />)}
+    </div></section>}
   </>
 );
 

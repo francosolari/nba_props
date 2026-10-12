@@ -65,7 +65,7 @@ function ISTGroupStandings({ groupName, conference, teams = [] }) {
                     </span>
                     {isQualified && (
                       <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white">
-                        <Check className="w-4 h-4" />
+                        <Check className="w-4 h-4" aria-label={isClinched ? "Clinched a knockout spot" : "Current group leader"} />
                       </div>
                     )}
                     {isClinched && !isQualified && (
@@ -87,7 +87,7 @@ function ISTGroupStandings({ groupName, conference, teams = [] }) {
                       {team.wins || 0}-{team.losses || 0}
                     </div>
                   </div>
-                  <div className="text-center hidden sm:block">
+                  <div className="text-center">
                     <div className="text-xs font-medium text-slate-500 dark:text-slate-400">DIFF</div>
                     <div className={`text-sm font-bold ${
                       (team.point_differential || 0) > 0

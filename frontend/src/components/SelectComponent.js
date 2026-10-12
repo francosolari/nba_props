@@ -20,6 +20,7 @@ const SelectComponent = ({
   mode = 'dark',
   components,
   isMulti = false,
+  'aria-label': ariaLabel,
 }) => {
   const isLight = mode === 'light';
   const normalizedValue = useMemo(() => {
@@ -49,6 +50,7 @@ const SelectComponent = ({
       isDisabled={isDisabled}
       isSearchable={isSearchable}
       isMulti={isMulti}
+      aria-label={ariaLabel}
       aria-invalid={hasError || undefined}
       noOptionsMessage={() => 'No options found'}
       styles={{

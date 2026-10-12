@@ -1,0 +1,373 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Props Predictions promo</title>
+<style>
+@font-face { font-family: "Barlow Condensed"; font-weight: 800; src: url("../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-800-normal.woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 700; src: url("../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff2"); }
+@font-face { font-family: "Source Sans 3"; font-weight: 400; src: url("../../node_modules/@fontsource/source-sans-3/files/source-sans-3-latin-400-normal.woff2"); }
+@font-face { font-family: "Source Sans 3"; font-weight: 700; src: url("../../node_modules/@fontsource/source-sans-3/files/source-sans-3-latin-700-normal.woff2"); }
+html, body { margin: 0; background: #000; }
+</style>
+<canvas id="c"></canvas>
+<script>
+// Courtside Album palette, from frontend/src/styles/courtside.css.
+const C = {
+  paper: '#ffffff', wash: '#f5f8fa', ink: '#101214', steel: '#53606d', rule: '#15181a', soft: '#cfd4d8',
+  blue: '#07549a', blueSoft: '#e8f2fb', red: '#d52b1e', redSoft: '#fcecea', gold: '#e7b92f', goldSoft: '#fff4c7',
+  carbon: '#0a0c0e', success: '#15703b', successSoft: '#e3f3e8',
+};
+const DISPLAY = '"Barlow Condensed", "Arial Narrow", sans-serif';
+const BODY = '"Source Sans 3", system-ui, sans-serif';
+
+const params = new URLSearchParams(location.search);
+const W = Number(params.get('w') || 1080), H = Number(params.get('h') || 1920);
+const FPS = 30, DURATION = 32.5;
+const canvas = document.getElementById('c'); canvas.width = W; canvas.height = H;
+const ctx = canvas.getContext('2d');
+
+// --- timing helpers -------------------------------------------------------
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+const easeInOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const backOut = (p) => { const s = 1.6; return 1 + (s + 1) * Math.pow(p - 1, 3) + s * Math.pow(p - 1, 2); };
+const lerp = (a, b, p) => a + (b - a) * p;
+
+// --- images ---------------------------------------------------------------
+const IMG = {};
+const loadImg = (name) => new Promise((res) => { const i = new Image(); i.onload = () => { IMG[name] = i; res(); }; i.src = `shots/${name}.png`; });
+// Screenshots are 430 CSS px wide at 3x.
+const S = 3;
+
+// --- drawing helpers ------------------------------------------------------
+function text(str, x, y, { size = 80, weight = 800, font = DISPLAY, color = C.ink, align = 'left', base = 'alphabetic', spacing = 0 } = {}) {
+  ctx.font = `${weight} ${size}px ${font}`; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = base;
+  ctx.letterSpacing = `${spacing}px`;
+  ctx.fillText(str, x, y);
+  ctx.letterSpacing = '0px';
+}
+function rect(x, y, w, h, fill, stroke, lw = 4) {
+  if (fill) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); }
+  if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.strokeRect(x + lw / 2, y + lw / 2, w - lw, h - lw); }
+}
+function fitSize(lines, maxW, size) {
+  ctx.font = `800 ${size}px ${DISPLAY}`;
+  const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
+  return widest > maxW ? Math.floor(size * maxW / widest) : size;
+}
+const PHONE_Y = 600, PHONE_FRAME = 18, CAPTION_GAP = 110;
+// Baseline for a caption that starts CAPTION_GAP below a phone's frame.
+const belowPhone = (phoneBottom, size) => phoneBottom + PHONE_FRAME + CAPTION_GAP + size * 0.74;
+function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function paperBg() {
+  rect(0, 0, W, H, C.paper);
+  // A faint center court in league blue: the circle and half-court line.
+  ctx.save();
+  ctx.strokeStyle = 'rgba(7,84,154,0.07)'; ctx.lineWidth = 8;
+  const cy = H * 0.56, r = W * 0.36;
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W / 2, cy, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W / 2, cy, r * 0.33, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+  // The scorebook sheet: a two-pixel carbon frame (scaled for video).
+  rect(28, 28, W - 56, H - 56, null, C.rule, 6);
+}
+// A phone showing a crop of a screenshot (CSS px), with a carbon frame.
+function phone(img, cx, cy, cw, ch, x, y, w, alpha = 1, tilt = 0) {
+  const h = (ch / cw) * w;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.translate(x + w / 2, y + h / 2); ctx.rotate(tilt); ctx.translate(-(x + w / 2), -(y + h / 2));
+  ctx.shadowColor = 'rgba(5,25,45,0.28)'; ctx.shadowOffsetX = 18; ctx.shadowOffsetY = 18; ctx.shadowBlur = 0;
+  rrect(x - 18, y - 18, w + 36, h + 36, 40); ctx.fillStyle = C.carbon; ctx.fill();
+  ctx.shadowColor = 'transparent';
+  rrect(x, y, w, h, 24); ctx.save(); ctx.clip();
+  ctx.drawImage(img, cx * S, cy * S, cw * S, ch * S, x, y, w, h);
+  ctx.restore(); ctx.restore();
+  return { h, k: w / cw }; // k: canvas px per CSS px
+}
+function caption(lines, y, t0, t, { size = 104, color = C.ink, accent = C.blue } = {}) {
+  lines.forEach((ln, i) => {
+    const p = easeOut(prog(t, t0 + i * 0.12, t0 + i * 0.12 + 0.45));
+    if (p <= 0) return;
+    ctx.save(); ctx.globalAlpha = p;
+    text(ln, W / 2, y + i * size * 0.95 + (1 - p) * 40, { size, align: 'center', color: i === lines.length - 1 ? accent : color });
+    ctx.restore();
+  });
+}
+function wipeBar(x, y, w, h, color, p) { if (p > 0) rect(x, y, w * p, h, color); }
+function stamp(str, x, y, color, p, size = 120) {
+  if (p <= 0) return;
+  const s = lerp(2.2, 1, backOut(p));
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-0.12); ctx.scale(s, s); ctx.globalAlpha = clamp(p * 2);
+  ctx.font = `800 ${size}px ${DISPLAY}`; const tw = ctx.measureText(str).width;
+  ctx.lineWidth = 10; ctx.strokeStyle = color; ctx.strokeRect(-tw / 2 - 30, -size * 0.62, tw + 60, size * 1.15);
+  text(str, 0, size * 0.36, { size, color, align: 'center' });
+  ctx.restore();
+}
+function transitionOut(t, t1, dur = 0.35) {
+  // carbon slab sweeps up between scenes
+  const p = prog(t, t1 - dur, t1);
+  if (p > 0 && p < 1) rect(0, H * (1 - easeInOut(p)), W, H, C.carbon);
+}
+function transitionIn(t, t0, dur = 0.35) {
+  const p = prog(t, t0, t0 + dur);
+  if (p < 1) rect(0, -H * easeInOut(p), W, H, C.carbon);
+}
+
+// --- scenes ---------------------------------------------------------------
+// Layout constants: everything that matters sits between SAFE_TOP and SAFE_BOTTOM
+// (Instagram puts the profile row on top and the reply bar at the bottom).
+const SAFE_TOP = 250, SAFE_BOTTOM = H - 340;
+
+function sceneHook(t) {
+  paperBg();
+  const p1 = backOut(prog(t, 0.15, 0.6)), p2 = backOut(prog(t, 0.45, 0.9));
+  wipeBar(0, 690, W, 26, C.blue, easeOut(prog(t, 0.05, 0.45)));
+  wipeBar(0, 1290, W, 26, C.red, easeOut(prog(t, 0.3, 0.7)));
+  text('PROPS PREDICTIONS · 2026-27', W / 2, 640, { size: 40, align: 'center', color: C.steel, spacing: 6, weight: 700 });
+  const size = fitSize(['THINK YOU', 'KNOW BALL?'], W - 140, 230);
+  if (p1 > 0) { ctx.save(); ctx.translate(W / 2, 930); ctx.scale(lerp(1.6, 1, p1), lerp(1.6, 1, p1)); ctx.globalAlpha = clamp(p1 * 2); text('THINK YOU', 0, 0, { size, align: 'center' }); ctx.restore(); }
+  if (p2 > 0) { ctx.save(); ctx.translate(W / 2, 1160); ctx.scale(lerp(1.6, 1, p2), lerp(1.6, 1, p2)); ctx.globalAlpha = clamp(p2 * 2); text('KNOW BALL?', 0, 0, { size, align: 'center', color: C.blue }); ctx.restore(); }
+  text('Prove it to the group chat.', W / 2, 1420, { size: 54, weight: 700, font: BODY, align: 'center', color: C.steel });
+  transitionOut(t, 2.6);
+}
+
+const ROWS = [160.81, 206.81, 252.81, 298.81, 344.81, 390.81, 436.81]; // Eastern rows 1-7, CSS px
+const ROW_H = 46, TEAM_X = 58, TEAM_W = 157; // the team part of a row; rank numbers stay put
+function sceneStandings(t) {
+  const t0 = 2.6;
+  paperBg(); transitionIn(t, t0);
+  caption(['RANK ALL 30', 'TEAMS'], 400, t0 + 0.2, t, { size: 120 });
+  const crop = { x: 0, y: 100, w: 430, h: 390 };
+  const px = 110, py = PHONE_Y, pw = 860;
+  const { k } = phone(IMG.standings, crop.x, crop.y, crop.w, crop.h, px, py, pw, 1);
+  const toCanvasY = (cssY) => py + (cssY - crop.y) * k;
+  const toCanvasX = (cssX) => px + (cssX - crop.x) * k;
+
+  // Drag the 76ers (7th) up to 2nd; 2nd-6th slide down one row.
+  const lift = easeOut(prog(t, t0 + 1.0, t0 + 1.25));
+  const move = easeInOut(prog(t, t0 + 1.3, t0 + 2.6));
+  const drop = easeOut(prog(t, t0 + 2.6, t0 + 2.85));
+  const from = 6, to = 1;
+  const strip = (cssY) => [TEAM_X * S, cssY * S, TEAM_W * S, ROW_H * S];
+  ctx.save(); rrect(px, py, pw, crop.h * k, 24); ctx.clip();
+  if (lift > 0) {
+    // blank the team column for the moving rows, then redraw them shifted
+    rect(toCanvasX(TEAM_X), toCanvasY(ROWS[to]), TEAM_W * k, (ROWS[from] - ROWS[to] + ROW_H) * k, C.paper);
+    for (let i = to; i < from; i++) {
+      const y = ROWS[i] + move * ROW_H;
+      ctx.drawImage(IMG.standings, ...strip(ROWS[i]), toCanvasX(TEAM_X), toCanvasY(y), TEAM_W * k, ROW_H * k);
+    }
+    // gold insertion stripe where the row will land
+    if (move > 0.05 && drop < 1) { ctx.globalAlpha = 1 - drop; rect(toCanvasX(TEAM_X), toCanvasY(ROWS[to]) - 6, TEAM_W * k, 12, C.gold); ctx.globalAlpha = 1; }
+    const y = lerp(ROWS[from], ROWS[to], move);
+    const sc = 1 + 0.06 * lift * (1 - drop);
+    const cx = toCanvasX(TEAM_X + TEAM_W / 2), cy = toCanvasY(y + ROW_H / 2);
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc); ctx.translate(-cx, -cy);
+    ctx.shadowColor = `rgba(5,25,45,${0.35 * lift * (1 - drop)})`; ctx.shadowOffsetY = 14; ctx.shadowBlur = 24;
+    ctx.drawImage(IMG.standings, ...strip(ROWS[from]), toCanvasX(TEAM_X), toCanvasY(y), TEAM_W * k, ROW_H * k);
+    ctx.shadowColor = 'transparent';
+    ctx.lineWidth = 6; ctx.strokeStyle = `rgba(231,185,47,${lift * (1 - drop)})`;
+    ctx.strokeRect(toCanvasX(TEAM_X), toCanvasY(y), TEAM_W * k, ROW_H * k);
+    ctx.restore();
+    // fingertip
+    const fa = lift * (1 - drop);
+    if (fa > 0) { ctx.beginPath(); ctx.arc(toCanvasX(TEAM_X + TEAM_W - 30), toCanvasY(y + ROW_H / 2), 46, 0, Math.PI * 2); ctx.fillStyle = `rgba(16,18,20,${0.22 * fa})`; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = `rgba(255,255,255,${0.9 * fa})`; ctx.stroke(); }
+  }
+  ctx.restore();
+  const tag = easeOut(prog(t, t0 + 2.75, t0 + 3.05));
+  if (tag > 0) { ctx.save(); ctx.globalAlpha = tag; text('DRAG. DROP. LOCK IT IN.', W / 2, belowPhone(py + crop.h * k, 70), { size: 70, align: 'center', color: C.red }); ctx.restore(); }
+  transitionOut(t, 6.6);
+}
+
+// A result card for a real past prop, in the Courtside slip style.
+function resultCard(t, t0, { kicker, title, line, answer, answerColor, stat, statSub }) {
+  const pIn = easeOut(prog(t, t0, t0 + 0.4));
+  const x = 90, y = 520 + (1 - pIn) * 120, w = W - 180;
+  ctx.save(); ctx.globalAlpha = pIn;
+  rect(x, y, w, 820, C.paper, C.rule, 6);
+  rect(x, y, w, 96, C.carbon);
+  text(kicker, x + 40, y + 64, { size: 46, color: '#fff', spacing: 3 });
+  title.forEach((ln, i) => text(ln, x + 40, y + 210 + i * 92, { size: 92 }));
+  const ty = y + 210 + title.length * 92;
+  if (line) text(line, x + 40, ty + 10, { size: 50, weight: 700, font: BODY, color: C.steel });
+  // pick split bar
+  const barY = y + 640, barW = w - 80;
+  const fill = easeOut(prog(t, t0 + 0.9, t0 + 1.4));
+  rect(x + 40, barY, barW, 40, C.wash, C.soft, 3);
+  rect(x + 40, barY, barW * stat.share * fill, 40, answerColor === C.success ? C.blue : C.red);
+  text(stat.label, x + 40, barY + 104, { size: 56, weight: 700, font: BODY });
+  text(statSub, x + 40, barY + 156, { size: 44, font: BODY, weight: 400, color: C.steel });
+  ctx.restore();
+  stamp(answer, x + w - 230, y + 470, answerColor, prog(t, t0 + 0.55, t0 + 0.95), 130);
+}
+function sceneLastSeason(t) {
+  const t0 = 6.6;
+  paperBg(); transitionIn(t, t0);
+  caption(['LAST SEASON\'S', 'PROPS'], 380, t0 + 0.1, t, { size: 104, accent: C.red });
+  if (t < 8.9) {
+    resultCard(t, t0 + 0.3, {
+      kicker: 'PROP · O/U 51.5 GAMES', title: ['SKINNY LEGEND:', 'ZION GAMES', 'PLAYED'], line: null,
+      answer: 'OVER ✓', answerColor: C.success, stat: { share: 16 / 21, label: '16 of 21 believed.' }, statSub: 'The skinny legend delivered.',
+    });
+  } else {
+    resultCard(t, 8.9, {
+      kicker: 'PROP · YES / NO', title: ['SWIFT & KELCE', 'MARRIED BEFORE', 'THE FINALS?'], line: null,
+      answer: 'NO', answerColor: C.red, stat: { share: 7 / 21, label: '7 of 21 said yes.' }, statSub: 'Not yet. So this year...',
+    });
+  }
+  fadeToPaper(t, 11.0);
+}
+// From here on, scenes ease in and out over paper instead of the carbon wipe,
+// and each beat holds long enough to read.
+function fadeFromPaper(t, t0, dur = 0.45) { const p = prog(t, t0, t0 + dur); if (p < 1) { ctx.save(); ctx.globalAlpha = 1 - easeInOut(p); rect(0, 0, W, H, C.paper); ctx.restore(); } }
+function fadeToPaper(t, t1, dur = 0.45) { const p = prog(t, t1 - dur, t1); if (p > 0) { ctx.save(); ctx.globalAlpha = easeInOut(p); rect(0, 0, W, H, C.paper); ctx.restore(); } }
+// Two beats sharing a scene: the first fades out while the second fades in.
+function beats(t, split, overlap, drawA, drawB) {
+  // sequential, never both on screen: A fades out, then B fades in
+  const half = overlap / 2;
+  if (t < split) { ctx.save(); ctx.globalAlpha = 1 - easeInOut(prog(t, split - half, split)); drawA(); ctx.restore(); }
+  else { ctx.save(); ctx.globalAlpha = easeInOut(prog(t, split, split + half)); drawB(); ctx.restore(); }
+}
+// Swap the screenshot inside a phone that stays put: frame drawn once, the
+// new capture fades in over the old one.
+function phoneSwap(imgA, imgB, p, crop, x, y, w) {
+  const { h, k } = phone(imgA, crop.x, crop.y, crop.w, crop.h, x, y, w, 1);
+  if (p > 0) {
+    ctx.save(); ctx.globalAlpha *= p; rrect(x, y, w, h, 24); ctx.clip();
+    ctx.drawImage(imgB, crop.x * S, crop.y * S, crop.w * S, crop.h * S, x, y, w, h);
+    ctx.restore();
+  }
+  return { h, k };
+}
+// A caption line whose text changes in place: old text fades out, new fades in.
+function swapLine(a, b, p, y, size, color, opts = {}) {
+  // sequential, so the two texts never blend: a out, then b in
+  if (p < 0.5) { ctx.save(); ctx.globalAlpha *= 1 - p * 2; text(a, W / 2, y, { size, align: 'center', color, ...opts }); ctx.restore(); }
+  else { ctx.save(); ctx.globalAlpha *= (p - 0.5) * 2; text(b, W / 2, y, { size, align: 'center', color, ...opts }); ctx.restore(); }
+}
+const T = { thisSeason: 11.0, kawhi: 13.8, board: 16.6, whatIf: 19.0, scoring: 21.6, cup: 24.8, cta: 27.6, end: 32.5 };
+const SWAP = 0.6;
+function sceneThisSeason(t) {
+  paperBg();
+  const t0 = T.thisSeason, size = 104;
+  const swap = easeInOut(prog(t, T.kawhi - SWAP / 2, T.kawhi + SWAP / 2));
+  const head = easeOut(prog(t, t0 + 0.1, t0 + 0.55));
+  if (head > 0) {
+    ctx.save(); ctx.globalAlpha = head;
+    text('THIS YEAR:', W / 2, 380 + (1 - head) * 40, { size, align: 'center' });
+    swapLine('A PREGNANCY?', 'KAWHI TRIBUTE?', swap, 380 + size * 0.95 + (1 - head) * 40, size, C.red);
+    ctx.restore();
+  }
+  const crop = { x: 0, y: 222, w: 430, h: 318 };
+  const pIn = easeOut(prog(t, t0 + 0.2, t0 + 0.8));
+  ctx.save(); ctx.globalAlpha = pIn;
+  const { h: ph } = phoneSwap(IMG.swift, IMG.kawhi, swap, crop, 110, PHONE_Y + (1 - pIn) * 80, 860);
+  ctx.restore();
+  const pin = easeOut(prog(t, t0 + 1.0, t0 + 1.5));
+  if (pin > 0) { ctx.save(); ctx.globalAlpha = pin; text('YOUR CALL.', W / 2, belowPhone(PHONE_Y + ph, 76), { size: 76, align: 'center', color: C.blue }); ctx.restore(); }
+  fadeFromPaper(t, t0);
+  fadeToPaper(t, T.board);
+}
+function sceneBoard(t) {
+  paperBg();
+  const t0 = T.board, size = 104;
+  const swap = easeInOut(prog(t, T.whatIf - SWAP / 2, T.whatIf + SWAP / 2));
+  const head = easeOut(prog(t, t0 + 0.1, t0 + 0.55));
+  if (head > 0) {
+    ctx.save(); ctx.globalAlpha = head;
+    const dy = (1 - head) * 40;
+    swapLine('37 PLAYED', 'RUN THE', swap, 380 + dy, size, C.ink);
+    swapLine('LAST SEASON', 'WHAT-IF', swap, 380 + size * 0.95 + dy, size, swap < 0.5 ? C.blue : C.gold);
+    ctx.restore();
+  }
+  const crop = { x: 0, y: 62, w: 430, h: 400 };
+  const pIn = easeOut(prog(t, t0 + 0.15, t0 + 0.7));
+  ctx.save(); ctx.globalAlpha = pIn;
+  const { h: ph, k } = phoneSwap(IMG.statsheet, IMG['whatif-on'], swap, crop, 110, PHONE_Y + (1 - pIn) * 60, 860);
+  ctx.restore();
+  if (swap >= 1) {
+    const pulse = 0.5 + 0.5 * Math.sin((t - T.whatIf) * 6);
+    const gx = 110 + (305.5 - crop.x) * k, gy = PHONE_Y + (158 - crop.y) * k;
+    ctx.save(); rrect(110, PHONE_Y, 860, crop.h * k, 24); ctx.clip();
+    ctx.lineWidth = 10; ctx.strokeStyle = `rgba(16,18,20,${0.4 + 0.6 * pulse})`;
+    ctx.strokeRect(gx + 5, gy + 5, 124.5 * k - 10, 60 * k - 10);
+    ctx.restore();
+  }
+  const note = easeOut(prog(t, t0 + 0.8, t0 + 1.3));
+  if (note > 0) {
+    ctx.save(); ctx.globalAlpha = note;
+    const y = belowPhone(PHONE_Y + ph, 58);
+    swapLine('Live points all season.', 'Move a team. Watch the board shift.', swap, y, 58, C.steel, { weight: 700, font: BODY });
+    ctx.restore();
+  }
+  fadeFromPaper(t, t0);
+  fadeToPaper(t, T.scoring);
+}
+function sceneScoring(t) {
+  paperBg();
+  const t0 = T.scoring;
+  caption(['EARN POINTS', 'ALL SEASON'], 490, t0 + 0.05, t, { size: 140, accent: C.blue });
+  const p = easeOut(prog(t, t0 + 0.25, t0 + 0.7));
+  ctx.save(); ctx.globalAlpha = p;
+  rect(90, 800 + (1 - p) * 30, W - 180, 390, C.blue, C.rule, 6);
+  text('MOST POINTS', W / 2, 970 + (1 - p) * 30, { size: 124, align: 'center', color: '#fff' });
+  text('WINS THE POOL.', W / 2, 1110 + (1 - p) * 30, { size: 124, align: 'center', color: '#fff' });
+  ctx.restore();
+  text('Make your picks. Follow the points.', W / 2, 1400, { size: 48, weight: 700, font: BODY, align: 'center', color: C.steel });
+  fadeFromPaper(t, t0, 0.3);
+  fadeToPaper(t, T.cup, 0.3);
+}
+function sceneCup(t) {
+  paperBg();
+  const t0 = T.cup;
+  caption(['NBA CUP'], 470, t0 + 0.05, t, { size: 150, accent: C.blue });
+  const p = easeOut(prog(t, t0 + 0.15, t0 + 0.6));
+  ctx.save(); ctx.globalAlpha = p;
+  rect(110, 600, W - 220, 680, C.paper, C.rule, 6);
+  rect(110, 600, W - 220, 12, C.blue);
+  text('$50', W / 2, 970 + (1 - p) * 30, { size: 360, align: 'center', color: C.blue });
+  text('MID-SEASON PAYOUT', W / 2, 1100, { size: 80, align: 'center' });
+  text('To the Cup prediction winner.', W / 2, 1210, { size: 46, weight: 700, font: BODY, align: 'center', color: C.steel });
+  ctx.restore();
+  text('Paid after the championship game.', W / 2, 1410, { size: 48, weight: 700, font: BODY, align: 'center', color: C.steel });
+  fadeFromPaper(t, t0, 0.3);
+  const out = prog(t, T.cta - 0.3, T.cta);
+  if (out > 0) { ctx.save(); ctx.globalAlpha = easeInOut(out); rect(0, 0, W, H, C.blue); ctx.restore(); }
+}
+function sceneCta(t) {
+  const t0 = T.cta;
+  rect(0, 0, W, H, C.blue);
+  const a = easeOut(prog(t, t0 + 0.2, t0 + 0.7));
+  if (a > 0) { ctx.save(); ctx.globalAlpha = a; text('$25 TO ENTER', W / 2, 560 + (1 - a) * 30, { size: 84, align: 'center', color: C.gold, spacing: 4 }); ctx.restore(); }
+  const b = easeOut(prog(t, t0 + 0.5, t0 + 1.1));
+  if (b > 0) { ctx.save(); ctx.translate(W / 2, 800); ctx.scale(lerp(1.12, 1, b), lerp(1.12, 1, b)); ctx.globalAlpha = b; text('PROPS', 0, 0, { size: 210, align: 'center', color: '#fff' }); text('PREDICTIONS', 0, 190, { size: 150, align: 'center', color: '#fff' }); ctx.restore(); }
+  const c = easeOut(prog(t, t0 + 1.3, t0 + 1.8));
+  if (c > 0) { ctx.save(); ctx.globalAlpha = c; rect(110, 1080, W - 220, 120, '#fff'); text('propspredictions.com', W / 2, 1162, { size: 72, weight: 700, font: BODY, align: 'center', color: C.blue }); ctx.restore(); }
+  const d = easeOut(prog(t, t0 + 1.9, t0 + 2.4));
+  if (d > 0) { ctx.save(); ctx.globalAlpha = d; rect(110, 1240, W - 220, 110, C.red); text('PICKS LOCK OCT 20', W / 2, 1318, { size: 80, align: 'center', color: '#fff', spacing: 3 }); ctx.restore(); }
+  const e = easeOut(prog(t, t0 + 2.9, t0 + 3.4));
+  if (e > 0) { ctx.save(); ctx.globalAlpha = e; text('SEND THIS TO THE CHAT →', W / 2, 1490 + (1 - e) * 24, { size: 78, align: 'center', color: C.gold }); ctx.restore(); }
+}
+
+function drawFrame(i) {
+  const t = i / FPS;
+  ctx.save();
+  if (t < 2.6) sceneHook(t);
+  else if (t < 6.6) sceneStandings(t);
+  else if (t < T.thisSeason) sceneLastSeason(t);
+  else if (t < T.board) sceneThisSeason(t);
+  else if (t < T.scoring) sceneBoard(t);
+  else if (t < T.cup) sceneScoring(t);
+  else if (t < T.cta) sceneCup(t);
+  else sceneCta(t);
+  ctx.restore();
+}
+
+window.ready = (async () => {
+  await Promise.all(['standings', 'swift', 'kawhi', 'statsheet', 'whatif-on'].map(loadImg));
+  await Promise.all(['800 40px "Barlow Condensed"', '700 40px "Barlow Condensed"', '400 40px "Source Sans 3"', '700 40px "Source Sans 3"'].map((f) => document.fonts.load(f)));
+  return { frames: Math.round(DURATION * FPS), fonts: document.fonts.check('800 40px "Barlow Condensed"') };
+})();
+window.frame = (i) => { drawFrame(i); return canvas.toDataURL('image/jpeg', 0.92).split(',')[1]; };
+</script>

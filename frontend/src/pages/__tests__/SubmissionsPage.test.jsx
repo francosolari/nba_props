@@ -214,7 +214,7 @@ describe('SubmissionsPage', () => {
 
         // Check for category headers
         expect(screen.getByRole('heading', { name: /Awards.*Superlatives/i })).toBeInTheDocument();
-        expect(screen.getByRole('heading', { name: /Prop Bets/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /Season Props/i })).toBeInTheDocument();
     });
 
     test('shows overall and current-section completion using configured questions only', async () => {

@@ -78,12 +78,20 @@ const useIstSubmissionData = ({ questions, answers, onAnswerChange, isReadOnly, 
   const scoreValues = { east: scores.east ? answers[scores.east.id] ?? '' : '', west: scores.west ? answers[scores.west.id] ?? '' : '' };
 
   useEffect(() => {
-    if (isReadOnly || !finals.champion || !scores.east || !scores.west || !selected.east || !selected.west) return;
+    if (isReadOnly || !finals.champion || !selected.east || !selected.west) return;
+    const current = answers[finals.champion.id];
     const eastScore = Number(scoreValues.east);
     const westScore = Number(scoreValues.west);
-    if (!Number.isFinite(eastScore) || !Number.isFinite(westScore) || eastScore === westScore) return;
-    const winner = eastScore > westScore ? selected.east.value : selected.west.value;
-    if (String(answers[finals.champion.id]) !== String(winner)) onAnswerChange(finals.champion.id, winner);
+    const hasScores = scores.east && scores.west
+      && String(scoreValues.east).trim() !== '' && String(scoreValues.west).trim() !== ''
+      && Number.isFinite(eastScore) && Number.isFinite(westScore)
+      && eastScore >= 0 && westScore >= 0;
+    if (hasScores && eastScore !== westScore) {
+      const winner = eastScore > westScore ? selected.east.value : selected.west.value;
+      if (String(current) !== String(winner)) onAnswerChange(finals.champion.id, winner);
+    } else if (current && ![selected.east.value, selected.west.value].some((value) => String(value) === String(current))) {
+      onAnswerChange(finals.champion.id, '');
+    }
   }, [
     answers, finals.champion, isReadOnly, onAnswerChange, scoreValues.east, scoreValues.west,
     scores.east, scores.west, selected.east, selected.west,

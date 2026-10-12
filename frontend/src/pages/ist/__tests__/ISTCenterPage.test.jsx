@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import ISTCenterPage from '../ISTCenterPage';
 import { useISTData } from '../../../hooks';
 
@@ -131,7 +131,15 @@ describe('ISTCenterPage', () => {
     render(<ISTCenterPage />);
 
     expect(screen.queryByText('NBA CUP 2024')).not.toBeInTheDocument();
-    expect(screen.getByText('In-Season Tournament')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'NBA Cup', level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('$50')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Prediction leaders' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'East groups' }));
+    expect(screen.getByRole('region', { name: 'Eastern Conference' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'East groups' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'West groups' }));
+    expect(screen.getByRole('region', { name: 'Western Conference' })).toBeVisible();
+    expect(screen.getByText('Eastern Conference')).not.toBeVisible();
     expect(screen.getByText('Eastern Conference')).toBeInTheDocument();
     expect(screen.getByText('Western Conference')).toBeInTheDocument();
     expect(screen.getByText('Boston Celtics')).toBeInTheDocument();

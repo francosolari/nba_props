@@ -20,7 +20,6 @@ function ISTWildcardRace({ conference, teams = [] }) {
     ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
     : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
 
-  const wildcardWinner = teams.find((t, idx) => idx === 0);
   const contenders = teams.slice(0, 3); // Top 3 wildcard contenders for compact view
 
   return (
@@ -33,6 +32,10 @@ function ISTWildcardRace({ conference, teams = [] }) {
             <h3 className="text-sm font-black text-white tracking-wide">{conference} WILDCARD</h3>
           </div>
           <button
+            type="button"
+            aria-label={`${conference} wildcard tiebreaker rules`}
+            aria-expanded={showTiebreakers}
+            aria-controls={`cup-${conference.toLowerCase()}-tiebreakers`}
             onClick={() => setShowTiebreakers(!showTiebreakers)}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/20 hover:bg-white/30 transition-colors text-white text-[10px] font-medium"
           >
@@ -44,7 +47,7 @@ function ISTWildcardRace({ conference, teams = [] }) {
 
       {/* Tiebreaker Rules Dropdown */}
       {showTiebreakers && (
-        <div className={`px-4 py-3 ${bgClass} border-b border-slate-200 dark:border-slate-700`}>
+        <div id={`cup-${conference.toLowerCase()}-tiebreakers`} className={`px-4 py-3 ${bgClass} border-b border-slate-200 dark:border-slate-700`}>
           <p className="text-xs font-semibold text-slate-900 dark:text-white mb-2">Tiebreaker Order:</p>
           <ol className="text-xs text-slate-700 dark:text-slate-300 space-y-1.5 list-decimal list-inside">
             <li><strong>Head-to-head record</strong> in group play games</li>
