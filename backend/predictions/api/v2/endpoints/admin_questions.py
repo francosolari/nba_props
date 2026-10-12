@@ -185,17 +185,28 @@ def create_head_to_head_question(request, payload: HeadToHeadQuestionCreateSchem
     """
     try:
         season = get_object_or_404(Season, slug=payload.season_slug)
-        team1 = get_object_or_404(Team, id=payload.team1_id)
-        team2 = get_object_or_404(Team, id=payload.team2_id)
-        
+        if payload.player1_id and payload.player2_id:
+            sides = {
+                "player1": get_object_or_404(Player, id=payload.player1_id),
+                "player2": get_object_or_404(Player, id=payload.player2_id),
+            }
+        elif payload.team1_id and payload.team2_id:
+            sides = {
+                "team1": get_object_or_404(Team, id=payload.team1_id),
+                "team2": get_object_or_404(Team, id=payload.team2_id),
+            }
+        else:
+            raise HttpError(400, "Pick two teams or two players.")
+        if len({obj.id for obj in sides.values()}) < 2:
+            raise HttpError(400, "Pick two different sides.")
+
         question = HeadToHeadQuestion.objects.create(
             season=season,
             text=payload.text,
             point_value=payload.point_value,
             answer_point_values=payload.answer_point_values or {},
-            team1=team1,
-            team2=team2,
-            conference_matchup=payload.conference_matchup,
+            conference_matchup=payload.conference_matchup and "team1" in sides,
+            **sides,
         )
         
         return {
@@ -339,6 +350,10 @@ def update_question(request, question_id: int, payload: QuestionUpdateSchema):
             if payload.team2_id is not None:
                 team2 = get_object_or_404(Team, id=payload.team2_id)
                 real_question.team2 = team2
+            if payload.player1_id is not None:
+                real_question.player1 = get_object_or_404(Player, id=payload.player1_id)
+            if payload.player2_id is not None:
+                real_question.player2 = get_object_or_404(Player, id=payload.player2_id)
             if payload.conference_matchup is not None:
                 real_question.conference_matchup = payload.conference_matchup
 

@@ -250,7 +250,7 @@ const QuestionInput = ({
         <div
           className={`head-to-head-scale${scaleStateClass}${disabledClass}`}
           role="group"
-          aria-label="Choose team"
+          aria-label={question.matchup === 'players' ? 'Choose player' : 'Choose team'}
         >
           <span className="head-to-head-indicator" aria-hidden="true" />
           <button

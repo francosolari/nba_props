@@ -226,14 +226,27 @@ class HeadToHeadQuestion(Question):
     Question to choose between two teams
     Used for opening night or trade bets -- Knicks vs Minnesota
     """
-    team1 = models.ForeignKey(Team, related_name='h2h_team1', on_delete=models.CASCADE)
-    team2 = models.ForeignKey(Team, related_name='h2h_team2', on_delete=models.CASCADE)
+    # A matchup is two teams or two players ("Who makes more threes, Ant or
+    # LaMelo?"); exactly one pair is set. Picks store the chosen side's id.
+    team1 = models.ForeignKey(Team, related_name='h2h_team1', on_delete=models.CASCADE, null=True, blank=True)
+    team2 = models.ForeignKey(Team, related_name='h2h_team2', on_delete=models.CASCADE, null=True, blank=True)
+    player1 = models.ForeignKey(Player, related_name='h2h_player1', on_delete=models.CASCADE, null=True, blank=True)
+    player2 = models.ForeignKey(Player, related_name='h2h_player2', on_delete=models.CASCADE, null=True, blank=True)
     # East vs West questions: each team stands in for its conference, so pickers
     # show "Eastern Conference" / "Western Conference" while answers stay team ids.
     conference_matchup = models.BooleanField(default=False)
 
+    @property
+    def is_player_matchup(self):
+        return self.player1_id is not None
+
+    @property
+    def sides(self):
+        return (self.player1, self.player2) if self.is_player_matchup else (self.team1, self.team2)
+
     def __str__(self):
-        return f"{self.text} ({self.team1.name} vs {self.team2.name})"
+        side1, side2 = self.sides
+        return f"{self.text} ({side1.name} vs {side2.name})"
 
 class InSeasonTournamentQuestion(Question):
     """

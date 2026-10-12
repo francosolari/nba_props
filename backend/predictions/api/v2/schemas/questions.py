@@ -65,10 +65,15 @@ class PlayerStatPredictionQuestionSchema(QuestionBaseSchema):
 class HeadToHeadQuestionSchema(QuestionBaseSchema):
     """Schema for Head-to-Head Questions"""
     question_type: Literal["head_to_head"] = "head_to_head"
-    team1_id: int
+    matchup: Literal["teams", "players"] = "teams"
+    team1_id: int  # the first side's id: a team, or a player for player matchups
     team1_name: str
+    team1_logo: Optional[str] = None
     team2_id: int
     team2_name: str
+    team2_logo: Optional[str] = None
+    player1_id: Optional[int] = None
+    player2_id: Optional[int] = None
     conference_matchup: bool = False
 
 
@@ -247,8 +252,11 @@ class HeadToHeadQuestionCreateSchema(Schema):
     text: str
     point_value: float = 0.5
     answer_point_values: Optional[Dict[str, float]] = None
-    team1_id: int
-    team2_id: int
+    # Either two teams or two players.
+    team1_id: Optional[int] = None
+    team2_id: Optional[int] = None
+    player1_id: Optional[int] = None
+    player2_id: Optional[int] = None
     conference_matchup: bool = False
 
 
@@ -296,6 +304,8 @@ class QuestionUpdateSchema(Schema):
     # Head-to-head question fields
     team1_id: Optional[int] = None
     team2_id: Optional[int] = None
+    player1_id: Optional[int] = None
+    player2_id: Optional[int] = None
     conference_matchup: Optional[bool] = None
 
     # IST question fields
