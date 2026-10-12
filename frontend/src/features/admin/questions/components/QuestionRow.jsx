@@ -32,6 +32,8 @@ const QuestionRow = ({
     if (initial.related_player_id !== undefined) initial.related_player = initial.related_player_id;
     if (initial.team1_id !== undefined) initial.team1 = initial.team1_id;
     if (initial.team2_id !== undefined) initial.team2 = initial.team2_id;
+    if (initial.player1_id) initial.player1 = initial.player1_id;
+    if (initial.player2_id) initial.player2 = initial.player2_id;
     if (initial.player_stat_id !== undefined) initial.player_stat = initial.player_stat_id;
     return initial;
   }, [question]);
@@ -92,11 +94,13 @@ const QuestionRow = ({
         };
         break;
       case "head_to_head":
-        specificPayload = {
-          team1_id: draft.team1 ? Number(draft.team1) : Number(draft.team1_id),
-          team2_id: draft.team2 ? Number(draft.team2) : Number(draft.team2_id),
-          conference_matchup: Boolean(draft.conference_matchup),
-        };
+        specificPayload = draft.matchup === "players"
+          ? { player1_id: Number(draft.player1), player2_id: Number(draft.player2) }
+          : {
+            team1_id: draft.team1 ? Number(draft.team1) : Number(draft.team1_id),
+            team2_id: draft.team2 ? Number(draft.team2) : Number(draft.team2_id),
+            conference_matchup: Boolean(draft.conference_matchup),
+          };
         break;
       case "ist":
         specificPayload = {

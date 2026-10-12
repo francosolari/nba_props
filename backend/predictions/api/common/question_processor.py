@@ -65,8 +65,8 @@ def process_questions_for_season(season_slug):
                 'text': q.text,
                 'point_value': q.point_value,
                 'question_type': question_type,
-                'team1': q.team1.name,
-                'team2': q.team2.name,
+                'team1': q.sides[0].name,
+                'team2': q.sides[1].name,
             })
         elif isinstance(q, InSeasonTournamentQuestion):
             question_type = 'ist'

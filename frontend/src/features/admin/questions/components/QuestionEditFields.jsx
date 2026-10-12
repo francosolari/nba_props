@@ -119,7 +119,24 @@ const QuestionEditFields = ({
         </div>
       );
     }
-    case "head_to_head":
+    case "head_to_head": {
+      if (draft.matchup === "players") {
+        return (
+          <div className="space-y-4">
+            {[["player1", "Player 1"], ["player2", "Player 2"]].map(([key, label]) => (
+              <SelectComponent
+                key={key}
+                options={playerOptions}
+                value={playerOptions.find((option) => option.value === draft[key]) || null}
+                onChange={(option) => setDraft((prev) => ({ ...prev, [key]: option ? option.value : null }))}
+                placeholder={`Select ${label.toLowerCase()}`}
+                isClearable
+                mode={themeStyles.mode}
+              />
+            ))}
+          </div>
+        );
+      }
       return (
         <div className="space-y-4">
           <SelectComponent
@@ -153,6 +170,7 @@ const QuestionEditFields = ({
           </label>
         </div>
       );
+    }
     case "player_stat":
       return (
         <div className="space-y-4">

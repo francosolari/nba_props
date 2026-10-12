@@ -75,6 +75,7 @@ const QuestionBuilders = ({
             form={forms.headToHeadForm}
             setForm={setters.setHeadToHeadForm}
             teamOptions={options.teamOptions}
+            playerOptions={options.playerOptions}
             createHeadToHead={mutations.createHeadToHead}
           />
         );

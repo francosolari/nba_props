@@ -687,3 +687,55 @@ class TestGetAwards:
 
         assert response.status_code == 200
         assert response.json() == []
+
+
+@pytest.mark.django_db
+class TestPlayerHeadToHead:
+    """Head-to-heads between two players, e.g. "Who makes more threes?"."""
+
+    def test_create_and_score_a_player_matchup(self, admin_client):
+        from predictions.api.common.services.answer_lookup_service import AnswerLookupService
+
+        client, admin = admin_client
+        SeasonFactory(slug='26-27')
+        ant = PlayerFactory(name='Anthony Edwards', nba_player_id=1630162)
+        melo = PlayerFactory(name='LaMelo Ball', nba_player_id=1630163)
+
+        response = client.post(
+            '/api/v2/admin/questions/head-to-head',
+            data=json.dumps({
+                "season_slug": "26-27",
+                "text": "Who will make more total 3-pointers?",
+                "point_value": 1,
+                "player1_id": ant.id,
+                "player2_id": melo.id,
+            }),
+            content_type='application/json',
+        )
+
+        assert response.status_code == 200
+        body = response.json()['question']
+        assert body['matchup'] == 'players'
+        assert (body['team1_name'], body['team2_name']) == ('Anthony Edwards', 'LaMelo Ball')
+        assert body['team1_logo'].endswith('/1630162.png')
+
+        question = HeadToHeadQuestion.objects.get(text="Who will make more total 3-pointers?")
+        assert question.team1 is None and question.player2 == melo
+        # A pick stores the player's id; grading resolves it to the name.
+        assert AnswerLookupService.resolve_answer(str(ant.id), question) == 'Anthony Edwards'
+        question.correct_answer = 'Anthony Edwards'
+        assert question.points_for_answer('Anthony Edwards') == 1
+        assert question.points_for_answer('LaMelo Ball') == 0
+
+    def test_rejects_a_half_set_matchup(self, admin_client):
+        client, admin = admin_client
+        SeasonFactory(slug='26-27')
+        ant = PlayerFactory(name='Anthony Edwards')
+
+        response = client.post(
+            '/api/v2/admin/questions/head-to-head',
+            data=json.dumps({"season_slug": "26-27", "text": "Half a matchup", "player1_id": ant.id}),
+            content_type='application/json',
+        )
+
+        assert response.status_code == 400

@@ -174,7 +174,7 @@ def build_questions_with_real_map(season: Season):
         elif model_class is PlayerStatPredictionQuestion:
             queryset = queryset.select_related("player_stat", "season")
         elif model_class is HeadToHeadQuestion:
-            queryset = queryset.select_related("team1", "team2", "season")
+            queryset = queryset.select_related("team1", "team2", "player1", "player2", "season")
         else:
             queryset = queryset.select_related("season")
         for real_question in queryset:
@@ -278,17 +278,27 @@ def serialize_question(question: Question, real_questions_map: Optional[dict] = 
     
     # Head-to-Head Question
     elif isinstance(real_question, HeadToHeadQuestion):
-        def side_name(team):
-            if real_question.conference_matchup:
-                return f"{team.conference}ern Conference"
-            return team.name
+        players = real_question.is_player_matchup
 
+        def side_name(side):
+            if not players and real_question.conference_matchup:
+                return f"{side.conference}ern Conference"
+            return side.name
+
+        side1, side2 = real_question.sides
+        # The pick card reads team1_*/team2_* for either kind of matchup; for
+        # players the "logo" is the headshot.
         return {
             **base_data,
-            "team1_id": real_question.team1.id,
-            "team1_name": side_name(real_question.team1),
-            "team2_id": real_question.team2.id,
-            "team2_name": side_name(real_question.team2),
+            "matchup": "players" if players else "teams",
+            "team1_id": side1.id,
+            "team1_name": side_name(side1),
+            "team1_logo": side1.headshot_url if players else None,
+            "team2_id": side2.id,
+            "team2_name": side_name(side2),
+            "team2_logo": side2.headshot_url if players else None,
+            "player1_id": real_question.player1_id,
+            "player2_id": real_question.player2_id,
             "conference_matchup": real_question.conference_matchup,
         }
     

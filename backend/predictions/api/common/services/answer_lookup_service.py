@@ -69,7 +69,9 @@ class AnswerLookupService:
             return str(answer_value)
 
         answer_id_int = int(answer_value)
-        if isinstance(question_instance, (SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion)):
+        if isinstance(question_instance, (SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion)) or (
+            isinstance(question_instance, HeadToHeadQuestion) and question_instance.is_player_matchup
+        ):
             return player_lookup.get(answer_id_int, f"Player ID {answer_id_int} not found")
         elif isinstance(question_instance,
                         (InSeasonTournamentQuestion, HeadToHeadQuestion, NBAFinalsPredictionQuestion)):
@@ -111,7 +113,9 @@ class AnswerLookupService:
                 continue
 
             answer_id_int = int(answer_val_str)
-            if isinstance(real_question, (SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion)):
+            if isinstance(real_question, (SuperlativeQuestion, PropQuestion, PlayerStatPredictionQuestion)) or (
+                isinstance(real_question, HeadToHeadQuestion) and real_question.is_player_matchup
+            ):
                 resolved_map[answer_obj.id] = player_lookup.get(answer_id_int, f"Player ID {answer_id_int} not found")
             elif isinstance(real_question,
                             (InSeasonTournamentQuestion, HeadToHeadQuestion, NBAFinalsPredictionQuestion)):

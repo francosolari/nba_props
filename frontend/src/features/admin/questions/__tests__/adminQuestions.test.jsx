@@ -151,3 +151,29 @@ test('an award pick list hides excluded players', () => {
   expect(screen.getByText('Alperen Sengun')).toBeInTheDocument();
   expect(screen.queryByText('LeBron James')).not.toBeInTheDocument();
 });
+
+test('a player head-to-head sends player ids', async () => {
+  const HeadToHeadForm = require('../components/HeadToHeadForm').default;
+  const handleMutation = jest.fn().mockResolvedValue(true);
+  render(
+    <HeadToHeadForm
+      form={{ matchup: 'players', text: 'Who makes more threes?', pointValue: 1, player1Id: 1, player2Id: 2 }}
+      setForm={jest.fn()}
+      teamOptions={[]}
+      playerOptions={[{ value: 1, label: 'Anthony Edwards' }, { value: 2, label: 'LaMelo Ball' }]}
+      defaultPointValue={1}
+      activeSeason="2026-27"
+      ensureSeasonSelected={() => true}
+      setError={jest.fn()}
+      handleMutation={handleMutation}
+      createHeadToHead={{ isPending: false }}
+      classes={{ labelClass: '', textareaClass: '', inputClass: '', primaryButtonClass: '', checkboxClass: '' }}
+      themeStyles={{ subtle: '', mode: 'light', textSecondary: '' }}
+    />,
+  );
+  expect(screen.queryByText(/Conference matchup/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Create question' }));
+  await waitFor(() => expect(handleMutation).toHaveBeenCalled());
+  expect(handleMutation.mock.calls[0][1]).toMatchObject({ player1_id: 1, player2_id: 2 });
+  expect(handleMutation.mock.calls[0][1]).not.toHaveProperty('team1_id');
+});

@@ -539,6 +539,8 @@ def get_questions_for_grading(request, season_slug: str):
         if isinstance(q, PropQuestion) and q.related_player_id:
             player_ids.add(q.related_player_id)
         elif isinstance(q, HeadToHeadQuestion):
+            if q.is_player_matchup:
+                player_ids.update({q.player1_id, q.player2_id})
             if q.team1_id:
                 team_ids.add(q.team1_id)
             if q.team2_id:
@@ -612,8 +614,12 @@ def get_questions_for_grading(request, season_slug: str):
         elif isinstance(question_real, HeadToHeadQuestion):
             input_type = 'team_choice'
             # Use cache to avoid N+1 queries
-            team1 = teams_cache.get(question_real.team1_id)
-            team2 = teams_cache.get(question_real.team2_id)
+            if question_real.is_player_matchup:
+                team1 = players_cache.get(question_real.player1_id)
+                team2 = players_cache.get(question_real.player2_id)
+            else:
+                team1 = teams_cache.get(question_real.team1_id)
+                team2 = teams_cache.get(question_real.team2_id)
             if team1:
                 team1_name = team1.name
             if team2:

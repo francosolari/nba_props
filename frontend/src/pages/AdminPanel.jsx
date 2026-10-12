@@ -87,10 +87,13 @@ const AdminPanel = ({ seasonSlug }) => {
   const [superForm, setSuperForm] = useState({ text: "", awardId: "", pointValue: defaultPointValue });
   const [propForm, setPropForm] = useState(() => defaultPropForm(defaultPointValue));
   const [headToHeadForm, setHeadToHeadForm] = useState({
+    matchup: "teams",
     text: "",
     pointValue: defaultPointValue,
     team1Id: null,
     team2Id: null,
+    player1Id: null,
+    player2Id: null,
   });
   const [istForm, setIstForm] = useState({
     text: "",
