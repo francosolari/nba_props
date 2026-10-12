@@ -884,3 +884,45 @@ class TestMultipleCorrectPlayers:
         assert known_rookie not in hidden
         new_rookie = Player.objects.get(nba_player_id=12)
         assert new_rookie.name == 'New Rookie' and new_rookie not in hidden
+
+    def test_rookie_added_by_name_gets_linked_not_duplicated(self, current_season, mocker):
+        import pandas as pd
+        from django.core.management import call_command
+
+        question = SuperlativeQuestionFactory(season=current_season, award=None)
+        by_name = PlayerFactory(name='Aday Mara', nba_player_id=None)
+        roster = pd.DataFrame([(77, 'Aday Mara', current_season.year[:4])], columns=['PERSON_ID', 'DISPLAY_FIRST_LAST', 'FROM_YEAR'])
+        mocker.patch(
+            'nba_api.stats.endpoints.commonallplayers.CommonAllPlayers',
+            return_value=mocker.Mock(get_data_frames=lambda: [roster]),
+        )
+
+        call_command('limit_player_picks', question.id, rookies=True)
+
+        by_name.refresh_from_db()
+        assert by_name.nba_player_id == 77
+        assert Player.objects.filter(name='Aday Mara').count() == 1
+
+
+@pytest.mark.django_db
+class TestMergeDuplicatePlayers:
+    def test_merges_onto_the_nba_id_row_and_moves_picks(self, current_season):
+        from django.core.management import call_command
+
+        keeper = PlayerFactory(name='Kristaps Porzingis', nba_player_id=204001)
+        dupe = PlayerFactory(name='Kristaps Porziņģis', nba_player_id=None)
+        bronny = PlayerFactory(name='Lebron James Jr', nba_player_id=None)
+        lebron = PlayerFactory(name='LeBron James', nba_player_id=2544)
+        question = SuperlativeQuestionFactory(season=current_season, current_leader=dupe)
+        question.excluded_players.add(dupe)
+        pick = Answer.objects.create(user=UserFactory(), question=question, answer=str(dupe.id))
+
+        call_command('merge_duplicate_players', skip=[bronny.id])
+
+        assert not Player.objects.filter(id=dupe.id).exists()
+        pick.refresh_from_db()
+        question.refresh_from_db()
+        assert pick.answer == str(keeper.id)
+        assert question.current_leader == keeper
+        assert list(question.excluded_players.all()) == [keeper]
+        assert Player.objects.filter(id__in=[bronny.id, lebron.id]).count() == 2

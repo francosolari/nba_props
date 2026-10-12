@@ -109,14 +109,25 @@ class Command(BaseCommand):
         rookie_ids = set(int(pid) for pid in rookies["PERSON_ID"])
         known = set(Player.objects.filter(nba_player_id__in=rookie_ids).values_list("nba_player_id", flat=True))
         missing = rookies[~rookies["PERSON_ID"].astype(int).isin(known)]
-        if len(missing):
-            names = ", ".join(missing["DISPLAY_FIRST_LAST"])
-            self.stdout.write(f"{'Would add' if dry_run else 'Adding'} {len(missing)} rookies missing from the player list: {names}")
-            if not dry_run:
-                Player.objects.bulk_create([
-                    Player(name=row.DISPLAY_FIRST_LAST, nba_player_id=int(row.PERSON_ID))
-                    for row in missing.itertuples()
-                ])
+        # A rookie added earlier by name only gets the NBA.com ID attached
+        # instead of a second Player row.
+        unlinked = {normalize_name(p.name): p for p in Player.objects.filter(nba_player_id__isnull=True)}
+        to_link, to_add = [], []
+        for row in missing.itertuples():
+            existing = unlinked.get(normalize_name(row.DISPLAY_FIRST_LAST))
+            if existing:
+                existing.nba_player_id = int(row.PERSON_ID)
+                to_link.append(existing)
+            else:
+                to_add.append(Player(name=row.DISPLAY_FIRST_LAST, nba_player_id=int(row.PERSON_ID)))
+        verb = "Would" if dry_run else "Will"
+        if to_link:
+            self.stdout.write(f"{verb} link NBA.com IDs to {len(to_link)} existing rookies: {', '.join(p.name for p in to_link)}")
+        if to_add:
+            self.stdout.write(f"{verb} add {len(to_add)} rookies missing from the player list: {', '.join(p.name for p in to_add)}")
+        if not dry_run:
+            Player.objects.bulk_update(to_link, ["nba_player_id"])
+            Player.objects.bulk_create(to_add)
         self.stdout.write(f"{len(rookie_ids)} rookies stay in the pick list.")
         # Players without an NBA.com ID can't be confirmed as rookies, so they're hidden too.
         return list(Player.objects.exclude(nba_player_id__in=rookie_ids))
