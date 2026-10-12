@@ -15,9 +15,9 @@ export const QUESTION_GROUP_META = {
     description: 'Predict statistical totals for standout player performances.',
   },
   head_to_head: {
-    title: 'Head-to-Head Matchups',
-    shortTitle: 'Matchups',
-    description: 'Choose the winner in marquee matchups.',
+    title: 'Head-to-Head',
+    shortTitle: 'H2H', // 'Head-to-Head' pushes the count badge off a 375px phone
+    description: 'Pick a side in each head-to-head.',
   },
   ist: {
     title: 'In Season Tournament: NBA Cup',
