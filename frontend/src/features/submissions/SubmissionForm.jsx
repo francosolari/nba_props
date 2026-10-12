@@ -4,7 +4,11 @@ import InSeasonTournamentSection from './InSeasonTournamentSection';
 import NBAFinalsSection from './NBAFinalsSection';
 import QuestionCard from './QuestionCard';
 import SubmissionProgressTracker from './SubmissionProgressTracker';
+import useStuckLedger from './useStuckLedger';
 import { isAnswered } from './submissionProgress';
+
+// The mobile bottom navigation is 74px and the ledger sticks 6px into it.
+const ACTIONS_STICKY_OFFSET = 68;
 
 const QuestionGroup = ({ group, answers, onAnswerChange, sharedProps }) => {
   const completed = group.questions.filter((question) => isAnswered(answers[question.id])).length;
@@ -49,19 +53,40 @@ const SubmissionActions = ({
   onSave,
   onSubmit,
   isAuthenticated,
-}) => (
-  <div id="submit" className={`submission-actions mt-10${validationAttempted && missingCount > 0 ? ' has-validation-error' : ''}`}>
+}) => {
+  const hasValidationError = validationAttempted && missingCount > 0;
+  // On a phone the pinned ledger docks to one row: what's left, Save, Submit.
+  // The notes come back in full at rest; the guest caveat also leads the page
+  // and Save asks guests for an account anyway. A validation error stays
+  // written out while pinned, since it's the reason the reader is here.
+  const [sentinelRef, ledgerRef, spacerRef, isStuck] = useStuckLedger('bottom', ACTIONS_STICKY_OFFSET);
+
+  return (
+  <>
+  <div
+    id="submit"
+    ref={ledgerRef}
+    className={`submission-actions mt-10${hasValidationError ? ' has-validation-error' : ''}${hasChanges ? ' has-changes' : ''}${isStuck ? ' is-stuck' : ''}`}
+  >
     <div className="submission-actions__status" id="submission-requirements">
       <div><span>Entry status</span><strong>{missingCount === 0 ? 'All questions answered' : `${missingCount} ${missingCount === 1 ? 'question' : 'questions'} left`}</strong></div>
-      <p aria-live="assertive">{!isAuthenticated
+      <p className="submission-actions__note" aria-live="assertive">{!isAuthenticated
         ? 'Your draft stays on this device. Create an account when you save or submit.'
-        : validationAttempted && missingCount > 0
+        : hasValidationError
         ? 'Final submission needs every question. Save this draft now or finish the remaining picks.'
         : 'Save a draft anytime. Final submission requires every question.'}</p>
     </div>
     <div className="submission-actions__buttons">
-      <button type="button" onClick={onSave} disabled={isPending} className="submission-actions__save">
+      <span className="submission-actions__count" aria-hidden="true">{missingCount === 0 ? 'All in' : `${missingCount} left`}</span>
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={isPending}
+        className="submission-actions__save"
+        aria-label={hasChanges && !isPending ? 'Save for later (unsaved changes)' : undefined}
+      >
         {isPending ? 'Saving…' : 'Save for later'}
+        <span className="submission-actions__dot" aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -75,7 +100,11 @@ const SubmissionActions = ({
     </div>
     {hasChanges && <p className="submission-actions__unsaved">You have unsaved changes</p>}
   </div>
-);
+  <div ref={sentinelRef} className="submission-ledger-mark" aria-hidden="true" />
+  <div ref={spacerRef} className="submission-ledger-spacer" aria-hidden="true" />
+  </>
+  );
+};
 
 const SubmissionForm = ({
   standingsBoardRef,

@@ -1,5 +1,9 @@
 import React from 'react';
 import { isAnswered } from './submissionProgress';
+import useStuckLedger from './useStuckLedger';
+
+// The masthead is 56px and the ledger sticks 8px below it.
+const PROGRESS_STICKY_OFFSET = 64;
 
 const SubmissionProgressTracker = ({
   activeGroup,
@@ -18,10 +22,14 @@ const SubmissionProgressTracker = ({
     : 0;
   const missingCount = Math.max(totalCount - completedCount, 0);
   const isComplete = totalCount > 0 && missingCount === 0;
+  const [sentinelRef, ledgerRef, spacerRef, isStuck] = useStuckLedger('top', PROGRESS_STICKY_OFFSET);
 
   return (
+    <>
+    <div ref={sentinelRef} className="submission-ledger-mark" aria-hidden="true" />
     <aside
-      className={`submission-progress${isComplete ? ' is-complete' : ''}`}
+      ref={ledgerRef}
+      className={`submission-progress${isComplete ? ' is-complete' : ''}${isStuck ? ' is-stuck' : ''}`}
       data-testid="submission-progress"
       aria-label="Prediction completion"
     >
@@ -86,6 +94,8 @@ const SubmissionProgressTracker = ({
         })}
       </nav>
     </aside>
+    <div ref={spacerRef} className="submission-ledger-spacer" aria-hidden="true" />
+    </>
   );
 };
 
