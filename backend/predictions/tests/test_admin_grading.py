@@ -822,30 +822,42 @@ class TestMultipleCorrectPlayers:
         assert question.correct_answers == ['Alperen Sengun', 'Evan Mobley']
         assert question.points_for_answer('Evan Mobley') == 2
 
-    def test_exclude_past_all_stars_hides_only_earlier_selections(self, current_season, mocker):
+    def test_past_all_stars_hides_earlier_all_stars_and_unrostered_players(self, current_season, mocker):
         import pandas as pd
         from django.core.management import call_command
 
         question = SuperlativeQuestionFactory(season=current_season, award=None)
-        veteran = PlayerFactory(name='Veteran Star', nba_player_id=1)
+        start = int(current_season.year[:4])
+        veteran = PlayerFactory(name='Nikola Jokic', nba_player_id=1)
         newcomer = PlayerFactory(name='This Year Star', nba_player_id=2)
-        PlayerFactory(name='Never Star', nba_player_id=3)
-        before, this_season = '2000-01', current_season.year
-        history = {
-            1: [{'DESCRIPTION': 'NBA All-Star', 'SEASON': before}],
-            2: [{'DESCRIPTION': 'NBA All-Star', 'SEASON': this_season}],
-            3: [{'DESCRIPTION': 'All-NBA', 'SEASON': before}],
-        }
+        never = PlayerFactory(name='Never Star', nba_player_id=3)
+        retired = PlayerFactory(name='Retired', nba_player_id=4)
+        roster = pd.DataFrame(
+            [(1, 'Nikola Jokic', '2015'), (2, 'This Year Star', '2018'), (3, 'Never Star', '2018')],
+            columns=['PERSON_ID', 'DISPLAY_FIRST_LAST', 'FROM_YEAR'],
+        )
+        mocker.patch(
+            'nba_api.stats.endpoints.commonallplayers.CommonAllPlayers',
+            return_value=mocker.Mock(get_data_frames=lambda: [roster]),
+        )
+        # Wikipedia spells it with the accent; this season's first game is start + 1.
+        mocker.patch(
+            'predictions.management.commands.limit_player_picks.all_star_first_games',
+            return_value={'nikola jokic': 2019, 'this year star': start + 1},
+        )
 
-        def fake_awards(player_id, timeout):
-            frame = pd.DataFrame(history[player_id], columns=['DESCRIPTION', 'SEASON'])
-            return mocker.Mock(get_data_frames=lambda: [frame])
+        call_command('limit_player_picks', question.id, past_all_stars=True)
 
-        mocker.patch('nba_api.stats.endpoints.playerawards.PlayerAwards', side_effect=fake_awards)
-        call_command('limit_player_picks', question.id, past_all_stars=True, delay=0)
+        hidden = set(question.excluded_players.all())
+        assert hidden == {veteran, retired}
+        assert newcomer not in hidden and never not in hidden
 
-        assert list(question.excluded_players.all()) == [veteran]
-        assert newcomer not in question.excluded_players.all()
+    def test_normalize_name_matches_accents_and_suffixes(self):
+        from predictions.management.commands.limit_player_picks import normalize_name
+
+        assert normalize_name('Nikola Jokić') == normalize_name('Nikola Jokic')
+        assert normalize_name('Jaren Jackson Jr.') == normalize_name('Jaren Jackson')
+        assert normalize_name('Alperen Şengün') == 'alperen sengun'
 
     def test_rookies_only_hides_everyone_else_and_adds_missing_rookies(self, current_season, mocker):
         import pandas as pd
@@ -872,3 +884,56 @@ class TestMultipleCorrectPlayers:
         assert known_rookie not in hidden
         new_rookie = Player.objects.get(nba_player_id=12)
         assert new_rookie.name == 'New Rookie' and new_rookie not in hidden
+
+    def test_rookie_added_by_name_gets_linked_not_duplicated(self, current_season, mocker):
+        import pandas as pd
+        from django.core.management import call_command
+
+        question = SuperlativeQuestionFactory(season=current_season, award=None)
+        by_name = PlayerFactory(name='Aday Mara', nba_player_id=None)
+        roster = pd.DataFrame([(77, 'Aday Mara', current_season.year[:4])], columns=['PERSON_ID', 'DISPLAY_FIRST_LAST', 'FROM_YEAR'])
+        mocker.patch(
+            'nba_api.stats.endpoints.commonallplayers.CommonAllPlayers',
+            return_value=mocker.Mock(get_data_frames=lambda: [roster]),
+        )
+
+        call_command('limit_player_picks', question.id, rookies=True)
+
+        by_name.refresh_from_db()
+        assert by_name.nba_player_id == 77
+        assert Player.objects.filter(name='Aday Mara').count() == 1
+
+
+@pytest.mark.django_db
+class TestMergeDuplicatePlayers:
+    def test_merges_onto_the_nba_id_row_and_moves_picks(self, current_season):
+        from django.core.management import call_command
+
+        keeper = PlayerFactory(name='Kristaps Porzingis', nba_player_id=204001)
+        dupe = PlayerFactory(name='Kristaps Porziņģis', nba_player_id=None)
+        bronny = PlayerFactory(name='Lebron James Jr', nba_player_id=None)
+        lebron = PlayerFactory(name='LeBron James', nba_player_id=2544)
+        question = SuperlativeQuestionFactory(season=current_season, current_leader=dupe)
+        question.excluded_players.add(dupe)
+        pick = Answer.objects.create(user=UserFactory(), question=question, answer=str(dupe.id))
+
+        call_command('merge_duplicate_players', skip=[bronny.id])
+
+        assert not Player.objects.filter(id=dupe.id).exists()
+        pick.refresh_from_db()
+        question.refresh_from_db()
+        assert pick.answer == str(keeper.id)
+        assert question.current_leader == keeper
+        assert list(question.excluded_players.all()) == [keeper]
+        assert Player.objects.filter(id__in=[bronny.id, lebron.id]).count() == 2
+
+    def test_also_merges_explicit_pairs(self, current_season):
+        from django.core.management import call_command
+
+        keeper = PlayerFactory(name='Felix Okpara', nba_player_id=1643590)
+        typo = PlayerFactory(name='Felix Okpata', nba_player_id=None)
+
+        call_command('merge_duplicate_players', also=[f'{typo.id}:{keeper.id}'])
+
+        assert not Player.objects.filter(id=typo.id).exists()
+        assert Player.objects.filter(id=keeper.id).exists()
