@@ -30,7 +30,7 @@ const AdminDashboard = ({ seasonSlug = 'current' }) => {
             className={activeTab === 'questions' ? 'is-active' : ''}
           >
             <ClipboardList aria-hidden="true" />
-            <span>Question Management</span>
+            <span>Questions</span>
           </button>
           <button
             type="button"
@@ -38,7 +38,7 @@ const AdminDashboard = ({ seasonSlug = 'current' }) => {
             className={activeTab === 'grading' ? 'is-active' : ''}
           >
             <ShieldCheck aria-hidden="true" />
-            <span>Grading &amp; Audit</span>
+            <span>Grading</span>
           </button>
         </div>
       </div>

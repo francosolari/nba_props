@@ -37,8 +37,10 @@ const HeadToHeadForm = ({
           conference_matchup: Boolean(form.conferenceMatchup),
         },
         "Head-to-head question created.",
-      );
-      setForm({ text: "", pointValue: defaultPointValue, team1Id: null, team2Id: null, conferenceMatchup: false });
+      ).then((created) => {
+        // Keep the draft when the save fails so nothing typed is lost.
+        if (created) setForm({ text: "", pointValue: defaultPointValue, team1Id: null, team2Id: null, conferenceMatchup: false });
+      });
     }}
     themeStyles={themeStyles}
     primaryButtonClass={classes.primaryButtonClass}

@@ -1996,7 +1996,7 @@ button[type="submit"]:active {
 
 /* Admin — Courtside Album chrome for staff-only tooling */
 .court-admin-page { min-height: 100vh; background: var(--court-paper); color: var(--court-ink); }
-.court-admin-tabbar { position: sticky; top: 0; z-index: 30; padding: 16px; background: var(--court-paper-translucent); border-bottom: 2px solid var(--court-rule); backdrop-filter: blur(8px); }
+.court-admin-tabbar { position: sticky; top: var(--court-topbar-height); z-index: 30; padding: 10px 12px; background: var(--court-paper-translucent); border-bottom: 2px solid var(--court-rule); backdrop-filter: blur(8px); }
 .court-admin-tabs { max-width: 640px; margin: 0 auto 0; }
 .court-admin-content { max-width: 1380px; margin: 0 auto; padding: 24px 16px 64px; }
 .court-admin-section { border: 2px solid var(--court-rule); background: var(--court-paper); padding: 20px; }
@@ -2033,6 +2033,131 @@ button[type="submit"]:active {
 .court-admin-accordion__body { padding: 20px; border-top: 1px solid var(--court-rule-soft); }
 .court-admin-subaccordion { border: 1px solid var(--court-rule-soft); }
 .court-admin-subaccordion__head { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; color: var(--court-ink); text-align: left; background: var(--court-sheet-wash); }
+
+/* Admin workbench: one admin, often on a phone. A compact season bar, a
+   single question composer, and a filterable question list replace the old
+   stack of six create cards. Controls meet the 44px touch floor. */
+.court-admin-chip-btn { min-height: 36px; }
+.court-admin-chip-btn:focus-visible,
+.court-admin-type-picker button:focus-visible,
+.court-admin-filter button:focus-visible,
+.court-admin-choice button:focus-visible,
+.court-admin-disclosure > summary:focus-visible { outline: 3px solid var(--court-gold); outline-offset: 2px; }
+@media (pointer: coarse) { .court-admin-chip-btn { min-height: 44px; } }
+
+.court-admin-questions { display: grid; gap: 16px; }
+.court-admin-sheet-title { margin: 0; font: var(--court-title-section, 800 24px/1 var(--court-display)); letter-spacing: .02em; text-transform: uppercase; }
+
+.court-admin-seasonbar { border: 2px solid var(--court-rule); background: var(--court-paper); }
+.court-admin-seasonbar__row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 12px; }
+.court-admin-seasonbar__select { width: 168px; }
+.court-admin-seasonbar__meta { display: flex; flex: 1 1 240px; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; color: var(--court-steel); font-size: 13px; font-variant-numeric: tabular-nums; }
+.court-admin-seasonbar__new { margin-left: auto; }
+.court-admin-seasonbar__form { padding: 16px; border-top: 2px solid var(--court-rule); background: var(--court-sheet-wash); }
+
+.court-admin-workbench { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 1100px) {
+  .court-admin-workbench { grid-template-columns: minmax(340px, 400px) minmax(0, 1fr); }
+  .court-admin-composer { position: sticky; top: calc(var(--court-topbar-height) + 76px); max-height: calc(100vh - var(--court-topbar-height) - 92px); overflow-y: auto; overscroll-behavior: contain; }
+}
+
+.court-admin-composer,
+.court-admin-list { border: 2px solid var(--court-rule); background: var(--court-paper); min-width: 0; }
+.court-admin-composer__head,
+.court-admin-list__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 8px 12px 8px 16px; color: #fff; background: var(--court-carbon); }
+.court-admin-composer__head h2,
+.court-admin-list__head h2 { display: flex; align-items: baseline; gap: 10px; margin: 0; color: #fff; font: 800 20px/1 var(--court-display); letter-spacing: .04em; text-transform: uppercase; }
+.court-admin-list__head h2 span { color: rgb(255 255 255 / 70%); font: 700 13px var(--court-body); letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.court-admin-composer__head .court-admin-chip-btn,
+.court-admin-list__head .court-admin-chip-btn { color: #fff; background: transparent; border-color: rgb(255 255 255 / 45%); }
+.court-admin-composer__head .court-admin-chip-btn:hover:not(:disabled),
+.court-admin-list__head .court-admin-chip-btn:hover:not(:disabled) { background: rgb(255 255 255 / 12%); }
+
+.court-admin-type-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 2px solid var(--court-rule); }
+.court-admin-type-picker button { min-height: 44px; padding: 6px 4px; color: var(--court-ink); font: 800 13px/1.1 var(--court-display); letter-spacing: .05em; text-transform: uppercase; background: var(--court-paper); border-right: 1px solid var(--court-rule-soft); border-bottom: 1px solid var(--court-rule-soft); transition: background-color 120ms ease-out, color 120ms ease-out; }
+.court-admin-type-picker button:nth-child(3n) { border-right: 0; }
+.court-admin-type-picker button:nth-child(n+4) { border-bottom: 0; }
+.court-admin-type-picker button:hover:not(.is-active) { background: var(--court-blue-soft); }
+.court-admin-type-picker button.is-active { color: #fff; background: var(--court-blue); }
+.court-admin-composer__form { padding: 16px; }
+
+.court-admin-list__tools { display: grid; gap: 10px; padding: 12px; border-bottom: 1px solid var(--court-rule-soft); background: var(--court-sheet-wash); }
+.court-admin-search { position: relative; display: block; }
+.court-admin-search > svg { position: absolute; top: 50%; left: 12px; width: 16px; height: 16px; color: var(--court-steel); transform: translateY(-50%); pointer-events: none; }
+.court-admin-search input { width: 100%; padding-left: 36px; padding-right: 44px; }
+.court-admin-search input::-webkit-search-cancel-button { display: none; }
+.court-admin-search > button { position: absolute; top: 0; right: 0; display: grid; width: 44px; height: 44px; place-items: center; color: var(--court-steel); }
+.court-admin-search > button svg { width: 16px; height: 16px; }
+.court-admin-filter { display: flex; gap: 6px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.court-admin-filter::-webkit-scrollbar { display: none; }
+.court-admin-filter button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; color: var(--court-ink); font: 800 12px var(--court-display); letter-spacing: .05em; text-transform: uppercase; background: var(--court-paper); border: 1px solid var(--court-rule-soft); border-radius: 2px; }
+.court-admin-filter button span { color: var(--court-steel); font: 700 12px var(--court-body); font-variant-numeric: tabular-nums; }
+.court-admin-filter button.is-active { color: #fff; background: var(--court-blue); border-color: var(--court-blue); }
+.court-admin-filter button.is-active span { color: rgb(255 255 255 / 80%); }
+@media (pointer: coarse) { .court-admin-filter button { min-height: 44px; } }
+
+.court-admin-list__empty { padding: 32px 16px; color: var(--court-steel); text-align: center; }
+.court-admin-link { color: var(--court-blue); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.court-admin-list__rows { margin: 0; padding: 0; list-style: none; }
+
+.court-admin-qrow { display: grid; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--court-rule-soft); }
+.court-admin-qrow:last-child { border-bottom: 0; }
+.court-admin-qrow.is-editing { background: var(--court-blue-soft); box-shadow: inset 0 3px 0 var(--court-blue); }
+.court-admin-qrow__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: var(--court-steel); font: 700 12px var(--court-body); font-variant-numeric: tabular-nums; }
+.court-admin-qrow__text { margin: 0; color: var(--court-ink); font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+.court-admin-qrow__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.court-admin-qrow__confirm { padding: 8px 10px; background: var(--court-red-soft); }
+.court-admin-qrow__confirm > span { flex: 1 1 180px; color: var(--court-danger); font-size: 13px; font-weight: 700; }
+.court-admin-qrow__editor { display: grid; gap: 14px; }
+.court-admin-qrow__editor .court-admin-qrow__actions > button { flex: 1 1 140px; }
+
+.court-admin-field { display: grid; gap: 6px; color: var(--court-steel); font: 800 11px var(--court-body); letter-spacing: .06em; text-transform: uppercase; }
+.court-admin-field > span { font: 400 13px/1.4 var(--court-body); letter-spacing: 0; text-transform: none; }
+.court-admin-field textarea,
+.court-admin-field input { letter-spacing: 0; text-transform: none; }
+.court-admin-field--narrow { max-width: 160px; }
+
+.court-admin-disclosure { border: 1px solid var(--court-rule-soft); background: var(--court-paper); }
+.court-admin-disclosure > summary { display: flex; min-height: 44px; align-items: center; gap: 8px; padding: 0 12px; color: var(--court-ink); font: 800 12px var(--court-display); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; list-style: none; }
+.court-admin-disclosure > summary::-webkit-details-marker { display: none; }
+.court-admin-disclosure > summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 150ms ease-out; }
+.court-admin-disclosure[open] > summary::before { transform: rotate(45deg); }
+.court-admin-disclosure > :not(summary) { padding: 0 12px 12px; }
+@media (prefers-reduced-motion: reduce) { .court-admin-disclosure > summary::before { transition: none; } }
+
+.court-button--secondary { color: var(--court-ink); background: var(--court-paper); }
+.court-button--secondary:hover { color: var(--court-ink); background: var(--court-blue-soft); }
+
+/* Grading queue */
+.court-admin-grading-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: end; }
+.court-admin-grading-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.court-admin-accordion__head > div:first-child { min-width: 0; }
+.court-admin-accordion__body.court-admin-grading-list { margin: 0; padding: 0; list-style: none; }
+.court-admin-grow { display: grid; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--court-rule-soft); }
+.court-admin-grow:last-child { border-bottom: 0; }
+.court-admin-grow.is-editing { background: var(--court-blue-soft); box-shadow: inset 0 3px 0 var(--court-blue); }
+.court-admin-grow__status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: var(--court-steel); font: 700 12px var(--court-body); font-variant-numeric: tabular-nums; }
+.court-admin-grow__text { margin: 0; color: var(--court-ink); font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+.court-admin-grow__answer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.court-admin-grow__answer > span { min-width: 0; color: var(--court-steel); font-size: 14px; font-style: italic; }
+.court-admin-grow__answer > span.is-set { color: var(--court-success); font-style: normal; font-weight: 700; }
+.court-admin-choice { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; border: 2px solid var(--court-rule); border-radius: 4px; overflow: hidden; background: var(--court-paper); }
+.court-admin-choice button { min-height: 48px; padding: 6px 8px; color: var(--court-ink); font: 800 15px/1.1 var(--court-display); letter-spacing: .04em; text-transform: uppercase; overflow-wrap: anywhere; transition: background-color 120ms ease-out, color 120ms ease-out; }
+.court-admin-choice button + button { border-left: 2px solid var(--court-rule); }
+.court-admin-choice button:hover:not(.is-selected) { background: var(--court-blue-soft); }
+.court-admin-choice button.is-selected { color: #fff; background: var(--court-blue); }
+
+@media (max-width: 767px) {
+  .court-admin-content { padding: 12px 12px 24px; }
+  .court-admin-grading-controls { grid-template-columns: 1fr; }
+  /* Admin tab labels are short enough to keep on phones; icons alone were guesswork. */
+  .court-admin-page .court-profile-tabs button span { display: inline; }
+  .court-admin-grow__answer > .court-admin-chip-btn { flex: 1 1 100%; justify-content: center; }
+  .court-admin-seasonbar__select { width: 100%; flex: 1 1 100%; }
+  .court-admin-seasonbar__new { margin-left: 0; }
+  .court-admin-qrow__actions > .court-admin-chip-btn { flex: 1 1 0; justify-content: center; }
+  .court-admin-qrow__confirm > span { flex-basis: 100%; }
+}
 
 /* Picks become ruled entry slips instead of a form-card grid */
 .court-submissions-page { padding-top: 28px !important; color: var(--court-ink); background: var(--court-paper) !important; }

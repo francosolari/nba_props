@@ -2,300 +2,253 @@
 import React from 'react';
 import SelectComponent from '../../../../components/SelectComponent';
 import CourtSelect from '../../../../components/CourtSelect';
-import {
-  CheckCircle2,
-  AlertCircle,
-  Lock,
-  Edit2,
-  Save,
-  X,
-} from 'lucide-react';
+import { CheckCircle2, AlertCircle, Lock, Pencil } from 'lucide-react';
 
-const GradingQuestionRow = ({ question, editor, playerOptions }) => {
-  const isEditing = editor.editingQuestion === question.question_id;
+// Up to this many choices render as one-tap buttons; longer lists use a listbox.
+const MAX_BUTTON_CHOICES = 4;
+
+const ChoiceButtons = ({ choices, value, onChange, label }) => (
+  <div className="court-admin-choice" role="radiogroup" aria-label={label}>
+    {choices.map((choice) => (
+      <button
+        key={choice}
+        type="button"
+        role="radio"
+        aria-checked={value === choice}
+        onClick={() => onChange(choice)}
+        className={value === choice ? 'is-selected' : ''}
+      >
+        {choice}
+      </button>
+    ))}
+  </div>
+);
+
+const CustomScoring = ({ question, editor, playerOptions }) => {
   const {
-    editedAnswer,
-    setEditedAnswer,
-    editedAnswerPlayerId,
-    setEditedAnswerPlayerId,
     editedRunnerUpPlayerId,
     editedRunnerUpPoints,
     onRunnerUpPointsChange,
     editedScoringRows,
-    updateQuestionMutation,
-    handleEditQuestion,
-    handleSaveQuestion,
-    handleCancelEdit,
     addScoringRow,
     updateScoringRow,
     removeScoringRow,
     handleRunnerUpSelect,
   } = editor;
+  const isSuperlative = question.question_type === 'SuperlativeQuestion';
 
   return (
-    <div className={question.has_correct_answer ? 'court-admin-grading-row court-admin-grading-row--set' : 'court-admin-grading-row'}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="text-sm font-medium">{question.question_text}</div>
-            {question.is_finalized && (
-              <Lock className="w-4 h-4 text-[var(--court-warning)]" title="Finalized" />
-            )}
+    <details className="court-admin-disclosure" open={editedScoringRows.length > 0 || undefined}>
+      <summary>
+        Custom answer points
+        {editedScoringRows.length > 0 && <span className="court-admin-badge court-admin-badge--warning">{editedScoringRows.length}</span>}
+      </summary>
+      <div className="grid gap-3">
+        <p className="m-0 text-[13px] text-[var(--court-steel)]">
+          Optional. Matching answers earn these points instead of the default {question.point_value}.
+        </p>
+
+        {isSuperlative && (
+          <div className="grid gap-2 md:grid-cols-[1fr_110px]">
+            <div className="court-admin-field">
+              Runner-up player
+              <SelectComponent
+                options={playerOptions}
+                value={editedRunnerUpPlayerId}
+                onChange={(option) => handleRunnerUpSelect(option, question)}
+                placeholder="Search runner-up player..."
+                mode="light"
+              />
+            </div>
+            <label className="court-admin-field">
+              Runner-up pts
+              <input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.5"
+                value={editedRunnerUpPoints}
+                onChange={(e) => onRunnerUpPointsChange(e.target.value)}
+                className="court-admin-input w-full"
+              />
+            </label>
           </div>
+        )}
 
-          <div className="text-xs space-y-1 text-[var(--court-steel)]">
-            <div>Type: {question.question_type}</div>
-            <div>Points: {question.point_value}</div>
-            <div>Submissions: {question.submission_count}</div>
+        {editedScoringRows.map((row, index) => (
+          <div key={index} className="grid grid-cols-[minmax(0,1fr)_88px_auto] gap-2">
+            <input
+              type="text"
+              value={row.answer}
+              onChange={(e) => updateScoringRow(index, { answer: e.target.value })}
+              placeholder="Answer, e.g. No or a player name"
+              aria-label="Answer"
+              className="court-admin-input min-w-0"
+            />
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.5"
+              value={row.points}
+              onChange={(e) => updateScoringRow(index, { points: e.target.value })}
+              placeholder="Pts"
+              aria-label="Points"
+              className="court-admin-input min-w-0"
+            />
+            <button
+              type="button"
+              onClick={() => removeScoringRow(index)}
+              className="court-admin-chip-btn court-admin-chip-btn--danger"
+              aria-label={`Remove ${row.answer || 'row'}`}
+            >
+              Remove
+            </button>
           </div>
+        ))}
 
-          <div className="mt-3">
-            {isEditing ? (
-              <div className="space-y-2">
-                {question.input_type === 'over_under' && question.line && (
-                  <div className="text-xs text-[var(--court-steel)]">
-                    Line: {question.line} {question.related_player_name && `(${question.related_player_name})`}
-                  </div>
-                )}
-
-                {question.input_type === 'yes_no' && question.related_player_name && (
-                  <div className="text-xs text-[var(--court-steel)]">
-                    Player: {question.related_player_name}
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  {question.input_type === 'yes_no' && (
-                    <div className="flex gap-3">
-                      {question.choices?.map((choice) => (
-                        <label key={choice} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`q-${question.question_id}`}
-                            value={choice}
-                            checked={editedAnswer === choice}
-                            onChange={(e) => setEditedAnswer(e.target.value)}
-                            className="w-4 h-4 accent-[var(--court-blue)]"
-                          />
-                          <span className="text-sm">{choice}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-
-                  {question.input_type === 'over_under' && (
-                    <div className="flex gap-3">
-                      {question.choices?.map((choice) => (
-                        <label key={choice} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`q-${question.question_id}`}
-                            value={choice}
-                            checked={editedAnswer === choice}
-                            onChange={(e) => setEditedAnswer(e.target.value)}
-                            className="w-4 h-4 accent-[var(--court-blue)]"
-                          />
-                          <span className="text-sm">{choice}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-
-                  {question.input_type === 'team_choice' && (
-                    <CourtSelect label="Select team" showLabel={false} value={editedAnswer} onChange={(e) => setEditedAnswer(e.target.value)}>
-                      <option value="">Select team...</option>
-                      {question.choices?.map((choice) => (
-                        <option key={choice} value={choice}>{choice}</option>
-                      ))}
-                    </CourtSelect>
-                  )}
-
-                  {question.input_type === 'player_search' && (
-                    <div className="flex-1">
-                      <SelectComponent
-                        options={playerOptions}
-                        value={editedAnswerPlayerId}
-                        onChange={(option) => {
-                          setEditedAnswerPlayerId(option ? option.value : null);
-                          setEditedAnswer(option ? option.label : '');
-                        }}
-                        placeholder="Search player database..."
-                        mode="light"
-                      />
-                      <div className="mt-1 text-[11px] text-[var(--court-steel)]">
-                        Saves the selected player's canonical name for grading submitted player IDs.
-                      </div>
-                    </div>
-                  )}
-
-                  {question.input_type === 'text' && (
-                    <input
-                      type="text"
-                      value={editedAnswer}
-                      onChange={(e) => setEditedAnswer(e.target.value)}
-                      placeholder="Enter correct answer..."
-                      className="court-admin-input w-full"
-                      autoFocus
-                    />
-                  )}
-
-                  {question.input_type !== 'yes_no' && question.input_type !== 'over_under' && (
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleSaveQuestion(question)}
-                        disabled={updateQuestionMutation.isPending}
-                        className="court-admin-chip-btn court-admin-chip-btn--success"
-                        title="Save"
-                      >
-                        <Save className="w-4 h-4" />
-                      </button>
-                      <button type="button" onClick={handleCancelEdit} className="court-admin-chip-btn" title="Cancel">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="border border-[var(--court-warning-soft)] bg-[var(--court-warning-soft)] p-3">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-xs font-bold uppercase tracking-wide text-[var(--court-warning)]">
-                          Custom answer points
-                        </div>
-                        <div className="text-[11px] text-[var(--court-steel)]">
-                          Optional. Matching answers earn these points instead of the default point value.
-                        </div>
-                      </div>
-                      <button type="button" onClick={() => addScoringRow('', '')} className="court-admin-chip-btn court-admin-chip-btn--warning">
-                        Add row
-                      </button>
-                    </div>
-
-                    {question.question_type === 'SuperlativeQuestion' && (
-                      <div className="mb-3 grid gap-2 md:grid-cols-[1fr_110px]">
-                        <div>
-                          <div className="mb-1 text-[11px] font-semibold">Runner-up player</div>
-                          <SelectComponent
-                            options={playerOptions}
-                            value={editedRunnerUpPlayerId}
-                            onChange={(option) => handleRunnerUpSelect(option, question)}
-                            placeholder="Search runner-up player..."
-                            mode="light"
-                          />
-                        </div>
-                        <label className="text-[11px] font-semibold">
-                          Runner-up pts
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.5"
-                            value={editedRunnerUpPoints}
-                            onChange={(e) => onRunnerUpPointsChange(e.target.value)}
-                            className="court-admin-input mt-1 w-full"
-                          />
-                        </label>
-                      </div>
-                    )}
-
-                    {editedScoringRows.length === 0 ? (
-                      <div className="border border-dashed border-[var(--court-rule-soft)] px-3 py-2 text-xs text-[var(--court-steel)]">
-                        No custom scoring rows. Correct answers use the default point value.
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {editedScoringRows.map((row, index) => (
-                          <div key={`${row.answer}-${index}`} className="grid gap-2 md:grid-cols-[1fr_110px_auto]">
-                            <input
-                              type="text"
-                              value={row.answer}
-                              onChange={(e) => updateScoringRow(index, { answer: e.target.value })}
-                              placeholder="Answer text, e.g. No or player name"
-                              className="court-admin-input"
-                            />
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.5"
-                              value={row.points}
-                              onChange={(e) => updateScoringRow(index, { points: e.target.value })}
-                              placeholder="Pts"
-                              className="court-admin-input"
-                            />
-                            <button type="button" onClick={() => removeScoringRow(index)} className="court-admin-chip-btn court-admin-chip-btn--danger">
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {question.choices?.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {question.choices.map((choice) => (
-                          <button
-                            key={choice}
-                            type="button"
-                            onClick={() => addScoringRow(choice, choice === question.correct_answer ? question.point_value : '')}
-                            className="court-admin-chip-btn"
-                          >
-                            Add {choice}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {(question.input_type === 'yes_no' || question.input_type === 'over_under') && editedAnswer && (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSaveQuestion(question)}
-                      disabled={updateQuestionMutation.isPending}
-                      className="court-admin-chip-btn court-admin-chip-btn--success"
-                    >
-                      <Save className="w-3 h-3" />
-                      Save
-                    </button>
-                    <button type="button" onClick={handleCancelEdit} className="court-admin-chip-btn">
-                      <X className="w-3 h-3" />
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
-                  <span className="text-xs text-[var(--court-steel)]">Correct Answer: </span>
-                  <span className={question.has_correct_answer ? 'text-sm text-[var(--court-success)]' : 'text-sm text-[var(--court-steel)]'}>
-                    {question.correct_answer || '(not set)'}
-                  </span>
-                  {question.input_type === 'over_under' && question.line && (
-                    <span className="text-xs text-[var(--court-steel)] ml-2">(Line: {question.line})</span>
-                  )}
-                  {question.related_player_name && (
-                    <span className="text-xs text-[var(--court-steel)] ml-2">({question.related_player_name})</span>
-                  )}
-                </div>
-                <button type="button" onClick={() => handleEditQuestion(question)} className="court-admin-chip-btn court-admin-chip-btn--blue">
-                  <Edit2 className="w-3 h-3" />
-                  Edit
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-          {question.has_correct_answer ? (
-            <CheckCircle2 className="w-6 h-6 text-[var(--court-success)]" />
-          ) : (
-            <AlertCircle className="w-6 h-6 text-[var(--court-warning)]" />
-          )}
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => addScoringRow('', '')} className="court-admin-chip-btn">
+            Add row
+          </button>
+          {question.choices?.map((choice) => (
+            <button
+              key={choice}
+              type="button"
+              onClick={() => addScoringRow(choice, choice === question.correct_answer ? question.point_value : '')}
+              className="court-admin-chip-btn"
+            >
+              Add {choice}
+            </button>
+          ))}
         </div>
       </div>
-    </div>
+    </details>
+  );
+};
+
+const AnswerInput = ({ question, editor, playerOptions }) => {
+  const { editedAnswer, setEditedAnswer, editedAnswerPlayerId, setEditedAnswerPlayerId } = editor;
+  const choices = question.choices || [];
+
+  if (question.input_type === 'player_search') {
+    return (
+      <div className="court-admin-field">
+        Correct player
+        <SelectComponent
+          options={playerOptions}
+          value={editedAnswerPlayerId}
+          onChange={(option) => {
+            setEditedAnswerPlayerId(option ? option.value : null);
+            setEditedAnswer(option ? option.label : '');
+          }}
+          placeholder="Search players..."
+          mode="light"
+        />
+      </div>
+    );
+  }
+
+  if (question.input_type === 'text') {
+    return (
+      <label className="court-admin-field">
+        Correct answer
+        <input
+          type="text"
+          value={editedAnswer}
+          onChange={(e) => setEditedAnswer(e.target.value)}
+          placeholder="Enter correct answer..."
+          className="court-admin-input w-full"
+          autoFocus
+        />
+      </label>
+    );
+  }
+
+  if (choices.length > 0 && choices.length <= MAX_BUTTON_CHOICES) {
+    return (
+      <ChoiceButtons
+        choices={choices}
+        value={editedAnswer}
+        onChange={setEditedAnswer}
+        label={`Correct answer for: ${question.question_text}`}
+      />
+    );
+  }
+
+  return (
+    <CourtSelect label="Correct answer" showLabel={false} value={editedAnswer} onChange={(e) => setEditedAnswer(e.target.value)}>
+      <option value="">Select answer...</option>
+      {choices.map((choice) => (
+        <option key={choice} value={choice}>{choice}</option>
+      ))}
+    </CourtSelect>
+  );
+};
+
+const GradingQuestionRow = ({ question, editor, playerOptions }) => {
+  const isEditing = editor.editingQuestion === question.question_id;
+  const { updateQuestionMutation, handleEditQuestion, handleSaveQuestion, handleCancelEdit } = editor;
+  const isSet = question.has_correct_answer;
+
+  return (
+    <li
+      className={`court-admin-grow${isSet ? ' is-set' : ''}${isEditing ? ' is-editing' : ''}`}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && isEditing) handleCancelEdit();
+      }}
+    >
+      <div className="court-admin-grow__status">
+        {isSet ? (
+          <span className="court-admin-badge court-admin-badge--success"><CheckCircle2 aria-hidden="true" className="h-3 w-3" />Set</span>
+        ) : (
+          <span className="court-admin-badge court-admin-badge--warning"><AlertCircle aria-hidden="true" className="h-3 w-3" />Needs answer</span>
+        )}
+        {question.is_finalized && (
+          <span className="court-admin-badge court-admin-badge--neutral"><Lock aria-hidden="true" className="h-3 w-3" />Finalized</span>
+        )}
+        <span>{question.point_value} pt{Number(question.point_value) === 1 ? '' : 's'}</span>
+        <span>{question.submission_count} picks</span>
+        {question.line != null && question.input_type === 'over_under' && <span>Line {question.line}</span>}
+        {question.related_player_name && <span>{question.related_player_name}</span>}
+      </div>
+
+      <p className="court-admin-grow__text">{question.question_text}</p>
+
+      {isEditing ? (
+        <div className="court-admin-qrow__editor">
+          <AnswerInput question={question} editor={editor} playerOptions={playerOptions} />
+          <CustomScoring question={question} editor={editor} playerOptions={playerOptions} />
+          <div className="court-admin-qrow__actions">
+            <button
+              type="button"
+              onClick={() => handleSaveQuestion(question)}
+              disabled={updateQuestionMutation.isPending}
+              className="court-button flex-1"
+            >
+              {updateQuestionMutation.isPending ? 'Saving…' : 'Save answer'}
+            </button>
+            <button type="button" onClick={handleCancelEdit} className="court-button court-button--secondary flex-1">
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="court-admin-grow__answer">
+          <span className={isSet ? 'is-set' : ''}>
+            {isSet ? question.correct_answer : 'No answer yet'}
+          </span>
+          <button
+            type="button"
+            onClick={() => handleEditQuestion(question)}
+            className={`court-admin-chip-btn${isSet ? '' : ' court-admin-chip-btn--blue'}`}
+          >
+            <Pencil aria-hidden="true" className="h-4 w-4" />
+            {isSet ? 'Change' : 'Set answer'}
+          </button>
+        </div>
+      )}
+    </li>
   );
 };
 

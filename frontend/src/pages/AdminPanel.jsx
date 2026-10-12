@@ -19,6 +19,7 @@ import {
   useUserContext,
 } from "../hooks";
 import QuestionBatchWizard from "../components/admin/QuestionBatchWizard";
+import { useToast } from "../components/Toast";
 import { ADMIN_STYLES, defaultPointValue, defaultSeasonForm, buildAdminClasses } from "../features/admin/questions/adminPanelStyles";
 import { ScreenMessage } from "../features/admin/questions/components/AdminFormPrimitives";
 import SeasonPanel from "../features/admin/questions/components/SeasonPanel";
@@ -29,8 +30,8 @@ const AdminPanel = ({ seasonSlug }) => {
   const { data: userContext, isLoading: userLoading } = useUserContext();
   const { data: seasons = [], isLoading: seasonsLoading } = useSeasons();
 
+  const toast = useToast();
   const [activeSeason, setActiveSeason] = useState(seasonSlug || "");
-  const [feedback, setFeedback] = useState(null);
   const [showSeasonForm, setShowSeasonForm] = useState(false);
   const [seasonForm, setSeasonForm] = useState(defaultSeasonForm);
   const [showBatchWizard, setShowBatchWizard] = useState(false);
@@ -124,17 +125,10 @@ const AdminPanel = ({ seasonSlug }) => {
   const playerOptions = useMemo(() => players.map((player) => ({ value: player.id, label: player.name })), [players]);
   const seasonOptions = useMemo(() => seasons.map((s) => ({ value: s.slug, label: s.year })), [seasons]);
   const seasonMeta = useMemo(() => seasons.find((s) => s.slug === activeSeason), [seasons, activeSeason]);
-  const navLinks = useMemo(
-    () => [
-      { href: "#season", label: "Season Hub" },
-      { href: "#builders", label: "Question Builders" },
-      { href: "#questions", label: "Question List" },
-    ],
-    [],
-  );
-
-  const setSuccess = useCallback((message) => setFeedback({ type: "success", message, id: Date.now() }), []);
-  const setError = useCallback((message) => setFeedback({ type: "error", message, id: Date.now() }), []);
+  // Toasts stay in view wherever the admin is on the page; a top-of-page
+  // banner was off-screen after saving from the list or the composer.
+  const setSuccess = useCallback((message) => toast.success(message), [toast]);
+  const setError = useCallback((message) => toast.error(message, 6000), [toast]);
 
   const ensureSeasonSelected = useCallback(() => {
     if (!activeSeason) {
@@ -151,14 +145,16 @@ const AdminPanel = ({ seasonSlug }) => {
 
   const handleMutation = useCallback(
     async (mutation, payload, successMessage) => {
-      if (!ensureSeasonSelected()) return;
+      if (!ensureSeasonSelected()) return false;
       try {
         await mutation.mutateAsync(payload);
         setSuccess(successMessage);
         await refetch();
+        return true;
       } catch (error) {
-        const message = error?.response?.data?.message || error?.message || "Request failed";
-        setError(message);
+        const data = error?.response?.data;
+        setError(data?.detail || data?.message || error?.message || "Request failed");
+        return false;
       }
     },
     [ensureSeasonSelected, refetch, setError, setSuccess],
@@ -204,23 +200,22 @@ const AdminPanel = ({ seasonSlug }) => {
     setSuccess("Reorder request submitted.");
   };
 
-  const handleUpdateQuestion = async (question, updates) => {
-    await handleMutation(
+  const handleUpdateQuestion = (question, updates) => (
+    handleMutation(
       updateQuestion,
       { questionId: question.id, updates, seasonSlug: activeSeason },
       "Question updated.",
-    );
-  };
+    )
+  );
 
-  const handleDeleteQuestion = async (question) => {
-    if (!ensureSeasonSelected()) return;
-    if (!window.confirm("Delete this question?")) return;
-    await handleMutation(
+  // QuestionRow asks for confirmation inline before calling this.
+  const handleDeleteQuestion = (question) => (
+    handleMutation(
       deleteQuestion,
       { questionId: question.id, seasonSlug: activeSeason },
       "Question deleted.",
-    );
-  };
+    )
+  );
 
   const handleBatchCompleted = useCallback(
     async (count) => {
@@ -249,59 +244,25 @@ const AdminPanel = ({ seasonSlug }) => {
   const optionSet = { awardOptions, playerOptions, teamOptions };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${themeStyles.background}`}>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 md:py-14 space-y-12">
-        <header className="space-y-6">
-          <div className="space-y-3 text-center md:text-left">
-            <span className={`inline-flex items-center justify-center md:justify-start gap-2 text-xs font-semibold tracking-[0.3em] uppercase ${themeStyles.subtle}`}>
-              Control Center
-            </span>
-            <h1 className={`text-3xl sm:text-4xl md:text-5xl font-bold ${themeStyles.heading}`}>
-              Predictions Admin Panel
-            </h1>
-            <p className={`text-sm sm:text-base max-w-3xl ${themeStyles.subtle}`}>
-              Craft, organise, and launch the season&apos;s prediction slate with a flexible interface tuned for batch workflows.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-center md:justify-between gap-3 text-sm">
-            <nav className="flex flex-wrap items-center justify-center gap-2">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="rounded px-3 py-2 border-2 border-[var(--court-rule)] bg-[var(--court-paper)] text-[var(--court-ink)] font-semibold hover:bg-[var(--court-blue-soft)] transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
-          </div>
-        </header>
+    <div className="court-admin-content court-admin-questions">
+      <SeasonPanel
+        seasonOptions={seasonOptions}
+        activeSeason={activeSeason}
+        setActiveSeason={setActiveSeason}
+        seasonMeta={seasonMeta}
+        questionCount={questions.length}
+        showSeasonForm={showSeasonForm}
+        setShowSeasonForm={setShowSeasonForm}
+        seasonForm={seasonForm}
+        onSeasonField={handleSeasonField}
+        onSeasonCreate={handleSeasonCreate}
+        onCancelSeasonForm={handleCancelSeasonForm}
+        createSeason={createSeason}
+        classes={classes}
+        themeStyles={themeStyles}
+      />
 
-        {feedback && (
-          <div
-            className={`border-2 px-6 py-4 text-sm transition ${feedback.type === "success" ? classes.successBannerClass : classes.errorBannerClass}`}
-          >
-            {feedback.message}
-          </div>
-        )}
-
-        <SeasonPanel
-          seasonOptions={seasonOptions}
-          activeSeason={activeSeason}
-          setActiveSeason={setActiveSeason}
-          seasonMeta={seasonMeta}
-          showSeasonForm={showSeasonForm}
-          setShowSeasonForm={setShowSeasonForm}
-          seasonForm={seasonForm}
-          onSeasonField={handleSeasonField}
-          onSeasonCreate={handleSeasonCreate}
-          onCancelSeasonForm={handleCancelSeasonForm}
-          createSeason={createSeason}
-          classes={classes}
-          themeStyles={themeStyles}
-        />
-
+      <div className="court-admin-workbench">
         <QuestionBuilders
           onLaunchBatchWizard={handleLaunchBatchWizard}
           forms={{ superForm, propForm, playerStatForm, headToHeadForm, istForm, nbaFinalsForm }}

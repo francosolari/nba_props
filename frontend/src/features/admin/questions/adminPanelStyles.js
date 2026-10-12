@@ -80,16 +80,6 @@ export const buildAdminClasses = (themeStyles = ADMIN_STYLES) => {
     "inline-flex min-h-[44px] items-center justify-center gap-2 rounded px-5 py-2.5 font-[var(--court-display)] text-sm font-bold uppercase tracking-wide transition-colors duration-150";
   const primaryButtonClass = `${courtButtonBase} ${themeStyles.primaryButton} disabled:cursor-not-allowed disabled:opacity-60`;
   const secondaryButtonClass = `${courtButtonBase} ${themeStyles.secondaryButton} disabled:cursor-not-allowed disabled:opacity-60`;
-  const accentButtonClass = `${courtButtonBase} ${themeStyles.accentButton}`;
-  const dangerButtonClass = `${courtButtonBase} px-3 py-2 text-xs ${themeStyles.dangerButton} disabled:cursor-not-allowed disabled:opacity-60`;
-  const themeCardClass = `${themeStyles.glassCard} w-full p-6`;
-  const batchCardClass = `${themeStyles.glassCard} p-6 flex flex-col gap-6 md:flex-row md:items-center md:justify-between`;
-  const headingClass = `text-lg font-semibold tracking-wide ${themeStyles.heading}`;
-  const subheadingClass = `text-sm ${themeStyles.subheading}`;
-  const mutedTextClass = `text-xs ${themeStyles.muted}`;
-  const chipClass = `court-admin-badge court-admin-badge--neutral`;
-  const successBannerClass = "border-[var(--court-success)] bg-[var(--court-success-soft)] text-[var(--court-success)]";
-  const errorBannerClass = "border-[var(--court-danger)] bg-[var(--court-red-soft)] text-[var(--court-danger)]";
 
   return {
     labelClass,
@@ -99,15 +89,5 @@ export const buildAdminClasses = (themeStyles = ADMIN_STYLES) => {
     checkboxClass,
     primaryButtonClass,
     secondaryButtonClass,
-    accentButtonClass,
-    dangerButtonClass,
-    themeCardClass,
-    batchCardClass,
-    headingClass,
-    subheadingClass,
-    mutedTextClass,
-    chipClass,
-    successBannerClass,
-    errorBannerClass,
   };
 };

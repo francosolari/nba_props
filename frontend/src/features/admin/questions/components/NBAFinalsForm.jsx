@@ -28,8 +28,10 @@ const NBAFinalsForm = ({
           group_name: form.groupName || undefined,
         },
         "NBA Finals question created.",
-      );
-      setForm({ text: "", pointValue: defaultPointValue, groupName: "" });
+      ).then((created) => {
+        // Keep the draft when the save fails so nothing typed is lost.
+        if (created) setForm({ text: "", pointValue: defaultPointValue, groupName: "" });
+      });
     }}
     themeStyles={themeStyles}
     primaryButtonClass={classes.primaryButtonClass}

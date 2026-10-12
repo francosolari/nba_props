@@ -35,8 +35,10 @@ const SuperlativeForm = ({
           award_id: Number(form.awardId),
         },
         "Superlative question created.",
-      );
-      setForm({ text: "", awardId: "", pointValue: defaultPointValue });
+      ).then((created) => {
+        // Keep the draft when the save fails so nothing typed is lost.
+        if (created) setForm({ text: "", awardId: "", pointValue: defaultPointValue });
+      });
     }}
     themeStyles={themeStyles}
     primaryButtonClass={classes.primaryButtonClass}

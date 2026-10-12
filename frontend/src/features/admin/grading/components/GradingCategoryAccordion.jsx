@@ -4,12 +4,21 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { getCategoryIcon } from '../utils';
 import GradingQuestionRow from './GradingQuestionRow';
 
-const GradingCategoryAccordion = ({ categoryName, questions, isExpanded, onToggle, editor, playerOptions }) => {
+const GradingCategoryAccordion = ({
+  categoryName,
+  questions,
+  visibleQuestions = questions,
+  isExpanded,
+  onToggle,
+  editor,
+  playerOptions,
+}) => {
   const answeredCount = questions.filter((q) => q.has_correct_answer).length;
+  const openCount = questions.length - answeredCount;
 
   return (
     <div className="court-admin-accordion">
-      <button type="button" onClick={onToggle} className="court-admin-accordion__head">
+      <button type="button" onClick={onToggle} className="court-admin-accordion__head" aria-expanded={isExpanded}>
         <div className="flex items-center gap-4">
           {isExpanded ? (
             <ChevronDown className="w-5 h-5 text-[var(--court-steel)]" />
@@ -24,14 +33,16 @@ const GradingCategoryAccordion = ({ categoryName, questions, isExpanded, onToggl
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-sm text-[var(--court-steel)]">{questions.length} questions</div>
-        </div>
+        {openCount > 0 ? (
+          <span className="court-admin-badge court-admin-badge--warning">{openCount} open</span>
+        ) : (
+          <span className="court-admin-badge court-admin-badge--success">Done</span>
+        )}
       </button>
 
       {isExpanded && (
-        <div className="court-admin-accordion__body space-y-3">
-          {questions.map((question) => (
+        <ol className="court-admin-accordion__body court-admin-grading-list">
+          {visibleQuestions.map((question) => (
             <GradingQuestionRow
               key={question.question_id}
               question={question}
@@ -39,7 +50,7 @@ const GradingCategoryAccordion = ({ categoryName, questions, isExpanded, onToggl
               playerOptions={playerOptions}
             />
           ))}
-        </div>
+        </ol>
       )}
     </div>
   );
