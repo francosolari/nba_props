@@ -93,7 +93,7 @@ const QuestionCard = ({
 // "3 pts", or "Up to 3 pts" when each answer pays differently.
 const pointsChipText = (question) => {
   const split = Object.values(question.points_if_correct || {});
-  if (!split.length) return `${question.point_value} pts`;
+  if (!split.length) return `${question.point_value} pt${Number(question.point_value) === 1 ? '' : 's'}`;
   return `Up to ${Math.max(...split.map(Number))} pts`;
 };
 

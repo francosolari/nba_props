@@ -2323,6 +2323,12 @@ button[type="submit"]:active {
 /* Submission completion ledger */
 .court-submissions-page { overflow-x: clip; }
 
+/* Siblings of the sticky ledgers, both without ink of their own: the mark
+   records where a ledger rests, and the spacer takes back exactly the height
+   the ledger releases when it pins, so the sheet below never moves. */
+.submission-ledger-mark { height: 1px; margin-bottom: -1px; }
+.submission-ledger-spacer { height: 0; }
+
 .court-submissions-page .submission-progress {
   position: sticky;
   top: calc(var(--court-topbar-height) + 8px);
@@ -2659,7 +2665,9 @@ button[type="submit"]:active {
   .submission-standings-actions > div { min-width: 390px; }
 }
 
-.court-submissions-page .submission-question-group { scroll-margin-top: calc(var(--court-topbar-height) + 150px); }
+/* The masthead is already covered by html's scroll-padding-top; this only has
+   to clear the pinned completion ledger above the section head. */
+.court-submissions-page .submission-question-group { scroll-margin-top: 66px; }
 .court-submissions-page .submission-question-group > header { gap: 12px; }
 .submission-section-count {
   align-self: center;
@@ -2733,6 +2741,17 @@ button[type="submit"]:active {
   background: var(--court-blue-soft) !important;
 }
 .submission-actions__buttons button:disabled { cursor: not-allowed; opacity: .58; }
+.submission-actions__count { display: none; }
+.submission-actions__dot {
+  display: none;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  vertical-align: 1px;
+  background: var(--court-gold);
+  border: 1px solid var(--court-rule);
+  border-radius: 50%;
+}
 .submission-actions__buttons button:active { transform: translateY(1px); }
 .submission-actions__unsaved {
   margin: 0;
@@ -2755,7 +2774,58 @@ button[type="submit"]:active {
   }
 }
 
+/* Mobile: a pinned ledger is borrowing the participant's reading space, so it
+   pays rent. Once each ledger lifts off the sheet it keeps only what the
+   participant cannot get elsewhere on screen — the completion bar and the
+   section jumps at the top, the entry state and the two actions at the bottom
+   — and drops the labels and reassurances the resting ledger still carries.
+   Nothing is deleted: scroll to either end and the full ledger returns. */
+/* The collapse is a docking step, not an animation: the spacer that keeps the
+   sheet still is measured once per state change, so a gradual collapse would
+   drift out from under it. */
+@media (max-width: 767px) {
+  .submission-progress.is-stuck .submission-progress__overall { padding-top: 0; padding-bottom: 0; }
+  .submission-progress.is-stuck .submission-progress__label-row { display: none; }
+  .submission-progress.is-stuck .submission-progress__overall-row { margin-top: 0; gap: 0; }
+  /* The bar runs the full width of the ledger and the jump nav's own rule
+     divides it, so the track drops its frame rather than doubling the line. */
+  .submission-progress.is-stuck .submission-progress__track {
+    height: 5px;
+    margin: 0 -12px;
+    border: 0;
+  }
+  .submission-progress.is-stuck .submission-progress__status { display: none; }
+  /* Paper over the 8px between the masthead and the pinned ledger, so the
+     page doesn't scroll visibly through the seam. */
+  .court-submissions-page .submission-progress.is-stuck { box-shadow: 0 -10px 0 var(--court-paper); }
+
+  /* Pinned, the actions ledger is one 48px row: what's left, Save, Submit.
+     Unsaved changes become a gold mark on Save instead of a strip. A
+     validation error keeps the full ledger, because it explains the block. */
+  .submission-actions.is-stuck:not(.has-validation-error) .submission-actions__status,
+  .submission-actions.is-stuck .submission-actions__unsaved { display: none; }
+  .court-submissions-page #submit.is-stuck:not(.has-validation-error) .submission-actions__buttons {
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.25fr);
+  }
+  .court-submissions-page #submit.is-stuck:not(.has-validation-error) .submission-actions__buttons button { min-height: 48px; }
+  .submission-actions.is-stuck:not(.has-validation-error) .submission-actions__count {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    color: var(--court-ink);
+    font: 800 13px/1 var(--court-display);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    background: var(--court-sheet-wash);
+    border-right: 1px solid var(--court-rule);
+  }
+  .submission-actions.is-stuck.has-changes .submission-actions__dot { display: inline-block; }
+}
+
 @media (min-width: 768px) {
+  .court-submissions-page .submission-question-group { scroll-margin-top: 130px; }
   .court-submissions-page .submission-progress { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
   .submission-progress__section { display: block; border-right: 1px solid var(--court-rule); }
   .submission-progress__overall { display: flex; flex-direction: column; justify-content: center; }
