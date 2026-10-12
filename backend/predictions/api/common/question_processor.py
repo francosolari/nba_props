@@ -26,7 +26,7 @@ def process_questions_for_season(season_slug):
                 'text': q.text,
                 'point_value': q.point_value,
                 'question_type': question_type,
-                'award': q.award.name,  # Assuming Award has a name field
+                'award': q.award.name if q.award_id else None,
                 'players': players,
             })
         elif isinstance(q, PropQuestion):

@@ -62,9 +62,12 @@ const QuestionRow = ({
     let specificPayload = {};
 
     switch (question.question_type) {
-      case "superlative":
-        specificPayload = { award_id: draft.award ? Number(draft.award) : Number(draft.award_id) };
+      case "superlative": {
+        // Player-pick questions have no award; only send one when set.
+        const awardId = draft.award ?? draft.award_id;
+        specificPayload = awardId ? { award_id: Number(awardId) } : {};
         break;
+      }
       case "prop": {
         const outcome = outcomeForKind(draft.kind);
         specificPayload = {
@@ -149,6 +152,9 @@ const QuestionRow = ({
         <span>{pointsText}</span>
         {isProp && question.line != null && question.outcome_type === "over_under" && <span>Line {question.line}</span>}
         {isProp && question.stat && <span>{statLabel(question.stat)}</span>}
+        {question.excluded_player_ids?.length > 0 && (
+          <span>{question.excluded_player_ids.length} players hidden</span>
+        )}
         {question.answer_count > 0 && <span>{question.answer_count} pick{question.answer_count === 1 ? "" : "s"}</span>}
       </div>
 

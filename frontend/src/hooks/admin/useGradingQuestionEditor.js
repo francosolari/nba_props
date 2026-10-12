@@ -31,6 +31,8 @@ export const useGradingQuestionEditor = ({ playerOptions, playerNameById, toast 
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [editedAnswer, setEditedAnswer] = useState('');
   const [editedAnswerPlayerId, setEditedAnswerPlayerId] = useState(null);
+  // Further correct players for questions with several right answers.
+  const [editedExtraPlayers, setEditedExtraPlayers] = useState([]);
   const [editedRunnerUpPlayerId, setEditedRunnerUpPlayerId] = useState(null);
   const [editedRunnerUpPoints, setEditedRunnerUpPoints] = useState('');
   const [editedScoringRows, setEditedScoringRows] = useState([]);
@@ -39,6 +41,7 @@ export const useGradingQuestionEditor = ({ playerOptions, playerNameById, toast 
     setEditingQuestion(null);
     setEditedAnswer('');
     setEditedAnswerPlayerId(null);
+    setEditedExtraPlayers([]);
     setEditedRunnerUpPlayerId(null);
     setEditedRunnerUpPoints('');
     setEditedScoringRows([]);
@@ -63,6 +66,12 @@ export const useGradingQuestionEditor = ({ playerOptions, playerNameById, toast 
       ? playerOptions.find((option) => String(option.value) === String(question.correct_answer_player_id))
       : playerOptions.find((option) => option.label === question.correct_answer);
     setEditedAnswerPlayerId(correctOption?.value || null);
+    setEditedExtraPlayers(
+      (question.correct_answers || [])
+        .filter((name) => name !== question.correct_answer)
+        .map((name) => playerOptions.find((option) => option.label === name))
+        .filter(Boolean),
+    );
     const scoringRows = buildScoringRows(question.answer_point_values);
     setEditedScoringRows(scoringRows);
     const runnerUpEntry = scoringRows.find((row) => (
@@ -96,6 +105,11 @@ export const useGradingQuestionEditor = ({ playerOptions, playerNameById, toast 
       correctAnswer,
       answerPointValues,
       correctAnswerPlayerId: isPlayerQuestion && editedAnswerPlayerId ? Number(editedAnswerPlayerId) : undefined,
+      // Only for several correct players; a single player keeps the existing
+      // path, which also clears any earlier extras.
+      correctAnswerPlayerIds: isPlayerQuestion && editedAnswerPlayerId && editedExtraPlayers.length
+        ? [Number(editedAnswerPlayerId), ...editedExtraPlayers.map((option) => Number(option.value))]
+        : undefined,
       runnerUpPlayerId: question.question_type === 'SuperlativeQuestion' && editedRunnerUpPlayerId
         ? Number(editedRunnerUpPlayerId)
         : undefined,
@@ -151,6 +165,8 @@ export const useGradingQuestionEditor = ({ playerOptions, playerNameById, toast 
     setEditedAnswer,
     editedAnswerPlayerId,
     setEditedAnswerPlayerId,
+    editedExtraPlayers,
+    setEditedExtraPlayers,
     editedRunnerUpPlayerId,
     editedRunnerUpPoints,
     onRunnerUpPointsChange: handleRunnerUpPointsChange,

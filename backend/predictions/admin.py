@@ -150,6 +150,7 @@ class SuperlativeQuestionAdmin(PolymorphicChildModelAdmin):
     list_display = ('text', 'award', 'point_value', 'answer_point_values', 'is_finalized')
     list_filter = ('award', 'is_finalized')
     search_fields = ('text',)
+    filter_horizontal = ('excluded_players',)
     # Define your admin options here
 
 @admin.register(PropQuestion)

@@ -17,22 +17,18 @@ const SuperlativeForm = ({
 }) => (
   <GlassFormCard
     title="Superlative"
-    subtitle="Award-style predictions"
+    subtitle="Players pick any player: an award winner, or any player-pick question."
     isSubmitting={createSuperlative.isPending}
     onSubmit={(event) => {
       event.preventDefault();
       if (!ensureSeasonSelected()) return;
-      if (!form.awardId) {
-        setError("Select an award before creating this question.");
-        return;
-      }
       handleMutation(
         createSuperlative,
         {
           season_slug: activeSeason,
           text: form.text.trim(),
           point_value: Number(form.pointValue || defaultPointValue),
-          award_id: Number(form.awardId),
+          award_id: form.awardId ? Number(form.awardId) : null,
         },
         "Superlative question created.",
       ).then((created) => {
@@ -61,16 +57,20 @@ const SuperlativeForm = ({
       labelClass={classes.labelClass}
       inputClass={classes.inputClass}
     />
-    <SelectComponent
-      options={awardOptions}
-      value={awardOptions.find((option) => option.value === form.awardId) || null}
-      onChange={(option) =>
-        setForm((prev) => ({ ...prev, awardId: option ? option.value : "" }))
-      }
-      placeholder="Select award"
-      isClearable
-      mode={themeStyles.mode}
-    />
+    <div className="court-admin-field">
+      Award (optional)
+      <span>Leave empty for a player pick like "Name a first-time All-Star". You can mark several correct players when grading.</span>
+      <SelectComponent
+        options={awardOptions}
+        value={awardOptions.find((option) => option.value === form.awardId) || null}
+        onChange={(option) =>
+          setForm((prev) => ({ ...prev, awardId: option ? option.value : "" }))
+        }
+        placeholder="No award"
+        isClearable
+        mode={themeStyles.mode}
+      />
+    </div>
   </GlassFormCard>
 );
 

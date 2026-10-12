@@ -168,7 +168,7 @@ def build_questions_with_real_map(season: Season):
                 "current_leader",
                 "current_runner_up",
                 "season",
-            ).prefetch_related("winners")
+            ).prefetch_related("winners", "excluded_players")
         elif model_class is PropQuestion:
             queryset = queryset.select_related("related_player", "season")
         elif model_class is PlayerStatPredictionQuestion:
@@ -246,10 +246,11 @@ def serialize_question(question: Question, real_questions_map: Optional[dict] = 
     if isinstance(real_question, SuperlativeQuestion):
         return {
             **base_data,
-            "award_id": real_question.award.id,
-            "award_name": real_question.award.name,
+            "award_id": real_question.award_id,
+            "award_name": real_question.award.name if real_question.award_id else None,
             "is_finalized": real_question.is_finalized,
             "winners": [winner.id for winner in real_question.winners.all()] if real_question.pk else [],
+            "excluded_player_ids": [p.id for p in real_question.excluded_players.all()] if real_question.pk else [],
         }
     
     # Prop Question

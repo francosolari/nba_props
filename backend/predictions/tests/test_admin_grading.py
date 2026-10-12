@@ -16,7 +16,7 @@ Performance optimizations:
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
-from predictions.models import Season, Answer, UserStats, StandingPrediction, Question
+from predictions.models import Season, Answer, UserStats, StandingPrediction, Question, Player
 from predictions.tests.factories import (
     SeasonFactory,
     UserFactory,
@@ -800,3 +800,75 @@ class TestGradingIntegration:
         # Verify user stats updated
         user_stats = UserStats.objects.get(user=user, season=current_season)
         assert user_stats.points >= 0
+
+
+@pytest.mark.django_db
+class TestMultipleCorrectPlayers:
+    """A player pick like 'Name a first-time All-Star' can have several correct players."""
+
+    def test_setting_several_correct_players(self, admin_client, current_season):
+        question = SuperlativeQuestionFactory(season=current_season, award=None, point_value=2)
+        first, second = PlayerFactory(name='Alperen Sengun'), PlayerFactory(name='Evan Mobley')
+
+        response = admin_client.post(
+            '/api/v2/admin/grading/update-question',
+            data={'question_id': question.id, 'correct_answer_player_ids': [first.id, second.id]},
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        question.refresh_from_db()
+        assert question.correct_answer == 'Alperen Sengun'
+        assert question.correct_answers == ['Alperen Sengun', 'Evan Mobley']
+        assert question.points_for_answer('Evan Mobley') == 2
+
+    def test_exclude_past_all_stars_hides_only_earlier_selections(self, current_season, mocker):
+        import pandas as pd
+        from django.core.management import call_command
+
+        question = SuperlativeQuestionFactory(season=current_season, award=None)
+        veteran = PlayerFactory(name='Veteran Star', nba_player_id=1)
+        newcomer = PlayerFactory(name='This Year Star', nba_player_id=2)
+        PlayerFactory(name='Never Star', nba_player_id=3)
+        before, this_season = '2000-01', current_season.year
+        history = {
+            1: [{'DESCRIPTION': 'NBA All-Star', 'SEASON': before}],
+            2: [{'DESCRIPTION': 'NBA All-Star', 'SEASON': this_season}],
+            3: [{'DESCRIPTION': 'All-NBA', 'SEASON': before}],
+        }
+
+        def fake_awards(player_id, timeout):
+            frame = pd.DataFrame(history[player_id], columns=['DESCRIPTION', 'SEASON'])
+            return mocker.Mock(get_data_frames=lambda: [frame])
+
+        mocker.patch('nba_api.stats.endpoints.playerawards.PlayerAwards', side_effect=fake_awards)
+        call_command('limit_player_picks', question.id, past_all_stars=True, delay=0)
+
+        assert list(question.excluded_players.all()) == [veteran]
+        assert newcomer not in question.excluded_players.all()
+
+    def test_rookies_only_hides_everyone_else_and_adds_missing_rookies(self, current_season, mocker):
+        import pandas as pd
+        from django.core.management import call_command
+
+        question = SuperlativeQuestionFactory(season=current_season, award=None)
+        known_rookie = PlayerFactory(name='Known Rookie', nba_player_id=10)
+        veteran = PlayerFactory(name='Veteran', nba_player_id=11)
+        unverified = PlayerFactory(name='No NBA Id', nba_player_id=None)
+        start, prior = current_season.year[:4], '2010'
+        roster = pd.DataFrame(
+            [(10, 'Known Rookie', start), (12, 'New Rookie', start), (11, 'Veteran', prior)],
+            columns=['PERSON_ID', 'DISPLAY_FIRST_LAST', 'FROM_YEAR'],
+        )
+        mocker.patch(
+            'nba_api.stats.endpoints.commonallplayers.CommonAllPlayers',
+            return_value=mocker.Mock(get_data_frames=lambda: [roster]),
+        )
+
+        call_command('limit_player_picks', question.id, rookies=True)
+
+        hidden = set(question.excluded_players.all())
+        assert veteran in hidden and unverified in hidden
+        assert known_rookie not in hidden
+        new_rookie = Player.objects.get(nba_player_id=12)
+        assert new_rookie.name == 'New Rookie' and new_rookie not in hidden

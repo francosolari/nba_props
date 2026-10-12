@@ -127,6 +127,7 @@ class QuestionForGradingItem(Schema):
     is_finalized: bool
     submission_count: int  # Number of user submissions for this question
     has_correct_answer: bool  # Whether correct_answer is set
+    correct_answers: List[str] = []
 
     # Additional metadata for rendering appropriate inputs
     outcome_type: Optional[str] = None  # 'over_under' or 'yes_no' for PropQuestion
@@ -154,6 +155,8 @@ class UpdateQuestionRequest(Schema):
     correct_answer: Optional[str] = None
     answer_point_values: Optional[Dict[str, float]] = None
     correct_answer_player_id: Optional[int] = None
+    # Several correct players; replaces correct_answer_player_id when sent.
+    correct_answer_player_ids: Optional[List[int]] = None
     runner_up_player_id: Optional[int] = None
     runner_up_points: Optional[float] = None
     is_finalized: Optional[bool] = None
