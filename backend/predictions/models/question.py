@@ -18,6 +18,9 @@ class Question(PolymorphicModel):
     # outcome is known.
     points_if_correct = models.JSONField(default=dict, blank=True)
     correct_answer = models.CharField(max_length=100, null=True, blank=True)
+    # Every accepted answer when more than one is correct, e.g. each player who
+    # became a first-time All-Star. correct_answer keeps the first for display.
+    correct_answers = models.JSONField(default=list, blank=True)
     is_manual = models.BooleanField(default=False)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -32,11 +35,17 @@ class Question(PolymorphicModel):
         """Normalize answer text for case-insensitive scoring lookups."""
         return str(answer_text or "").strip().lower()
 
+    def accepted_answers(self):
+        accepted = {self.normalize_answer_key(a) for a in (self.correct_answers or [])}
+        accepted.add(self.normalize_answer_key(self.correct_answer))
+        accepted.discard("")
+        return accepted
+
     def is_primary_correct_answer(self, resolved_answer_text):
-        correct_answer = self.normalize_answer_key(self.correct_answer)
-        if not correct_answer:
+        accepted = self.accepted_answers()
+        if not accepted:
             return False
-        return self.normalize_answer_key(resolved_answer_text) == correct_answer
+        return self.normalize_answer_key(resolved_answer_text) in accepted
 
     def points_for_answer(self, resolved_answer_text):
         normalized_answer = self.normalize_answer_key(resolved_answer_text)
@@ -69,7 +78,9 @@ class Question(PolymorphicModel):
 
 
 class SuperlativeQuestion(Question):
-    award = models.ForeignKey(Award, on_delete=models.CASCADE)
+    # Optional: a "player pick" question such as "Name a first-time All-Star"
+    # has no award, no odds, and can have several correct players.
+    award = models.ForeignKey(Award, on_delete=models.CASCADE, null=True, blank=True)
     winners = models.ManyToManyField(Player, related_name='superlative_wins', blank=True)
     is_finalized = models.BooleanField(default=False)
 
@@ -114,6 +125,9 @@ class SuperlativeQuestion(Question):
         Called automatically after scraping new odds.
         """
         from django.utils import timezone
+
+        if not self.award_id:
+            return
 
         # Get latest odds for this award (for the current season)
         latest_scrape = Odds.objects.filter(

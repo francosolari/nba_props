@@ -577,7 +577,7 @@ def get_questions_for_grading(request, season_slug: str):
         submission_count = submission_counts.get(question_real.id, 0)
 
         # Check if correct answer is set
-        has_correct_answer = bool(question_real.correct_answer and question_real.correct_answer.strip())
+        has_correct_answer = bool(question_real.accepted_answers())
 
         # Check if finalized
         is_finalized = getattr(question_real, 'is_finalized', False)
@@ -648,6 +648,7 @@ def get_questions_for_grading(request, season_slug: str):
             'runner_up_player_id': runner_up_player_id,
             'point_value': question_real.point_value or 0,
             'answer_point_values': question_real.answer_point_values or {},
+            'correct_answers': question_real.correct_answers or [],
             'points_if_correct': question_real.points_if_correct or {},
             'is_finalized': is_finalized,
             'submission_count': submission_count,
@@ -698,13 +699,22 @@ def update_question_answer(request, payload: UpdateQuestionRequest):
         else question_real.answer_point_values or {}
     )
 
-    if payload.correct_answer_player_id is not None:
+    if payload.correct_answer_player_ids:
+        by_id = Player.objects.in_bulk(payload.correct_answer_player_ids)
+        names = [by_id[pid].name for pid in payload.correct_answer_player_ids if pid in by_id]
+        if not names:
+            return JsonResponse({"error": "No matching players"}, status=400)
+        question_real.correct_answer = names[0]
+        question_real.correct_answers = names if len(names) > 1 else []
+    elif payload.correct_answer_player_id is not None:
         correct_player = get_object_or_404(Player, id=payload.correct_answer_player_id)
+        question_real.correct_answers = []
         question_real.correct_answer = correct_player.name
         if isinstance(question_real, SuperlativeQuestion):
             question_real.current_leader = correct_player
     elif payload.correct_answer is not None:
         question_real.correct_answer = payload.correct_answer
+        question_real.correct_answers = []
 
     if payload.runner_up_player_id is not None:
         runner_up_player = get_object_or_404(Player, id=payload.runner_up_player_id)

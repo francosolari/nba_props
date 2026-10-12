@@ -246,8 +246,8 @@ def serialize_question(question: Question, real_questions_map: Optional[dict] = 
     if isinstance(real_question, SuperlativeQuestion):
         return {
             **base_data,
-            "award_id": real_question.award.id,
-            "award_name": real_question.award.name,
+            "award_id": real_question.award_id,
+            "award_name": real_question.award.name if real_question.award_id else None,
             "is_finalized": real_question.is_finalized,
             "winners": [winner.id for winner in real_question.winners.all()] if real_question.pk else [],
         }

@@ -800,3 +800,24 @@ class TestGradingIntegration:
         # Verify user stats updated
         user_stats = UserStats.objects.get(user=user, season=current_season)
         assert user_stats.points >= 0
+
+
+@pytest.mark.django_db
+class TestMultipleCorrectPlayers:
+    """A player pick like 'Name a first-time All-Star' can have several correct players."""
+
+    def test_setting_several_correct_players(self, admin_client, current_season):
+        question = SuperlativeQuestionFactory(season=current_season, award=None, point_value=2)
+        first, second = PlayerFactory(name='Alperen Sengun'), PlayerFactory(name='Evan Mobley')
+
+        response = admin_client.post(
+            '/api/v2/admin/grading/update-question',
+            data={'question_id': question.id, 'correct_answer_player_ids': [first.id, second.id]},
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        question.refresh_from_db()
+        assert question.correct_answer == 'Alperen Sengun'
+        assert question.correct_answers == ['Alperen Sengun', 'Evan Mobley']
+        assert question.points_for_answer('Evan Mobley') == 2

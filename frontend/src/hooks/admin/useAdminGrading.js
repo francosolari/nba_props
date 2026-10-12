@@ -71,6 +71,7 @@ export const useUpdateQuestionMutation = (onUpdated) => {
       isFinalized,
       answerPointValues,
       correctAnswerPlayerId,
+      correctAnswerPlayerIds,
       runnerUpPlayerId,
       runnerUpPoints,
     }) => {
@@ -80,6 +81,7 @@ export const useUpdateQuestionMutation = (onUpdated) => {
         is_finalized: isFinalized,
         answer_point_values: answerPointValues,
         correct_answer_player_id: correctAnswerPlayerId,
+        correct_answer_player_ids: correctAnswerPlayerIds,
         runner_up_player_id: runnerUpPlayerId,
         runner_up_points: runnerUpPoints,
       }, {

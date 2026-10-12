@@ -34,8 +34,8 @@ class QuestionBaseSchema(Schema):
 class SuperlativeQuestionSchema(QuestionBaseSchema):
     """Schema for Superlative (Award) Questions"""
     question_type: Literal["superlative"] = "superlative"
-    award_id: int
-    award_name: str
+    award_id: Optional[int] = None
+    award_name: Optional[str] = None
     is_finalized: bool
     winners: Optional[List[int]] = None  # List of player IDs
 
@@ -213,7 +213,7 @@ class SuperlativeQuestionCreateSchema(Schema):
     text: str
     point_value: float = 0.5
     answer_point_values: Optional[Dict[str, float]] = None
-    award_id: int
+    award_id: Optional[int] = None
 
 
 class PropQuestionCreateSchema(Schema):

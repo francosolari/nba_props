@@ -131,7 +131,9 @@ const QuestionInput = ({
             mode="light"
             components={playerSelectComponents}
           />
-          <p className="text-xs text-slate-500 dark:text-slate-400">Runner-up selections earn half points.</p>
+          {question.award_id && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">Runner-up selections earn half points.</p>
+          )}
         </div>
       );
     }

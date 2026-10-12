@@ -128,24 +128,41 @@ const CustomScoring = ({ question, editor, playerOptions }) => {
 };
 
 const AnswerInput = ({ question, editor, playerOptions }) => {
-  const { editedAnswer, setEditedAnswer, editedAnswerPlayerId, setEditedAnswerPlayerId } = editor;
+  const {
+    editedAnswer, setEditedAnswer, editedAnswerPlayerId, setEditedAnswerPlayerId,
+    editedExtraPlayers, setEditedExtraPlayers,
+  } = editor;
   const choices = question.choices || [];
 
   if (question.input_type === 'player_search') {
     return (
-      <div className="court-admin-field">
-        Correct player
-        <SelectComponent
-          options={playerOptions}
-          value={editedAnswerPlayerId}
-          onChange={(option) => {
-            setEditedAnswerPlayerId(option ? option.value : null);
-            setEditedAnswer(option ? option.label : '');
-          }}
-          placeholder="Search players..."
-          mode="light"
-        />
-      </div>
+      <>
+        <div className="court-admin-field">
+          Correct player
+          <SelectComponent
+            options={playerOptions}
+            value={editedAnswerPlayerId}
+            onChange={(option) => {
+              setEditedAnswerPlayerId(option ? option.value : null);
+              setEditedAnswer(option ? option.label : '');
+            }}
+            placeholder="Search players..."
+            mode="light"
+          />
+        </div>
+        <div className="court-admin-field">
+          Also correct (optional)
+          <span>For questions with several right answers, like "Name a first-time All-Star".</span>
+          <SelectComponent
+            options={playerOptions.filter((option) => option.value !== editedAnswerPlayerId)}
+            value={editedExtraPlayers}
+            onChange={(selected) => setEditedExtraPlayers(selected || [])}
+            placeholder="Add players..."
+            isMulti
+            mode="light"
+          />
+        </div>
+      </>
     );
   }
 
@@ -240,7 +257,7 @@ const GradingQuestionRow = ({ question, editor, playerOptions }) => {
       ) : (
         <div className="court-admin-grow__answer">
           <span className={isSet ? 'is-set' : ''}>
-            {isSet ? question.correct_answer : 'No answer yet'}
+            {isSet ? (question.correct_answers?.length ? question.correct_answers.join(', ') : question.correct_answer) : 'No answer yet'}
           </span>
           <button
             type="button"

@@ -19,10 +19,12 @@ const SelectComponent = ({
   className = '',
   mode = 'dark',
   components,
+  isMulti = false,
 }) => {
   const isLight = mode === 'light';
   const normalizedValue = useMemo(() => {
     if (!value) return null;
+    if (Array.isArray(value)) return value;
     if (typeof value === 'object' && 'value' in value) {
       return value;
     }
@@ -46,6 +48,7 @@ const SelectComponent = ({
       isClearable={isClearable}
       isDisabled={isDisabled}
       isSearchable={isSearchable}
+      isMulti={isMulti}
       aria-invalid={hasError || undefined}
       noOptionsMessage={() => 'No options found'}
       styles={{

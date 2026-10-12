@@ -81,7 +81,7 @@ def create_superlative_question(request, payload: SuperlativeQuestionCreateSchem
     """
     try:
         season = get_object_or_404(Season, slug=payload.season_slug)
-        award = get_object_or_404(Award, id=payload.award_id)
+        award = get_object_or_404(Award, id=payload.award_id) if payload.award_id else None
         
         question = SuperlativeQuestion.objects.create(
             season=season,

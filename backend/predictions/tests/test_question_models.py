@@ -90,6 +90,19 @@ class TestPropQuestion:
         assert question.points_for_answer("No") == no_pts
 
 
+    def test_any_of_several_correct_answers_scores(self):
+        """'Name a first-time All-Star' accepts every listed player."""
+        question = SuperlativeQuestion(
+            point_value=2,
+            correct_answer="Jalen Williams",
+            correct_answers=["Jalen Williams", "Alperen Sengun", "Evan Mobley"],
+        )
+
+        assert question.points_for_answer("alperen sengun") == 2
+        assert question.points_for_answer("Jalen Williams") == 2
+        assert question.points_for_answer("LeBron James") == 0
+
+
 @pytest.mark.django_db
 class TestSuperlativeQuestion:
     """Tests for SuperlativeQuestion model (MVP, ROY, etc.)."""

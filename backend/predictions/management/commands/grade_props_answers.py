@@ -98,6 +98,7 @@ class Command(BaseCommand):
 
                     if (
                         (correct_answer_text_cached is None or not correct_answer_text_cached.strip())
+                        and not question_instance.correct_answers
                         and not scoring_rules_cached
                     ):
                         warning_msg = (

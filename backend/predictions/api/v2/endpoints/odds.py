@@ -138,7 +138,7 @@ def get_scoring_positions(request, season_slug: str):
 
     # Get all SuperlativeQuestions for this season
     questions = SuperlativeQuestion.objects.filter(
-        season=season
+        season=season, award__isnull=False
     ).select_related(
         'award', 'current_leader', 'current_runner_up'
     )
