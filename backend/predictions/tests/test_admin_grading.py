@@ -16,7 +16,7 @@ Performance optimizations:
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
-from predictions.models import Season, Answer, UserStats, StandingPrediction, Question
+from predictions.models import Season, Answer, UserStats, StandingPrediction, Question, Player
 from predictions.tests.factories import (
     SeasonFactory,
     UserFactory,
@@ -842,7 +842,33 @@ class TestMultipleCorrectPlayers:
             return mocker.Mock(get_data_frames=lambda: [frame])
 
         mocker.patch('nba_api.stats.endpoints.playerawards.PlayerAwards', side_effect=fake_awards)
-        call_command('exclude_past_all_stars', question.id, delay=0)
+        call_command('limit_player_picks', question.id, past_all_stars=True, delay=0)
 
         assert list(question.excluded_players.all()) == [veteran]
         assert newcomer not in question.excluded_players.all()
+
+    def test_rookies_only_hides_everyone_else_and_adds_missing_rookies(self, current_season, mocker):
+        import pandas as pd
+        from django.core.management import call_command
+
+        question = SuperlativeQuestionFactory(season=current_season, award=None)
+        known_rookie = PlayerFactory(name='Known Rookie', nba_player_id=10)
+        veteran = PlayerFactory(name='Veteran', nba_player_id=11)
+        unverified = PlayerFactory(name='No NBA Id', nba_player_id=None)
+        start, prior = current_season.year[:4], '2010'
+        roster = pd.DataFrame(
+            [(10, 'Known Rookie', start), (12, 'New Rookie', start), (11, 'Veteran', prior)],
+            columns=['PERSON_ID', 'DISPLAY_FIRST_LAST', 'FROM_YEAR'],
+        )
+        mocker.patch(
+            'nba_api.stats.endpoints.commonallplayers.CommonAllPlayers',
+            return_value=mocker.Mock(get_data_frames=lambda: [roster]),
+        )
+
+        call_command('limit_player_picks', question.id, rookies=True)
+
+        hidden = set(question.excluded_players.all())
+        assert veteran in hidden and unverified in hidden
+        assert known_rookie not in hidden
+        new_rookie = Player.objects.get(nba_player_id=12)
+        assert new_rookie.name == 'New Rookie' and new_rookie not in hidden
