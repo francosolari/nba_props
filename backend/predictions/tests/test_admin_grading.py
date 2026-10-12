@@ -926,3 +926,14 @@ class TestMergeDuplicatePlayers:
         assert question.current_leader == keeper
         assert list(question.excluded_players.all()) == [keeper]
         assert Player.objects.filter(id__in=[bronny.id, lebron.id]).count() == 2
+
+    def test_also_merges_explicit_pairs(self, current_season):
+        from django.core.management import call_command
+
+        keeper = PlayerFactory(name='Felix Okpara', nba_player_id=1643590)
+        typo = PlayerFactory(name='Felix Okpata', nba_player_id=None)
+
+        call_command('merge_duplicate_players', also=[f'{typo.id}:{keeper.id}'])
+
+        assert not Player.objects.filter(id=typo.id).exists()
+        assert Player.objects.filter(id=keeper.id).exists()

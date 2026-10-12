@@ -11,7 +11,7 @@ exactly one NBA.com ID are reported and left alone.
 
 Usage:
     python manage.py merge_duplicate_players --dry-run
-    python manage.py merge_duplicate_players --skip 532
+    python manage.py merge_duplicate_players --skip 532 --also 689:372
 """
 
 from collections import defaultdict
@@ -37,8 +37,12 @@ class Command(BaseCommand):
             "--skip", type=int, nargs="*", default=[],
             help="Player ids to leave alone, e.g. a different person whose name only differs by Jr.",
         )
+        parser.add_argument(
+            "--also", nargs="*", default=[], metavar="DUPE:KEEPER",
+            help="Extra merges by id for spellings name matching can't catch, e.g. 831:926 (Okpata -> Okpara).",
+        )
 
-    def handle(self, *args, dry_run, skip, **options):
+    def handle(self, *args, dry_run, skip, also, **options):
         groups = defaultdict(list)
         for player in Player.objects.exclude(id__in=skip).order_by("id"):
             groups[normalize_name(player.name)].append(player)
@@ -53,6 +57,11 @@ class Command(BaseCommand):
                 continue
             keeper = keepers[0]
             merges.append((keeper, [p for p in rows if p is not keeper]))
+
+        for pair in also:
+            dupe_id, keeper_id = (int(part) for part in pair.split(":"))
+            dupe, keeper = Player.objects.get(id=dupe_id), Player.objects.get(id=keeper_id)
+            merges.append((keeper, [dupe]))
 
         for keeper, dupes in merges:
             names = ", ".join(f'"{d.name}" (#{d.id})' for d in dupes)
