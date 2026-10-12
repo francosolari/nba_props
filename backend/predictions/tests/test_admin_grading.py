@@ -852,6 +852,76 @@ class TestMultipleCorrectPlayers:
         assert hidden == {veteran, retired}
         assert newcomer not in hidden and never not in hidden
 
+    @pytest.mark.parametrize("mode", ["rookies", "past_all_stars"])
+    def test_question_season_roster_keeps_new_rookies_visible(self, current_season, mocker, mode):
+        """A stale nba_api default must not hide the question season's rookies."""
+        import pandas as pd
+        from django.core.management import call_command
+
+        question = SuperlativeQuestionFactory(season=current_season, award=None)
+        rookie = PlayerFactory(name='AJ Dybantsa', nba_player_id=1643407)
+        veteran = PlayerFactory(name='Nikola Jokic', nba_player_id=203999)
+        # Simulate an older library default that only knows the veteran.
+        old_roster = pd.DataFrame(
+            [(203999, 'Nikola Jokic', '2015')],
+            columns=['PERSON_ID', 'DISPLAY_FIRST_LAST', 'FROM_YEAR'],
+        )
+        question_roster = pd.concat([old_roster, pd.DataFrame(
+            [(1643407, 'AJ Dybantsa', current_season.year[:4])],
+            columns=old_roster.columns,
+        )], ignore_index=True)
+
+        def roster_for_season(**kwargs):
+            roster = question_roster if kwargs.get('season') == current_season.year else old_roster
+            return mocker.Mock(get_data_frames=lambda: [roster])
+
+        mocker.patch('nba_api.stats.endpoints.commonallplayers.CommonAllPlayers', side_effect=roster_for_season)
+        mocker.patch(
+            'predictions.management.commands.limit_player_picks.all_star_first_games',
+            return_value={'nikola jokic': 2019},
+        )
+        question.excluded_players.add(rookie)
+
+        call_command('limit_player_picks', question.id, **{mode: True})
+
+        assert not question.excluded_players.filter(pk=rookie.pk).exists()
+        assert question.excluded_players.filter(pk=veteran.pk).exists()
+
+    def test_all_star_history_does_not_confuse_sons_with_their_fathers(self, current_season, mocker):
+        """Keep first-timers eligible without losing known All-Stars' exclusions."""
+        import pandas as pd
+        from django.core.management import call_command
+
+        question = SuperlativeQuestionFactory(season=current_season, award=None)
+        hardaway = PlayerFactory(name='Tim Hardaway Jr.', nba_player_id=1)
+        payton = PlayerFactory(name='Gary Payton II', nba_player_id=2)
+        # The local spelling omits Jr.; the NBA ID still identifies the All-Star son.
+        jackson = PlayerFactory(name='Jaren Jackson', nba_player_id=3)
+        butler = PlayerFactory(name='Jimmy Butler', nba_player_id=4)
+        roster = pd.DataFrame(
+            [(1, 'Tim Hardaway Jr.', '2013'), (2, 'Gary Payton II', '2016'),
+             (3, 'Jaren Jackson Jr.', '2018'), (4, 'Jimmy Butler III', '2011')],
+            columns=['PERSON_ID', 'DISPLAY_FIRST_LAST', 'FROM_YEAR'],
+        )
+        mocker.patch('nba_api.stats.endpoints.commonallplayers.CommonAllPlayers',
+                     return_value=mocker.Mock(get_data_frames=lambda: [roster]))
+        mocker.patch('predictions.management.commands.limit_player_picks.all_star_first_games',
+                     return_value={'tim hardaway': 1991, 'gary payton': 1994,
+                                   'jaren jackson jr': 2023, 'jimmy butler': 2015})
+
+        call_command('limit_player_picks', question.id, past_all_stars=True)
+
+        assert not question.excluded_players.filter(pk__in=[hardaway.pk, payton.pk]).exists()
+        assert question.excluded_players.filter(pk=jackson.pk).exists()
+        assert question.excluded_players.filter(pk=butler.pk).exists()
+
+    def test_all_star_name_normalization_preserves_generations(self):
+        from predictions.management.commands.limit_player_picks import normalize_all_star_name
+
+        assert normalize_all_star_name('Nikola Jokić') == 'nikola jokic'
+        assert normalize_all_star_name('Jaren Jackson Jr.') == 'jaren jackson jr'
+        assert normalize_all_star_name('Gary Payton II') != normalize_all_star_name('Gary Payton')
+
     def test_normalize_name_matches_accents_and_suffixes(self):
         from predictions.management.commands.limit_player_picks import normalize_name
 

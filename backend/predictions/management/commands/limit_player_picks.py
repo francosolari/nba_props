@@ -36,6 +36,12 @@ def normalize_name(name):
     return " ".join(word for word in name.split() if word not in {"jr", "sr", "ii", "iii", "iv"})
 
 
+def normalize_all_star_name(name):
+    """Normalize spelling while keeping generations distinct for award history."""
+    name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    return " ".join(re.sub(r"[^a-z ]", "", name).split())
+
+
 def all_star_first_games():
     """{normalized name: year of first All-Star Game} for every All-Star ever."""
     import requests
@@ -53,17 +59,19 @@ def all_star_first_games():
         name = re.search(r'class="fn"><a [^>]*>([^<]+)</a>', row)
         years = [int(year) for year in re.findall(r"/wiki/(\d{4})_NBA_All-Star_Game", row)]
         if name and years:
-            first_games[normalize_name(html.unescape(name.group(1)))] = min(years)
+            first_games[normalize_all_star_name(html.unescape(name.group(1)))] = min(years)
     if len(first_games) < 300:
         raise RuntimeError(f"Only parsed {len(first_games)} All-Stars from Wikipedia; the page layout may have changed.")
     return first_games
 
 
-def current_roster():
-    """Every player on an NBA roster this season, with their first season."""
+def current_roster(season_year):
+    """Players listed for the question season, independent of nba_api defaults."""
     from nba_api.stats.endpoints import commonallplayers
 
-    return commonallplayers.CommonAllPlayers(is_only_current_season=1, timeout=30).get_data_frames()[0]
+    return commonallplayers.CommonAllPlayers(
+        season=season_year, is_only_current_season=1, timeout=30,
+    ).get_data_frames()[0]
 
 
 class Command(BaseCommand):
@@ -101,7 +109,7 @@ class Command(BaseCommand):
 
     def _non_rookies(self, question, dry_run):
         start_year = question.season.year[:4]  # "2026-27" -> "2026"
-        roster = current_roster()
+        roster = current_roster(question.season.year)
         rookies = roster[roster["FROM_YEAR"].astype(str) == start_year]
         if rookies.empty:
             raise CommandError(f"NBA.com lists no players whose first season is {question.season.year}.")
@@ -137,14 +145,29 @@ class Command(BaseCommand):
         # for 2026-27 any game in 2026 or earlier is a past selection.
         last_past_game = int(question.season.year[:4])
         first_games = all_star_first_games()
-        rostered = set(int(pid) for pid in current_roster()["PERSON_ID"])
+        roster = current_roster(question.season.year)
+        # NBA IDs bind legacy/local spellings to the actual rostered person.
+        roster_players = {int(row.PERSON_ID): row for row in roster.itertuples()}
+        rostered = set(roster_players)
 
         # Nobody off a current roster can make the team, so they're hidden too.
         unrostered = list(Player.objects.exclude(nba_player_id__in=rostered))
-        past_all_stars = [
-            player for player in Player.objects.filter(nba_player_id__in=rostered).order_by("name")
-            if first_games.get(normalize_name(player.name), 9999) <= last_past_game
-        ]
+        past_all_stars = []
+        for player in Player.objects.filter(nba_player_id__in=rostered).order_by("name"):
+            row = roster_players[player.nba_player_id]
+            names = {
+                normalize_all_star_name(row.DISPLAY_FIRST_LAST),
+                normalize_all_star_name(player.name),
+                normalize_name(row.DISPLAY_FIRST_LAST),
+            }
+            # Allow historical aliases (Jimmy Butler / Jimmy Butler III), but
+            # never inherit a father's selection from before the son's debut.
+            first_season = int(row.FROM_YEAR)
+            if any(
+                first_season < first_games.get(name, 9999) <= last_past_game
+                for name in names
+            ):
+                past_all_stars.append(player)
         self.stdout.write(f"Read {len(first_games)} All-Stars from Wikipedia.")
         self.stdout.write(f"Hiding {len(unrostered)} players not on a current roster.")
         self.stdout.write(f"Past All-Stars on rosters ({len(past_all_stars)}): {', '.join(p.name for p in past_all_stars)}")
