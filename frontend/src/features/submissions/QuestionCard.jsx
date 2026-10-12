@@ -116,7 +116,11 @@ const QuestionInput = ({
 }) => {
   switch (question.question_type) {
     case 'superlative': {
-      const sortedPlayerOptions = [...playerOptions].sort((a, b) => (a.label || '').localeCompare(b.label || ''));
+      // Some questions hide players, e.g. past All-Stars for "first-time All-Star".
+      const excluded = new Set(question.excluded_player_ids || []);
+      const sortedPlayerOptions = playerOptions
+        .filter((option) => !excluded.has(option.value))
+        .sort((a, b) => (a.label || '').localeCompare(b.label || ''));
       const selectedPlayer =
         sortedPlayerOptions.find((option) => String(option.value) === String(answer)) || null;
 

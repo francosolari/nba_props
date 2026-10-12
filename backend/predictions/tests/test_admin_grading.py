@@ -821,3 +821,28 @@ class TestMultipleCorrectPlayers:
         assert question.correct_answer == 'Alperen Sengun'
         assert question.correct_answers == ['Alperen Sengun', 'Evan Mobley']
         assert question.points_for_answer('Evan Mobley') == 2
+
+    def test_exclude_past_all_stars_hides_only_earlier_selections(self, current_season, mocker):
+        import pandas as pd
+        from django.core.management import call_command
+
+        question = SuperlativeQuestionFactory(season=current_season, award=None)
+        veteran = PlayerFactory(name='Veteran Star', nba_player_id=1)
+        newcomer = PlayerFactory(name='This Year Star', nba_player_id=2)
+        PlayerFactory(name='Never Star', nba_player_id=3)
+        before, this_season = '2000-01', current_season.year
+        history = {
+            1: [{'DESCRIPTION': 'NBA All-Star', 'SEASON': before}],
+            2: [{'DESCRIPTION': 'NBA All-Star', 'SEASON': this_season}],
+            3: [{'DESCRIPTION': 'All-NBA', 'SEASON': before}],
+        }
+
+        def fake_awards(player_id, timeout):
+            frame = pd.DataFrame(history[player_id], columns=['DESCRIPTION', 'SEASON'])
+            return mocker.Mock(get_data_frames=lambda: [frame])
+
+        mocker.patch('nba_api.stats.endpoints.playerawards.PlayerAwards', side_effect=fake_awards)
+        call_command('exclude_past_all_stars', question.id, delay=0)
+
+        assert list(question.excluded_players.all()) == [veteran]
+        assert newcomer not in question.excluded_players.all()

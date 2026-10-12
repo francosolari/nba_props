@@ -135,3 +135,19 @@ describe('Prop questions', () => {
     expect(screen.getByRole('button', { name: 'Yes' })).toBeInTheDocument();
   });
 });
+
+test('an award pick list hides excluded players', () => {
+  const QuestionCard = require('../../../submissions/QuestionCard').default;
+  render(
+    <QuestionCard
+      question={{ id: 2, question_type: 'superlative', text: 'Name a first-time All-Star', point_value: 2, excluded_player_ids: [1] }}
+      answer=""
+      onChange={jest.fn()}
+      playerOptions={[{ value: 1, label: 'LeBron James' }, { value: 2, label: 'Alperen Sengun' }]}
+    />,
+  );
+  expect(screen.queryByText('Runner-up selections earn half points.')).not.toBeInTheDocument();
+  fireEvent.keyDown(screen.getByRole('combobox'), { key: 'ArrowDown' });
+  expect(screen.getByText('Alperen Sengun')).toBeInTheDocument();
+  expect(screen.queryByText('LeBron James')).not.toBeInTheDocument();
+});

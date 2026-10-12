@@ -82,6 +82,9 @@ class SuperlativeQuestion(Question):
     # has no award, no odds, and can have several correct players.
     award = models.ForeignKey(Award, on_delete=models.CASCADE, null=True, blank=True)
     winners = models.ManyToManyField(Player, related_name='superlative_wins', blank=True)
+    # Players hidden from the pick list, e.g. past All-Stars for "Name a
+    # first-time All-Star". Filled by exclude_past_all_stars; grading ignores it.
+    excluded_players = models.ManyToManyField(Player, related_name='excluded_from_superlatives', blank=True)
     is_finalized = models.BooleanField(default=False)
 
     # Current odds-based leader (automatically updated from scraper)

@@ -38,6 +38,7 @@ class SuperlativeQuestionSchema(QuestionBaseSchema):
     award_name: Optional[str] = None
     is_finalized: bool
     winners: Optional[List[int]] = None  # List of player IDs
+    excluded_player_ids: List[int] = []  # Hidden from the pick list
 
 
 class PropQuestionSchema(QuestionBaseSchema):
