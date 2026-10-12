@@ -179,6 +179,7 @@ def create_head_to_head_question(request, payload: HeadToHeadQuestionCreateSchem
             answer_point_values=payload.answer_point_values or {},
             team1=team1,
             team2=team2,
+            conference_matchup=payload.conference_matchup,
         )
         
         return {
@@ -318,6 +319,8 @@ def update_question(request, question_id: int, payload: QuestionUpdateSchema):
             if payload.team2_id is not None:
                 team2 = get_object_or_404(Team, id=payload.team2_id)
                 real_question.team2 = team2
+            if payload.conference_matchup is not None:
+                real_question.conference_matchup = payload.conference_matchup
 
         elif question_type == "InSeasonTournamentQuestion":
             if payload.prediction_type is not None:

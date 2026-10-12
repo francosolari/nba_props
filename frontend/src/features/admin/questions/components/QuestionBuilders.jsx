@@ -1,11 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Layers } from 'lucide-react';
 import SuperlativeForm from './SuperlativeForm';
 import PropForm from './PropForm';
 import PlayerStatForm from './PlayerStatForm';
 import HeadToHeadForm from './HeadToHeadForm';
 import ISTForm from './ISTForm';
 import NBAFinalsForm from './NBAFinalsForm';
+import { QUESTION_TYPES } from '../questionTypes';
 
+const LAST_TYPE_KEY = 'admin.composer.type';
+
+const readLastType = () => {
+  try {
+    const saved = window.localStorage.getItem(LAST_TYPE_KEY);
+    return QUESTION_TYPES.some((type) => type.value === saved) ? saved : 'superlative';
+  } catch {
+    return 'superlative';
+  }
+};
+
+// One composer instead of six stacked forms: pick a type, fill one form.
+// Each form keeps its own draft in AdminPanel state, so switching types
+// never loses what was typed.
 const QuestionBuilders = ({
   onLaunchBatchWizard,
   forms,
@@ -19,99 +35,116 @@ const QuestionBuilders = ({
   handleMutation,
   classes,
   themeStyles,
-}) => (
-  <section id="builders" className="space-y-8">
-    <div className={classes.batchCardClass}>
-      <div>
-        <h2 className={classes.headingClass}>Launch batch creator</h2>
-        <p className={classes.subheadingClass}>
-          Draft multiple questions with a guided flow. Perfect when seeding a new season.
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onLaunchBatchWizard}
-        className={`${classes.primaryButtonClass} md:w-auto`}
-      >
-        Batch create questions
-      </button>
-    </div>
+}) => {
+  const [activeType, setActiveType] = useState(readLastType);
 
-    <div className="grid gap-8 lg:grid-cols-2">
-      <SuperlativeForm
-        form={forms.superForm}
-        setForm={setters.setSuperForm}
-        awardOptions={options.awardOptions}
-        defaultPointValue={defaultPointValue}
-        activeSeason={activeSeason}
-        ensureSeasonSelected={ensureSeasonSelected}
-        setError={setError}
-        handleMutation={handleMutation}
-        createSuperlative={mutations.createSuperlative}
-        classes={classes}
-        themeStyles={themeStyles}
-      />
-      <PropForm
-        form={forms.propForm}
-        setForm={setters.setPropForm}
-        playerOptions={options.playerOptions}
-        defaultPointValue={defaultPointValue}
-        activeSeason={activeSeason}
-        ensureSeasonSelected={ensureSeasonSelected}
-        handleMutation={handleMutation}
-        createProp={mutations.createProp}
-        classes={classes}
-        themeStyles={themeStyles}
-      />
-      <PlayerStatForm
-        form={forms.playerStatForm}
-        setForm={setters.setPlayerStatForm}
-        defaultPointValue={defaultPointValue}
-        activeSeason={activeSeason}
-        ensureSeasonSelected={ensureSeasonSelected}
-        setError={setError}
-        handleMutation={handleMutation}
-        createPlayerStat={mutations.createPlayerStat}
-        classes={classes}
-        themeStyles={themeStyles}
-      />
-      <HeadToHeadForm
-        form={forms.headToHeadForm}
-        setForm={setters.setHeadToHeadForm}
-        teamOptions={options.teamOptions}
-        defaultPointValue={defaultPointValue}
-        activeSeason={activeSeason}
-        ensureSeasonSelected={ensureSeasonSelected}
-        setError={setError}
-        handleMutation={handleMutation}
-        createHeadToHead={mutations.createHeadToHead}
-        classes={classes}
-        themeStyles={themeStyles}
-      />
-      <ISTForm
-        form={forms.istForm}
-        setForm={setters.setIstForm}
-        defaultPointValue={defaultPointValue}
-        activeSeason={activeSeason}
-        ensureSeasonSelected={ensureSeasonSelected}
-        handleMutation={handleMutation}
-        createIST={mutations.createIST}
-        classes={classes}
-        themeStyles={themeStyles}
-      />
-      <NBAFinalsForm
-        form={forms.nbaFinalsForm}
-        setForm={setters.setNbaFinalsForm}
-        defaultPointValue={defaultPointValue}
-        activeSeason={activeSeason}
-        ensureSeasonSelected={ensureSeasonSelected}
-        handleMutation={handleMutation}
-        createNBAFinals={mutations.createNBAFinals}
-        classes={classes}
-        themeStyles={themeStyles}
-      />
-    </div>
-  </section>
-);
+  const chooseType = (value) => {
+    setActiveType(value);
+    try {
+      window.localStorage.setItem(LAST_TYPE_KEY, value);
+    } catch {
+      // Remembering the last type is a convenience only.
+    }
+  };
+
+  const shared = {
+    defaultPointValue,
+    activeSeason,
+    ensureSeasonSelected,
+    setError,
+    handleMutation,
+    classes,
+    themeStyles,
+  };
+
+  const renderForm = () => {
+    switch (activeType) {
+      case 'prop':
+        return (
+          <PropForm
+            {...shared}
+            form={forms.propForm}
+            setForm={setters.setPropForm}
+            playerOptions={options.playerOptions}
+            createProp={mutations.createProp}
+          />
+        );
+      case 'player_stat':
+        return (
+          <PlayerStatForm
+            {...shared}
+            form={forms.playerStatForm}
+            setForm={setters.setPlayerStatForm}
+            createPlayerStat={mutations.createPlayerStat}
+          />
+        );
+      case 'head_to_head':
+        return (
+          <HeadToHeadForm
+            {...shared}
+            form={forms.headToHeadForm}
+            setForm={setters.setHeadToHeadForm}
+            teamOptions={options.teamOptions}
+            createHeadToHead={mutations.createHeadToHead}
+          />
+        );
+      case 'ist':
+        return (
+          <ISTForm
+            {...shared}
+            form={forms.istForm}
+            setForm={setters.setIstForm}
+            createIST={mutations.createIST}
+          />
+        );
+      case 'nba_finals':
+        return (
+          <NBAFinalsForm
+            {...shared}
+            form={forms.nbaFinalsForm}
+            setForm={setters.setNbaFinalsForm}
+            createNBAFinals={mutations.createNBAFinals}
+          />
+        );
+      default:
+        return (
+          <SuperlativeForm
+            {...shared}
+            form={forms.superForm}
+            setForm={setters.setSuperForm}
+            awardOptions={options.awardOptions}
+            createSuperlative={mutations.createSuperlative}
+          />
+        );
+    }
+  };
+
+  return (
+    <section id="builders" className="court-admin-composer" aria-labelledby="composer-title">
+      <header className="court-admin-composer__head">
+        <h2 id="composer-title">New question</h2>
+        <button type="button" onClick={onLaunchBatchWizard} className="court-admin-chip-btn">
+          <Layers aria-hidden="true" className="h-4 w-4" />
+          Batch create
+        </button>
+      </header>
+      <div className="court-admin-type-picker" role="radiogroup" aria-label="Question type">
+        {QUESTION_TYPES.map((type) => (
+          <button
+            key={type.value}
+            type="button"
+            role="radio"
+            aria-checked={activeType === type.value}
+            onClick={() => chooseType(type.value)}
+            className={activeType === type.value ? 'is-active' : ''}
+          >
+            {type.label}
+          </button>
+        ))}
+      </div>
+      <div className="court-admin-composer__form">{renderForm()}</div>
+    </section>
+  );
+};
 
 export default QuestionBuilders;

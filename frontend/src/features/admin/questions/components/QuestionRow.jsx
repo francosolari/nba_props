@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { ADMIN_STYLES } from '../adminPanelStyles';
+import { questionTypeLabel } from '../questionTypes';
 import QuestionEditFields from './QuestionEditFields';
 
 const QuestionRow = ({
@@ -8,15 +10,14 @@ const QuestionRow = ({
   onDelete,
   themeStyles = ADMIN_STYLES,
   inputClass,
+  primaryButtonClass,
   secondaryButtonClass,
-  dangerButtonClass,
-  chipClass,
-  mutedTextClass,
   awardOptions,
   playerOptions,
   teamOptions,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const getInitialDraft = useCallback(() => {
     const initial = { ...question };
@@ -90,6 +91,7 @@ const QuestionRow = ({
         specificPayload = {
           team1_id: draft.team1 ? Number(draft.team1) : Number(draft.team1_id),
           team2_id: draft.team2 ? Number(draft.team2) : Number(draft.team2_id),
+          conference_matchup: Boolean(draft.conference_matchup),
         };
         break;
       case "ist":
@@ -106,9 +108,17 @@ const QuestionRow = ({
         break;
     }
 
-    await onUpdate({ ...basePayload, ...specificPayload });
+    const saved = await onUpdate({ ...basePayload, ...specificPayload });
     setBusy(false);
-    setIsEditing(false);
+    // A failed save keeps the editor open with the draft intact.
+    if (saved !== false) setIsEditing(false);
+  };
+
+  const handleDelete = async () => {
+    setBusy(true);
+    const deleted = await onDelete();
+    setBusy(false);
+    if (deleted === false) setConfirmingDelete(false);
   };
 
   const handleCancel = () => {
@@ -116,99 +126,125 @@ const QuestionRow = ({
     setDraft(getInitialDraft());
   };
 
-  const bodyTextClass = `text-sm leading-relaxed ${themeStyles.textSecondary}`;
-  const metaTextClass = `text-xs ${themeStyles.muted}`;
+  const hasCustomScoring =
+    question.answer_point_values && Object.keys(question.answer_point_values).length > 0;
 
   return (
-    <div className="flex flex-col gap-4 px-8 py-6 md:flex-row md:items-start md:justify-between">
-      <div className="flex-1 space-y-3">
-        <div className={`flex items-center gap-3 text-xs uppercase tracking-[0.3em] ${themeStyles.subtle}`}>
-          <span className={chipClass || "court-admin-badge court-admin-badge--neutral"}>
-            {question.question_type}
-          </span>
-          <span className={mutedTextClass || metaTextClass}>ID #{question.id}</span>
-        </div>
-        {isEditing ? (
-          <textarea
-            value={draft.text}
-            onChange={(e) => setDraft((prev) => ({ ...prev, text: e.target.value }))}
-            className={`${inputClass} w-full`}
-            rows={3}
-          />
-        ) : (
-          <p className={bodyTextClass}>{question.text}</p>
-        )}
-        <div className={`flex flex-wrap gap-3 text-xs ${themeStyles.muted}`}>
-          <span>Points: {question.point_value}</span>
-          {question.answer_point_values && Object.keys(question.answer_point_values).length > 0 && (
-            <span>Custom scoring enabled</span>
-          )}
-          <span>Updated: {new Date(question.last_updated).toLocaleString()}</span>
-        </div>
+    <li
+      className={`court-admin-qrow${isEditing ? " is-editing" : ""}`}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && isEditing) handleCancel();
+      }}
+    >
+      <div className="court-admin-qrow__meta">
+        <span className="court-admin-badge court-admin-badge--neutral">
+          {questionTypeLabel(question.question_type)}
+        </span>
+        <span>#{question.id}</span>
+        <span>{question.point_value} pt{Number(question.point_value) === 1 ? "" : "s"}</span>
+        {hasCustomScoring && <span>Custom scoring</span>}
       </div>
-      <div className="flex w-full max-w-xs flex-col gap-3">
-        {isEditing && (
-          <div className="space-y-4">
-            <label className={`text-xs ${themeStyles.subtle}`}>
-              Point value
-              <input
-                type="number"
-                value={draft.point_value}
-                min="0"
-                step="0.5"
-                onChange={(e) => setDraft((prev) => ({ ...prev, point_value: e.target.value }))}
-                className={`${inputClass} mt-2 w-full`}
-              />
-            </label>
-            <label className={`text-xs ${themeStyles.subtle}`}>
-              Answer point values JSON
+
+      {isEditing ? (
+        <div className="court-admin-qrow__editor">
+          <label className="court-admin-field">
+            Question
+            <textarea
+              value={draft.text}
+              onChange={(e) => setDraft((prev) => ({ ...prev, text: e.target.value }))}
+              className={`${inputClass} h-auto py-3`}
+              rows={3}
+              autoFocus
+            />
+          </label>
+          <label className="court-admin-field court-admin-field--narrow">
+            Points
+            <input
+              type="number"
+              inputMode="decimal"
+              value={draft.point_value}
+              min="0"
+              step="0.5"
+              onChange={(e) => setDraft((prev) => ({ ...prev, point_value: e.target.value }))}
+              className={inputClass}
+            />
+          </label>
+          <QuestionEditFields
+            questionType={question.question_type}
+            draft={draft}
+            setDraft={setDraft}
+            awardOptions={awardOptions}
+            playerOptions={playerOptions}
+            teamOptions={teamOptions}
+            inputClass={inputClass}
+            themeStyles={themeStyles}
+          />
+          <details className="court-admin-disclosure" open={hasCustomScoring || Boolean(saveError)}>
+            <summary>Custom answer points</summary>
+            <label className="court-admin-field">
+              <span className={themeStyles.subtle}>
+                JSON of answer to points. Matching answers earn these points instead of the default.
+              </span>
               <textarea
                 value={draft.answer_point_values_json || "{}"}
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, answer_point_values_json: e.target.value }))
                 }
-                className={`${inputClass} mt-2 w-full font-mono text-xs`}
+                className={`${inputClass} h-auto py-3 font-mono text-xs`}
                 rows={4}
                 placeholder='{"No": 1, "Runner Up": 2.5}'
               />
             </label>
-            {saveError && <p className="text-xs text-[var(--court-danger)]">{saveError}</p>}
-            <QuestionEditFields
-              questionType={question.question_type}
-              draft={draft}
-              setDraft={setDraft}
-              awardOptions={awardOptions}
-              playerOptions={playerOptions}
-              teamOptions={teamOptions}
-              inputClass={inputClass}
-              themeStyles={themeStyles}
-            />
+          </details>
+          {saveError && <p className="text-sm text-[var(--court-danger)]" role="alert">{saveError}</p>}
+          <div className="court-admin-qrow__actions">
+            <button type="button" onClick={handleSave} disabled={busy} className={primaryButtonClass}>
+              {busy ? "Saving…" : "Save"}
+            </button>
+            <button type="button" onClick={handleCancel} disabled={busy} className={secondaryButtonClass}>
+              Cancel
+            </button>
           </div>
-        )}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
-            disabled={busy}
-            className={`${secondaryButtonClass} flex-1`}
-          >
-            {isEditing ? (busy ? "Saving…" : "Save") : "Edit"}
-          </button>
-          <button type="button" onClick={onDelete} disabled={busy} className={dangerButtonClass}>
-            Delete
-          </button>
         </div>
-        {isEditing && (
-          <button
-            type="button"
-            onClick={handleCancel}
-            className={`text-xs ${themeStyles.subtle} transition hover:opacity-80`}
-          >
-            Cancel
-          </button>
-        )}
-      </div>
-    </div>
+      ) : (
+        <>
+          <p className="court-admin-qrow__text">{question.text}</p>
+          {confirmingDelete ? (
+            <div className="court-admin-qrow__actions court-admin-qrow__confirm" role="group" aria-label="Confirm delete">
+              <span>Delete this question and its answers?</span>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={busy}
+                className="court-admin-chip-btn court-admin-chip-btn--danger"
+              >
+                {busy ? "Deleting…" : "Delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={busy}
+                className="court-admin-chip-btn"
+                autoFocus
+              >
+                Keep
+              </button>
+            </div>
+          ) : (
+            <div className="court-admin-qrow__actions">
+              <button type="button" onClick={() => setIsEditing(true)} className="court-admin-chip-btn court-admin-chip-btn--blue">
+                <Pencil aria-hidden="true" className="h-4 w-4" />
+                Edit
+              </button>
+              <button type="button" onClick={() => setConfirmingDelete(true)} className="court-admin-chip-btn" aria-label={`Delete question #${question.id}`}>
+                <Trash2 aria-hidden="true" className="h-4 w-4" />
+                Delete
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </li>
   );
 };
 

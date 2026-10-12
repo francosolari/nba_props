@@ -150,22 +150,14 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
 
   return (
     <div className="court-admin-content">
-      <div className="mb-6">
-        <h1 className="text-3xl mb-2">Admin Grading Panel</h1>
-        <p className="text-[var(--court-steel)]">
-          {activeTab === 'grading' ? 'Set correct answers for questions and run grading' : 'Review user submissions and manually grade answers'}
-          {' '}&bull; {questionsData?.season_year || auditData?.season_year || selectedSeason}
-        </p>
-      </div>
-
-      <div className="court-profile-tabs mb-6" style={{ maxWidth: 420 }}>
+      <div className="court-profile-tabs mb-4" style={{ maxWidth: 420 }}>
         <button type="button" onClick={() => setActiveTab('grading')} className={activeTab === 'grading' ? 'is-active' : ''}>
           <ClipboardList aria-hidden="true" className="w-4 h-4" />
-          <span>Question Grading</span>
+          <span>Set answers</span>
         </button>
         <button type="button" onClick={() => setActiveTab('audit')} className={activeTab === 'audit' ? 'is-active' : ''}>
           <ShieldCheck aria-hidden="true" className="w-4 h-4" />
-          <span>Results Audit</span>
+          <span>Audit users</span>
         </button>
       </div>
 
@@ -194,6 +186,7 @@ const AdminGradingPanel = ({ seasonSlug = 'current' }) => {
           questionsData={questionsData}
           selectedSeason={selectedSeason}
           expandedQuestionCategories={expandedQuestionCategories}
+          setExpandedQuestionCategories={setExpandedQuestionCategories}
           onToggleCategory={toggleQuestionCategory}
           editor={editor}
           playerOptions={playerOptions}

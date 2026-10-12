@@ -35,13 +35,15 @@ const PropForm = ({
               : undefined,
         },
         "Prop question created.",
-      );
-      setForm({
-        text: "",
-        pointValue: defaultPointValue,
-        outcomeType: "over_under",
-        line: "",
-        relatedPlayerId: null,
+      ).then((created) => {
+        // Keep the draft when the save fails so nothing typed is lost.
+        if (created) setForm({
+          text: "",
+          pointValue: defaultPointValue,
+          outcomeType: "over_under",
+          line: "",
+          relatedPlayerId: null,
+        });
       });
     }}
     themeStyles={themeStyles}

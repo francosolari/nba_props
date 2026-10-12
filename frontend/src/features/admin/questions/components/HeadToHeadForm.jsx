@@ -34,10 +34,13 @@ const HeadToHeadForm = ({
           point_value: Number(form.pointValue || defaultPointValue),
           team1_id: Number(form.team1Id),
           team2_id: Number(form.team2Id),
+          conference_matchup: Boolean(form.conferenceMatchup),
         },
         "Head-to-head question created.",
-      );
-      setForm({ text: "", pointValue: defaultPointValue, team1Id: null, team2Id: null });
+      ).then((created) => {
+        // Keep the draft when the save fails so nothing typed is lost.
+        if (created) setForm({ text: "", pointValue: defaultPointValue, team1Id: null, team2Id: null, conferenceMatchup: false });
+      });
     }}
     themeStyles={themeStyles}
     primaryButtonClass={classes.primaryButtonClass}
@@ -76,6 +79,15 @@ const HeadToHeadForm = ({
       isClearable
       mode={themeStyles.mode}
     />
+    <label className={`mt-2 flex items-center gap-3 text-sm ${themeStyles.textSecondary}`}>
+      <input
+        type="checkbox"
+        checked={Boolean(form.conferenceMatchup)}
+        onChange={(e) => setForm((prev) => ({ ...prev, conferenceMatchup: e.target.checked }))}
+        className={classes.checkboxClass}
+      />
+      Conference matchup (show each team's conference, e.g. Eastern vs Western)
+    </label>
   </GlassFormCard>
 );
 

@@ -51,7 +51,7 @@ const GradingControls = ({
 
   return (
     <div className="court-admin-section mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="court-admin-grading-controls">
         <div>
           <label className="court-admin-label block mb-2">Season</label>
           <CourtSelect label="Season" showLabel={false} value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)}>
@@ -119,18 +119,20 @@ const GradingControls = ({
         </div>
       )}
 
-      <div className="mt-4 pt-4 border-t border-[var(--court-rule-soft)]">
-        <div className="flex items-center justify-between mb-3 gap-3">
-          <p className="text-xs text-[var(--court-steel)]">
-            <strong className="text-[var(--court-ink)]">Management Commands</strong> (LOCAL ONLY &mdash; will fail if NBA API blocked)
-          </p>
+      <details className="court-admin-disclosure mt-4" open={runGradingMutation.isPending || undefined}>
+        <summary>
+          Data &amp; grading commands
           {runGradingMutation.isPending && (
-            <div className="flex items-center gap-2 text-xs text-[var(--court-blue)]">
-              <RefreshCw className="w-3 h-3 animate-spin" />
-              Running command...
-            </div>
+            <span className="ml-auto flex items-center gap-2 text-xs normal-case tracking-normal text-[var(--court-blue)]" role="status">
+              <RefreshCw aria-hidden="true" className="w-3 h-3 animate-spin" />
+              Running…
+            </span>
           )}
-        </div>
+        </summary>
+        <div>
+        <p className="mb-3 text-xs text-[var(--court-steel)]">
+          These call the NBA API, which production may block. If one fails, run it locally.
+        </p>
 
         <div className="mb-3">
           <p className="text-xs mb-2 text-[var(--court-steel)]">Update Data:</p>
@@ -191,7 +193,8 @@ const GradingControls = ({
             ))}
           </div>
         </div>
-      </div>
+        </div>
+      </details>
     </div>
   );
 };

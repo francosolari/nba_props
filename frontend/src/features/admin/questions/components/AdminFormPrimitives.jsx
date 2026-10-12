@@ -38,19 +38,18 @@ export const GlassFormCard = ({
   themeStyles = ADMIN_STYLES,
   primaryButtonClass,
 }) => (
-  <form onSubmit={onSubmit} className={`${themeStyles.glassCard} p-6`}>
-    <div className="mb-4">
-      <h3 className={`text-lg font-semibold tracking-wide ${themeStyles.heading}`}>
-        {title}
-      </h3>
-      <p className={`mt-1 text-sm ${themeStyles.subtle}`}>{subtitle}</p>
-    </div>
+  // Lives inside the composer sheet, so no frame of its own; the type picker
+  // above already names the form.
+  <form onSubmit={onSubmit} aria-label={title}>
+    <p className={`mb-4 text-sm ${themeStyles.subtle}`}>{subtitle}</p>
     <div className="space-y-4">{children}</div>
-    <div className="mt-6 flex justify-end">
-      <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
-        {isSubmitting ? "Saving…" : "Create question"}
-      </button>
-    </div>
+    <button
+      type="submit"
+      disabled={isSubmitting}
+      className={`${primaryButtonClass} mt-6 w-full`}
+    >
+      {isSubmitting ? "Saving…" : "Create question"}
+    </button>
   </form>
 );
 

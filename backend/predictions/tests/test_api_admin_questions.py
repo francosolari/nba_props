@@ -485,6 +485,22 @@ class TestUpdateQuestion:
         real_question = question.get_real_instance()
         assert real_question.line == Decimal('27.0')
 
+    def test_update_head_to_head_conference_matchup(self, admin_client):
+        """Test admin can flag a head-to-head as a conference matchup."""
+        client, admin = admin_client
+        question = HeadToHeadQuestionFactory(season=SeasonFactory(slug='24-25'))
+
+        response = client.put(
+            f'/api/v2/admin/questions/{question.id}',
+            data=json.dumps({"conference_matchup": True}),
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        assert response.json()['question']['conference_matchup'] is True
+        question.refresh_from_db()
+        assert question.conference_matchup is True
+
     def test_update_question_permission_required(self, regular_user_client):
         """Test non-admin cannot update question."""
         client, user = regular_user_client

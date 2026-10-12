@@ -35,8 +35,10 @@ const PlayerStatForm = ({
           fixed_value: form.fixedValue !== "" ? Number(form.fixedValue) : undefined,
         },
         "Player stat question created.",
-      );
-      setForm({ text: "", pointValue: defaultPointValue, playerStatId: "", statType: "", fixedValue: "" });
+      ).then((created) => {
+        // Keep the draft when the save fails so nothing typed is lost.
+        if (created) setForm({ text: "", pointValue: defaultPointValue, playerStatId: "", statType: "", fixedValue: "" });
+      });
     }}
     themeStyles={themeStyles}
     primaryButtonClass={classes.primaryButtonClass}

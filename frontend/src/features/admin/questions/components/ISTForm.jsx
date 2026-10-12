@@ -30,13 +30,15 @@ const ISTForm = ({
           is_tiebreaker: Boolean(form.predictionType === "tiebreaker" || form.isTiebreaker),
         },
         "IST question created.",
-      );
-      setForm({
-        text: "",
-        pointValue: defaultPointValue,
-        predictionType: "group_winner",
-        istGroup: "",
-        isTiebreaker: false,
+      ).then((created) => {
+        // Keep the draft when the save fails so nothing typed is lost.
+        if (created) setForm({
+          text: "",
+          pointValue: defaultPointValue,
+          predictionType: "group_winner",
+          istGroup: "",
+          isTiebreaker: false,
+        });
       });
     }}
     themeStyles={themeStyles}
