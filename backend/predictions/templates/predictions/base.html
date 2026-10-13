@@ -179,5 +179,9 @@
             }
         };
     </script>
+    {% if cf_web_analytics_token %}
+    <!-- Cloudflare Web Analytics: cookieless page-view counts -->
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ cf_web_analytics_token }}"}'></script>
+    {% endif %}
 </body>
 </html>

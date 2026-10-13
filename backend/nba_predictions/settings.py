@@ -146,6 +146,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'predictions.context_processors.current_season',
+                'predictions.context_processors.web_analytics',
             ],
         },
     },
@@ -280,6 +281,12 @@ SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
 # If not provided, test keys will be used (always pass validation)
 CF_TURNSTILE_SITE_KEY = os.getenv('CF_TURNSTILE_SITE_KEY', '')
 CF_TURNSTILE_SECRET_KEY = os.getenv('CF_TURNSTILE_SECRET_KEY', '')
+
+# Cloudflare Web Analytics: cookieless visit counts, so no cookie banner is needed.
+# The token is public (it ships in every page), so it lives here rather than in deploy secrets.
+# Get it from dash.cloudflare.com > Analytics & Logs > Web Analytics > Add a site (manual JS snippet).
+# Empty = no beacon; it never loads in development.
+CF_WEB_ANALYTICS_TOKEN = os.getenv('CF_WEB_ANALYTICS_TOKEN', '')
 
 # Stripe Payment Configuration
 # Get keys from: https://dashboard.stripe.com/test/apikeys
