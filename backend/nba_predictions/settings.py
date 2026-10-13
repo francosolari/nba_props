@@ -286,7 +286,7 @@ CF_TURNSTILE_SECRET_KEY = os.getenv('CF_TURNSTILE_SECRET_KEY', '')
 # The token is public (it ships in every page), so it lives here rather than in deploy secrets.
 # Get it from dash.cloudflare.com > Analytics & Logs > Web Analytics > Add a site (manual JS snippet).
 # Empty = no beacon; it never loads in development.
-CF_WEB_ANALYTICS_TOKEN = os.getenv('CF_WEB_ANALYTICS_TOKEN', '')
+CF_WEB_ANALYTICS_TOKEN = os.getenv('CF_WEB_ANALYTICS_TOKEN', 'ededfb47eef64cad9f748dee388bb6c8')
 
 # Stripe Payment Configuration
 # Get keys from: https://dashboard.stripe.com/test/apikeys
