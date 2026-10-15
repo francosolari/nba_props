@@ -80,7 +80,6 @@ def create_checkout_session(
     try:
         # Create Checkout Session
         session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
             line_items=[
                 {
                     'price_data': {
@@ -101,7 +100,8 @@ def create_checkout_session(
             client_reference_id=f"{user.id}:{season.slug}",
             metadata=session_metadata,
             expires_at=int((datetime.now().timestamp()) + 3600),  # 1 hour from now
-            # Enable Apple Pay and Google Pay automatically where available
+            # Payment methods (card, Apple Pay, ...) come from Dashboard settings;
+            # Stripe rejects payment_method_types on Checkout Sessions now.
             payment_method_options={
                 'card': {
                     'request_three_d_secure': 'automatic',
