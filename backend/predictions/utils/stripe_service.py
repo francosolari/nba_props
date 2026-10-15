@@ -139,19 +139,22 @@ def retrieve_checkout_session(session_id: str) -> Dict[str, Any]:
     initialize_stripe()
 
     try:
-        session = stripe.checkout.Session.retrieve(session_id)
+        # Plain dicts: StripeObject is neither a dict nor JSON-serializable since
+        # stripe-python 14, and this result is saved to Payment.stripe_payload.
+        session = stripe.checkout.Session.retrieve(session_id).to_dict()
+        customer_details = session.get('customer_details') or {}
 
         return {
-            'session_id': session.id,
-            'payment_intent': session.payment_intent,
-            'payment_status': session.payment_status,
-            'status': session.status,
-            'customer_email': session.customer_details.email if session.customer_details else None,
-            'amount_total': session.amount_total / 100 if session.amount_total else 0,  # Convert cents to dollars
-            'currency': session.currency,
-            'metadata': session.metadata,
-            'created': session.created,
-            'expires_at': session.expires_at,
+            'session_id': session['id'],
+            'payment_intent': session.get('payment_intent'),
+            'payment_status': session.get('payment_status'),
+            'status': session.get('status'),
+            'customer_email': customer_details.get('email'),
+            'amount_total': session['amount_total'] / 100 if session.get('amount_total') else 0,  # Convert cents to dollars
+            'currency': session.get('currency'),
+            'metadata': session.get('metadata') or {},
+            'created': session.get('created'),
+            'expires_at': session.get('expires_at'),
         }
 
     except StripeError as e:
@@ -179,7 +182,8 @@ def verify_webhook_signature(payload: bytes, sig_header: str) -> Dict[str, Any]:
         event = stripe.Webhook.construct_event(
             payload, sig_header, webhook_secret
         )
-        return event
+        # Handlers call .get() and store the payload as JSON; StripeObject supports neither.
+        return event.to_dict()
 
     except ValueError as e:
         logger.error(f"Invalid webhook payload: {str(e)}")

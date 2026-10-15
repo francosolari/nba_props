@@ -72,7 +72,7 @@ cryptography==46.0.2
 sendgrid==6.11.0
 django-cf-turnstile==0.1.0
 disposable-email-domains==0.0.106
-stripe>=8.0.0
+stripe==16.0.0
 # Testing dependencies
 pytest>=7.4.0
 pytest-django>=4.5.2
