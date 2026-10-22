@@ -50,3 +50,19 @@ export const getInitials = (name) => {
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   return name.slice(0, 2).toUpperCase();
 };
+
+// Groups within the props section, in board order. The API tags each
+// prediction with one as `kind`.
+export const PROP_KINDS = ['Over/Under', 'Yes/No', 'Head-to-head', 'Finals', 'Other'];
+
+// The questions a table shows: only `kind` when one is picked, otherwise all of
+// them grouped by kind so related calls sit side by side.
+export const orderQuestions = (questions, kind = 'all') => {
+  const rank = (q) => {
+    const i = PROP_KINDS.indexOf(q.kind);
+    return i === -1 ? PROP_KINDS.length : i;
+  };
+  return questions
+    .filter((q) => kind === 'all' || q.kind === kind)
+    .sort((a, b) => rank(a) - rank(b) || a.text.localeCompare(b.text));
+};

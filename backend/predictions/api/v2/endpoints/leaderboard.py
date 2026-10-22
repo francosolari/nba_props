@@ -65,6 +65,21 @@ CATEGORY_RULES: List[CategoryRule] = [
 ]
 
 
+# Groups within "Props & Yes/No", so the board can filter a long row of calls.
+QUESTION_KINDS = {
+    "headtoheadquestion": "Head-to-head",
+    "nbafinalspredictionquestion": "Finals",
+}
+
+
+def _question_kind(ans: Answer, prop_question_data: Dict[int, Dict]) -> str:
+    model = ans.question.polymorphic_ctype.model if ans.question.polymorphic_ctype_id else None
+    if model == "propquestion":
+        outcome = prop_question_data.get(ans.question_id, {}).get("outcome_type")
+        return "Yes/No" if outcome == "yes_no" else "Over/Under"
+    return QUESTION_KINDS.get(model, "Other")
+
+
 def _resolve_category(obj: Union[Answer, StandingPrediction]) -> Optional[str]:
     for rule in CATEGORY_RULES:
         if rule.predicate(obj):
@@ -290,7 +305,6 @@ def _compute_leaderboard(season_slug: str) -> List[Dict]:
     # board needs both so a What-If scenario knows who it is displacing.
     superlative_meta: Dict[int, Dict] = {
         q.id: {
-            "is_finalized": q.is_finalized,
             "leader": q.current_leader.name if q.current_leader_id else None,
             "runner_up": q.current_runner_up.name if q.current_runner_up_id else None,
         }
@@ -346,15 +360,15 @@ def _compute_leaderboard(season_slug: str) -> List[Dict]:
             # question rather than leaving it to be inferred from whoever happened
             # to pick it — which is impossible when nobody did.
             "correct_answer": ans.question.correct_answer or None,
-            # Superlatives carry a real finalization flag: until an award is
-            # awarded, `correct_answer` is only the current odds leader, so the
-            # points it scores are provisional. Question types without the flag
-            # report None — unknown, never a promise that the result is settled.
-            "is_finalized": superlative_meta.get(ans.question_id, {}).get("is_finalized"),
-            # `is_finalized` stays a faithful report of the award itself. Whether
-            # the points can still move is the separate question the board asks,
-            # and a finished season settles it for everything.
-            "is_locked": season_over or superlative_meta.get(ans.question_id, {}).get("is_finalized") is True,
+            # Until an admin finalizes a question, `correct_answer` may be
+            # provisional (an award's odds leader, a stat leader so far), so
+            # the points it scores can still move.
+            "is_finalized": ans.question.is_finalized,
+            # `is_finalized` stays a faithful report of the question itself.
+            # Whether the points can still move is the separate question the
+            # board asks, and a finished season settles it for everything.
+            "is_locked": season_over or ans.question.is_finalized,
+            "kind": _question_kind(ans, prop_question_data),
         }
         if ans.question_id in superlative_meta:
             meta = superlative_meta[ans.question_id]

@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Lock, Pin, GripVertical, X } from 'lucide-react';
-import { standingPoints, fromSectionKey, extractLineValue, isLockedPrediction } from '../utils/helpers';
+import { standingPoints, fromSectionKey, extractLineValue, isLockedPrediction, orderQuestions } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 import PlayerHeadshot from '../../../components/PlayerHeadshot';
 import usePlayerHeadshots from '../hooks/usePlayerHeadshots';
@@ -61,6 +61,7 @@ const settlementState = (prediction, simulating) => {
 export const LeaderboardTableDesktop = ({
   section,
   sortBy,
+  propKind = 'all',
   displayedUsers,
   pinnedUserIds,
   togglePin,
@@ -200,12 +201,13 @@ export const LeaderboardTableDesktop = ({
             runner_up_answer: p.runner_up_answer,
             line: p.line,
             outcome_type: p.outcome_type,
+            kind: p.kind,
           });
         }
       });
     });
-    return Array.from(qMap.values()).sort((a, b) => a.text.localeCompare(b.text));
-  }, [isStandingsSection, leaderboardData, nonStandingsCategoryKey]);
+    return orderQuestions(Array.from(qMap.values()), propKind);
+  }, [isStandingsSection, leaderboardData, nonStandingsCategoryKey, propKind]);
 
   const isAwardsSection = section === 'awards';
   const headshotsByName = usePlayerHeadshots(isAwardsSection);

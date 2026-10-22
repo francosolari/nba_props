@@ -108,8 +108,10 @@ from predictions.tests.factories import (  # noqa: E402
     AnswerFactory,
     CurrentSeasonFactory,
     EasternTeamFactory,
+    HeadToHeadQuestionFactory,
     PastSeasonFactory,
     PlayerFactory,
+    PropQuestionFactory,
     StandingPredictionFactory,
     SuperlativeQuestionFactory,
     UserFactory,
@@ -164,6 +166,28 @@ class TestAwardPayload:
         prediction = award_predictions(_build_leaderboard(season.slug))[0]
         assert prediction['is_finalized'] is True
         assert prediction['is_locked'] is True
+
+
+def prop_predictions(rows):
+    return {p['question']: p for p in rows[0]['categories']['Props & Yes/No']['predictions']}
+
+
+@pytest.mark.django_db
+class TestPropPayload:
+    def test_props_lock_when_finalized_and_carry_their_group(self):
+        season = CurrentSeasonFactory(slug='lock-3', year='lock-3')
+        user = UserFactory()
+        over = PropQuestionFactory(season=season, text='Over', outcome_type='over_under', line=10.5,
+                                   correct_answer='Over', is_finalized=True)
+        yes = PropQuestionFactory(season=season, text='Yes', outcome_type='yes_no')
+        h2h = HeadToHeadQuestionFactory(season=season, text='H2H')
+        for question, answer in ((over, 'Over'), (yes, 'Yes'), (h2h, str(h2h.team1_id))):
+            AnswerFactory(user=user, question=question, answer=answer, points_earned=0)
+
+        predictions = prop_predictions(_build_leaderboard(season.slug))
+        assert predictions['Over']['is_locked'] is True
+        assert predictions['Yes']['is_locked'] is False
+        assert [predictions[t]['kind'] for t in ('Over', 'Yes', 'H2H')] == ['Over/Under', 'Yes/No', 'Head-to-head']
 
 
 @pytest.mark.django_db

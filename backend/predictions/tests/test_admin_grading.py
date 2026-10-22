@@ -753,7 +753,7 @@ class TestFinalizeQuestionEndpoint:
         assert question.correct_answer == 'Bench Star'
 
     def test_finalize_non_superlative_question(self, admin_client, current_season):
-        """Non-superlative questions do not toggle finalized flag."""
+        """Props can be finalized too, and update-question can reopen them."""
         question = PropQuestionFactory(season=current_season, correct_answer='Yes', point_value=3)
 
         response = admin_client.post(
@@ -763,7 +763,18 @@ class TestFinalizeQuestionEndpoint:
 
         assert response.status_code in [200, 201]
         question.refresh_from_db()
-        assert getattr(question, 'is_finalized', False) is False
+        assert question.is_finalized is True
+
+        response = admin_client.post(
+            '/api/v2/admin/grading/update-question',
+            data={'question_id': question.id, 'is_finalized': False},
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        question.refresh_from_db()
+        assert question.is_finalized is False
+        assert question.correct_answer == 'Yes'
 
 
 # ============================================================================

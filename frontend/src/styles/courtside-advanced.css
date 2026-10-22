@@ -1242,6 +1242,18 @@
   background: var(--court-red);
 }
 
+/* Prop groups: more tabs than fit a phone, so the row scrolls sideways. */
+.court-adv-switch--kinds {
+  position: static;
+  overflow-x: auto;
+}
+
+.court-adv-switch--kinds button {
+  flex: 1 0 auto;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
 .court-adv-mrow {
   display: flex;
   align-items: stretch;

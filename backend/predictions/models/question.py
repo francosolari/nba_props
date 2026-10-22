@@ -22,6 +22,9 @@ class Question(PolymorphicModel):
     # became a first-time All-Star. correct_answer keeps the first for display.
     correct_answers = models.JSONField(default=list, blank=True)
     is_manual = models.BooleanField(default=False)
+    # The result is official and can no longer move. Until then correct_answer
+    # may be provisional: an award's odds leader, or a stat leader so far.
+    is_finalized = models.BooleanField(default=False)
     last_updated = models.DateTimeField(auto_now=True)
 
     # class Meta:
@@ -85,7 +88,6 @@ class SuperlativeQuestion(Question):
     # Players hidden from the pick list, e.g. past All-Stars for "Name a
     # first-time All-Star". Filled by exclude_past_all_stars; grading ignores it.
     excluded_players = models.ManyToManyField(Player, related_name='excluded_from_superlatives', blank=True)
-    is_finalized = models.BooleanField(default=False)
 
     # Current odds-based leader (automatically updated from scraper)
     current_leader = models.ForeignKey(
