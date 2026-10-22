@@ -175,7 +175,7 @@ def prop_predictions(rows):
 @pytest.mark.django_db
 class TestPropPayload:
     def test_props_lock_when_finalized_and_carry_their_group(self):
-        season = CurrentSeasonFactory(slug='lock-props', year='lock-props')
+        season = CurrentSeasonFactory(slug='lock-3', year='lock-3')
         user = UserFactory()
         over = PropQuestionFactory(season=season, text='Over', outcome_type='over_under', line=10.5,
                                    correct_answer='Over', is_finalized=True)
