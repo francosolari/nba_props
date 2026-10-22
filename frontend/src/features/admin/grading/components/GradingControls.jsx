@@ -13,6 +13,7 @@ import {
 const COMMAND_LABELS = {
   update_season_standings: 'Update Season Standings',
   scrape_award_odds: 'Scrape Award Odds',
+  update_player_stat_answers: 'Update Player Stat Answers',
   grade_props_answers: 'Grade Props Answers',
   grade_standing_predictions: 'Grade Standing Predictions',
   grade_ist_predictions: 'Grade IST Predictions',
@@ -167,6 +168,16 @@ const GradingControls = ({
             >
               <Target className="w-3.5 h-3.5" />
               Scrape Award Odds
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRunCommand('update_player_stat_answers')}
+              disabled={runGradingMutation.isPending}
+              className="court-admin-chip-btn court-admin-chip-btn--success"
+              title="Set current answers for player props and player head-to-heads; run Grade Props after"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Update Player Stats
             </button>
           </div>
         </div>
