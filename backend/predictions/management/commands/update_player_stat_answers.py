@@ -153,7 +153,7 @@ class Command(BaseCommand):
             return totals_from_games(games) if games else None
 
         changes = []
-        for q in PropQuestion.objects.filter(season=season, outcome_type='over_under').exclude(stat='').select_related('related_player'):
+        for q in PropQuestion.objects.filter(season=season, outcome_type='over_under', is_finalized=False).exclude(stat='').select_related('related_player'):
             opponent = opponent_abbreviation(q.text, nba_teams)
             if opponent:
                 row = opponent_row(q.related_player, opponent, bool(PLAYOFFS_PATTERN.search(q.text)))
@@ -169,7 +169,7 @@ class Command(BaseCommand):
             self.stdout.write(f'  prop  {q.text!r}: {value:.2f} vs {q.line} -> {answer}')
             changes.append((q, answer))
 
-        for q in HeadToHeadQuestion.objects.filter(season=season, player1__isnull=False).select_related('player1', 'player2'):
+        for q in HeadToHeadQuestion.objects.filter(season=season, player1__isnull=False, is_finalized=False).select_related('player1', 'player2'):
             column = h2h_stat_column(q.text)
             if column is None:
                 self.stdout.write(self.style.WARNING(f'  skip  {q.text!r} (no stat recognised in text)'))

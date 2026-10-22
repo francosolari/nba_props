@@ -747,7 +747,7 @@ def update_question_answer(request, payload: UpdateQuestionRequest):
     question_real.answer_point_values = answer_point_values
 
     # Update finalized status if provided
-    if payload.is_finalized is not None and isinstance(question_real, SuperlativeQuestion):
+    if payload.is_finalized is not None:
         question_real.is_finalized = payload.is_finalized
 
     question_real.save()
@@ -769,7 +769,7 @@ def update_question_answer(request, payload: UpdateQuestionRequest):
 @router.post(
     "/finalize-question/{question_id}",
     summary="Finalize Question",
-    description="Mark a SuperlativeQuestion as finalized (locks the answer)",
+    description="Mark a question as finalized (locks the answer)",
     auth=django_auth
 )
 def finalize_question(request, question_id: int, correct_answer: Optional[str] = None):
@@ -788,27 +788,15 @@ def finalize_question(request, question_id: int, correct_answer: Optional[str] =
     if correct_answer:
         question_real.correct_answer = correct_answer
 
-    # Mark as finalized if it's a SuperlativeQuestion
-    if isinstance(question_real, SuperlativeQuestion):
-        question_real.is_finalized = True
-        question_real.save()
+    question_real.is_finalized = True
+    question_real.save()
 
-        logger.info(f"Admin {request.user.username} finalized question {question_id}")
+    logger.info(f"Admin {request.user.username} finalized question {question_id}")
 
-        return {
-            'success': True,
-            'question_id': question_id,
-            'is_finalized': True,
-            'correct_answer': question_real.correct_answer,
-            'message': f"Question {question_id} has been finalized"
-        }
-    else:
-        # For other question types, just save the correct answer
-        question_real.save()
-        return {
-            'success': True,
-            'question_id': question_id,
-            'is_finalized': False,
-            'correct_answer': question_real.correct_answer,
-            'message': f"Question {question_id} updated (not a finalizable type)"
-        }
+    return {
+        'success': True,
+        'question_id': question_id,
+        'is_finalized': True,
+        'correct_answer': question_real.correct_answer,
+        'message': f"Question {question_id} has been finalized"
+    }

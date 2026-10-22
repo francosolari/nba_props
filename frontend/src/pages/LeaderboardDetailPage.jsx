@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useLeaderboard } from '../hooks';
-import { standingPoints, fromSectionKey } from '../features/leaderboard/utils/helpers';
+import { standingPoints, fromSectionKey, PROP_KINDS } from '../features/leaderboard/utils/helpers';
 
 // Components
 import { LeaderboardHeader } from '../features/leaderboard/components/LeaderboardHeader';
@@ -53,6 +53,15 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
     return Array.from(new Set([initialUserId, ...top])).filter(Boolean);
   });
   const [sortBy, setSortBy] = useState('total');
+  // Narrows the props section to one group of calls, e.g. only head-to-heads.
+  const [propKind, setPropKind] = useState('all');
+  const propKinds = useMemo(() => {
+    const present = new Set();
+    (leaderboardData || []).forEach((e) => {
+      e.user.categories?.['Props & Yes/No']?.predictions?.forEach((p) => p.kind && present.add(p.kind));
+    });
+    return PROP_KINDS.filter((kind) => present.has(kind));
+  }, [leaderboardData]);
   const [query, setQuery] = useState('');
   const [whatIfEnabled, setWhatIfEnabled] = useState(false);
   const [showWhatIfConfirm, setShowWhatIfConfirm] = useState(false);
@@ -575,8 +584,26 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
           </div>
         ) : (
           <>
+            {section === 'props' && propKinds.length > 1 && (
+              <div className="court-adv-switch court-adv-switch--kinds no-scrollbar" role="tablist" aria-label="Prop type">
+                {['all', ...propKinds].map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    role="tab"
+                    aria-selected={propKind === kind}
+                    onClick={() => setPropKind(kind)}
+                    className={propKind === kind ? 'is-active' : ''}
+                  >
+                    {kind === 'all' ? 'All' : kind}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <LeaderboardTableDesktop
               section={section}
+              propKind={section === 'props' ? propKind : 'all'}
               sortBy={sortBy}
               displayedUsers={displayedUsers}
               pinnedUserIds={pinnedUserIds}
@@ -595,6 +622,7 @@ function LeaderboardDetailPage({ seasonSlug: initialSeasonSlug = 'current' }) {
 
             <LeaderboardTableMobile
               section={section}
+              propKind={section === 'props' ? propKind : 'all'}
               displayedUsers={displayedUsers}
               pinnedUserIds={pinnedUserIds}
               togglePin={togglePin}

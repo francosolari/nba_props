@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useState, useRef, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { standingPoints, fromSectionKey, extractLineValue, isLockedPrediction } from '../utils/helpers';
+import { standingPoints, fromSectionKey, extractLineValue, isLockedPrediction, orderQuestions } from '../utils/helpers';
 import TeamLogo from '../../../components/TeamLogo';
 import PlayerHeadshot from '../../../components/PlayerHeadshot';
 import usePlayerHeadshots from '../hooks/usePlayerHeadshots';
@@ -55,6 +55,7 @@ export const LeaderboardTableMobile = ({
   requestEnableWhatIf,
   toggleWhatIfAnswer,
   sortBy,
+  propKind = 'all',
   loggedInUserId,
 }) => {
   const catKey = fromSectionKey(section);
@@ -86,11 +87,12 @@ export const LeaderboardTableMobile = ({
           runner_up_answer: prediction.runner_up_answer,
           line: prediction.line,
           outcome_type: prediction.outcome_type,
+          kind: prediction.kind,
         });
       });
     });
-    return Array.from(qMap.values()).sort((a, b) => a.text.localeCompare(b.text));
-  }, [displayedUsers, catKey]);
+    return orderQuestions(Array.from(qMap.values()), propKind);
+  }, [displayedUsers, catKey, propKind]);
 
   const isAwardsSection = section === 'awards';
   const headshotsByName = usePlayerHeadshots(isAwardsSection);

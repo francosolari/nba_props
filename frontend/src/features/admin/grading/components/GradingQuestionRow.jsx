@@ -2,7 +2,7 @@
 import React from 'react';
 import SelectComponent from '../../../../components/SelectComponent';
 import CourtSelect from '../../../../components/CourtSelect';
-import { CheckCircle2, AlertCircle, Lock, Pencil } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Lock, LockOpen, Pencil } from 'lucide-react';
 
 // Up to this many choices render as one-tap buttons; longer lists use a listbox.
 const MAX_BUTTON_CHOICES = 4;
@@ -267,6 +267,23 @@ const GradingQuestionRow = ({ question, editor, playerOptions }) => {
             <Pencil aria-hidden="true" className="h-4 w-4" />
             {isSet ? 'Change' : 'Set answer'}
           </button>
+          {isSet && (
+            <button
+              type="button"
+              onClick={() => updateQuestionMutation.mutate({
+                questionId: question.question_id,
+                isFinalized: !question.is_finalized,
+              })}
+              disabled={updateQuestionMutation.isPending}
+              className="court-admin-chip-btn"
+              title={question.is_finalized
+                ? 'Reopen: the answer can change again and refreshes may update it'
+                : 'Mark the answer official; refreshes stop updating it and the board shows it locked'}
+            >
+              {question.is_finalized ? <LockOpen aria-hidden="true" className="h-4 w-4" /> : <Lock aria-hidden="true" className="h-4 w-4" />}
+              {question.is_finalized ? 'Reopen' : 'Finalize'}
+            </button>
+          )}
         </div>
       )}
     </li>
