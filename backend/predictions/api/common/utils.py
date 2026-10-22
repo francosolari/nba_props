@@ -4,7 +4,7 @@ Common utilities for API endpoints.
 Provides reusable functions for answer resolution and question processing.
 """
 from typing import Dict, List, Tuple, Optional
-from predictions.models import Answer, Question
+from predictions.models import Answer, Question, HeadToHeadQuestion
 from .services.answer_lookup_service import AnswerLookupService
 
 
@@ -18,6 +18,10 @@ def resolve_answers_optimized(answer_list: List[Answer]) -> Dict[int, str]:
 
     # Get cached lookup tables once
     player_lookup, team_lookup = AnswerLookupService.get_lookup_tables()
+    # Head-to-heads between players store player ids, not team ids.
+    player_h2h_ids = set(HeadToHeadQuestion.objects.filter(
+        id__in={a.question_id for a in answer_list}, player1__isnull=False,
+    ).values_list('id', flat=True))
 
     resolved_map = {}
 
@@ -46,7 +50,9 @@ def resolve_answers_optimized(answer_list: List[Answer]) -> Dict[int, str]:
         # Resolve based on question type
         answer_id_int = int(answer_val_str)
 
-        if question_type in ('superlativequestion', 'propquestion', 'playerstatpredictionquestion'):
+        if question_type in ('superlativequestion', 'propquestion', 'playerstatpredictionquestion') or (
+            answer_obj.question_id in player_h2h_ids
+        ):
             resolved_map[answer_obj.id] = player_lookup.get(answer_id_int, f"Player ID {answer_id_int} not found")
         elif question_type in ('inseasontournamentquestion', 'headtoheadquestion', 'nbafinalspredictionquestion'):
             resolved_map[answer_obj.id] = team_lookup.get(answer_id_int, f"Team ID {answer_id_int} not found")

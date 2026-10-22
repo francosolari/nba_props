@@ -332,6 +332,31 @@ def fetch_active_players():
     print(nba_players)
     update_active_players(nba_players)
 
+def fetch_player_season_totals(season):
+    """Season totals for every player who has played, one row per player."""
+    return leaguedashplayerstats.LeagueDashPlayerStats(
+        season=_normalize_nba_season(season),
+        per_mode_detailed='Totals',
+        timeout=_get_int_env("NBA_API_TIMEOUT_SECONDS", 45),
+    ).get_data_frames()[0]
+
+
+def fetch_player_games_vs(player_id, season, opponent_abbreviation, include_playoffs=False):
+    """A player's game-log rows against one opponent, e.g. "SAS"."""
+    from nba_api.stats.endpoints import playergamelog
+    season_types = ['Regular Season', 'Playoffs'] if include_playoffs else ['Regular Season']
+    games = []
+    for season_type in season_types:
+        df = playergamelog.PlayerGameLog(
+            player_id=player_id,
+            season=_normalize_nba_season(season),
+            season_type_all_star=season_type,
+            timeout=_get_int_env("NBA_API_TIMEOUT_SECONDS", 45),
+        ).get_data_frames()[0]
+        games += [g for g in df.to_dict('records') if g['MATCHUP'].endswith(opponent_abbreviation)]
+    return games
+
+
 def get_player_with_most_fouls(season):
     # Fetch player statistics for the given season
     player_stats = \

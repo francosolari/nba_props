@@ -452,6 +452,7 @@ def run_grading_command(request, payload: GradingCommandRequest):
         'grade_standing_predictions',
         'grade_ist_predictions',
         'update_season_standings',
+        'update_player_stat_answers',
         'scrape_award_odds'
     ]
 
