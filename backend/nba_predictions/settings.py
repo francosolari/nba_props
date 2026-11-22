@@ -102,13 +102,21 @@ SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie (s
 SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection while allowing normal navigation
 # Secure cookies in production (HTTPS only), overridable per container.
 #
-# The override exists for blue/green smoke tests. The idle container is reached
-# directly as http://<droplet-ip>:8000|8002, which bypasses the nginx TLS
-# termination that fronts propspredictions.com. A browser silently discards a
-# Secure cookie on an http:// origin, so the login POST succeeds but the
-# session cookie is never stored and every later request is anonymous -- login
-# appears to do nothing, with no error. Launch just the idle container with
-# SESSION_COOKIE_SECURE=False to smoke-test it; never set it on the live one.
+# Why the override exists: the blue/green idle container is reached directly as
+# http://<droplet-ip>:8000|8002, bypassing the nginx TLS termination that
+# fronts propspredictions.com. A browser silently discards a Secure cookie on
+# an http:// origin, so the login POST succeeds but the session cookie is never
+# stored and every later request is anonymous -- login appears to do nothing,
+# with no error and nothing logged.
+#
+# DANGER: the idle container BECOMES the live one -- switch-traffic only
+# repoints nginx at its port, it does not rebuild the container. A container
+# started with SESSION_COOKIE_SECURE=False therefore serves production with
+# insecure session cookies after the switch. Prefer an SSH tunnel for smoke
+# tests (browsers accept Secure cookies over http://localhost, so no override
+# is needed):
+#     ssh -L 8002:127.0.0.1:8002 <droplet>   # then browse http://localhost:8002
+# Only use this flag on a throwaway container that will never take traffic.
 SESSION_COOKIE_SECURE = os.getenv(
     'SESSION_COOKIE_SECURE', str(not IS_DEVELOPMENT)
 ).lower() == 'true'
