@@ -77,15 +77,17 @@ class TestSessionCookieSecureOverride:
         resolved = _resolved_settings(is_development=False, session_cookie_secure=value)
         assert resolved['SESSION_COOKIE_SECURE'] is False
 
-    @pytest.mark.parametrize('value', ['0', 'no', 'off', '', 'yes', 'garbage'])
-    def test_production_stays_secure_for_anything_but_an_explicit_true(self, value):
+    @pytest.mark.parametrize('value', ['0', 'no', 'off'])
+    def test_recognised_false_values_opt_out(self, value):
+        resolved = _resolved_settings(is_development=False, session_cookie_secure=value)
+        assert resolved['SESSION_COOKIE_SECURE'] is False
+
+    @pytest.mark.parametrize('value', ['', 'garbage', 'flase', 'ture'])
+    def test_production_stays_secure_for_an_unrecognised_value(self, value):
         """
-        Opting out requires exactly "false"-ish parsing of a truthy flag: the
-        setting is `== 'true'`, so any unrecognised value lands on False.
-        This pins that down so the parsing is a deliberate choice rather than
-        an accident -- the dangerous direction would be an unrecognised value
-        silently turning security ON in dev or OFF in prod unnoticed.
+        Fail safe: a typo must never silently disable secure cookies in
+        production. `SESSION_COOKIE_SECURE=flase` has to keep them on, not
+        quietly turn them off -- which a bare `== 'true'` check would do.
         """
         resolved = _resolved_settings(is_development=False, session_cookie_secure=value)
-        # Anything that isn't "true" disables the flag, including typos.
-        assert resolved['SESSION_COOKIE_SECURE'] is False
+        assert resolved['SESSION_COOKIE_SECURE'] is True

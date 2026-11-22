@@ -18,6 +18,27 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(os.path.join(BASE_DIR, 'backend', '.env'))
 IS_DEVELOPMENT = os.getenv('DJANGO_DEVELOPMENT', 'False').lower() == 'true'
+
+
+def _env_flag(name, default):
+    """
+    Read a boolean environment variable, falling back to `default`.
+
+    Only a recognised value flips the flag; anything unrecognised keeps the
+    default rather than being treated as false. A bare `== 'true'` check makes
+    every typo mean "off", which is the wrong direction to fail for both of
+    the flags below: `SESSION_COOKIE_SECURE=1` would silently disable secure
+    cookies, and `GZIP_RESPONSES=yes` would silently disable compression.
+    """
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    value = raw.strip().lower()
+    if value in ('1', 'true', 'yes', 'on'):
+        return True
+    if value in ('0', 'false', 'no', 'off'):
+        return False
+    return default
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -117,9 +138,7 @@ SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection while allowing normal navigat
 # is needed):
 #     ssh -L 8002:127.0.0.1:8002 <droplet>   # then browse http://localhost:8002
 # Only use this flag on a throwaway container that will never take traffic.
-SESSION_COOKIE_SECURE = os.getenv(
-    'SESSION_COOKIE_SECURE', str(not IS_DEVELOPMENT)
-).lower() == 'true'
+SESSION_COOKIE_SECURE = _env_flag('SESSION_COOKIE_SECURE', not IS_DEVELOPMENT)
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -146,6 +165,16 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     'accounts.middleware.OnboardingMiddleware',  # Redirect new users to onboarding
 ]
+
+# Compression stays ON by default -- it is a straight win on the API payloads
+# and costs little CPU. The switch is a diagnostic escape hatch: it lets a
+# container rule compression out as the cause of a problem without a code
+# revert and redeploy (`-e GZIP_RESPONSES=False`). GZipMiddleware is removed
+# from the list rather than conditionally inserted so its position above stays
+# the single source of truth for middleware ordering.
+GZIP_RESPONSES = _env_flag('GZIP_RESPONSES', True)
+if not GZIP_RESPONSES:
+    MIDDLEWARE.remove('django.middleware.gzip.GZipMiddleware')
 
 ROOT_URLCONF = 'nba_predictions.urls'
 
